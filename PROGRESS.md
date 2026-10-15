@@ -7,7 +7,7 @@ Updated: 2026-10-15 (synthetic Docker validation completed; model catalog rechec
 - Owner explicitly requested that completed changes be pushed, overriding the
   earlier manual-only instruction for this checkpoint. Verified the existing
   AyushmanMohapatra015/Dojo repository is private and main is the default branch.
-  Remote main was c89be8e; two prior local commits plus this work await upload.
+  Remote main was c89be8e; two prior local commits plus this work were uploaded.
 - Reviewed pending files and commit identity: GitHub no-reply email is configured
   and used by the two unpublished commits. Environment files, .venv, test
   scratch data and the nested synthetic repository remain ignored.
@@ -15,9 +15,12 @@ Updated: 2026-10-15 (synthetic Docker validation completed; model catalog rechec
   packages). Common credential-pattern review of 68 project files found only
   explicit synthetic markers in mocked secret-redaction tests; no real key was
   identified. This limited scan is not a guarantee that all secrets are detectable.
-- Preparing a reviewed commit and normal push to the existing origin/main.
-  No force-push, visibility change, new account access or live inference is
-  authorized by this checkpoint. Confirm upload by comparing local/remote SHAs.
+- Committed the reviewed work as 44dba5a and pushed normally to origin/main.
+  Verified local HEAD and GitHub main both resolved to
+  44dba5a70b56846fe389a4c5eecbf4f86d971288, the working tree was clean, and the
+  repository remained private. This documentation confirmation is synced in a
+  follow-up commit. No force-push, visibility change, new account access or
+  live inference occurred.
 
 ## Done
 - Read BUILD_SPEC.md, Rules.txt and the existing PROGRESS.md before editing.
