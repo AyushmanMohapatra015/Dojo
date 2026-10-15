@@ -13,6 +13,8 @@ sandbox:
   cpus: 2
   memory: 2g
 verification:
+  # Live calls are locked in dojo/verify.py under the zero-out-of-pocket rule.
+  # This budget remains a dry-run allowance; editing YAML does not unlock calls.
   budget_usd: '0.10'
   max_tokens: 256
   thinking_budget: 64

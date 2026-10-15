@@ -63,12 +63,18 @@ Updated: 2026-10-15 (verification preparation; model catalog rechecked 2026-10-1
 - [Canonical Apache-2.0 text](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 ## Next
-- Finish the capped Token Factory verification using a key supplied only through
-  the local process environment. The owner must not paste the key into chat.
+- Enforce the owner's zero-out-of-pocket rule: live inference is now locked in
+  code. Verify provider-enforced protection against usage debt/card charges,
+  usable promotional balance/expiry and a safety reserve, then implement
+  cumulative spending records before revisiting the lock. If protection cannot
+  be established, continue offline; a key or per-run cap is not sufficient.
+- Live Token Factory verification is deferred under the zero-out-of-pocket lock.
+  If eventually enabled, supply keys only through the local process environment;
+  the owner must not paste keys into chat.
   The verifier must run in the same PowerShell session that receives the key;
   setting it in a separate terminal does not update this running agent's environment.
-- Set NEBIUS_API_KEY in the environment, then run the documented capped verifier
-  and record live latency/usage/control observations. Never paste keys into chat.
+- After all zero-out-of-pocket requirements are established, revisit live
+  verification and record latency/usage/control observations. Never paste keys.
 - Recheck current prices and serving bases, review Super availability, and reconcile
   usage estimates with provider billing. Tiny arithmetic probes cannot establish
   thinking semantics on their own.
@@ -77,6 +83,17 @@ Updated: 2026-10-15 (verification preparation; model catalog rechecked 2026-10-1
 - Complete and commit preregistration before inspecting held-out outcomes.
 
 ## Blockers / unresolved items
+- Zero-out-of-pocket protection is unverified. Current provider billing docs
+  permit automatic charges. Live inference is disabled both at the verifier
+  entry point and the production API transport, even with a key and sufficient
+  run budget. No CLI override is provided. Cross-run spending accounting is not
+  implemented and is required before unlocking; do not claim the existing cap
+  monitors the whole account.
+- Token Factory key creation is paused at bank-card onboarding. The owner reports
+  a $0 verification screen; its exact terms have not been inspected. Current
+  billing documentation requires a card and permits automatic charges for usage
+  debt/thresholds. The owner decides whether to accept those terms. No payment,
+  card entry, API-key receipt or paid model call was performed by the assistant.
 - GitHub authentication, remote setup and the owner's first push are complete.
   Subsequent pushes stay manual. Never share passwords, tokens or login codes.
 - NEBIUS_API_KEY is unset. Live provider verification and the end-to-end task
@@ -151,11 +168,17 @@ Updated: 2026-10-15 (verification preparation; model catalog rechecked 2026-10-1
   reported error during the original 2026-10-13 check). Updated models.yaml.
 - NEBIUS_API_KEY remains unavailable in the agent process. No inference request
   was sent. Awaiting the owner's local key setup to complete live measurements.
+- Researched the card requirement against current first-party Billing & Consumption
+  documentation: https://docs.tokenfactory.nebius.com/other-capabilities/billing-new.
+  A $0 card verification does not cap future account charges. No card-free credit
+  exception or provider-enforced hard spending limit was confirmed. The verifier's
+  $0.10 default cap controls that run only, under its documented assumptions.
 
 ## Measured numbers
 - Python: 3.12.7; uv: 0.13.0. Locked packages: 88, including optional resolutions;
   installed Day 1 packages: 31.
-- Tests: **25 passed**. Ruff: **passed**. uv lock check: **passed**.
+- Tests: **28 passed** after the billing-policy lock. Ruff: **passed**.
+  uv lock check: **passed** during the scaffold milestone; dependencies unchanged.
 - Probe plan: **4 models × 4 variants = 16 sequential requests**.
 - Completion limit: **256 tokens**, reasoning-inclusive limit also set.
 - Conservative input allowance for fixed tiny prompt: **1,024 tokens/request**.
@@ -164,3 +187,22 @@ Updated: 2026-10-15 (verification preparation; model catalog rechecked 2026-10-1
 - Actual paid inference calls: **0**. Actual provider spend: **$0**.
 - Live latency, tokens and throughput: **not measured**.
 - Validated benchmark tasks: **0**. End-to-end benchmark runs: **0**.
+
+## Zero-out-of-pocket policy checkpoint — 2026-10-15
+
+- The owner requires zero out-of-pocket Nebius spend, including unintended card
+  charges. Recorded this as a standing rule; usable promotional credits alone
+  are not evidence of provider-enforced protection against usage debt.
+- Added a live-inference lock both before the verifier starts requests and at
+  the production API transport. A key, run budget, or CLI flag cannot bypass it.
+  There is no CLI unlock option; future policy changes require implementation
+  review after the prerequisites are established.
+- Dry-run planning still works. Production live requests remain disabled.
+  Future solver paths must enforce the same policy before any network calls.
+- Added offline regression tests: with a key and budget, live mode exits with
+  zero attempts; direct transport calls cannot construct an API client; CLI
+  invocation is also blocked. Existing accounting tests use fake transports and
+  explicitly prevent real client creation.
+- All 28 offline tests and Ruff checks passed. No model requests, account billing
+  changes, purchases or pushes were performed. Cross-run credit accounting is
+  still a prerequisite, not an implemented feature.

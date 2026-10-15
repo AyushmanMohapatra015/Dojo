@@ -20,3 +20,17 @@ Sources are linked in PROGRESS.md. Add measured feedback here after live probes.
 The same four model IDs and prices remain listed. Super's JSON status has changed
 from error to active. No live serving result is available yet; catalog state and
 account inference access remain separate checks.
+
+## 2026-10-15 — card-required onboarding and billing review
+
+The owner encountered a card request while creating Token Factory access and
+reported a $0 verification screen. The exact checkout page was not inspected.
+Current [Billing & Consumption documentation](https://docs.tokenfactory.nebius.com/other-capabilities/billing-new)
+requires a bank card during onboarding and describes automatic charging when
+the balance is negative at month start or a billing threshold is reached.
+A $0 verification must not be presented as a guarantee of no future charges.
+The older billing page describes a different prepaid/auto-top-up flow; use the
+current account's terms and current documentation, not an assumed card-free path.
+No card information was requested in chat or entered by the assistant. No paid
+API requests were sent. The script cap applies to its own run, not the account
+or other services. Support must confirm any card-free hackathon-credit exception.

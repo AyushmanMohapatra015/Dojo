@@ -2,6 +2,8 @@
 - BUILD_SPEC.md is the plan. Do only the step I ask for, then stop and summarize.
 - Never print or log secrets. Read keys from the environment only.
 - Never run paid model jobs without a spend cap. Ask me before any run that could cost over $1.
+- Nebius must incur zero out-of-pocket spend. Promotional credits may only be used after verifying balance, expiry and provider-enforced protection against usage debt/card charges. A per-run cap is not sufficient.
+- Keep live Nebius calls disabled until that protection is established and spending is tracked cumulatively across runs, with a safety reserve. Never run unattended or assume a $0 verification/credit balance prevents future billing.
 - Keep PROGRESS.md updated: done, next, blockers, measured numbers.
 - Write tests for logic that scores results.
 - If something in the spec is marked VERIFY, check it and record the answer. Don't assume.

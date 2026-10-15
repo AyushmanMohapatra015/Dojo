@@ -28,7 +28,7 @@ def verify(
     live: bool = False,
     output: Path | None = None,
 ):
-    """Plan probes for free; --live sends capped requests using NEBIUS_API_KEY."""
+    """Plan probes for free; live calls are locked by the zero-out-of-pocket policy."""
     try:
         report = run_verification(load_models(config), positive_decimal(budget_usd), max_tokens, live)
     except (OSError, ValueError, TypeError, KeyError, InvalidOperation, yaml.YAMLError):

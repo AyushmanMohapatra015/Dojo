@@ -44,6 +44,10 @@ program and revoking its account access are separate actions; complete both.
   they were configured. Never print, commit or paste the values.
 - [ ] Stop/delete any billable project resources if created later. None were
   provisioned during this GitHub setup.
+- [ ] Review the provider's final balance, invoices and saved payment method if
+  card onboarding was completed. Current Token Factory docs allow automatic
+  charges for usage debt; uninstalling a CLI or revoking a key does not settle
+  invoices. Ask provider support about payment-method/account closure if needed.
 - [ ] Uninstall GitHub CLI through Windows Installed apps or:
 
   ```powershell

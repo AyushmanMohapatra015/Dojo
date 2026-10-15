@@ -14,6 +14,15 @@ from time import perf_counter
 
 from dojo.solve.model import ModelConfig, positive_decimal
 
+# Deliberately locked: no provider-enforced protection against card charges or
+# usage debt has been verified. A key, credits, or per-run cap cannot unlock it.
+# Revisit only after documenting provider protection and cumulative accounting.
+LIVE_INFERENCE_ENABLED = False
+LIVE_BLOCK_REASON = (
+    "Live inference is disabled until provider-enforced zero-out-of-pocket "
+    "protection is verified."
+)
+
 MESSAGES = [
     {"role": "system", "content": "Answer the arithmetic question briefly."},
     {"role": "user", "content": "What is 17 * 19? Reply with the integer only."},
@@ -64,6 +73,8 @@ def plan(models: list[ModelConfig], max_tokens: int) -> list[dict]:
 
 
 def openai_request(model: ModelConfig, kwargs: dict, key: str):
+    if not LIVE_INFERENCE_ENABLED:
+        raise RuntimeError(LIVE_BLOCK_REASON)
     from openai import OpenAI
 
     with OpenAI(api_key=key, base_url=model.api_base, max_retries=0, timeout=30) as client:
@@ -94,6 +105,7 @@ def run_verification(
         "estimated_usage_cost_usd": "0", "attempted_calls": 0,
         "input_token_bound": INPUT_TOKEN_BOUND, "max_tokens": max_tokens,
         "controls_honored": "unverified",
+        "billing_policy": "zero_out_of_pocket",
         "cost_assumptions": "Configured prices; input allowance; max_tokens includes reasoning; no cache discount.",
         "probes": [], "status": "planned",
     }
@@ -103,6 +115,10 @@ def run_verification(
     key = os.environ.get("NEBIUS_API_KEY")
     if not key or not key.strip():
         report["status"] = "blocked_missing_key"
+        return report
+    if not LIVE_INFERENCE_ENABLED:
+        report["status"] = "blocked_zero_out_of_pocket_policy"
+        report["reason"] = LIVE_BLOCK_REASON
         return report
 
     usage_cost = Decimal(0)

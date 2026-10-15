@@ -24,6 +24,13 @@ installing them for Day 1. No solver or Docker jobs are run by this scaffold.
 
 ## Day 1 provider verification
 
+**Live inference is currently locked under the owner's zero-out-of-pocket rule.**
+An API key and a per-run cap cannot unlock it. Provider-enforced protection
+against card charges/usage debt has not been verified. Keep working offline
+until that protection, usable credits/expiry, a safety reserve and cumulative
+spend accounting are established. The current guard accounts for a single run;
+it is not an account-wide billing limit.
+
 ```console
 uv run dojo cost
 uv run python scripts/verify_models.py --budget-usd 0.10
@@ -34,13 +41,18 @@ four models, each with baseline, thinking off, thinking off with forced content,
 and thinking on with a 64-token thinking budget. It reserves **$0.01030144** at
 the configured prices and a 256-token completion limit.
 
-Set `NEBIUS_API_KEY` in your shell environment using your usual secret manager.
+For eventual live use, `NEBIUS_API_KEY` belongs only in the process environment.
 The script reads only that environment variable; it does not read `.env` files,
-credential files, or accept a key argument. Then run:
+credential files, or accept a key argument. The following currently demonstrates
+the refusal path, not an enabled live workflow:
 
 ```console
 uv run python scripts/verify_models.py --live --budget-usd 0.10 --output data/verification.json
 ```
+
+With a key present it exits unsuccessfully with
+`blocked_zero_out_of_pocket_policy` and zero requests; without a key it reports
+`blocked_missing_key`. The production transport also rejects direct calls.
 
 Each paid request reserves its full conservative allowance before sending.
 Reservations are never refunded. The entire grid must fit the cap before any

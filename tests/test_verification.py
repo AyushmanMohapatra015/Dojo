@@ -10,9 +10,44 @@ from typer.testing import CliRunner
 
 from dojo.cli import app
 from dojo.solve.model import load_models, positive_decimal
-from dojo.verify import INPUT_TOKEN_BOUND, Budget, BudgetExceeded, run_verification
+from dojo.verify import INPUT_TOKEN_BOUND, Budget, BudgetExceeded, openai_request, run_verification
 
 MODELS = load_models(Path(__file__).resolve().parents[1] / "configs/models.yaml")
+
+
+@pytest.fixture
+def simulated_live(monkeypatch):
+    """Exercise accounting with injected fake transports; never unlock real calls."""
+    monkeypatch.setattr("dojo.verify.LIVE_INFERENCE_ENABLED", True)
+
+    def client_must_not_be_created(**kwargs):
+        pytest.fail("Accounting tests must use fake transports only")
+
+    monkeypatch.setattr("openai.OpenAI", client_must_not_be_created)
+
+
+def test_live_disabled_even_with_key_and_budget(monkeypatch):
+    monkeypatch.setenv("NEBIUS_API_KEY", "test-key")
+    calls = []
+
+    def request(*args):
+        calls.append(args)
+        return response()
+
+    result = run_verification(MODELS, live=True, request=request)
+    assert result["status"] == "blocked_zero_out_of_pocket_policy"
+    assert result["attempted_calls"] == 0
+    assert result["reserved_usd"] == "0"
+    assert not calls
+
+
+def test_direct_transport_blocked_before_client_creation(monkeypatch):
+    def client_must_not_be_created(**kwargs):
+        pytest.fail("The live API client must not be constructed")
+
+    monkeypatch.setattr("openai.OpenAI", client_must_not_be_created)
+    with pytest.raises(RuntimeError, match="zero-out-of-pocket"):
+        openai_request(MODELS[0], {}, "test-key")
 
 
 def response(prompt=20, completion=4, content="323", reasoning=None):
@@ -75,7 +110,7 @@ def test_missing_key_sends_no_requests(monkeypatch):
     assert not calls
 
 
-def test_success_cost_controls_and_secret_safety(monkeypatch):
+def test_success_cost_controls_and_secret_safety(monkeypatch, simulated_live):
     secret = "DO_NOT_PRINT_TEST_SECRET"
     monkeypatch.setenv("NEBIUS_API_KEY", secret)
     calls = []
@@ -104,7 +139,7 @@ def test_success_cost_controls_and_secret_safety(monkeypatch):
     NS(usage=None), response(prompt=INPUT_TOKEN_BOUND+1), response(completion=257),
     response(prompt=-1), response(prompt=True), NS(usage=NS(prompt_tokens=20)),
 ])
-def test_bad_usage_stops_after_one_request(monkeypatch, bad_response):
+def test_bad_usage_stops_after_one_request(monkeypatch, bad_response, simulated_live):
     monkeypatch.setenv("NEBIUS_API_KEY", "test-key")
     calls = []
 
@@ -119,7 +154,7 @@ def test_bad_usage_stops_after_one_request(monkeypatch, bad_response):
 
 
 @pytest.mark.parametrize("status", [None, 401, 402, 429, 500])
-def test_error_stops_without_retry_or_secret_leak(monkeypatch, status):
+def test_error_stops_without_retry_or_secret_leak(monkeypatch, status, simulated_live):
     secret = "DO_NOT_PRINT_TEST_SECRET"
     monkeypatch.setenv("NEBIUS_API_KEY", secret)
     calls = []
@@ -136,7 +171,7 @@ def test_error_stops_without_retry_or_secret_leak(monkeypatch, status):
     assert secret not in json.dumps(result)
 
 
-def test_parameter_rejections_retain_reservations(monkeypatch):
+def test_parameter_rejections_retain_reservations(monkeypatch, simulated_live):
     monkeypatch.setenv("NEBIUS_API_KEY", "test-key")
 
     def request(*args):
@@ -168,3 +203,17 @@ def test_cli_dry_run_and_missing_key_exit(monkeypatch):
     result = runner.invoke(app, ["verify", "--live"])
     assert result.exit_code == 1
     assert json.loads(result.stdout)["status"] == "blocked_missing_key"
+
+
+def test_cli_live_with_key_exits_without_sending(monkeypatch):
+    monkeypatch.setenv("NEBIUS_API_KEY", "test-key")
+
+    def client_must_not_be_created(**kwargs):
+        pytest.fail("A configured key must not bypass the billing-policy lock")
+
+    monkeypatch.setattr("openai.OpenAI", client_must_not_be_created)
+    result = CliRunner().invoke(app, ["verify", "--live"])
+    assert result.exit_code == 1
+    report = json.loads(result.stdout)
+    assert report["status"] == "blocked_zero_out_of_pocket_policy"
+    assert report["attempted_calls"] == 0
