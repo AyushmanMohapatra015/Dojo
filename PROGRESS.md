@@ -63,9 +63,9 @@ Updated: 2026-10-15 (GitHub setup; public model sources checked 2026-10-13)
 - [Canonical Apache-2.0 text](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 ## Next
-- Finish GitHub browser authentication using GitHub CLI, then create the private
-  repository named dojo and add origin. The owner will run the push manually.
-  Local initial commit ed397aa is saved on main; no remote or upload exists yet.
+- The owner runs `git push -u origin main` from this workspace for the first push.
+  Private origin is https://github.com/AyushmanMohapatra015/dojo.git. The assistant
+  has not pushed any commits.
 - Set NEBIUS_API_KEY in the environment, then run the documented capped verifier
   and record live latency/usage/control observations. Never paste keys into chat.
 - Recheck current prices and serving bases, review Super availability, and reconcile
@@ -76,8 +76,8 @@ Updated: 2026-10-15 (GitHub setup; public model sources checked 2026-10-13)
 - Complete and commit preregistration before inspecting held-out outcomes.
 
 ## Blockers / unresolved items
-- GitHub CLI is installed but not signed in. The owner must authenticate directly
-  in their browser; never share passwords, tokens or login codes in chat.
+- GitHub authentication and remote setup are complete. First push is left to
+  the owner as requested. Never share passwords, tokens or login codes in chat.
 - NEBIUS_API_KEY is unset. Live provider verification and the end-to-end task
   gate remain open. No successful runtime inference integration is claimed.
 - Private GitHub setup is now requested. Public publishing and registration
@@ -110,8 +110,15 @@ Updated: 2026-10-15 (GitHub setup; public model sources checked 2026-10-13)
   MSI directly. Windows Installer initially returned 1603 because secure repair
   expected the original MSI filename. Restoring that filename resolved the issue;
   final installer exit code was 0 and gh --version succeeded.
-- CLI authentication check reports no signed-in GitHub hosts. Private repository
-  creation and origin setup are pending browser login. Publishing stays manual.
+- Initial CLI authentication check had no signed-in hosts. Follow-up confirmed
+  the owner signed in as AyushmanMohapatra015 with credentials stored in the
+  system keyring, using HTTPS for Git.
+- Created https://github.com/AyushmanMohapatra015/dojo and verified isPrivate=true.
+  Added its HTTPS URL as origin without a push. All existing commits remain local.
+- Added PROJECT_CLEANUP.md and a Rules.txt reminder to review it at project
+  completion. It inventories project-added tools and separates logout, account
+  authorization revocation, credential cleanup and uninstallation. No cleanup
+  is executed now; none of these steps guarantees absolute safety.
 
 ## Measured numbers
 - Python: 3.12.7; uv: 0.13.0. Locked packages: 88, including optional resolutions;

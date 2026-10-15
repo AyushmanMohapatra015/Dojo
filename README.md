@@ -95,3 +95,8 @@ will hold benchmark artifacts. No held-out data is generated or evaluated yet.
 Apache-2.0; see [LICENSE](LICENSE). mini-swe-agent is an optional upstream MIT
 dependency, not vendored here. Model licenses are separate from the code license.
 Set Apache-2.0 in the repository About section when creating the public remote.
+
+## Project completion checkpoint
+
+Review [PROJECT_CLEANUP.md](PROJECT_CLEANUP.md) at completion for the owner's
+requested CLI removal, account-access revocation and credential cleanup.

@@ -8,3 +8,4 @@
 - Work in small steps: explain what each step does before acting, then recap what we learned.
 - Help the owner learn alongside implementation; preserve the owner-written learning work in BUILD_SPEC.md.
 - The owner pushes to GitHub manually. Do not push unless the owner explicitly changes this preference.
+- At project completion, remind the owner and review PROJECT_CLEANUP.md before final handoff; keep its tool inventory current.
