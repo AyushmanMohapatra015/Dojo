@@ -2,8 +2,9 @@
 
 Benchmark Nemotron on your own repository, measure cost versus success, and keep
 only repository notes that earn their place. See [BUILD_SPEC.md](BUILD_SPEC.md).
-This is the Day 1 scaffold. Mining, solving, scoring, analysis, and the dashboard
-are scheduled for later milestones; their modules are placeholders.
+Single-commit filtering and synthetic Docker validation are implemented; see
+[the mining exercise](docs/mining-first-step.md). Real-task mining, the solver,
+benchmark scoring, analysis and dashboard remain later milestones.
 
 ## Setup
 
@@ -20,16 +21,18 @@ uv run ruff check .
 
 On this Windows workspace, uv is installed at `.venv\Scripts\uv.exe`.
 The optional `solver` and `analysis` extras reserve later dependencies without
-installing them for Day 1. No solver or Docker jobs are run by this scaffold.
+installing them for Day 1. No solver jobs have run. The synthetic validation
+command runs only the exact practice fixture in local Docker.
 
 ## Day 1 provider verification
 
 **Live inference is currently locked under the owner's zero-out-of-pocket rule.**
-An API key and a per-run cap cannot unlock it. Provider-enforced protection
-against card charges/usage debt has not been verified. Keep working offline
-until that protection, usable credits/expiry, a safety reserve and cumulative
-spend accounting are established. The current guard accounts for a single run;
-it is not an account-wide billing limit.
+An API key, per-run cap or local ledger cannot unlock it. The owner accepts
+monitored promotional use despite the provider's lack of a hard cap. Persistent
+cumulative reservations are implemented, but usable promotional balances and
+their expiry must be confirmed before creating an actual spending allowance.
+See [promotional-credit safeguards](docs/promotional-credit-safety.md). These
+are local controls, not an account-wide billing limit or zero-charge guarantee.
 
 ```console
 uv run dojo cost

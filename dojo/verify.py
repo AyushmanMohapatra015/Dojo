@@ -8,19 +8,24 @@ The cap assumes configured prices and provider enforcement of max_tokens
 import json
 import os
 from collections.abc import Callable
+from contextvars import ContextVar
 from datetime import UTC, datetime
 from decimal import Decimal
 from time import perf_counter
 
 from dojo.solve.model import ModelConfig, positive_decimal
+from dojo.store.credits import CreditError, CreditLedger
 
-# Deliberately locked: no provider-enforced protection against card charges or
-# usage debt has been verified. A key, credits, or per-run cap cannot unlock it.
-# Revisit only after documenting provider protection and cumulative accounting.
+# Deliberately locked pending confirmed promo expiry/exclusive account usage and
+# a reviewed credit allowance. The owner accepts monitored credit usage despite
+# the provider's lack of a hard cap. No key or per-run flag unlocks this switch.
 LIVE_INFERENCE_ENABLED = False
 LIVE_BLOCK_REASON = (
-    "Live inference is disabled until provider-enforced zero-out-of-pocket "
-    "protection is verified."
+    "Live inference is disabled pending zero-out-of-pocket safeguards: confirmed "
+    "promotional balance/expiry, exclusive account usage and reviewed accounting."
+)
+ACTIVE_CREDIT_RUN: ContextVar[tuple[CreditLedger, str] | None] = ContextVar(
+    "active_credit_run", default=None,
 )
 
 MESSAGES = [
@@ -75,6 +80,10 @@ def plan(models: list[ModelConfig], max_tokens: int) -> list[dict]:
 def openai_request(model: ModelConfig, kwargs: dict, key: str):
     if not LIVE_INFERENCE_ENABLED:
         raise RuntimeError(LIVE_BLOCK_REASON)
+    credit_run = ACTIVE_CREDIT_RUN.get()
+    if credit_run is None:
+        raise CreditError("No durable credit reservation; direct live calls blocked")
+    credit_run[0].check_run(credit_run[1])
     from openai import OpenAI
 
     with OpenAI(api_key=key, base_url=model.api_base, max_retries=0, timeout=30) as client:
@@ -91,6 +100,7 @@ def run_verification(
     models: list[ModelConfig], cap: Decimal = Decimal("0.10"),
     max_tokens: int = 256, live: bool = False,
     request: Callable = openai_request,
+    credit_ledger: CreditLedger | None = None,
 ) -> dict:
     budget = Budget(cap)
     requests = plan(models, max_tokens)
@@ -121,10 +131,31 @@ def run_verification(
         report["reason"] = LIVE_BLOCK_REASON
         return report
 
+    ledger = credit_ledger if credit_ledger is not None else CreditLedger()
+    try:
+        reservation = ledger.reserve_run(total)
+    except (CreditError, OSError):
+        report["status"] = "blocked_credit_ledger"
+        return report
+    report["credit_reservation_usd"] = str(total)
+
+    def finish() -> dict:
+        try:
+            ledger.finish_run(reservation, report["estimated_usage_cost_usd"]
+                              if report["status"] == "completed" else None)
+        except (CreditError, OSError):
+            report["status"] = "stopped_credit_accounting_error"
+        return report
+
     usage_cost = Decimal(0)
     failed = False
     for model in models:
         for variant, controls in VARIANTS:
+            try:
+                ledger.check_run(reservation)
+            except (CreditError, OSError):
+                report["status"] = "stopped_credit_accounting_error"
+                return finish()
             reserve = model.cost(INPUT_TOKEN_BOUND, max_tokens)
             budget.reserve(reserve)
             report["reserved_usd"] = str(budget.reserved)
@@ -139,7 +170,11 @@ def run_verification(
                 kwargs["extra_body"] = {"chat_template_kwargs": dict(controls)}
             start = perf_counter()
             try:
-                response = request(model, kwargs, key)
+                context_token = ACTIVE_CREDIT_RUN.set((ledger, reservation))
+                try:
+                    response = request(model, kwargs, key)
+                finally:
+                    ACTIVE_CREDIT_RUN.reset(context_token)
             except Exception as exc:  # noqa: BLE001 -- redact all transport/provider errors
                 # Provider errors can echo keys or request bodies; retain only numeric status.
                 status = getattr(exc, "status_code", None)
@@ -151,7 +186,7 @@ def run_verification(
                 if type(status) is int and status in {400, 404, 422}:
                     continue
                 report["status"] = "stopped_request_error"
-                return report
+                return finish()
             row["latency_seconds"] = round(perf_counter() - start, 4)
             try:
                 usage = response.usage
@@ -196,8 +231,8 @@ def run_verification(
                 row["status"] = "invalid_usage_or_response"
                 report["probes"].append(row)
                 report["status"] = "stopped_invalid_usage_or_response"
-                return report
+                return finish()
             report["estimated_usage_cost_usd"] = str(usage_cost)
             report["probes"].append(row)
     report["status"] = "completed_with_errors" if failed else "completed"
-    return report
+    return finish()

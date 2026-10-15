@@ -1,5 +1,14 @@
 # Learning log
 
+## Spending across runs
+
+A per-run cap starts over when the program restarts. A persistent ledger records
+the whole planned run before a request starts, so restarting cannot recover that
+allowance. SQLite transactions prevent two instances from reserving the same
+remaining allowance. Unknown usage and interrupted runs block continuation;
+successful low usage does not refund the conservative reservation. This controls
+our program's accounting, not the provider's billing or other applications.
+
 ## Synthetic fail-before/pass-after validation
 
 The new regression test must be present in both versions: otherwise a passing

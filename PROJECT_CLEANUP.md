@@ -9,6 +9,32 @@ credits after spending safeguards are ready, then request Token Factory card
 removal at project completion. Earlier immediate-closure discussions were
 superseded. No card removal, account closure or promo redemption is confirmed.
 
+## Token Factory support procedure — reported 2026-10-16
+
+Support's reply supplied by the owner confirms payment-method inactivation is
+handled by Customer Support, after account suspension and settlement of any
+outstanding amounts. Ownership verification requires User ID and Org ID; share
+these only in the verified support channel, not in the project repository.
+The account may remain suspended without a payment method and be reactivated
+later by adding one. Normal processing is 1–2 days, with confirmation by reply;
+this is an estimate, not evidence that the request is already complete.
+
+At project completion:
+
+- [ ] Stop all project workloads and revoke all Token Factory API keys.
+- [ ] Check balance/invoices and ask support to confirm no pending/unbilled
+  usage remains; resolve any actual amount owed before inactivation.
+- [ ] Request account suspension and saved-payment-method inactivation in the
+  existing verified support thread; supply User ID and Org ID there if asked.
+- [ ] Obtain written confirmation of suspension and payment-method inactivation.
+  Keep the account suspended if retaining it; full account deletion is optional.
+- [ ] If payment-token erasure is required, ask separately what is deactivated,
+  what remains with the processor, and which retention obligations apply.
+
+Support referred the token-deletion question to https://docs.nebius.com/legal/privacy
+rather than explicitly confirming processor-token erasure. Inactivation and
+deletion are different. None of this introduces a hard spending cap during use.
+
 The owner wants project-added command-line tools removed after completion.
 No software setup or cleanup can guarantee absolute safety. Uninstalling a
 program and revoking its account access are separate actions; complete both.
@@ -28,8 +54,9 @@ program and revoking its account access are separate actions; complete both.
 
 ## Checklist — perform at project completion
 
-- [ ] Save intended final code, results and documentation. The owner handles
-  GitHub pushes; verify the backup before removing any project environment.
+- [ ] Save intended final code, results and documentation. The owner authorizes
+  reviewed checkpoint pushes; verify the GitHub backup before removing any
+  project environment.
 - [ ] Review the inventory and identify every CLI/integration added during this
   project, including anything added after this checkpoint was written.
 - [ ] Sign out of the project GitHub CLI account before uninstalling it:

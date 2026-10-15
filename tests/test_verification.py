@@ -1,6 +1,7 @@
 """Offline tests for paid-request boundaries, cost accounting and safe reporting."""
 
 import json
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace as NS
@@ -10,20 +11,26 @@ from typer.testing import CliRunner
 
 from dojo.cli import app
 from dojo.solve.model import load_models, positive_decimal
+from dojo.store.credits import CreditLedger
 from dojo.verify import INPUT_TOKEN_BOUND, Budget, BudgetExceeded, openai_request, run_verification
 
 MODELS = load_models(Path(__file__).resolve().parents[1] / "configs/models.yaml")
 
 
 @pytest.fixture
-def simulated_live(monkeypatch):
+def simulated_live(monkeypatch, tmp_path):
     """Exercise accounting with injected fake transports; never unlock real calls."""
     monkeypatch.setattr("dojo.verify.LIVE_INFERENCE_ENABLED", True)
+    ledger = CreditLedger(tmp_path / "simulation.sqlite3")
+    ledger.initialize(balance_usd="30", reserve_usd="3", allowance_usd="1",
+                      expires_at=datetime.now(UTC) + timedelta(days=90), exclusive_use=True)
+    monkeypatch.setattr("dojo.verify.CreditLedger", lambda: ledger)
 
     def client_must_not_be_created(**kwargs):
         pytest.fail("Accounting tests must use fake transports only")
 
     monkeypatch.setattr("openai.OpenAI", client_must_not_be_created)
+    return ledger
 
 
 def test_live_disabled_even_with_key_and_budget(monkeypatch):
@@ -217,3 +224,37 @@ def test_cli_live_with_key_exits_without_sending(monkeypatch):
     report = json.loads(result.stdout)
     assert report["status"] == "blocked_zero_out_of_pocket_policy"
     assert report["attempted_calls"] == 0
+
+
+def test_simulated_runs_share_full_grid_reservations(monkeypatch, simulated_live):
+    monkeypatch.setenv("NEBIUS_API_KEY", "test-key")
+    for _ in range(2):
+        result = run_verification(MODELS, live=True, request=lambda *args: response())
+        assert result["status"] == "completed"
+    report = simulated_live.status()
+    assert Decimal(report["reserved_usd"]) == Decimal("0.01030144") * 2
+
+
+def test_missing_ledger_blocks_before_fake_request(monkeypatch, tmp_path, simulated_live):
+    monkeypatch.setenv("NEBIUS_API_KEY", "test-key")
+    calls = []
+    result = run_verification(MODELS, live=True, request=lambda *args: calls.append(args),
+                              credit_ledger=CreditLedger(tmp_path / "missing.sqlite3"))
+    assert result["status"] == "blocked_credit_ledger"
+    assert result["attempted_calls"] == 0
+    assert not calls
+
+
+def test_ambiguous_run_blocks_all_later_requests(monkeypatch, simulated_live):
+    monkeypatch.setenv("NEBIUS_API_KEY", "test-key")
+    first = run_verification(MODELS, live=True, request=lambda *args: NS(usage=None))
+    assert first["status"] == "stopped_invalid_usage_or_response"
+    calls = []
+    second = run_verification(MODELS, live=True, request=lambda *args: calls.append(args))
+    assert second["status"] == "blocked_credit_ledger"
+    assert not calls
+
+
+def test_transport_requires_durable_context_even_if_flag_changes(monkeypatch, simulated_live):
+    with pytest.raises(ValueError, match="durable credit reservation"):
+        openai_request(MODELS[0], {}, "test-key")

@@ -1,6 +1,67 @@
 # Progress
 
-Updated: 2026-10-15 (synthetic Docker validation completed; model catalog rechecked 2026-10-15)
+Updated: 2026-10-16 (persistent credit safeguards implemented; model catalog rechecked 2026-10-15)
+
+## Credit transaction and ongoing push authorization — 2026-10-16
+
+- Owner supplied the transaction dated 2026-10-15 18:43 UTC, labelled Adjustment:
+  Nebius Builder Program Credits, +US$29.50. This confirms the reported addition
+  is Builder promotional credit. Oct 1–31 is the displayed transaction period;
+  Oct 31 zero-value rows do not establish promotional-credit expiry.
+- Checked https://nebius.com/builders-terms-and-conditions §C.2: credits expire
+  90 days from issuance. Do not equate the transaction/redemption timestamp with
+  issuance or treat the owner's no-billing-until-exhaustion notice as a hard cap.
+  Actual account-specific expiry remains to be established before initialization.
+- Owner explicitly authorizes future reviewed project checkpoint commits/pushes
+  whenever appropriate. Updated Rules.txt and cleanup notes; preserve the private
+  remote and use normal pushes. This supersedes earlier manual-only instructions.
+- Checkpoint review: 137 offline tests, Ruff and uv lock check pass; 71-file
+  common-credential-pattern scan found no real credentials (two known mock
+  markers excluded). Verified private remote and no-reply identity. No real
+  ledger or API key is available in the agent process; live calls remain locked.
+
+## Persistent promotional-credit safeguards — 2026-10-16
+
+- Owner explicitly reconfirmed monitored Token Factory use and reports an account
+  balance of US$29.50, a separate US$1 trial with 29 days remaining, and exclusive
+  Dojo usage (no other apps/people spending). Do not infer the US$29.50 is entirely
+  promotional or shares the trial expiry. Credit breakdown/earliest expiry still
+  require confirmation. No real credit ledger or live request was initialized.
+- Added data/spend.sqlite3 accounting (ignored): integer nanodollars, conservative
+  rounding, initial allowance at most US$1, minimum US$1/10% safety reserve,
+  one-hour balance freshness and 24-hour expiry margin. Proposed first allowance
+  US$0.10 and reserve US$3 are NOT active or automatically initialized.
+- Full-grid reservation is committed before requests; amounts survive restarts
+  and are never refunded. Pending/crashed/unknown runs, excessive usage, stale
+  observations, invalid databases and contention block further reservations.
+  Transactions serialize competing instances. Existing ledgers cannot be reset.
+- Integrated with the verifier and direct transport context; the live code lock
+  remains False at both entry/transport. Added credits-init/credits-status CLI.
+  No refresh/reset shortcut exists; stale or uncertain accounting needs a
+  reviewed reconciliation/continuation procedure before later sessions.
+- All 137 offline tests and Ruff passed. Tested cumulative and exact boundaries,
+  two competing instances, corruption, stale/expiring policies, unknown usage,
+  interrupted reservations, repeat simulated runs, missing ledger and direct
+  transport bypass refusal. Fake transports prevent actual client creation.
+- Free verifier smoke test still plans US$0.01030144 for 16 probes, with zero
+  attempts. credits-status confirms no usable real ledger; SQLite sidecars are
+  ignored. No provider calls, billing/account changes, new dependencies or
+  GitHub pushes this step. Updated README and docs/promotional-credit-safety.md.
+
+## Payment-method support clarification — 2026-10-16
+
+- Owner supplied support's reply: Customer Support can inactivate a payment
+  method after suspension and settlement of outstanding payments, verifying
+  User ID and Org ID. A suspended account can be kept without a payment method
+  and reactivated by adding one. Estimated processing 1–2 days; confirmation
+  is sent by reply. No actual suspension/inactivation has been performed here.
+- Updated PROJECT_CLEANUP.md with this procedure, key revocation, final-usage
+  confirmation and the distinction between token inactivation and erasure.
+  The privacy-policy referral does not itself confirm processor-token deletion.
+- This clarifies the eventual exit procedure but adds no provider spending cap.
+  LIVE_INFERENCE_ENABLED remains False. Redeemed balance/expiry and cumulative
+  reservations with a safety reserve still need verification/implementation.
+  No API calls, charges, account changes, emails or pushes were made this turn.
 
 ## Authorized GitHub checkpoint — 2026-10-15
 
@@ -83,6 +144,10 @@ Updated: 2026-10-15 (synthetic Docker validation completed; model catalog rechec
 - [Canonical Apache-2.0 text](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 ## Next
+- For credit-funded work: confirm the credit breakdown and earliest expiry,
+  recheck prices/account usage, then set a reviewed small local allowance before
+  reviewing the live lock. Persistent accounting is now implemented; missing
+  account evidence still prevents activation. Do not delete/recreate the ledger.
 - Latest completed slice: the exact synthetic addition fixture now passes
   fail-before/pass-after validation twice in local Docker. It is not real
   benchmark yield. Next support a selected real repository's snapshots, test
@@ -103,17 +168,17 @@ Updated: 2026-10-15 (synthetic Docker validation completed; model catalog rechec
   a safety reserve, then request card removal at completion. No card-funded usage
   is authorized, and the absence of a provider hard cap still prevents a zero-
   charge guarantee. No calls are enabled by recording this change.
-- Before any live use, verify actual redeemed balance/expiry and other account
-  workloads; implement/test shared cumulative reservations and a conservative
-  credit allowance. Keep the existing code lock until those prerequisites pass.
+- Before any live use, confirm promotional balance/expiry. Owner reports exclusive
+  usage and US$29.50 account balance; shared reservations are now tested. Review
+  the small credit allowance and retain the lock until prerequisites pass.
 - Owner now requests instructions to remove the saved Token Factory card and
   close the account in the earlier discussion; this was subsequently revised to
   post-project card removal with carefully controlled credit-funded development.
   Account/card removal has NOT been performed or confirmed. The assistant has
   not contacted support or redeemed a code.
 - Live inference remains locked in code. Under the revised credit-funded plan,
-  confirm usable promotional balance/expiry and a safety reserve, then implement
-  cumulative spending records before revisiting the lock. The prior requirement
+  confirm usable promotional balance/expiry and a safety reserve; cumulative
+  spending records are implemented. The prior requirement
   for a provider-enforced hard cap is superseded by the owner's latest plan;
   the known lack of a hard cap and residual billing risk must remain explicit.
 - Live Token Factory verification is deferred under the zero-out-of-pocket lock.
@@ -133,7 +198,8 @@ Updated: 2026-10-15 (synthetic Docker validation completed; model catalog rechec
 ## Blockers / unresolved items
 - Credit-delivery update: the owner now reports that support supplied the promo
   code. No private code was shared or stored here. Redemption and the actual
-  account balance/expiry remain unverified; receiving a code does not permit
+  owner reports US$29.50 account balance; promotional breakdown/expiry remain
+  unverified. Receiving a code does not permit
   live inference under the standing policy.
 - The support reply shared by the owner explicitly confirms there is no hard
   spending cap and usage beyond available/valid credits is charged to the card.
@@ -141,15 +207,16 @@ Updated: 2026-10-15 (synthetic Docker validation completed; model catalog rechec
   monitoring/reservation prerequisites pass; residual account billing risk
   remains. Live inference is currently disabled both at the verifier
   entry point and the production API transport, even with a key and sufficient
-  run budget. No CLI override is provided. Cross-run spending accounting is not
-  implemented and is required before unlocking; do not claim the existing cap
-  monitors the whole account.
+  run budget. No CLI override is provided. Cross-run spending accounting is now
+  implemented, but unconfirmed promotional expiry still blocks activation.
+  Local accounting does not monitor or enforce limits on the whole account.
 - The owner confirmed adding card details and subsequently requested instructions
   for card removal and Token Factory account closure. Completion is unverified.
   No payment, card entry, API-key receipt, account closure or paid model call was
   performed by the assistant.
-- GitHub authentication, remote setup and the owner's first push are complete.
-  Subsequent pushes stay manual. Never share passwords, tokens or login codes.
+- GitHub authentication, remote setup and earlier pushes are complete. Owner now
+  authorizes reviewed checkpoint pushes; preserve private visibility and normal
+  push behavior. Never share passwords, tokens or login codes.
 - NEBIUS_API_KEY is unset. Live provider verification and the end-to-end task
   gate remain open. No successful runtime inference integration is claimed.
 - Private GitHub setup is now requested. Public publishing and registration
@@ -231,7 +298,7 @@ Updated: 2026-10-15 (synthetic Docker validation completed; model catalog rechec
 ## Measured numbers
 - Python: 3.12.7; uv: 0.13.0. Locked packages: 88, including optional resolutions;
   installed Day 1 packages: 31.
-- Tests: **108 passed** after synthetic Docker validation. Ruff: **passed**.
+- Tests: **137 passed** after persistent credit safeguards. Ruff: **passed**.
   uv lock check: **passed** during the scaffold milestone; dependencies unchanged.
 - Probe plan: **4 models × 4 variants = 16 sequential requests**.
 - Completion limit: **256 tokens**, reasoning-inclusive limit also set.

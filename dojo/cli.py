@@ -15,9 +15,43 @@ from dojo.mine.demo import create_demo
 from dojo.mine.git_mine import candidate_rejection_reasons, candidate_window, inspect_commit
 from dojo.mine.validate import validate_demo
 from dojo.solve.model import load_models, positive_decimal
+from dojo.store.credits import CreditError, CreditLedger
 from dojo.verify import plan, run_verification
 
 app = typer.Typer(no_args_is_help=True, help="DOJO: measure Nemotron on your repository.")
+
+
+@app.command()
+def credits_init(
+    balance_usd: Annotated[str, typer.Option(help="Owner-confirmed available USD credits.")],
+    reserve_usd: Annotated[str, typer.Option(help="Keep at least $1 and 10% untouched.")],
+    allowance_usd: Annotated[str, typer.Option(help="Explicit cumulative allowance, at most $1.")],
+    expires_at: Annotated[str, typer.Option(help="Earliest credit expiry, ISO timestamp with timezone.")],
+    exclusive_use: bool = False,
+):
+    """Create local accounting once; requires verified expiry and exclusive account usage."""
+    try:
+        CreditLedger().initialize(
+            balance_usd=balance_usd, reserve_usd=reserve_usd, allowance_usd=allowance_usd,
+            expires_at=datetime.fromisoformat(expires_at), exclusive_use=exclusive_use,
+        )
+    except (OSError, ValueError, TypeError):
+        typer.echo("Credit ledger not initialized: check confirmed credit details, reserve, "
+                   "allowance, timezone and exclusive use. Existing ledgers are never reset.", err=True)
+        raise typer.Exit(2)
+    typer.echo("Local credit ledger created. This does not unlock live calls or cap the provider.")
+
+
+@app.command()
+def credits_status():
+    """Show local reservations; never query the provider or print account credentials."""
+    try:
+        report = CreditLedger().status()
+    except (CreditError, OSError):
+        typer.echo("Credit ledger missing, stale, blocked or invalid; live calls remain stopped.",
+                   err=True)
+        raise typer.Exit(2)
+    typer.echo(json.dumps(report, indent=2))
 
 
 @app.command()

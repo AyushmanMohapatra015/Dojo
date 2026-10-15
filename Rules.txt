@@ -9,6 +9,5 @@
 - If something in the spec is marked VERIFY, check it and record the answer. Don't assume.
 - Work in small steps: explain what each step does before acting, then recap what we learned.
 - Help the owner learn alongside implementation; preserve the owner-written learning work in BUILD_SPEC.md.
-- The owner pushes to GitHub manually. Do not push unless the owner explicitly changes this preference.
-- Exception: the owner explicitly authorized committing and pushing the completed mining/validation work on 2026-10-15. Keep the existing private Dojo remote and use a normal push; this does not authorize unrelated GitHub/account changes.
+- The owner now authorizes committing and pushing completed, reviewed project checkpoints whenever appropriate. Run relevant checks, review staged files for credentials/private data, preserve the existing private Dojo remote and push normally. Do not force-push, change repository visibility, or make unrelated GitHub/account changes.
 - At project completion, remind the owner and review PROJECT_CLEANUP.md before final handoff; keep its tool inventory current.
