@@ -1,0 +1,26 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest_tmp/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+.env
+.env.*
+!.env.example
+*.sqlite*
+data/verification*.json
+data/trajectories/
+node_modules/
+dashboard/dist/
+
+# Local credential directories.
+.aws/
+.ssh/
+
+# Supplied duplicate plans; keep BUILD_SPEC.md as the canonical plan.
+DOJO_BUILD_SPEC (2).md
+RewriteenAfterModification_DOJO_BUILD_SPEC (3).md
+Some_Instructions_and_other_Informations.txt

@@ -1,0 +1,20 @@
+# Future solver defaults; Day 1 only implements verification.
+schema_version: 1
+max_steps: 40
+observation_chars: 3000
+command_timeout_seconds: 60
+run_token_ceiling: 500000
+budget_usd: '1.00'
+concurrency: 1
+backend: local_docker
+sandbox:
+  network: none
+  non_root: true
+  cpus: 2
+  memory: 2g
+verification:
+  budget_usd: '0.10'
+  max_tokens: 256
+  thinking_budget: 64
+  timeout_seconds: 30
+  retries: 0

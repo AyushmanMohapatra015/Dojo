@@ -1,0 +1,10 @@
+# Rules
+- BUILD_SPEC.md is the plan. Do only the step I ask for, then stop and summarize.
+- Never print or log secrets. Read keys from the environment only.
+- Never run paid model jobs without a spend cap. Ask me before any run that could cost over $1.
+- Keep PROGRESS.md updated: done, next, blockers, measured numbers.
+- Write tests for logic that scores results.
+- If something in the spec is marked VERIFY, check it and record the answer. Don't assume.
+- Work in small steps: explain what each step does before acting, then recap what we learned.
+- Help the owner learn alongside implementation; preserve the owner-written learning work in BUILD_SPEC.md.
+- The owner pushes to GitHub manually. Do not push unless the owner explicitly changes this preference.
