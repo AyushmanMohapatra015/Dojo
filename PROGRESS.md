@@ -99,7 +99,8 @@ Updated: 2026-10-15 (GitHub setup; public model sources checked 2026-10-13)
 
 - Confirmed Git was already initialized, initially on master with no commits.
   Renamed the branch to main and saved the reviewed Day 1 scaffold in commit
-  ed397aa (62 files). No push command was run.
+  49f31ba (62 files; hash updated after the email-privacy repair below).
+  No assistant push command was run.
 - Checked all 62 candidate files for common credential patterns: zero findings.
   This is a limited pattern check, not proof that arbitrary secrets cannot exist.
   Verified credential, environment and generated-output exclusions.
@@ -119,6 +120,23 @@ Updated: 2026-10-15 (GitHub setup; public model sources checked 2026-10-13)
   completion. It inventories project-added tools and separates logout, account
   authorization revocation, credential cleanup and uninstallation. No cleanup
   is executed now; none of these steps guarantees absolute safety.
+
+## Git commit email privacy repair — 2026-10-15
+
+- The owner's first push was rejected by GitHub's email privacy protection.
+  The initial local commits had inherited the pre-existing global personal email.
+  The assistant should have configured this repository's no-reply email first.
+- Verified the GitHub account ID and documented no-reply address format. Set
+  user.email locally for this repository; left the global identity unchanged.
+- Verified the remote had no branches and the working tree was clean. Created
+  a verified local recovery bundle at .git/dojo-before-email-fix.bundle, then
+  replaced author and committer email in all three unpublished commits.
+- Verified every rewritten commit preserves the original file tree and message.
+  Hash changes: ed397aa → 49f31ba; 6077613 → 295c865; e1fbbbb → 12d963a.
+  The original backup is inside .git and will not be uploaded by a normal push.
+- All reachable main commit author/committer emails now use the GitHub no-reply
+  address. The owner can retry a normal push; force-push is unnecessary for the
+  observed empty remote. No email-privacy setting was disabled and no push run.
 
 ## Measured numbers
 - Python: 3.12.7; uv: 0.13.0. Locked packages: 88, including optional resolutions;

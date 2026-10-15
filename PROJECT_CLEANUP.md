@@ -54,6 +54,11 @@ program and revoking its account access are separate actions; complete both.
   delete Program Files as a substitute for uninstalling.
 - [ ] Remove project-only uv/dependency environments and temporary installers/logs
   after verifying the exact paths. Do not delete the project source or .git.
+- [ ] After verifying the final backup/push and confirming recovery is unnecessary,
+  remove the local email-repair bundle .git/dojo-before-email-fix.bundle. It holds
+  the original commits with personal email metadata. Remove only that file;
+  preserve .git. Old objects can also remain in local reflogs; do not claim this
+  step securely erases all previous metadata from disk.
 - [ ] Review the exact project safe.directory entry. If no longer needed, remove
   only this entry:
 

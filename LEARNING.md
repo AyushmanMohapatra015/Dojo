@@ -19,3 +19,9 @@ upload it: `git push` performs that upload. The name and email in Git identify
 the commit author; they do not sign you into GitHub. Browser authentication is a
 separate step. A package hash verifies its bytes against the published manifest,
 while a valid signature identifies its publisher; neither guarantees zero risk.
+
+Commit email privacy is separate from account login. A Git commit embeds both
+author and committer email addresses. Changing user.email affects new commits;
+it does not repair earlier ones. Before the first successful push, the three
+local commits were backed up and rewritten to use the GitHub no-reply address,
+with their file trees and messages preserved. GitHub's privacy protection stays on.
