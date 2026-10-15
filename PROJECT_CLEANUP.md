@@ -4,6 +4,11 @@ Status: PENDING. Review this checkpoint when DOJO is finished, before declaring
 project handoff complete. This is a persistent checklist, not a scheduled reminder.
 No cleanup has been performed by creating this file.
 
+Latest owner direction: continue development using carefully monitored promo
+credits after spending safeguards are ready, then request Token Factory card
+removal at project completion. Earlier immediate-closure discussions were
+superseded. No card removal, account closure or promo redemption is confirmed.
+
 The owner wants project-added command-line tools removed after completion.
 No software setup or cleanup can guarantee absolute safety. Uninstalling a
 program and revoking its account access are separate actions; complete both.
@@ -14,6 +19,8 @@ program and revoking its account access are separate actions; complete both.
 | --- | --- | --- |
 | GitHub CLI 2.102.0 | Installed for this project | Sign out, revoke unused GitHub CLI access, then uninstall. |
 | uv 0.13.0 | Added to the existing project .venv | Remove the project-local installation/environment after preserving reproducible setup and checking it is no longer needed. |
+| Docker Desktop / CLI | Already installed; started for local validation | Preserve the shared installation. At completion review project images and any uniquely named dojo-validation containers only. |
+| Docker validation images | Downloaded python:3.12-slim and built dojo-validation-demo:local | Review/remove these project images if no longer needed; do not prune unrelated images, volumes or containers. Temporary test containers are removed after each run. |
 | Python .venv | Already existed; project dependencies were added | Review and remove only this disposable environment if no longer needed. Preserve pyproject.toml and uv.lock. |
 | Git, Git Credential Manager, Python/Anaconda, winget | Already present | Do not automatically uninstall shared tools. Review with the owner if they want these removed too. |
 | Git safe.directory entry | Added for D:/NVIDIA X NEBIUS | Remove this exact entry if it is no longer needed; never clear unrelated entries. |

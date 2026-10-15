@@ -1,6 +1,23 @@
 # Progress
 
-Updated: 2026-10-15 (verification preparation; model catalog rechecked 2026-10-15)
+Updated: 2026-10-15 (synthetic Docker validation completed; model catalog rechecked 2026-10-15)
+
+## Authorized GitHub checkpoint — 2026-10-15
+
+- Owner explicitly requested that completed changes be pushed, overriding the
+  earlier manual-only instruction for this checkpoint. Verified the existing
+  AyushmanMohapatra015/Dojo repository is private and main is the default branch.
+  Remote main was c89be8e; two prior local commits plus this work await upload.
+- Reviewed pending files and commit identity: GitHub no-reply email is configured
+  and used by the two unpublished commits. Environment files, .venv, test
+  scratch data and the nested synthetic repository remain ignored.
+- Pre-push checks: 108 tests passed; Ruff passed; uv lock --check passed (88
+  packages). Common credential-pattern review of 68 project files found only
+  explicit synthetic markers in mocked secret-redaction tests; no real key was
+  identified. This limited scan is not a guarantee that all secrets are detectable.
+- Preparing a reviewed commit and normal push to the existing origin/main.
+  No force-push, visibility change, new account access or live inference is
+  authorized by this checkpoint. Confirm upload by comparing local/remote SHAs.
 
 ## Done
 - Read BUILD_SPEC.md, Rules.txt and the existing PROGRESS.md before editing.
@@ -63,11 +80,39 @@ Updated: 2026-10-15 (verification preparation; model catalog rechecked 2026-10-1
 - [Canonical Apache-2.0 text](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 ## Next
-- Enforce the owner's zero-out-of-pocket rule: live inference is now locked in
-  code. Verify provider-enforced protection against usage debt/card charges,
-  usable promotional balance/expiry and a safety reserve, then implement
-  cumulative spending records before revisiting the lock. If protection cannot
-  be established, continue offline; a key or per-run cap is not sufficient.
+- Latest completed slice: the exact synthetic addition fixture now passes
+  fail-before/pass-after validation twice in local Docker. It is not real
+  benchmark yield. Next support a selected real repository's snapshots, test
+  patches and dependency environment; full-history mining/export remain open.
+- Candidate filters are implemented and connected to the single-commit CLI.
+  Separate test/reference patches and isolated validation now exist for the
+  synthetic demo only. No real task or full-history miner is implemented yet.
+- Owner added the first three candidate rejection checks. Fixed an indentation
+  error: the function definition must start at the left margin, with its body
+  indented four spaces. Demo call returns `[]`; module Ruff check passes.
+  Rejection checks are tested; the remaining filters and CLI integration are
+  now complete as recorded in the checkpoint below.
+- The owner wrote the first three candidate checks, then explicitly requested
+  implementation of the remaining rules. See LEARNING.md and
+  docs/mining-first-step.md for the implemented policy and learning notes.
+- Latest owner direction supersedes the earlier recommendation to close Token
+  Factory immediately: use promotional credits carefully for the project, retain
+  a safety reserve, then request card removal at completion. No card-funded usage
+  is authorized, and the absence of a provider hard cap still prevents a zero-
+  charge guarantee. No calls are enabled by recording this change.
+- Before any live use, verify actual redeemed balance/expiry and other account
+  workloads; implement/test shared cumulative reservations and a conservative
+  credit allowance. Keep the existing code lock until those prerequisites pass.
+- Owner now requests instructions to remove the saved Token Factory card and
+  close the account in the earlier discussion; this was subsequently revised to
+  post-project card removal with carefully controlled credit-funded development.
+  Account/card removal has NOT been performed or confirmed. The assistant has
+  not contacted support or redeemed a code.
+- Live inference remains locked in code. Under the revised credit-funded plan,
+  confirm usable promotional balance/expiry and a safety reserve, then implement
+  cumulative spending records before revisiting the lock. The prior requirement
+  for a provider-enforced hard cap is superseded by the owner's latest plan;
+  the known lack of a hard cap and residual billing risk must remain explicit.
 - Live Token Factory verification is deferred under the zero-out-of-pocket lock.
   If eventually enabled, supply keys only through the local process environment;
   the owner must not paste keys into chat.
@@ -83,17 +128,23 @@ Updated: 2026-10-15 (verification preparation; model catalog rechecked 2026-10-1
 - Complete and commit preregistration before inspecting held-out outcomes.
 
 ## Blockers / unresolved items
-- Zero-out-of-pocket protection is unverified. Current provider billing docs
-  permit automatic charges. Live inference is disabled both at the verifier
+- Credit-delivery update: the owner now reports that support supplied the promo
+  code. No private code was shared or stored here. Redemption and the actual
+  account balance/expiry remain unverified; receiving a code does not permit
+  live inference under the standing policy.
+- The support reply shared by the owner explicitly confirms there is no hard
+  spending cap and usage beyond available/valid credits is charged to the card.
+  Under the owner's revised plan, credit-funded use may proceed only after the
+  monitoring/reservation prerequisites pass; residual account billing risk
+  remains. Live inference is currently disabled both at the verifier
   entry point and the production API transport, even with a key and sufficient
   run budget. No CLI override is provided. Cross-run spending accounting is not
   implemented and is required before unlocking; do not claim the existing cap
   monitors the whole account.
-- Token Factory key creation is paused at bank-card onboarding. The owner reports
-  a $0 verification screen; its exact terms have not been inspected. Current
-  billing documentation requires a card and permits automatic charges for usage
-  debt/thresholds. The owner decides whether to accept those terms. No payment,
-  card entry, API-key receipt or paid model call was performed by the assistant.
+- The owner confirmed adding card details and subsequently requested instructions
+  for card removal and Token Factory account closure. Completion is unverified.
+  No payment, card entry, API-key receipt, account closure or paid model call was
+  performed by the assistant.
 - GitHub authentication, remote setup and the owner's first push are complete.
   Subsequent pushes stay manual. Never share passwords, tokens or login codes.
 - NEBIUS_API_KEY is unset. Live provider verification and the end-to-end task
@@ -177,7 +228,7 @@ Updated: 2026-10-15 (verification preparation; model catalog rechecked 2026-10-1
 ## Measured numbers
 - Python: 3.12.7; uv: 0.13.0. Locked packages: 88, including optional resolutions;
   installed Day 1 packages: 31.
-- Tests: **28 passed** after the billing-policy lock. Ruff: **passed**.
+- Tests: **108 passed** after synthetic Docker validation. Ruff: **passed**.
   uv lock check: **passed** during the scaffold milestone; dependencies unchanged.
 - Probe plan: **4 models × 4 variants = 16 sequential requests**.
 - Completion limit: **256 tokens**, reasoning-inclusive limit also set.
@@ -187,6 +238,87 @@ Updated: 2026-10-15 (verification preparation; model catalog rechecked 2026-10-1
 - Actual paid inference calls: **0**. Actual provider spend: **$0**.
 - Live latency, tokens and throughput: **not measured**.
 - Validated benchmark tasks: **0**. End-to-end benchmark runs: **0**.
+- Synthetic validation: **1 demo**, **4 container runs**, **2.672 seconds**.
+  Regression failed twice before fix and passed twice after; existing test
+  passed all four times. No skipped tests or collection/setup/teardown errors.
+
+## Synthetic Docker validation — 2026-10-15
+
+- Found Docker Desktop/CLI already installed; engine was stopped. Started the
+  existing Desktop, downloaded official python:3.12-slim, and built the local
+  dojo-validation-demo:local image with pytest 9.1.1 (matching uv.lock).
+  Base digest pinned in docker/Dockerfile.validation-demo. Dependency setup
+  used the network; all actual test containers ran with networking disabled.
+- Added prepare_demo: read immutable base/fix Git objects, require exact known
+  synthetic contents and regular file modes, extract separate test/gold diffs,
+  and construct base+new-tests without checking out or changing project files.
+  Unsupported histories are refused, with no host-test fallback.
+- Added mine-validate-demo CLI and local Docker runner: explicit local endpoint,
+  no host bind mounts/credentials, stdin snapshots, non-root, read-only root,
+  limited writable tmpfs, CPU/memory/pid limits, dropped capabilities and
+  no-new-privileges. Each run uses a fresh container with a unique cleanup name.
+  Per-run timeout and a shared 60-second acceptance deadline are enforced.
+- Ran four actual containers: before-fix regression failed twice, after-fix
+  regression passed twice, existing zero test passed four times. Runtime 2.672 s;
+  validation status validated_synthetic_demo. Image ID:
+  sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad.
+  Verified no dojo-validation containers remain. Local images are retained for
+  reuse; Docker Desktop remains available. Cleanup inventory updated.
+- Full offline suite 108 passed, Ruff and patch whitespace checks passed. Tests
+  cover reference/test separation, immutable checkout, fixture rejection,
+  exact test outcomes, bad collection/setup/skips, inconsistent/duplicate
+  repeats, changed image IDs, timeout handling and uniquely scoped cleanup.
+  No Nebius/API calls, model spend, new CLI installation or GitHub push occurred.
+- This is a deliberately constrained synthetic slice, not a general validator,
+  exported benchmark task or evidence toward G1. No solver/model ran. General
+  patch application, environment selection and real-task discovery remain open.
+
+## First offline mining exercise — 2026-10-15
+
+### Candidate filter completion
+
+- At the owner's explicit request, extended the three owner-written checks with
+  source-count (>5), changed-line (>150), binary, generated-path, lockfile-only,
+  invalid/future-date and age rules. Default window is 9 calendar months,
+  configurable from 6 to 9; UTC committer timestamps, inclusive boundaries and
+  month-end clamping are documented. Generated detection is a path heuristic,
+  not a guarantee that all generated files are caught.
+- Wired decisions and all rejection reasons into `dojo mine`; reports include
+  the effective cutoff/as-of/limits and generated-detection version. Inspection
+  itself labels eligibility not_evaluated; the CLI labels candidate/rejected.
+  validation remains not_run and full-history enumeration is still pending.
+- Full suite: 82 passed; Ruff passed. Tested exact limits, UTC-offset equivalence,
+  leap-year/month-end behavior, invalid options and a real binary Git commit.
+  CLI smoke tests: demo fix candidate with no rejection reasons; root rejected
+  for missing one parent/source/tests. No provider calls, paid jobs, installs,
+  project commits or GitHub pushes occurred. Live inference remains locked.
+
+- Follow-up: added 8 filter test cases covering a valid candidate, missing
+  tests/source, root/two-parent/three-parent commits, simultaneous rejection
+  reasons, unchanged input reports, and the real synthetic history. All 46
+  offline tests pass; full dojo/tests Ruff and tracked patch whitespace checks
+  pass. No model calls, provider actions or GitHub pushes. These tests cover
+  only the initial three rules, not complete eligibility or task validation.
+
+- Added an isolated two-commit synthetic addition-bug history via
+  `python -m dojo mine-demo`; existing target directories are refused. It has
+  no remote and uses a fictional identity, with hooks/signing disabled. The
+  fixture at data/mining-demo is ignored and is not real benchmark material.
+- Added a read-only single-commit facts command, `python -m dojo mine --repo
+  data/mining-demo --dry-run`: parent/base/fix IDs, date, per-file line counts,
+  initial Python source/test classification, binary flag and total line count.
+  It neither checks out commits nor runs repository code. External diff and
+  text conversion are disabled; Git commands use argument arrays, not a shell.
+- Require a repository root: tests caught Git discovering the surrounding
+  project repository when given a non-repository subdirectory.
+- Measured demo: 1 parent, 1 source file, 1 test file, 6 changed lines. Output
+  explicitly states pending_owner_filter and validation not_run. Roots have no
+  base comparison; merges are reported, not accepted. Full-history mining,
+  date/generated-file filters, Docker validation and dataset export are pending.
+- Added 10 offline test cases; full suite 38 passed, Ruff passed. CLI smoke
+  tests succeeded. Learning exercise and commands documented in LEARNING.md
+  and docs/mining-first-step.md. No additional tool was installed, no API call
+  or paid workload ran, and no project commit or GitHub push was performed.
 
 ## Zero-out-of-pocket policy checkpoint — 2026-10-15
 
@@ -206,3 +338,51 @@ Updated: 2026-10-15 (verification preparation; model catalog rechecked 2026-10-1
 - All 28 offline tests and Ruff checks passed. No model requests, account billing
   changes, purchases or pushes were performed. Cross-run credit accounting is
   still a prerequisite, not an implemented feature.
+
+## Credit entitlement research — 2026-10-15
+
+- Current Token Factory billing docs distinguish a $1 signup trial valid for
+  30 days from promotional credits. The Builder page advertises a separate $25
+  Token Factory credit, with email verification and a credit-claim step.
+- Builder service terms say successful registration/verification provides promo
+  codes and promotional credits expire 90 days from issuance. The owner reports
+  the welcome email is received but the promised separate credit email is missing.
+  No personal code
+  was requested, stored, submitted or exposed. Do not assume $25 is usable yet.
+- Official hackathon Resources lists another $25 Token Factory claim through its
+  linked Nebius promo form with activation code NEBIUS-DEVPOST-GLOBAL26, plus
+  another $25 by joining Builders. The event activation code belongs in the form;
+  a resulting redemption code may be required in the Token Factory console.
+- Current console redemption instructions: balance → Top up → With promo code;
+  apply the redemption code and confirm the credit entry in Transactions.
+  The account's selected organization, balance and expiry must be checked by
+  the owner. No $26/$50/$51 balance or stacking outcome is assumed until visible.
+- Tavily's Builder credit is separate from Token Factory credit. No code was
+  redeemed by the assistant. Model calls remain locked under the zero-out-of-
+  pocket policy regardless of any successful credit claim.
+- Sources: https://dev.nebius.com/builders ;
+  https://nebius.com/builders-terms-and-conditions ;
+  https://docs.tokenfactory.nebius.com/other-capabilities/billing-new ;
+  https://nebiusglobalaihackathon.devpost.com/resources .
+
+- Follow-up: verify email confirmation was completed, search all mail/spam for
+  the missing Nebius credit email, and request a resend/issuance status through
+  Nebius support. Official https://nebius.com/support publishes support@nebius.com.
+  No guaranteed credit-email delivery deadline was verified. Do not invent an
+  approval/delivery wait time, create duplicate accounts, or mark credits received.
+  No support message was sent by the assistant. Live inference remains locked.
+
+## Support reply: credit delivered, hard cap unavailable
+
+- The owner shared a support reply and reported receiving the promotional code.
+  The private code is not included in the project. No redemption was performed.
+- Support explicitly states that Token Factory has no hard spending cap and
+  further usage after promo exhaustion/expiry is charged to the saved card at
+  standard rates. Monitoring the Usage tab is their suggested control, not an
+  account-level stop. This does not satisfy the owner's standing requirement.
+- Verified LIVE_INFERENCE_ENABLED remains False. The promo-code arrival does
+  not unlock calls. No network inference or account actions were performed.
+- Recommended continuing the owner's prior card-removal/account-closure request
+  and obtaining written confirmation of final balance and effective closure.
+  Any change of spending policy requires an explicit owner instruction; do not
+  infer it from this support reply. Offline project work can continue.

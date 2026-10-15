@@ -2,12 +2,13 @@
 - BUILD_SPEC.md is the plan. Do only the step I ask for, then stop and summarize.
 - Never print or log secrets. Read keys from the environment only.
 - Never run paid model jobs without a spend cap. Ask me before any run that could cost over $1.
-- Nebius must incur zero out-of-pocket spend. Promotional credits may only be used after verifying balance, expiry and provider-enforced protection against usage debt/card charges. A per-run cap is not sufficient.
-- Keep live Nebius calls disabled until that protection is established and spending is tracked cumulatively across runs, with a safety reserve. Never run unattended or assume a $0 verification/credit balance prevents future billing.
+- The owner now permits carefully monitored promotional-credit usage and plans card removal after project completion. No out-of-pocket/card-funded spending is authorized. Support confirms there is no provider hard cap; never promise that local controls guarantee zero charges.
+- Keep live Nebius calls locked until usable credit balance/expiry are confirmed and cumulative spending reservations across runs, a safety reserve and per-request limits are implemented and tested. A key, a promo code or a per-run cap alone is insufficient. Stop on unknown usage/accounting; never run unattended.
 - Keep PROGRESS.md updated: done, next, blockers, measured numbers.
 - Write tests for logic that scores results.
 - If something in the spec is marked VERIFY, check it and record the answer. Don't assume.
 - Work in small steps: explain what each step does before acting, then recap what we learned.
 - Help the owner learn alongside implementation; preserve the owner-written learning work in BUILD_SPEC.md.
 - The owner pushes to GitHub manually. Do not push unless the owner explicitly changes this preference.
+- Exception: the owner explicitly authorized committing and pushing the completed mining/validation work on 2026-10-15. Keep the existing private Dojo remote and use a normal push; this does not authorize unrelated GitHub/account changes.
 - At project completion, remind the owner and review PROJECT_CLEANUP.md before final handoff; keep its tool inventory current.

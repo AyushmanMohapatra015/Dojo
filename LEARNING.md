@@ -1,5 +1,53 @@
 # Learning log
 
+## Synthetic fail-before/pass-after validation
+
+The new regression test must be present in both versions: otherwise a passing
+old test suite could hide the bug. The validator combines the buggy source with
+the fixed version's tests, while keeping the reference source fix separate.
+For our addition example, `add(2, 3)` returns -1 before the fix and 5 afterward.
+The existing zero test passes in both. Four fresh Docker containers repeat this
+pattern twice; errors during test setup/collection are not evidence of the
+intended regression. Repetition catches some inconsistencies but cannot prove
+that a task never flakes. This milestone validates our synthetic example only.
+
+## Offline mining: reading a commit
+
+A commit records a snapshot; its parent is the snapshot immediately before it.
+For a bug-fix task, `base_sha` identifies the starting code and `fix_sha` the
+reference fix. The synthetic addition example changes one source file and one
+test file, with six added/deleted lines in total. These are candidate facts,
+not evidence that a test fails before the fix and passes afterward. Git can
+discover a parent repository when invoked inside an ordinary subdirectory;
+Dojo now requires the selected path to be the repository root.
+
+### Your next exercise: the candidate filter
+
+Update: the owner requested implementation of the remaining rules. They are now
+implemented and connected to the CLI, with tests for 5/6 source files, 150/151
+changed lines, date cutoff/future/timezone behavior, generated paths and binary
+changes. The nine-month window means calendar months, not 270 days; shorter
+months need day clamping. A lockfile accompanying source/tests is allowed, while
+a lockfile-only change is rejected. Generated-file detection is a naming
+heuristic and must be checked against each real repository's conventions.
+Next learning step: explain why `candidate` still does not mean `validated`.
+
+The first three checks are now written and tested. A commit can fail several
+requirements at once, so the function collects all rejection reasons instead
+of stopping at the first. Tests also confirm that checking a report leaves its
+contents unchanged. The synthetic fix passes these preliminary checks; that
+still does not prove its tests fail before the fix and pass after it.
+
+Write the decision function in `dojo/mine/git_mine.py`, using `inspect_commit`'s
+report as input. Return eligibility plus explicit rejection reasons. Start with
+rejecting root commits, merges, binaries, missing source/tests, more than five
+source files, and more than 150 changed lines. Then cover the 6–9 month window
+and generated files described in BUILD_SPEC §7.1. A squash merge has one parent;
+a bare merge has multiple parents. Do not label a candidate a validated task.
+
+Before coding, explain why a source-only commit cannot supply the new regression
+test we need, and why changed-line counts include both additions and deletions.
+
 ## Day 1 — scaffold observation
 
 Catalog metadata, account access, request acceptance and behavioral evidence are

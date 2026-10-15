@@ -1,0 +1,6 @@
+# Image setup may download packages; actual validation runs have no network.
+# No repository source or credentials are copied into this image.
+FROM python@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+RUN python -m pip install --no-cache-dir pytest==9.1.1
+USER 65534:65534
+WORKDIR /tmp

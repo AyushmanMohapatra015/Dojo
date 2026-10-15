@@ -34,3 +34,25 @@ current account's terms and current documentation, not an assumed card-free path
 No card information was requested in chat or entered by the assistant. No paid
 API requests were sent. The script cap applies to its own run, not the account
 or other services. Support must confirm any card-free hackathon-credit exception.
+
+## 2026-10-15 — trial versus Builder promotional credits
+
+The owner saw $1 trial credit despite receiving the Builder welcome email. They
+clarified that the welcome email promises a separate $25 credit email, which
+has not arrived; no redemption code is available to them yet. The public documentation
+lists $1 signup trial credit separately from the $25 Builder promotional claim.
+A clearer dashboard distinction between signup credit, pending credit-email
+delivery and redeemed promotional credits would reduce this confusion.
+The hackathon's activation-form code is also distinct from a console redemption
+code; instructions should distinguish them. No account claim was performed or
+live billing behavior measured during this research.
+
+## Support reply — hard spending cap unavailable
+
+The owner reports that support supplied the missing promo code. No private code
+is stored here. The shared support reply explicitly says there is no hard
+spending cap; usage beyond exhausted/expired promotional credits is charged to
+the card. Support says the hard-limit request was passed to the product team.
+Manual balance/Usage monitoring does not meet this owner's zero-out-of-pocket
+requirement. Live project inference therefore remains disabled. Credit
+redemption, card removal and account closure have not been verified.
