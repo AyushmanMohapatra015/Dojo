@@ -10,3 +10,12 @@ the owner should add their own reflections as each milestone is understood.
 
 The mining filter, hidden-test restoration, paired bootstrap, cascade composition
 and gate rules remain for the owner to write and understand per BUILD_SPEC.md §4.
+
+## Git and GitHub — setup notes
+
+Git stores project history locally. GitHub hosts a copy of that history online,
+and GitHub CLI helps manage the hosting account. Creating a commit does not
+upload it: `git push` performs that upload. The name and email in Git identify
+the commit author; they do not sign you into GitHub. Browser authentication is a
+separate step. A package hash verifies its bytes against the published manifest,
+while a valid signature identifies its publisher; neither guarantees zero risk.

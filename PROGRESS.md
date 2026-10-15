@@ -1,6 +1,6 @@
 # Progress
 
-Updated: 2026-10-14 (Day 1 implementation; public sources checked 2026-10-13)
+Updated: 2026-10-15 (GitHub setup; public model sources checked 2026-10-13)
 
 ## Done
 - Read BUILD_SPEC.md, Rules.txt and the existing PROGRESS.md before editing.
@@ -63,9 +63,9 @@ Updated: 2026-10-14 (Day 1 implementation; public sources checked 2026-10-13)
 - [Canonical Apache-2.0 text](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 ## Next
-- GitHub setup requested: private repository named dojo. Prepare the initial
-  local commit and remote; the owner will run the push manually. Authentication
-  and remote creation status will be recorded after checks.
+- Finish GitHub browser authentication using GitHub CLI, then create the private
+  repository named dojo and add origin. The owner will run the push manually.
+  Local initial commit ed397aa is saved on main; no remote or upload exists yet.
 - Set NEBIUS_API_KEY in the environment, then run the documented capped verifier
   and record live latency/usage/control observations. Never paste keys into chat.
 - Recheck current prices and serving bases, review Super availability, and reconcile
@@ -76,6 +76,8 @@ Updated: 2026-10-14 (Day 1 implementation; public sources checked 2026-10-13)
 - Complete and commit preregistration before inspecting held-out outcomes.
 
 ## Blockers / unresolved items
+- GitHub CLI is installed but not signed in. The owner must authenticate directly
+  in their browser; never share passwords, tokens or login codes in chat.
 - NEBIUS_API_KEY is unset. Live provider verification and the end-to-end task
   gate remain open. No successful runtime inference integration is claimed.
 - Private GitHub setup is now requested. Public publishing and registration
@@ -92,6 +94,24 @@ Updated: 2026-10-14 (Day 1 implementation; public sources checked 2026-10-13)
 - Recorded the owner's preferences in Rules.txt: explain each small step and
   leave GitHub pushes to the owner. Duplicate supplied plans stay on disk and
   are ignored; BUILD_SPEC.md is the canonical plan.
+
+## GitHub setup — 2026-10-15
+
+- Confirmed Git was already initialized, initially on master with no commits.
+  Renamed the branch to main and saved the reviewed Day 1 scaffold in commit
+  ed397aa (62 files). No push command was run.
+- Checked all 62 candidate files for common credential patterns: zero findings.
+  This is a limited pattern check, not proof that arbitrary secrets cannot exist.
+  Verified credential, environment and generated-output exclusions.
+- Installed GitHub CLI 2.102.0 from the official GitHub release. SHA-256 matched
+  Microsoft's winget manifest, and Windows Authenticode reported a valid
+  signature from GitHub, Inc.
+- Winget stalled updating its source catalogue, so installation used the verified
+  MSI directly. Windows Installer initially returned 1603 because secure repair
+  expected the original MSI filename. Restoring that filename resolved the issue;
+  final installer exit code was 0 and gh --version succeeded.
+- CLI authentication check reports no signed-in GitHub hosts. Private repository
+  creation and origin setup are pending browser login. Publishing stays manual.
 
 ## Measured numbers
 - Python: 3.12.7; uv: 0.13.0. Locked packages: 88, including optional resolutions;
