@@ -1,6 +1,6 @@
 # Progress
 
-Updated: 2026-10-15 (GitHub setup; public model sources checked 2026-10-13)
+Updated: 2026-10-15 (verification preparation; model catalog rechecked 2026-10-15)
 
 ## Done
 - Read BUILD_SPEC.md, Rules.txt and the existing PROGRESS.md before editing.
@@ -63,9 +63,10 @@ Updated: 2026-10-15 (GitHub setup; public model sources checked 2026-10-13)
 - [Canonical Apache-2.0 text](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 ## Next
-- The owner runs `git push -u origin main` from this workspace for the first push.
-  Private origin is https://github.com/AyushmanMohapatra015/dojo.git. The assistant
-  has not pushed any commits.
+- Finish the capped Token Factory verification using a key supplied only through
+  the local process environment. The owner must not paste the key into chat.
+  The verifier must run in the same PowerShell session that receives the key;
+  setting it in a separate terminal does not update this running agent's environment.
 - Set NEBIUS_API_KEY in the environment, then run the documented capped verifier
   and record live latency/usage/control observations. Never paste keys into chat.
 - Recheck current prices and serving bases, review Super availability, and reconcile
@@ -76,8 +77,8 @@ Updated: 2026-10-15 (GitHub setup; public model sources checked 2026-10-13)
 - Complete and commit preregistration before inspecting held-out outcomes.
 
 ## Blockers / unresolved items
-- GitHub authentication and remote setup are complete. First push is left to
-  the owner as requested. Never share passwords, tokens or login codes in chat.
+- GitHub authentication, remote setup and the owner's first push are complete.
+  Subsequent pushes stay manual. Never share passwords, tokens or login codes.
 - NEBIUS_API_KEY is unset. Live provider verification and the end-to-end task
   gate remain open. No successful runtime inference integration is claimed.
 - Private GitHub setup is now requested. Public publishing and registration
@@ -137,6 +138,19 @@ Updated: 2026-10-15 (GitHub setup; public model sources checked 2026-10-13)
 - All reachable main commit author/committer emails now use the GitHub no-reply
   address. The owner can retry a normal push; force-push is unnecessary for the
   observed empty remote. No email-privacy setting was disabled and no push run.
+
+## Provider verification preparation — 2026-10-15
+
+- Confirmed the owner renamed the private repository to Dojo. GitHub reports
+  AyushmanMohapatra015/Dojo with isPrivate=true. Updated origin to
+  https://github.com/AyushmanMohapatra015/Dojo.git.
+- Verified remote main points to c89be8e, confirming the owner's first push
+  succeeded. The assistant has not pushed any commits.
+- Rechecked the public machine-readable catalog: all four model IDs and prices
+  still match the config. All four now report active, including Super (which
+  reported error during the original 2026-10-13 check). Updated models.yaml.
+- NEBIUS_API_KEY remains unavailable in the agent process. No inference request
+  was sent. Awaiting the owner's local key setup to complete live measurements.
 
 ## Measured numbers
 - Python: 3.12.7; uv: 0.13.0. Locked packages: 88, including optional resolutions;

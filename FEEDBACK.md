@@ -14,3 +14,9 @@
   was available. The verifier records these checks conservatively when run.
 
 Sources are linked in PROGRESS.md. Add measured feedback here after live probes.
+
+## 2026-10-15 — catalog recheck before live verification
+
+The same four model IDs and prices remain listed. Super's JSON status has changed
+from error to active. No live serving result is available yet; catalog state and
+account inference access remain separate checks.

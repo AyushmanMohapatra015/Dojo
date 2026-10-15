@@ -1,5 +1,5 @@
 schema_version: 1
-catalog_checked: '2026-10-13'
+catalog_checked: '2026-10-15'
 catalog_source: https://tokenfactory.nebius.com/api/public/models_info
 # Catalog metadata is verified; account access and serving URLs need live probes.
 models:
@@ -30,7 +30,7 @@ models:
     context_tokens: 262144
     input_usd_per_million: '0.30'
     output_usd_per_million: '0.90'
-    catalog_status: error
+    catalog_status: active
     temperature: 1.0
     top_p: 0.95
   ultra:
