@@ -1,0 +1,10 @@
+{
+  "selection_id": "f7d214ae289c8a1e894cdb83733441748a24786b257f69cf973fdc9999771200",
+  "execution_id": "761913c5dcc32ae551603d8075caf2d760af927769eeb39fafc5f0779617d3d5",
+  "registration_commit": "c11f164c666d4a3ad04d7b9a6e5308afaf1da06c",
+  "train": [],
+  "held_out": [
+    "more_itertools_3eb4053e1aac"
+  ],
+  "held_out_ids_sha256": "ba4c421b7911f4effe9478d580856ec70f42f46ab787c170354fd0f5139638a9"
+}

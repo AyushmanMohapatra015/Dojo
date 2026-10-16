@@ -1,6 +1,34 @@
 # Progress
 
-Updated: 2026-10-16 (more-itertools execution registration prepared)
+Updated: 2026-10-16 (more-itertools batch completed: combined 35 eligible tasks)
+
+## More-itertools construction v1 results - 2026-10-16
+
+- Execution registration c11f164c666d4a3ad04d7b9a6e5308afaf1da06c was committed
+  and pushed before the first candidate ran. Completed all 32 sequentially.
+  Results: 1 eligible / 31 rejected. Combined with Click: 35 eligible; G1 is
+  NOT passed (five short). No candidate scope or execution source changed.
+- Rejections: validation_timeout 21; unstable_or_non_regression_outcomes 8;
+  base_did_not_fail 2. Preserved every record and summary/JSONL/split under
+  data/more-itertools-construction-v1. Expansion split: 0 train / 1 held-out;
+  original Click 20/14 labels unchanged. Combined labels total 20 train / 15 held-out.
+- Eligible more_itertools_3eb4053e1aac has 1 fail-to-pass / 0 pass-to-pass cases,
+  four consistent runs in 3.157 seconds. No minimum pass-to-pass rule was added.
+- Discovered a v1 collector limitation: unittest subtest reports repeat parent
+  IDs, while collection counts methods. Receipts with thousands of repeated
+  outcomes are rejected by existing integrity rules. These rejections do not
+  show bad fixes or flaky tests. Timeout causes are not established. Documented
+  in docs/more-itertools-results.md with a synthetic offline regression test.
+- Added post-batch evidence tests for record identities/hashes, four-run quality,
+  exact exports, split consistency, prior Click preservation and combined G1.
+- Verification: 206 offline tests, Ruff, dependency lock (88 packages) and
+  whitespace checks passed. Credential-pattern scan: 190 files, no findings.
+  Registered execution still matches c11f164; no validation containers remain.
+  Existing GitHub destination is private. Publishing all reviewed evidence.
+- Next: separately design a subtest-aware collector and new protocol version;
+  preserve v1 and disclose prior quality
+  outcomes. Timing must be reviewed on development fixtures, not tuned per task.
+- Zero model calls or provider spending. Inference remains locked.
 
 ## More-itertools execution registration - 2026-10-16
 

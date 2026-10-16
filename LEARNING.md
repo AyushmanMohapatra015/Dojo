@@ -112,3 +112,13 @@ the fix works. Freezing the rules before running the batch prevents us from
 changing the definition of success to reach our target. The 20/14 split separates
 future training and evaluation work; it does not mean a model has been evaluated.
 These are implementation notes; the owner's own milestone reflection is pending.
+
+## Subtest collection - implementation observation
+
+A test method can contain thousands of smaller subtests. Our v1 collector counted
+methods but appended every subtest report using the method's ID, so its receipt
+could not satisfy the judge's uniqueness and count checks. Rejecting that receipt
+prevented a false success, but it also limited useful tasks. An environment or
+collector rejection tells us what our measurement supports, not whether an
+upstream fix is correct. We preserved all 32 expansion outcomes and need a new,
+tested protocol version to handle this. The owner's own reflection is pending.

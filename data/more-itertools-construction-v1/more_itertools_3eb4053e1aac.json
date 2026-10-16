@@ -1,0 +1,94 @@
+{
+  "status": "eligible_task",
+  "fail_to_pass": [
+    "tests/test_seekable_memory.py::SeekableMemoryTests::test_repeated_zero_cache_peek_has_bounded_memory"
+  ],
+  "pass_to_pass": [],
+  "stable_skips": [],
+  "synthetic": false,
+  "split": "unassigned",
+  "schema_version": 1,
+  "repo": "more-itertools/more-itertools",
+  "held_out_eligible": true,
+  "counts_toward_frozen_benchmark": false,
+  "rejection_reason": null,
+  "base_sha": "b5e3886a37209bb880f17d82fbf4ba00ece0e41e",
+  "fix_sha": "3eb4053e1aacac53853f6e0abae556f280726f01",
+  "features": {
+    "files_changed": 2,
+    "lines_changed": 40
+  },
+  "test_scope": [
+    "tests/test_seekable_memory.py"
+  ],
+  "runs": [
+    {
+      "stage": "base",
+      "repeat": 1,
+      "exit_code": 1,
+      "collected": 1,
+      "passed": [],
+      "failed": [
+        "tests/test_seekable_memory.py::SeekableMemoryTests::test_repeated_zero_cache_peek_has_bounded_memory"
+      ],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "fix",
+      "repeat": 1,
+      "exit_code": 0,
+      "collected": 1,
+      "passed": [
+        "tests/test_seekable_memory.py::SeekableMemoryTests::test_repeated_zero_cache_peek_has_bounded_memory"
+      ],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "base",
+      "repeat": 2,
+      "exit_code": 1,
+      "collected": 1,
+      "passed": [],
+      "failed": [
+        "tests/test_seekable_memory.py::SeekableMemoryTests::test_repeated_zero_cache_peek_has_bounded_memory"
+      ],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "fix",
+      "repeat": 2,
+      "exit_code": 0,
+      "collected": 1,
+      "passed": [
+        "tests/test_seekable_memory.py::SeekableMemoryTests::test_repeated_zero_cache_peek_has_bounded_memory"
+      ],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    }
+  ],
+  "elapsed_seconds": 3.157,
+  "patches": {
+    "test_patch": "diff --git a/tests/test_seekable_memory.py b/tests/test_seekable_memory.py\nnew file mode 100644\nindex 0000000000000000000000000000000000000000..5d7d07e3f99152989470c7305ff113970e2676ef\n--- /dev/null\n+++ b/tests/test_seekable_memory.py\n@@ -0,0 +1,31 @@\n+import platform\n+import unittest\n+\n+from more_itertools import seekable\n+\n+\n+class SeekableMemoryTests(unittest.TestCase):\n+    @unittest.skipUnless(\n+        platform.python_implementation() == 'CPython',\n+        'retained allocation check uses CPython tracemalloc',\n+    )\n+    def test_repeated_zero_cache_peek_has_bounded_memory(self):\n+        import tracemalloc\n+\n+        if tracemalloc.is_tracing():\n+            self.skipTest('do not disturb an existing allocation trace')\n+        iterator = seekable(range(3), maxlen=0)\n+        tracemalloc.start()\n+        try:\n+            iterator.peek()\n+            baseline = tracemalloc.get_traced_memory()[0]\n+            for _ in range(10000):\n+                iterator.peek()\n+                bool(iterator)\n+            retained = tracemalloc.get_traced_memory()[0] - baseline\n+        finally:\n+            tracemalloc.stop()\n+        # A lookahead needs one item, not one iterator per peek/truth test.\n+        self.assertLess(retained, 256 * 1024)\n+        self.assertEqual(list(iterator.elements()), [])\n+        self.assertEqual(list(iterator), [0, 1, 2])\n",
+    "gold_patch": "diff --git a/more_itertools/more.py b/more_itertools/more.py\nindex 0fed9977f7aafc3cd0da6afb436f14ac1eadcbd7..3726d417dac9a042b6196856cb09d52a5e49d4ba 100755\n--- a/more_itertools/more.py\n+++ b/more_itertools/more.py\n@@ -3093,7 +3093,7 @@ class seekable:\n     \"\"\"\n \n     def __init__(self, iterable, maxlen=None):\n-        self._source = iter(iterable)\n+        self._source = peekable(iterable) if maxlen == 0 else iter(iterable)\n         if maxlen is None:\n             self._cache = []\n         else:\n@@ -3125,17 +3125,14 @@ class seekable:\n         return True\n \n     def peek(self, default=_marker):\n+        if getattr(self._cache, 'maxlen', None) == 0:\n+            return self._source.peek(default)\n         try:\n             peeked = next(self)\n         except StopIteration:\n             if default is _marker:\n                 raise\n             return default\n-        # maxlen=0 cannot store the item we just consumed, so put it back.\n-        if getattr(self._cache, 'maxlen', None) == 0:\n-            self._source = chain((peeked,), self._source)\n-            self._index = None\n-            return peeked\n         if self._index is None:\n             self._index = len(self._cache)\n         self._index -= 1\n"
+  },
+  "upstream_license": "Copyright (c) 2012 Erik Rose\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+  "snapshot_sha256": {
+    "base": "89395bf9d57663c70e578600b5c8535e578f992dfb4670485c4de0cb18886282",
+    "fix": "b16b598259847ebb6aa53a1c34df16ce5f7c51abb6fe6bd514fb09d482ca8cdb"
+  },
+  "selection_id": "f7d214ae289c8a1e894cdb83733441748a24786b257f69cf973fdc9999771200",
+  "execution_id": "761913c5dcc32ae551603d8075caf2d760af927769eeb39fafc5f0779617d3d5",
+  "registration_commit": "c11f164c666d4a3ad04d7b9a6e5308afaf1da06c",
+  "task_id": "more_itertools_3eb4053e1aac",
+  "commit_date": "2026-09-22T09:20:30-04:00",
+  "record_sha256": "a68cf8be9cc34369bb34a879f219ca9d33221dc596f4f0ccb5a1b595db0e755a"
+}

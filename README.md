@@ -14,8 +14,9 @@ separate from validated tasks and do not establish benchmark readiness.
 The Click construction batch completed with a committed-before-validation
 candidate manifest and reproducible offline batch runner; see
 [Click construction](docs/click-construction.md). Model evaluation remains locked.
-The next pool has [32 frozen more-itertools candidates](docs/more-itertools-construction.md);
-its batch execution registration is still pending.
+The [more-itertools expansion](docs/more-itertools-results.md) completed all 32
+candidates with one eligible task, for 35 combined tasks. The 40-task target is
+unmet; subtest collection and timeout limitations need a new protocol version.
 
 ## Setup
 
@@ -115,9 +116,9 @@ as verified until a successful live run is recorded in [PROGRESS.md](PROGRESS.md
 `configs/` contains model metadata and proposed solver defaults. `scripts/`
 contains the verifier entry point. `tests/` contains offline spend and reporting
 checks. `docker/` and `dashboard/` describe later implementation work. `data/`
-holds construction artifacts: the frozen Click batch yielded 34 eligible tasks
-from 50 candidates, split into 20 train and 14 held-out tasks. The 40-task gate
-is not met. No model evaluation has run; see
+holds construction artifacts: Click yielded 34 eligible tasks from 50 candidates,
+and more-itertools yielded one from 32. Preserved per-pool labels total 20 train
+and 15 held-out tasks. The 40-task gate is not met. No model evaluation has run; see
 [construction results](docs/click-construction.md#measured-result---2026-10-16).
 
 ## License

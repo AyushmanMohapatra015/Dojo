@@ -1,0 +1,15 @@
+{
+  "status": "rejected",
+  "rejection_reason": "validation_timeout",
+  "fix_sha": "069b30002a985c02f1ab18409290a699fd649376",
+  "base_sha": "da37f9de442b69fbcaa9f54fb042c2a6999473a6",
+  "fail_to_pass": [],
+  "pass_to_pass": [],
+  "runs": [],
+  "selection_id": "f7d214ae289c8a1e894cdb83733441748a24786b257f69cf973fdc9999771200",
+  "execution_id": "761913c5dcc32ae551603d8075caf2d760af927769eeb39fafc5f0779617d3d5",
+  "registration_commit": "c11f164c666d4a3ad04d7b9a6e5308afaf1da06c",
+  "task_id": "more_itertools_069b30002a98",
+  "commit_date": "2026-07-16T14:15:08-05:00",
+  "record_sha256": "e4c1027aa3f29ae1a5c3c0124ebbecc5beee71209389648375126afb3b45e3b8"
+}
