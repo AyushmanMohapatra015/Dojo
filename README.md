@@ -14,6 +14,8 @@ separate from validated tasks and do not establish benchmark readiness.
 The Click construction batch completed with a committed-before-validation
 candidate manifest and reproducible offline batch runner; see
 [Click construction](docs/click-construction.md). Model evaluation remains locked.
+The next pool has [32 frozen more-itertools candidates](docs/more-itertools-construction.md);
+its batch execution registration is still pending.
 
 ## Setup
 

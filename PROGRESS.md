@@ -1,6 +1,27 @@
 # Progress
 
-Updated: 2026-10-16 (Click construction results verified)
+Updated: 2026-10-16 (more-itertools expansion selection frozen)
+
+## More-itertools expansion selection - 2026-10-16
+
+- Froze 32 candidates from the existing 34-candidate audit, excluding the two
+  inspected development examples. Selection also excludes identical development
+  patches across audited repositories and all frozen Click patch IDs.
+- Manifest: data/more-itertools-selection.lock.json. Selection ID:
+  f7d214ae289c8a1e894cdb83733441748a24786b257f69cf973fdc9999771200.
+- Reuse the existing immutable pytest-only local image, source imports without
+  installation, whole changed test files, four consistent runs for eligibility,
+  fixed limits and no repair/resampling. Full protocol is in
+  docs/more-itertools-construction.md. Click v1 source/results/split unchanged.
+- This step freezes metadata only. No expansion candidate tests, new images,
+  package installations, model calls or provider spending occurred.
+- Verification: all 198 offline tests, Ruff, lockfile (88 packages) and whitespace
+  checks passed. Credential-pattern scan: 147 files, no findings. Existing Click
+  protocol matches its registration commit; GitHub repository remains private.
+- Next: implement/test the expansion batch runner and separately commit its
+  execution lock with the selection and source identities before running any
+  candidates. Process all 32, preserve Click labels, split expansion separately.
+  G1 remains NOT passed (34 eligible tasks); model evaluation stays locked.
 
 ## Click construction v1 results - 2026-10-16
 
