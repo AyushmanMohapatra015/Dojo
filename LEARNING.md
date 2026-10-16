@@ -1,5 +1,15 @@
 # Learning log
 
+## First real task: a falsey callable
+
+A callable object can evaluate as false and still be the intended validator.
+Using `validator or default` replaced it silently. The added regression fails
+on the parent source and passes with the fix; nine existing tests pass in both.
+We also learned that pytest needs an explicit root directory when neutralizing
+repository configuration, or recorded IDs can lose their file paths. A validated
+task needs reproducible test IDs, not just a matching pass/fail count. This
+inspected example is development-only and cannot become held-out evidence.
+
 ## Spending across runs
 
 A per-run cap starts over when the program restarts. A persistent ledger records

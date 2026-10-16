@@ -1,6 +1,38 @@
 # Progress
 
-Updated: 2026-10-16 (persistent credit safeguards implemented; model catalog rechecked 2026-10-15)
+Updated: 2026-10-16 (first real development task validated; model catalog rechecked 2026-10-15)
+
+## First real development task — 2026-10-16
+
+- Continued offline as requested; Token Factory remains unused and live calls
+  remain locked. Cloned the official more-itertools repository with no checkout
+  or hooks into ignored data/repos/more-itertools; no host installation or
+  execution of its source/dependencies was performed. Upstream license is MIT.
+- Selected 67fcf640477c78605580f5ee703a54c73c1e7a8a (2026-10-06), parent
+  1ea82a711c69f590054987b5cb194157f8ce8ac4: respect a callable bucket validator
+  even if it evaluates as false. Candidate: 1 source file, 1 test file, 1 doc,
+  20 changed lines. Reviewed the source/test change and selected BucketTests.
+- Added regular-blob snapshot loading with path/type/size limits, separate test
+  and reference patches, unchanged base non-test files, and the mine-validate
+  CLI. Docker isolation remains local-only, network-off, non-root, resource-
+  capped, with no host mounts/credentials. No automatic dependency installation.
+  Pytest config/plugins are neutralized and repository root is explicit.
+- Four final containers (two base+test-patch and two fixed) consistently found
+  one fail-to-pass regression and nine pass-to-pass tests; no errors/skips.
+  Canonical test ID: tests/test_more.py::BucketTests::test_falsey_validator_is_honoured.
+  Container-stage elapsed time 6.312 seconds. All containers removed afterward.
+- Saved data/development/more-itertools-bucket.json with SHA pair, four receipts,
+  image/snapshot hashes, separate patches and upstream MIT permission notice.
+  Classified development_only, permanently held_out_eligible=False. Does not
+  count toward a frozen 40-task benchmark or claim full upstream-suite coverage.
+- Fixed a reporting issue found during validation: neutral pytest configuration
+  without an explicit root omitted test-file prefixes. Rejected that record and
+  reran with canonical IDs; unit tests now reject incomplete test IDs. The
+  original synthetic Docker demo still passes after the runner change (2.547 s).
+- All 169 offline tests, Ruff, uv lock check and whitespace checks pass. A
+  75-file common-credential scan found no real credentials; known mocked marker
+  excluded. Confirmed private GitHub target and no-reply identity for the
+  authorized checkpoint push. No model calls, charges or new dependencies.
 
 ## Credit transaction and ongoing push authorization — 2026-10-16
 
@@ -144,6 +176,9 @@ Updated: 2026-10-16 (persistent credit safeguards implemented; model catalog rec
 - [Canonical Apache-2.0 text](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 ## Next
+- Offline: assess candidate yield/environment requirements, then build history
+  enumeration and dependency-compatible task validation. One real inspected
+  example now works, but no held-out dataset, solver run or G1 yield claim exists.
 - For credit-funded work: confirm the credit breakdown and earliest expiry,
   recheck prices/account usage, then set a reviewed small local allowance before
   reviewing the live lock. Persistent accounting is now implemented; missing
@@ -298,7 +333,7 @@ Updated: 2026-10-16 (persistent credit safeguards implemented; model catalog rec
 ## Measured numbers
 - Python: 3.12.7; uv: 0.13.0. Locked packages: 88, including optional resolutions;
   installed Day 1 packages: 31.
-- Tests: **137 passed** after persistent credit safeguards. Ruff: **passed**.
+- Tests: **169 passed** after first real-task validation. Ruff: **passed**.
   uv lock check: **passed** during the scaffold milestone; dependencies unchanged.
 - Probe plan: **4 models × 4 variants = 16 sequential requests**.
 - Completion limit: **256 tokens**, reasoning-inclusive limit also set.
@@ -308,6 +343,8 @@ Updated: 2026-10-16 (persistent credit safeguards implemented; model catalog rec
 - Actual paid inference calls: **0**. Actual provider spend: **$0**.
 - Live latency, tokens and throughput: **not measured**.
 - Validated benchmark tasks: **0**. End-to-end benchmark runs: **0**.
+- Real development-only tasks: **1**, with **1 fail-to-pass** and **9 pass-to-pass**
+  tests, repeated in **4 containers**, **6.312 seconds**. Excluded from held-out.
 - Synthetic validation: **1 demo**, **4 container runs**, **2.672 seconds**.
   Regression failed twice before fix and passed twice after; existing test
   passed all four times. No skipped tests or collection/setup/teardown errors.

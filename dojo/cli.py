@@ -13,6 +13,7 @@ import yaml
 from dojo import __version__
 from dojo.mine.demo import create_demo
 from dojo.mine.git_mine import candidate_rejection_reasons, candidate_window, inspect_commit
+from dojo.mine.real_task import validate_candidate
 from dojo.mine.validate import validate_demo
 from dojo.solve.model import load_models, positive_decimal
 from dojo.store.credits import CreditError, CreditLedger
@@ -151,6 +152,33 @@ def mine_validate_demo(repo: Path = Path("data/mining-demo")):
         raise typer.Exit(2)
     typer.echo(json.dumps(report, indent=2))
     if report["status"] != "validated_synthetic_demo":
+        raise typer.Exit(1)
+
+
+@app.command()
+def mine_validate(
+    repo: Annotated[Path, typer.Option(help="Root of a reviewed local Python repository.")],
+    revision: Annotated[str, typer.Option(help="One reviewed bug-fix commit.")],
+    test: Annotated[list[str], typer.Option(help="Explicit pytest node/class/file scope.")],
+    output: Path | None = None,
+):
+    """Validate one reviewed development task in Docker; never assign held-out data."""
+    try:
+        if output and output.exists():
+            raise FileExistsError("Choose a new output path")
+        report = validate_candidate(repo, revision, tuple(test))
+        if output:
+            # Refuse to overwrite an existing task or project file.
+            output.parent.mkdir(parents=True, exist_ok=True)
+            with output.open("x", encoding="utf-8") as stream:
+                stream.write(json.dumps(report, indent=2) + "\n")
+    except (OSError, ValueError, TypeError, RuntimeError, subprocess.SubprocessError):
+        typer.echo("Validation stopped; no validated task claimed. Check reviewed code, "
+                   "local Docker/test dependencies, test selection and a new output path.", err=True)
+        raise typer.Exit(2)
+    summary = {key: value for key, value in report.items() if key not in {"patches", "upstream_license"}}
+    typer.echo(json.dumps(summary, indent=2))
+    if report["status"] != "validated_development_task":
         raise typer.Exit(1)
 
 

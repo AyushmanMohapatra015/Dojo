@@ -47,6 +47,7 @@ program and revoking its account access are separate actions; complete both.
 | uv 0.13.0 | Added to the existing project .venv | Remove the project-local installation/environment after preserving reproducible setup and checking it is no longer needed. |
 | Docker Desktop / CLI | Already installed; started for local validation | Preserve the shared installation. At completion review project images and any uniquely named dojo-validation containers only. |
 | Docker validation images | Downloaded python:3.12-slim and built dojo-validation-demo:local | Review/remove these project images if no longer needed; do not prune unrelated images, volumes or containers. Temporary test containers are removed after each run. |
+| more-itertools source clone | Downloaded under ignored data/repos/more-itertools | Optional project cache; preserve the upstream revision/provenance and validated record before removing this exact clone. No host dependency installation was performed. |
 | Python .venv | Already existed; project dependencies were added | Review and remove only this disposable environment if no longer needed. Preserve pyproject.toml and uv.lock. |
 | Git, Git Credential Manager, Python/Anaconda, winget | Already present | Do not automatically uninstall shared tools. Review with the owner if they want these removed too. |
 | Git safe.directory entry | Added for D:/NVIDIA X NEBIUS | Remove this exact entry if it is no longer needed; never clear unrelated entries. |

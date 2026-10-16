@@ -1,0 +1,134 @@
+{
+  "status": "validated_development_task",
+  "fail_to_pass": [
+    "tests/test_more.py::BucketTests::test_falsey_validator_is_honoured"
+  ],
+  "pass_to_pass": [
+    "tests/test_more.py::BucketTests::test_basic",
+    "tests/test_more.py::BucketTests::test_getitem_miss_does_not_add_key",
+    "tests/test_more.py::BucketTests::test_in",
+    "tests/test_more.py::BucketTests::test_in_does_not_add_key",
+    "tests/test_more.py::BucketTests::test_in_does_not_add_key_with_validator",
+    "tests/test_more.py::BucketTests::test_keys_are_only_those_seen",
+    "tests/test_more.py::BucketTests::test_list",
+    "tests/test_more.py::BucketTests::test_list_validator",
+    "tests/test_more.py::BucketTests::test_validator"
+  ],
+  "synthetic": false,
+  "split": "development_only",
+  "schema_version": 1,
+  "repo": "more-itertools/more-itertools",
+  "held_out_eligible": false,
+  "counts_toward_frozen_benchmark": false,
+  "base_sha": "1ea82a711c69f590054987b5cb194157f8ce8ac4",
+  "fix_sha": "67fcf640477c78605580f5ee703a54c73c1e7a8a",
+  "features": {
+    "files_changed": 3,
+    "lines_changed": 20
+  },
+  "test_scope": [
+    "tests/test_more.py::BucketTests"
+  ],
+  "runs": [
+    {
+      "stage": "base",
+      "repeat": 1,
+      "exit_code": 1,
+      "collected": 10,
+      "passed": [
+        "tests/test_more.py::BucketTests::test_basic",
+        "tests/test_more.py::BucketTests::test_getitem_miss_does_not_add_key",
+        "tests/test_more.py::BucketTests::test_in",
+        "tests/test_more.py::BucketTests::test_in_does_not_add_key",
+        "tests/test_more.py::BucketTests::test_in_does_not_add_key_with_validator",
+        "tests/test_more.py::BucketTests::test_keys_are_only_those_seen",
+        "tests/test_more.py::BucketTests::test_list",
+        "tests/test_more.py::BucketTests::test_list_validator",
+        "tests/test_more.py::BucketTests::test_validator"
+      ],
+      "failed": [
+        "tests/test_more.py::BucketTests::test_falsey_validator_is_honoured"
+      ],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "fix",
+      "repeat": 1,
+      "exit_code": 0,
+      "collected": 10,
+      "passed": [
+        "tests/test_more.py::BucketTests::test_basic",
+        "tests/test_more.py::BucketTests::test_falsey_validator_is_honoured",
+        "tests/test_more.py::BucketTests::test_getitem_miss_does_not_add_key",
+        "tests/test_more.py::BucketTests::test_in",
+        "tests/test_more.py::BucketTests::test_in_does_not_add_key",
+        "tests/test_more.py::BucketTests::test_in_does_not_add_key_with_validator",
+        "tests/test_more.py::BucketTests::test_keys_are_only_those_seen",
+        "tests/test_more.py::BucketTests::test_list",
+        "tests/test_more.py::BucketTests::test_list_validator",
+        "tests/test_more.py::BucketTests::test_validator"
+      ],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "base",
+      "repeat": 2,
+      "exit_code": 1,
+      "collected": 10,
+      "passed": [
+        "tests/test_more.py::BucketTests::test_basic",
+        "tests/test_more.py::BucketTests::test_getitem_miss_does_not_add_key",
+        "tests/test_more.py::BucketTests::test_in",
+        "tests/test_more.py::BucketTests::test_in_does_not_add_key",
+        "tests/test_more.py::BucketTests::test_in_does_not_add_key_with_validator",
+        "tests/test_more.py::BucketTests::test_keys_are_only_those_seen",
+        "tests/test_more.py::BucketTests::test_list",
+        "tests/test_more.py::BucketTests::test_list_validator",
+        "tests/test_more.py::BucketTests::test_validator"
+      ],
+      "failed": [
+        "tests/test_more.py::BucketTests::test_falsey_validator_is_honoured"
+      ],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "fix",
+      "repeat": 2,
+      "exit_code": 0,
+      "collected": 10,
+      "passed": [
+        "tests/test_more.py::BucketTests::test_basic",
+        "tests/test_more.py::BucketTests::test_falsey_validator_is_honoured",
+        "tests/test_more.py::BucketTests::test_getitem_miss_does_not_add_key",
+        "tests/test_more.py::BucketTests::test_in",
+        "tests/test_more.py::BucketTests::test_in_does_not_add_key",
+        "tests/test_more.py::BucketTests::test_in_does_not_add_key_with_validator",
+        "tests/test_more.py::BucketTests::test_keys_are_only_those_seen",
+        "tests/test_more.py::BucketTests::test_list",
+        "tests/test_more.py::BucketTests::test_list_validator",
+        "tests/test_more.py::BucketTests::test_validator"
+      ],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    }
+  ],
+  "elapsed_seconds": 6.312,
+  "patches": {
+    "test_patch": "diff --git a/tests/test_more.py b/tests/test_more.py\nindex 1fdf22a17754d8f34d2403afb8b10ae6f27550bd..b3a9351595a6fd7f1aa9c1e35978f08106e43df0 100644\n--- a/tests/test_more.py\n+++ b/tests/test_more.py\n@@ -1109,6 +1109,20 @@ class BucketTests(TestCase):\n         self.assertEqual(list(D[20]), [])\n         self.assertEqual(list(D[30]), [30, 31, 33])\n \n+    def test_falsey_validator_is_honoured(self):\n+        # A falsey callable is still a valid validator and must not be\n+        # replaced by the default (see #1308).\n+        class AllowedKeys(set):\n+            def __call__(self, key):\n+                return key in self\n+\n+        allowed = AllowedKeys()\n+        self.assertFalse(allowed)  # Sanity: the validator itself is falsey\n+        D = mi.bucket(iter([10, 20, 11, 21]), key=lambda x: x, validator=allowed)\n+        self.assertEqual(list(D[10]), [])\n+        self.assertNotIn(10, D)\n+        self.assertEqual(set(D), set())\n+\n     def test_in_does_not_add_key(self):\n         # A failed membership test must not invent a key (see #1284)\n         iterable = [10, 20, 11, 21]\n",
+    "gold_patch": "diff --git a/docs/versions.rst b/docs/versions.rst\nindex 738ff67c6bf24639a8f800cedf2a3978744a17b3..ecc38117174bbd3d65c87764d05e4596933ec737 100644\n--- a/docs/versions.rst\n+++ b/docs/versions.rst\n@@ -9,6 +9,7 @@ Unreleased\n ----------\n \n * Changes to existing functions:\n+    * :func:`bucket` now honours a falsey *validator* callable (such as an empty ``set`` subclass that defines ``__call__``) instead of silently replacing it with the default that accepts every key.\n     * :func:`ichunked` now matches :func:`chunked` for ``n = 0`` and negative *n*: it yields nothing for a zero chunk size (without consuming the source) and raises ``ValueError: n must be at least 0`` instead of leaking :func:`itertools.islice`'s error.\n     * :func:`running_min`, :func:`running_max`, :func:`running_mean`, and :func:`running_statistics` now consistently validate *maxlen* as an integer and support the index protocol.\n     * :func:`numeric_range` now preserves its original values and length when reversed, including floating-point ranges and ranges near datetime limits.\ndiff --git a/more_itertools/more.py b/more_itertools/more.py\nindex 940b8009cc6ee72518d5f2364a3ef4221854b033..9c56ab37558733ece94d676f71d502d8048bc1d5 100755\n--- a/more_itertools/more.py\n+++ b/more_itertools/more.py\n@@ -1182,7 +1182,10 @@ class bucket:\n         self._it = iter(iterable)\n         self._key = key\n         self._cache = defaultdict(deque)\n-        self._validator = validator or (lambda x: True)\n+        # Use ``is None`` rather than truthiness: a valid validator may be a\n+        # callable object that is falsey (e.g. an empty ``set`` subclass with\n+        # ``__call__``), and ``validator or ...`` would silently replace it.\n+        self._validator = (lambda x: True) if validator is None else validator\n \n     def __contains__(self, value):\n         if not self._validator(value):\n"
+  },
+  "upstream_license": "Copyright (c) 2012 Erik Rose\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+  "snapshot_sha256": {
+    "base": "93136c07bf7f59846a52ac7a21cc953801d743dd68893140582029854430badc",
+    "fix": "003407edb037e2237cd0c3c5637d60b9bc52616a7062ed0ecce36f5b698725fb"
+  }
+}

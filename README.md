@@ -2,9 +2,10 @@
 
 Benchmark Nemotron on your own repository, measure cost versus success, and keep
 only repository notes that earn their place. See [BUILD_SPEC.md](BUILD_SPEC.md).
-Single-commit filtering and synthetic Docker validation are implemented; see
-[the mining exercise](docs/mining-first-step.md). Real-task mining, the solver,
-benchmark scoring, analysis and dashboard remain later milestones.
+Single-commit filtering, synthetic Docker validation and one real development
+task are implemented; see [the mining exercise](docs/mining-first-step.md) and
+[real-task validation](docs/real-task-first-step.md). Full-history mining, the
+solver, benchmark scoring, analysis and dashboard remain later milestones.
 
 ## Setup
 
@@ -22,7 +23,8 @@ uv run ruff check .
 On this Windows workspace, uv is installed at `.venv\Scripts\uv.exe`.
 The optional `solver` and `analysis` extras reserve later dependencies without
 installing them for Day 1. No solver jobs have run. The synthetic validation
-command runs only the exact practice fixture in local Docker.
+command runs the exact practice fixture in local Docker; `mine-validate` can
+validate a separately reviewed, dependency-compatible repository commit.
 
 ## Day 1 provider verification
 
