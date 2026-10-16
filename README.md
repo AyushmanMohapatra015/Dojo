@@ -7,6 +7,10 @@ task are implemented; see [the mining exercise](docs/mining-first-step.md) and
 [real-task validation](docs/real-task-first-step.md). Full-history mining, the
 solver, benchmark scoring, analysis and dashboard remain later milestones.
 
+History candidate auditing is available via `dojo mine-audit`; see the
+[three-repository yield report](docs/candidate-yield.md). Candidate counts are
+separate from validated tasks and do not establish benchmark readiness.
+
 ## Setup
 
 Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/getting-started/installation/).

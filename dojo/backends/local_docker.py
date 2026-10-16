@@ -33,10 +33,11 @@ with tarfile.open(fileobj=io.BytesIO(payload), mode='r:') as archive:
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(archive.extractfile(member).read())
 os.chdir(root)
-sys.path.insert(0, str(root))
 os.environ['PYTEST_DISABLE_PLUGIN_AUTOLOAD'] = '1'
 os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
 import pytest
+sys.path.insert(0, str(root))
+if (root / 'src').is_dir(): sys.path.insert(0, str(root / 'src'))
 class Receipt:
     def __init__(self):
         self.passed, self.failed, self.errors, self.skipped = [], [], [], []

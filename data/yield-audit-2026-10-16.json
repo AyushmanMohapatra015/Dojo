@@ -1,0 +1,6248 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-16T03:16:51.368915+00:00",
+  "repositories": [
+    {
+      "schema_version": 1,
+      "repo": "more-itertools/more-itertools",
+      "head_sha": "4aeb4338ae1407d8da9723e86da99efeb446f719",
+      "as_of": "2026-10-16T03:16:51.368915+00:00",
+      "window_start": "2026-01-16T03:16:51.368915+00:00",
+      "window_months": 9,
+      "commits_scanned": 262,
+      "candidate_count": 34,
+      "rejected_count": 228,
+      "unique_patch_candidates": 34,
+      "duplicate_patch_groups": [],
+      "rejection_counts": {
+        "missing_source": 87,
+        "missing_tests": 160,
+        "requires_one_parent": 92,
+        "too_many_changed_lines": 9
+      },
+      "rejection_counts_overlap": true,
+      "candidates": [
+        {
+          "fix_sha": "f91c7339f16392dd01702b0259bf03a017acc974",
+          "base_sha": "23785eb2bed6082cf8268d00b276af47c94cabfd",
+          "parent_count": 1,
+          "commit_date": "2026-01-28T20:57:31Z",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 54,
+          "stable_patch_id": "1f2a77aa3248f4bc4f4508c67776ab5d7bc8f8f0",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "be5793a55f58ee29521d8cbc9f14019f5833454e",
+          "base_sha": "fdbd43c569feb4388302ddee0551d18edd39fadc",
+          "parent_count": 1,
+          "commit_date": "2026-02-02T13:35:27-06:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 17,
+          "stable_patch_id": "21a8bcde755fac2953ab57ecf15d1e4619474fa0",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "d71c4ad9f828117e609269701f6df10419ae90c8",
+          "base_sha": "c0ed9d187906d202b9276a0750b3c377584cb75f",
+          "parent_count": 1,
+          "commit_date": "2026-02-08T12:41:40-08:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 28,
+          "stable_patch_id": "42308f739ec608f39b35c811784b6ae06f9cf64d",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "db4f41b28050aa3aa5d5df5294f446299bba5356",
+          "base_sha": "c0ed9d187906d202b9276a0750b3c377584cb75f",
+          "parent_count": 1,
+          "commit_date": "2026-02-09T16:16:46-06:00",
+          "test_files": [
+            "tests/test_recipes.py"
+          ],
+          "source_files": [
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 43,
+          "stable_patch_id": "de4b7f126b885ed0b610be4088cde6fc50fb1a5c",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "8089263d2374e121ecb8cfdef0f5664bab7bafb1",
+          "base_sha": "e4d2a4a2a97246a73856754b2c4866d7f41d4875",
+          "parent_count": 1,
+          "commit_date": "2026-03-31T20:39:43-05:00",
+          "test_files": [
+            "tests/test_more.py",
+            "tests/test_recipes.py"
+          ],
+          "source_files": [
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 95,
+          "stable_patch_id": "a33b9cbd90496d4aa8494a3d12a9c904a9063fdc",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "d63a26e56eac21ef874d243d2230123464539ed5",
+          "base_sha": "d0c20f594667738b714a1f7786da82e0de70fbf5",
+          "parent_count": 1,
+          "commit_date": "2026-03-31T21:12:03-05:00",
+          "test_files": [
+            "tests/test_recipes.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py",
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 16,
+          "stable_patch_id": "1dbb9869552c3ea3012b99ab0a5a4fcf3abce3e2",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "93c1cf8484f00a63f940be94b9e78c8347992a8b",
+          "base_sha": "e90bda0657c9cc7cddbec3ee4268c6bfcfb118e3",
+          "parent_count": 1,
+          "commit_date": "2026-03-31T22:35:32-05:00",
+          "test_files": [
+            "tests/test_recipes.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py",
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 16,
+          "stable_patch_id": "273e6e394364fad1b9cb57e970caced500e4abea",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "71b46b06fb48abcd2f7a26d74c148a650d340386",
+          "base_sha": "e4d2a4a2a97246a73856754b2c4866d7f41d4875",
+          "parent_count": 1,
+          "commit_date": "2026-03-31T23:06:52-05:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 14,
+          "stable_patch_id": "408a28c085b39760722081a06b2da0a959326c6e",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "52cfcfedc31060138c1a9f691bc6aa20b457ec12",
+          "base_sha": "5b43c0dc5f67713130ab534d448f8db1cf493e09",
+          "parent_count": 1,
+          "commit_date": "2026-04-02T11:00:44-05:00",
+          "test_files": [
+            "tests/test_recipes.py"
+          ],
+          "source_files": [
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 17,
+          "stable_patch_id": "a09770b428b7ab0f9dd74655669a4ef7df2b4e57",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "edb3346f835ca917efbfda5e2d6664ab952da369",
+          "base_sha": "247e15b3a489d5805375c95dfa79486c9bd0eb1b",
+          "parent_count": 1,
+          "commit_date": "2026-04-10T14:29:02-05:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 13,
+          "stable_patch_id": "73da3528f7f59977066e86155d7c6e900ccd4e92",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "ba7ef9425f6983deaf0aedb616e8cdf0ece2f517",
+          "base_sha": "18d98893df45e0014bf316ca7832d441dd94aa4f",
+          "parent_count": 1,
+          "commit_date": "2026-05-13T11:51:01-07:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 32,
+          "stable_patch_id": "d61d0954a08e39c19da022838490e438acd686e0",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "842a2b17a8e3f78462fe20cd4a88abd32085c111",
+          "base_sha": "0c48044a70bae53fed919526bb1229d459a3e496",
+          "parent_count": 1,
+          "commit_date": "2026-06-09T21:06:48-06:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 64,
+          "stable_patch_id": "4552342627e1cefab14153133dea4b5aaeaedfa0",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "43decdd76072519fbf1392fb3d066ad26601c147",
+          "base_sha": "c5538f9ff7f3fa92ac0fe378b5c70486494c040b",
+          "parent_count": 1,
+          "commit_date": "2026-06-17T10:42:28+02:00",
+          "test_files": [
+            "tests/test_recipes.py"
+          ],
+          "source_files": [
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 30,
+          "stable_patch_id": "111ca3ec7402ecdadf4d48bf3c74b41c6e50a9c9",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "f51a53bfd2fe9504063a33ef5f4a73e30d82d0e2",
+          "base_sha": "5d946b3590bfe92f1465c1b9b9830dd434745c84",
+          "parent_count": 1,
+          "commit_date": "2026-06-29T22:48:08-03:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 7,
+          "stable_patch_id": "5c2e643f3db5aad792a8e63cc8a8a395a5d24048",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "d64a7d6971bfd31c5719d02f0001e58de85683d1",
+          "base_sha": "5d946b3590bfe92f1465c1b9b9830dd434745c84",
+          "parent_count": 1,
+          "commit_date": "2026-06-30T17:32:13+08:00",
+          "test_files": [
+            "tests/test_recipes.py"
+          ],
+          "source_files": [
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 7,
+          "stable_patch_id": "8bf88790b9d19380a56003c58f816bfd58865356",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "958990e22c4ab6daf434d89cf2b86d7a4a7a9e3c",
+          "base_sha": "ed86a1528aa015f219f8d3385ea2ebd3f63a5212",
+          "parent_count": 1,
+          "commit_date": "2026-07-02T21:47:37-07:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 12,
+          "stable_patch_id": "be085789efeefdcc9c1462b90b53a97a3a8fa6a1",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "d992be0de9383ddcaae3a24866a2d96b52132b07",
+          "base_sha": "cb75bb9c55f7ed3e77ce599097e1ba8da411746d",
+          "parent_count": 1,
+          "commit_date": "2026-07-12T15:05:04-05:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 66,
+          "stable_patch_id": "4369301e19a8e3ca3b7226c1a8d27795c4c93121",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "069b30002a985c02f1ab18409290a699fd649376",
+          "base_sha": "da37f9de442b69fbcaa9f54fb042c2a6999473a6",
+          "parent_count": 1,
+          "commit_date": "2026-07-16T14:15:08-05:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 106,
+          "stable_patch_id": "1009445373eb41c165e0115579501d0cf93bb305",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "0e6acdf9b60765ecf9634d6f5c132ac1bebc616b",
+          "base_sha": "516f0a80fb7c2c8562dbb5e318fc2a3d44f4171f",
+          "parent_count": 1,
+          "commit_date": "2026-07-19T20:17:28+05:30",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 12,
+          "stable_patch_id": "103aa91a57c1d587b567375c764e7952d6ce03ae",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "dc2664b4a7c66209485c9f5e359137bf4b365eb3",
+          "base_sha": "2fe1b2eeb9d75f994113fe3ac76d14b6bcd6fb10",
+          "parent_count": 1,
+          "commit_date": "2026-09-02T11:49:42-04:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 104,
+          "stable_patch_id": "f93d0cead4866f80824bfd9af228a92b8ab05d11",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "7847d4324a581da8d0919734a8e50b2a6573b780",
+          "base_sha": "bc8be1013ac90fe3c1df8aae646b02605d578818",
+          "parent_count": 1,
+          "commit_date": "2026-09-03T11:22:05-04:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 26,
+          "stable_patch_id": "8313242a3481c76174eb5f5b6e5b389e6eeadeb5",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "ce676d24136e6efa932df8a4f3bf4801b89e1dd0",
+          "base_sha": "d92f081a089714e0aa92434c797fdd1a06da1290",
+          "parent_count": 1,
+          "commit_date": "2026-09-04T00:44:41+03:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 58,
+          "stable_patch_id": "87523735a39f0e33fb5665822d4498c735ffaf46",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "1fd388bc237923e92574ae272cd8c71eab4b886c",
+          "base_sha": "b656ecc0a64e328549a9858af1c4b609f9922b07",
+          "parent_count": 1,
+          "commit_date": "2026-09-07T22:30:07-04:00",
+          "test_files": [
+            "tests/test_recipes.py"
+          ],
+          "source_files": [
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 54,
+          "stable_patch_id": "2be50a80b3ac9eae5303e79946634c3a6e7f39a3",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "6b1907de293a655fb77881bf81948f95fd15bd7c",
+          "base_sha": "ca711220a6657a22655f6fa497524d006a735c5f",
+          "parent_count": 1,
+          "commit_date": "2026-09-09T22:09:31+08:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 19,
+          "stable_patch_id": "f1acb5ad3058d01e880568709f5d1714564d5c4e",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "752799b5c88e0823f1bd93e073edab0a6a7e5648",
+          "base_sha": "9ed3dbb0ae527230cd156d91d0af305478558fba",
+          "parent_count": 1,
+          "commit_date": "2026-09-11T23:23:39-07:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 30,
+          "stable_patch_id": "63ec819584c540f10ab4e82ec6af239c9df345ee",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "e426d256b90bcef9aa4509ea345fca68ff21ae0c",
+          "base_sha": "9ed3dbb0ae527230cd156d91d0af305478558fba",
+          "parent_count": 1,
+          "commit_date": "2026-09-12T15:12:51+03:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 36,
+          "stable_patch_id": "6ddd6100ad816bb034ab8f9fdf2555984684e23a",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "def2dabea858b6ecb84ee0c52e6e07929f2c409c",
+          "base_sha": "9ed3dbb0ae527230cd156d91d0af305478558fba",
+          "parent_count": 1,
+          "commit_date": "2026-09-14T10:39:38+05:30",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 64,
+          "stable_patch_id": "e1c907798039ab8dc1926dc18ad3c5347e4ae64b",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "2b8d5cddce4ea01f88a973551cd50479cf5fa45f",
+          "base_sha": "b2f3aff7633057d234ec9186c18a53f4df306d08",
+          "parent_count": 1,
+          "commit_date": "2026-09-17T09:49:11-04:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 44,
+          "stable_patch_id": "baec9f0ef83873fe21a28a1d307545e2cfc98dcc",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "670b715b307adfe5d2fca08a87ca562cb8bfea2c",
+          "base_sha": "d634820be7a23b6a85441ee67051530fb0a8a960",
+          "parent_count": 1,
+          "commit_date": "2026-09-18T13:55:47-05:00",
+          "test_files": [
+            "tests/test_recipes.py"
+          ],
+          "source_files": [
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 54,
+          "stable_patch_id": "7da1164d18c17306957ff53d6ea973f5dec3af8b",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "3eb4053e1aacac53853f6e0abae556f280726f01",
+          "base_sha": "b5e3886a37209bb880f17d82fbf4ba00ece0e41e",
+          "parent_count": 1,
+          "commit_date": "2026-09-22T09:20:30-04:00",
+          "test_files": [
+            "tests/test_seekable_memory.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 40,
+          "stable_patch_id": "8575fccdabbf4cc2c1d5eafbe63f16aeee8bd317",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "f89d7a3331ba6b5421273e556c0a738e3dd1dd35",
+          "base_sha": "790bb0bb2c03e7a07282e5f16f4b1fde35b8fcf5",
+          "parent_count": 1,
+          "commit_date": "2026-09-29T17:58:58+02:00",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 20,
+          "stable_patch_id": "924a3511d0524d590ecce66d6b9778531b66850d",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "67fcf640477c78605580f5ee703a54c73c1e7a8a",
+          "base_sha": "1ea82a711c69f590054987b5cb194157f8ce8ac4",
+          "parent_count": 1,
+          "commit_date": "2026-10-06T22:23:13Z",
+          "test_files": [
+            "tests/test_more.py"
+          ],
+          "source_files": [
+            "more_itertools/more.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 20,
+          "stable_patch_id": "08078f08f51aa008935337bd9360c6497296878a",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "0ab351d380cccb5b6989ca437cf92aa8fdfafe81",
+          "base_sha": "4e2c3414eff309842beaa86be17273821f4a51cc",
+          "parent_count": 1,
+          "commit_date": "2026-10-09T14:32:11-05:00",
+          "test_files": [
+            "tests/test_recipes.py"
+          ],
+          "source_files": [
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 100,
+          "stable_patch_id": "420c1c9e88fa3253d408daad0384a73902d63fe6",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "98562cab0718e79404bb64bdd355541c90c6bdcb",
+          "base_sha": "0ab351d380cccb5b6989ca437cf92aa8fdfafe81",
+          "parent_count": 1,
+          "commit_date": "2026-10-09T14:39:22-05:00",
+          "test_files": [
+            "tests/test_recipes.py"
+          ],
+          "source_files": [
+            "more_itertools/recipes.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 29,
+          "stable_patch_id": "0ae1ed11d1c255ca65f966cb2021678a7892257b",
+          "duplicate_of": null
+        }
+      ],
+      "rejected": [
+        {
+          "fix_sha": "4aeb4338ae1407d8da9723e86da99efeb446f719",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "da864da6d8beaa49d693b719cbc21a5d88dfb475",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "737c261c21271e1a6eb949f7d188297bebe8b125",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "909b70336ce229088bbc253d300190c99fb8411a",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "6ad55cbedd2cd722a9c029e5823177622910771a",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "787bcb5c9faf800da3fdc72c1023c1aab24572dc",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "68a52e07369f3515bd9a0d5f31555429e16fcc54",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "be6ecc015e03f48c0a50f07ce6079f636c9753a4",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "45c65a3dc532dadf014d53bcaa0c2f38cbeacfe1",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "56a469cd7f3522d2f391060957b02be81809afb5",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "a30f8ba3ca8b25556f7dadbb329b07d72a6f9486",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "4e2c3414eff309842beaa86be17273821f4a51cc",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b21ec4ee8e139ebe297e2221980a694bebb69523",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "a2c619c1de84bb180e91b61648e66a55b044708e",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "0cfb9f501da3e686d1cc177503724c507d9e9179",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "5236f040f5907ae9974e7abf33ed3922c764114f",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "81c21a8db1c922260cd673841257fb9b112c1318",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "2eecb86441e110ef62543a3347d9fc1bc4c307d1",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "1ea82a711c69f590054987b5cb194157f8ce8ac4",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "790bb0bb2c03e7a07282e5f16f4b1fde35b8fcf5",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "237642ea8a6fa817a1067369c7c06bd5130fe0da",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "031c1a62bd3d7ee5820e10769fd544e060cdcd35",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "fbb9a98d8c7b914fcc952afd4976c1bc8deebe87",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "ca0586d550e0d8d7bdee97bcaacb0d260d766245",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "7f7c94efcf63271ac27dd000d62dd990afa71fd7",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "ed1bd2d4706535c3b00f38aa28e104eb26744433",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "1dd480a08bc2a4c399c84bf21cb1558f8b5fc838",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "edc63587ed2ec41ecc802d5550524471f48161c0",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "fda709afc6f805ffab7f249e9b1179e8f34e4b32",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b5e3886a37209bb880f17d82fbf4ba00ece0e41e",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "262dbb9805710cf31140f7566037e9f6178b6c28",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "1da45ae4b61a832ed080f08a8833784aad0a9534",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "7421d802fa4d5b67a6e215d4691db97d669e4392",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "d634820be7a23b6a85441ee67051530fb0a8a960",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "540255d22f95ae7367075cd95caeeae83e28b611",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "288d6da0058a3e1e56842bd1ce6f4fc669658aea",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "8a930acd4fa0222af8209ae84806c18f260ee9a3",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "3ea9b009b19db0e01a83d51cee43e9935c0d657f",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "0c5183863a056c39919ae4dea470e2d7b1a3b57b",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "b2f3aff7633057d234ec9186c18a53f4df306d08",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "4ebeea3e569388911a0bec740092f3cf996d79f3",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "feaddee0ff87a1f6dd648efa1d447acb2e6a0962",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "9ed3dbb0ae527230cd156d91d0af305478558fba",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "106fdecc0a9ea5ba05e98a668218892d768163e6",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "cd47ab22e88241688ddc45f0c9e925ea3f50329d",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "aaa9b5581f5f62b3d9dfb95bde609b7b0b486d5b",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "e581766aecd209744efdc4cebf741fd6b23c865d",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "87d12578c3e558c57fbfbe663be63259c1fce56f",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "d032cab7798c7a072ecbb8ade4dfa50030c75cb5",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "19ddb972845ab0e5b9b7449d3fd5930781407441",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "0e6dce3a7a8c6f9c5deb80779cc1d293c80e2974",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "ca711220a6657a22655f6fa497524d006a735c5f",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "926acab4ae876eea0697a885996efdf3a32bf0ac",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "069b1100383bced92e80acd6533a5a4fa135a74f",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "1b74b56d03bbe0d7496b8431aabe41598850ec0d",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "b656ecc0a64e328549a9858af1c4b609f9922b07",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "b8e0cbb8ed74e125a66bc32f050659227bce0e01",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "141f38bcf6a027b36f9a59f66f704cdb930ace19",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "37f99c53a92b6254b671491b698ebdf6562ecb50",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "ddd678209da01d97844d61a2bd963ce4b67c0a0c",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "fc3690451e3b0d323cff4bc19c5669cfee7556dd",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "caaec943d83fc6876f7032032a4c83e4f5183239",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "dee22c93f7617380875b68bfa55c3cb0e0b35570",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "b8fe92096c4693ed0b134be7de88e00efed131f7",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "3e87c08ac878f4bb79349d38ac69ba75c45dc5bf",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "d92f081a089714e0aa92434c797fdd1a06da1290",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "a826a4e09e3f2782822c71da6670e9275735ad3e",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8b8e306fd233b4dfb561a3af5742b869e34bfa1a",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "bc8be1013ac90fe3c1df8aae646b02605d578818",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "30ada7dd597316a3ef967911477e0a1d9f55eefe",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "7e6c2baa73a22f694f4a4dd42c9d672e812878c7",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "63ee583047181a055c21e64e732a7011290ca837",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "2fe1b2eeb9d75f994113fe3ac76d14b6bcd6fb10",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "3f8a42d9dae6fc29b6d39fc2d40d38838e0b3f3c",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8a9dd135ea32301e9eaf6f179384db464aeee6b6",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "857d2b45a41dccecd4f29e6fca254b9082929454",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "fc2c4f4f47eb445b39ce3cc74db693f15c06ee08",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "cecd215fe1c6fdc639b9eb837cee93bba09d2952",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "c69f0f9129ff8d26102219f50b60088353be7edf",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "237388cc3220bdc7cfacc6f766304a49b42fb8e7",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "3a259350f28cd17f09b4f0af21c6ebc03cf725cf",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "5c715d813a048e55676b819bd6ace4f8957cd958",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "7ff676d95968fb0a85f2527056c575cba039303c",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "27688e5394e1af8a632e6ad015304ded2e2f06d3",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "63243787b0a49482ba4a17f83a0aa4d6f2fb5741",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "794fe558a666309856d066d0d2ec2e072370bc36",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "9ddc55c57390707d97d96302eea1992919c8d930",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "516f0a80fb7c2c8562dbb5e318fc2a3d44f4171f",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "f9cdcb990dbb87a9748e61a9a28c2ad737e60452",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "f312dce1a2c668475265dc6ddb5f62187d55960c",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "eedb79a899504a9938dd3ab347fc6d915d3428c6",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "da37f9de442b69fbcaa9f54fb042c2a6999473a6",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "301c957c8a50eca09c3b6eae416508a91487b552",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "c92c4fa26ec2c258a82f21116b3dacd4b787f193",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "eb3ac850dd534c1ee34761479ad21189dda958cb",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "7c17fc62ebae971d490ecf8fd41b79b9f42e6b0d",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "07eb790b4aa1aee88d78963fc4f740b03a9fb4a1",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "cb75bb9c55f7ed3e77ce599097e1ba8da411746d",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "ba4e27fd784e6d55e6fd4d415189c68f117476c1",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "bb70114ae6b5c1c9a8d7b1956e1de3a8e953ab43",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "9d0ea7ecc69f9805524eb3bcff14122f9f06b2b5",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "4a02e3662142d4576b0f0c6ac58d5f46dc13ab01",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "c2859de7ae7b791b77c33462a58f81f9a4d9d5d6",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "8ff2d60e1462a6857f5a9b153d7be474f82da8b5",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "d82024d025ec48f1197f92d5b66560a537a78184",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "71253170de729b440993ae510765026a5beb3de5",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "208fbcdedea57210c8166b09be80a6cfc3cb2e28",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "6d6052d60b21518f229d8c089ba6d76a7900f65e",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "ed86a1528aa015f219f8d3385ea2ebd3f63a5212",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "54fcbae90fe712d6434dd7509dd0e01c97b03c06",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "586ccc4d5af7263108c0f51386acff27469a28e4",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "fe24c338d8c3264a82cdc2bed49fb156cfd11a86",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "19767950523c8a14331bc26ff702edf6172d2a1c",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "9c743eacf1c3bbd26de8f29566756e8bf8341415",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b363d6b82c7082db647bd350560fca5e1d724a16",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "5d946b3590bfe92f1465c1b9b9830dd434745c84",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "ac375a07233309813b3b676ff740113e1547f24f",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "4a55f8d7d2aed01e0c9383ededd9ea12c1085bec",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b27870c1c175d46a39451426c807978a7ccb866c",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "23efd8f393facb3e68871fcfc5fd34c1667dbbf7",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "bb518d812a5300b3708559021b59a81358693b21",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "49c991e4e5f142c326de6b92478f58851544f7dd",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "67d310481f0d459dbd67a885d5b6883b83438847",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "cf421cb0507a5508b1231ba64c458b818760b78a",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "7b2929cc1e44d04e18bc63e5cb8400e03e4c7391",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "5235c951844d6d55c0b92fc547652fc3b19f5d16",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "aa3fd14cc9b0124d1dee1d94ae764617b78f9661",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "c6b640cadeb46bc9a3882b792b9709ca13ee8816",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "c5538f9ff7f3fa92ac0fe378b5c70486494c040b",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "56a91fcb92df52339cfa073462d49972e0e4f941",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "2c05fc7cf2815af4d2fd79f4bfbba1118709833c",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "40a042f91dc85b6f70f662a8685e81830dc2e282",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "4c0c0b2d18af53aba672bcb76f76cf70d2042049",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "377c178c122b9ed93dad4f25375c69e279055e4c",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "2baa5a3ec4f8b24e4a7c9157efab16981cf95883",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c4d612fd9dc14460f0a810b45b32f30ce2b4db96",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "eb7891326e0c18cd675414ac169144e973f352ee",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "aae9c62ab9be7a6a8e0cc16a81e259f379e22f21",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8b53da2dd77686631710f3d9c3f159186a7b8edc",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "a197244f451ebfa3c065577c71989b7bcfe7cbea",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "ccf6e0caedd1d982e7f628e5160956a8a18ad608",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "fc43f8c688689a7dcc92a3bc3467269d903764ab",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "aaa45c2dd91b660a0cf73cb66b3d956efd762894",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "75f207a98d8cdaa1f546fcd91588b18f8dc1ec5c",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "e6c54e1da13799a3eb75298c2352f468a2ffcdd4",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "4c42c04deca5fe4c5c023fad83713b2cec6b4a98",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "dd6e15786a7a2e54a8b2086d0efc8487140e6de1",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5692cd838d2b0b55ff46c5f9934b79a0b069027e",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "504b087128d853d7b2cc6478237626e585514935",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "15a4a7d8552887159f66eec0c1f5e19976825e3d",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "150fa2e510cf3fa90ce8414bd60e54b1f84a165c",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "0c48044a70bae53fed919526bb1229d459a3e496",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "ec3e6a1988be5a19de21242543013dd4ce270a13",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "3265258211deb791678e5d79f84979c3e37eb17f",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "6aeb7458a8313428f69f8c579b6bf7eea6269e90",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "319b24382341582defc71a15c7f74e144253d614",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "f7b44bba5c4a73ed42bab52cb8ede9d742d95e16",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "64be96ceb2a6e836f76f069f4a96d2394d59fd0c",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "03a08ec2459bd616362c8d7414bf9388d71a0a0f",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "9af73b9ca01bd7ff2e776578610095fc0b7ae248",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "264b18d8dfbab42fdbd969fc09abf602c6ea58b3",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "18d98893df45e0014bf316ca7832d441dd94aa4f",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "c7b870ad903821eb43cbbe2964ad7a55159a77a4",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "fb6923e01f31ffe5fe4a23e57bffae6e3c8396b1",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "1c85ece40f9549bcc542eb9af9893597ab58f888",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "bd8475cc1e9b2efdbc055ab4af4d4693a9c5cb7a",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "e5d0b41448fe920811c982529d0fc42348a9be21",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "ad5f6cfac43b08dc3e7ea39b25b984bc1377caa1",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "309bb5811ace100e4959a52dc040adb350d5d867",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b5ebe5364125b166606ae34d278ed6756bdae45e",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "45a9b5148598ad493e7ed53ee257f2208dbefbaf",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "975c157ed93566910f00c3b4ec11a9da14a63e49",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "5e4893f87d96de1d80203e7e9ee0d6b9b8f89dd0",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "ea68e05fbe566a01ab416a0a2dd5e9637ac4e789",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "37bb3adb089f7f392edb96bc7bf8d3c921e26d38",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "5517508e728d824a02247b1178337f088cc17458",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "bf32d6a80d24852ec63b06fe30466271e835dd37",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "1806a75b836b9eff4a7885a96ece6183f5fb6409",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "ddc0d867703639bd81abd9bf9bd4c7db28365a50",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "247e15b3a489d5805375c95dfa79486c9bd0eb1b",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "f3eebe1ec01edcacd16ec156e37ccba17040336a",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "619eaed83b632ea648ee4fb9186c3092d0d45c7f",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "6294fa6186399adfb8fcc5d7f597dfad0f78e814",
+          "reasons": [
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "ca21d8be1b24c42c3c9549a9544cf04587741e74",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "6afa2cddd0a8165f0f35a859cbc259222679b1cb",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "1bf1273ad54d41a2d1cc4524058ef81e6fcdd7ed",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5d5c163abf2c16fa6d18c5c8baa874a7a95aa678",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "95ce3352d64a3e4c3c91972c647e76dce4745e75",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "d619fe08542c49652d109cf19e701655b98e2290",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5ea81c48727f9906879e30b352772bc3869c4e88",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "2fcf9ef942066124126e9101846f47afab2d302c",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "5b43c0dc5f67713130ab534d448f8db1cf493e09",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "499213bfefdd18cc91c4c5e1a5b666b5febe1064",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8fb18b9e9a40934a16e7a3c0feffec26cd0807e2",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "afe23fca637285b6a28a5afb247a4070515e437e",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "4930555a6d40b51d9d79d31aaf5c78d4b7430e9c",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "06626d5d47dc4d3c205a84dcc55b62df66aae624",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "c91ba4ee387a01061e1e845591e71f99ac12f9b5",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "32c033544e16562a91b0d37b00992670eb40b477",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "a6a2edcc9d9d72f3ba06b6744e39c207cd76a5e3",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "eaaa55d531cd53c835f7470cdc9fb6610464ee94",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "2cc032a29824b8cbb05db1455f63e35f9cd0d770",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "2cf2fa1444f7270a9fd8c746b7d0a52f882f5d86",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "b5506dfe29f70ee913c3eab8761ccc400108a03c",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "87e5c5bd0fc42555cfd80aea0270018090c2249e",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "e90bda0657c9cc7cddbec3ee4268c6bfcfb118e3",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "bca980656d1bdef479c6a219adac23005006d943",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "1f95c4155cab7c904c9e91e8d563e96325569b6e",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "d0c20f594667738b714a1f7786da82e0de70fbf5",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "a7bac4a4b0471daf68b48c012cfafe086e4cd498",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "38b66e286549429288098c4b2c4000fbfac8447e",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "26a54030be86bb93885de63630b1732787c31891",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "a105eb3d5ef81440b7bb8a18b088fd49e7958a9a",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "6d43b18491d6ae0388b5dfb7b0fad860f65fe745",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "63039f708e73ca46cc1dfbfa109e4ead84d1000a",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "e4d2a4a2a97246a73856754b2c4866d7f41d4875",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "18c57c720fc5a7672439ea45a5393a8c1ff40d1e",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "9210d54527ddfa63ebe75cd5b5daa0201902c674",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "00a00cb79c9f7edcc5e934fe3180db3b69f5231f",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "dfeb321bba6b838c931975edf1f1b45c66b1aed0",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "b290c272d9a238a2d942d83ece4d68180172db3e",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "3bbe636e23bdfa359d80e6851e0c37abbc860d4c",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "ebb0f00dbc5affaf863a250094ae7ac160c35e7c",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "a51da8244b6f9ec59ec05f81f1555f943d9506b2",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "1c21c3ae9c7991b73044fe16807b70d1cac61e0b",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "c0ed9d187906d202b9276a0750b3c377584cb75f",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "fdbd43c569feb4388302ddee0551d18edd39fadc",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "6a6d1364d8dc6d2d3c727e4ccd36353b731ab105",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        }
+      ],
+      "validation": "not_run",
+      "test_outcomes_inspected": false,
+      "dataset_split": "not_assigned"
+    },
+    {
+      "schema_version": 1,
+      "repo": "pallets/click",
+      "head_sha": "2247b35ea1c47c727d7a06e51fa280e12a863ff6",
+      "as_of": "2026-10-16T03:16:51.368915+00:00",
+      "window_start": "2026-01-16T03:16:51.368915+00:00",
+      "window_months": 9,
+      "commits_scanned": 399,
+      "candidate_count": 52,
+      "rejected_count": 347,
+      "unique_patch_candidates": 51,
+      "duplicate_patch_groups": [
+        [
+          "c3535905c77a29afc84861b29d3ad366ce5451bd",
+          "b7e5fd4cc7de70280eccd39f2bb956df617e5519"
+        ]
+      ],
+      "rejection_counts": {
+        "missing_source": 161,
+        "missing_tests": 192,
+        "requires_one_parent": 179,
+        "too_many_changed_lines": 117,
+        "too_many_source_files": 14
+      },
+      "rejection_counts_overlap": true,
+      "candidates": [
+        {
+          "fix_sha": "d8e987eae723fbb0ccc355d125d0e179a1bf5fd8",
+          "base_sha": "b6afbf05ea6dbc8a4e7cdd448dd345c783973137",
+          "parent_count": 1,
+          "commit_date": "2026-02-28T13:03:13+04:00",
+          "test_files": [
+            "tests/test_testing_logging.py"
+          ],
+          "source_files": [
+            "src/click/testing.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 48,
+          "stable_patch_id": "ca6c2bc31dcbd1aa7beb4f9a425819124a33ea33",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "d340b0c1202284a1b9d0ca892549208527d586ce",
+          "base_sha": "04ef3a6f473deb2499721a8d11f92a7d2c0912f2",
+          "parent_count": 1,
+          "commit_date": "2026-04-08T16:29:07+02:00",
+          "test_files": [
+            "tests/test_options.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 34,
+          "stable_patch_id": "8728af9649895017eb1258ba8e2a2985f88f2d43",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "6de212151893e4072ca21779b7b6f4cb82452f51",
+          "base_sha": "1339fd3323357119a9c7a6326c788f80295954ce",
+          "parent_count": 1,
+          "commit_date": "2026-04-09T14:46:44+02:00",
+          "test_files": [
+            "tests/test_defaults.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 59,
+          "stable_patch_id": "8ce2452f870b49f1a69198ef5fcfabdf74eabbc9",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "4f9086bf8fd98aca1d804bf742f4f1ceb6c12295",
+          "base_sha": "1339fd3323357119a9c7a6326c788f80295954ce",
+          "parent_count": 1,
+          "commit_date": "2026-04-09T16:23:44+02:00",
+          "test_files": [
+            "tests/test_testing.py"
+          ],
+          "source_files": [
+            "src/click/testing.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 100,
+          "stable_patch_id": "02374d75a2494847a91a9fc049c637748c194f0f",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "607316f9dea85ee81f8a215f5d5ae20f7f4fff71",
+          "base_sha": "878de46100e9c29aea9dab5b385b8116863cb5e3",
+          "parent_count": 1,
+          "commit_date": "2026-04-13T20:28:39+02:00",
+          "test_files": [
+            "tests/test_options.py",
+            "tests/test_termui.py"
+          ],
+          "source_files": [
+            "src/click/core.py",
+            "src/click/termui.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 44,
+          "stable_patch_id": "8b47d900f7d8727ceceedcd4fca1cb9c1943ea80",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "39413d9b1d782317e72e82ec09d437bef8359078",
+          "base_sha": "607316f9dea85ee81f8a215f5d5ae20f7f4fff71",
+          "parent_count": 1,
+          "commit_date": "2026-04-13T20:29:10+02:00",
+          "test_files": [
+            "tests/test_termui.py"
+          ],
+          "source_files": [
+            "src/click/termui.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 67,
+          "stable_patch_id": "a4edfa7ad9a200ee983a0ce606eda43cc3a59f22",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "8762c7752cf1632d082c76922b15fef06ac3a2f1",
+          "base_sha": "878de46100e9c29aea9dab5b385b8116863cb5e3",
+          "parent_count": 1,
+          "commit_date": "2026-04-14T09:55:10+02:00",
+          "test_files": [
+            "tests/test_testing.py"
+          ],
+          "source_files": [
+            "src/click/testing.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 143,
+          "stable_patch_id": "565ea65e6133086f330e9c01236059638eb0a39a",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "4e4c7a69b7953ccb8c14e92368ca65d9525f1d2b",
+          "base_sha": "f1f191ecd2c790b161187c78e7c88440e9524e5c",
+          "parent_count": 1,
+          "commit_date": "2026-04-21T13:05:06+02:00",
+          "test_files": [
+            "tests/test_options.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 111,
+          "stable_patch_id": "494ebeeebe2c473c0ddfd156dc94ec2b1f6befd8",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "1241abaed4e441582a21f4bf90c8482de02b92df",
+          "base_sha": "f1f191ecd2c790b161187c78e7c88440e9524e5c",
+          "parent_count": 1,
+          "commit_date": "2026-04-21T18:02:12+02:00",
+          "test_files": [
+            "tests/test_formatting.py"
+          ],
+          "source_files": [
+            "src/click/exceptions.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 77,
+          "stable_patch_id": "c8bd920c9357319ba17235151c47a6ab2b04aa28",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "e3c0898975a7e095a3f11fd2d13035872a55a3e5",
+          "base_sha": "f1f191ecd2c790b161187c78e7c88440e9524e5c",
+          "parent_count": 1,
+          "commit_date": "2026-04-22T12:04:22-07:00",
+          "test_files": [
+            "tests/test_defaults.py",
+            "tests/test_options.py",
+            "tests/test_termui.py",
+            "tests/test_types.py"
+          ],
+          "source_files": [
+            "examples/aliases/aliases.py",
+            "examples/repo/repo.py",
+            "src/click/core.py",
+            "src/click/parser.py",
+            "src/click/types.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 47,
+          "stable_patch_id": "606d3ae0f240c2866f07dcf70ef9e30b451c83d7",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "3a3e0350b6a2ea3e799440d48e779acabcf44de9",
+          "base_sha": "8bd8b4a074c55c03b6eb5666edc44a9c43df38a2",
+          "parent_count": 1,
+          "commit_date": "2026-04-27T16:55:53+02:00",
+          "test_files": [
+            "tests/test_defaults.py"
+          ],
+          "source_files": [
+            "docs/conf.py",
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 75,
+          "stable_patch_id": "636c046bde199a1092273afce6e47b161d5d1ccb",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "2468b70997a6ec27ced4b4867954c90da3f92075",
+          "base_sha": "ddede2147c9370ab8275f81db4826b6895d2e7dc",
+          "parent_count": 1,
+          "commit_date": "2026-04-30T00:20:22+01:00",
+          "test_files": [
+            "tests/test_utils.py"
+          ],
+          "source_files": [
+            "src/click/termui.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 95,
+          "stable_patch_id": "1e11243edb0740b54e050cc0253b9565bf078d01",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "19fd4d6e18bc9fce451f92f422696b11169faa57",
+          "base_sha": "c69643b60cf971cd5d8e5d3902632807ceab9b8f",
+          "parent_count": 1,
+          "commit_date": "2026-04-30T00:37:31+01:00",
+          "test_files": [
+            "tests/test_shell_completion.py"
+          ],
+          "source_files": [
+            "src/click/shell_completion.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 79,
+          "stable_patch_id": "733bc9af8ae90b8d8373bd63939ce804bfa39b2a",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "831c8f0948af519e45b90801d7430ff25451f972",
+          "base_sha": "19fd4d6e18bc9fce451f92f422696b11169faa57",
+          "parent_count": 1,
+          "commit_date": "2026-04-30T00:53:14+01:00",
+          "test_files": [
+            "tests/test_commands.py",
+            "tests/test_options.py"
+          ],
+          "source_files": [
+            "src/click/__init__.py",
+            "src/click/core.py",
+            "src/click/exceptions.py",
+            "src/click/parser.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 108,
+          "stable_patch_id": "ba64519f315589631793ee45cf78e16b19e2702e",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "fc6c7c47edd6110b6bd5a1a5297b2035214b0cd1",
+          "base_sha": "5b9630f50fde938b72ad8c99542efe3a6f5717e2",
+          "parent_count": 1,
+          "commit_date": "2026-05-08T15:47:47+02:00",
+          "test_files": [
+            "tests/test_types.py"
+          ],
+          "source_files": [
+            "src/click/types.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 36,
+          "stable_patch_id": "aa47ec921a9c08352345442017fb4a23ecedcd80",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "a09c1c655eef3d43181eb46036b66cf058d72df4",
+          "base_sha": "fc6c7c47edd6110b6bd5a1a5297b2035214b0cd1",
+          "parent_count": 1,
+          "commit_date": "2026-05-08T16:04:59+02:00",
+          "test_files": [
+            "tests/test_termui.py"
+          ],
+          "source_files": [
+            "src/click/termui.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 74,
+          "stable_patch_id": "282237e7ca72296e7f78e997ab64825029493942",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "0551bf53588ae87f462d336f24f853a156fefe3a",
+          "base_sha": "7c99ebe23b931f27562d926814423cce85fd9766",
+          "parent_count": 1,
+          "commit_date": "2026-05-16T08:39:31+02:00",
+          "test_files": [
+            "tests/test_formatting.py"
+          ],
+          "source_files": [
+            "src/click/formatting.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 128,
+          "stable_patch_id": "43fed046164bec3d665663ddd162aef7c6042483",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "a3321c9ca14ddb951f04ac981f275b0de2f46208",
+          "base_sha": "b8b9ffeb5d012f5d041685c81152636bf596cf72",
+          "parent_count": 1,
+          "commit_date": "2026-05-18T12:13:50-07:00",
+          "test_files": [
+            "tests/test_shell_completion.py"
+          ],
+          "source_files": [
+            "src/click/shell_completion.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 22,
+          "stable_patch_id": "6dba366759bb56cd29874d324fea82e47e5ffc30",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "d15f3c23a177e80c324e1ee9681c9449c31ac965",
+          "base_sha": "e0d1678ebc10cc663f2bc1973e0399b31415f8db",
+          "parent_count": 1,
+          "commit_date": "2026-05-18T14:01:46-07:00",
+          "test_files": [
+            "tests/test_utils.py"
+          ],
+          "source_files": [
+            "src/click/_compat.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 6,
+          "stable_patch_id": "c99a9bffe98da6a8959fc4a8c200b5aa213c9d13",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "32ae2acd3474a57d2450ea849545b2e1258bf76a",
+          "base_sha": "bee33141650ce7c91551f5fac9ebfb0c8fca473e",
+          "parent_count": 1,
+          "commit_date": "2026-05-18T16:43:31-07:00",
+          "test_files": [
+            "tests/test_shell_completion.py"
+          ],
+          "source_files": [
+            "src/click/types.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 8,
+          "stable_patch_id": "cbf968d6ab42e0f675556d9f86475af10049d0ac",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "0baa8db07736fc7ad3d3eed97d4c73b0059c63e1",
+          "base_sha": "7d05a59b9d46a415d85937630d1d812cf477f60a",
+          "parent_count": 1,
+          "commit_date": "2026-05-21T15:00:59+02:00",
+          "test_files": [
+            "tests/test_defaults.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 49,
+          "stable_patch_id": "e9ef4621aeeab249f8c12a5cb7e763507ac43641",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "4d3db84b251518e97299a38a5ca4bab3d01873a2",
+          "base_sha": "d42f15b71757de791a5781fb179fd972da9169f5",
+          "parent_count": 1,
+          "commit_date": "2026-05-21T15:43:31-07:00",
+          "test_files": [
+            "tests/test_utils.py"
+          ],
+          "source_files": [
+            "src/click/utils.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 23,
+          "stable_patch_id": "614095ce65bfed0aeeec0bb681cfc22f2ab7d920",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "becbde5cf416441627f779e8dd34e57738ee1c1f",
+          "base_sha": "a5f5aa6d4012d256ccca24638f2642fc371e9f77",
+          "parent_count": 1,
+          "commit_date": "2026-05-21T20:35:58-07:00",
+          "test_files": [
+            "tests/test_termui.py",
+            "tests/test_testing.py"
+          ],
+          "source_files": [
+            "src/click/_termui_impl.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 50,
+          "stable_patch_id": "a2e6ea4e21e5be187ab87b205f57bbf68941a2d2",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "c3535905c77a29afc84861b29d3ad366ce5451bd",
+          "base_sha": "bc36cd1a2b3bc18f401a98476154dbc5a2d212c9",
+          "parent_count": 1,
+          "commit_date": "2026-05-23T09:05:16+02:00",
+          "test_files": [
+            "tests/test_shell_completion.py"
+          ],
+          "source_files": [
+            "src/click/shell_completion.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 79,
+          "stable_patch_id": "e26fd8778ff76cc64e298877b2e08750a9ebf6b7",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "b7e5fd4cc7de70280eccd39f2bb956df617e5519",
+          "base_sha": "5b1aba82745cbde04c75e0bab995e5ddf0804196",
+          "parent_count": 1,
+          "commit_date": "2026-05-23T09:13:25+02:00",
+          "test_files": [
+            "tests/test_shell_completion.py"
+          ],
+          "source_files": [
+            "src/click/shell_completion.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 79,
+          "stable_patch_id": "e26fd8778ff76cc64e298877b2e08750a9ebf6b7",
+          "duplicate_of": "c3535905c77a29afc84861b29d3ad366ce5451bd"
+        },
+        {
+          "fix_sha": "ddf20d0673788ebe8ec28b6031a24a36cba92115",
+          "base_sha": "b7e5fd4cc7de70280eccd39f2bb956df617e5519",
+          "parent_count": 1,
+          "commit_date": "2026-05-23T10:14:55+02:00",
+          "test_files": [
+            "tests/test_shell_completion.py"
+          ],
+          "source_files": [
+            "src/click/shell_completion.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 20,
+          "stable_patch_id": "c1bca574591eb8368468294bac56dbc6580167e6",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "82f377c547e1867d073f02bb8f476214d07e245b",
+          "base_sha": "648d7c403829013ade629d63ddbfe808f6b2b770",
+          "parent_count": 1,
+          "commit_date": "2026-05-23T15:59:39+02:00",
+          "test_files": [
+            "tests/test_commands.py",
+            "tests/test_options.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 37,
+          "stable_patch_id": "812fdc31d5005ac1c1fe9070f6249634af4bca65",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "745464765a3fc9ddd5f9e445e5a2ca37efd63237",
+          "base_sha": "bc36cd1a2b3bc18f401a98476154dbc5a2d212c9",
+          "parent_count": 1,
+          "commit_date": "2026-05-23T07:31:27-07:00",
+          "test_files": [
+            "tests/test_utils.py"
+          ],
+          "source_files": [
+            "src/click/_compat.py",
+            "src/click/termui.py",
+            "src/click/utils.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 121,
+          "stable_patch_id": "dde3e51c48a257d9c456ce3794c65f385623c42e",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "7eb57cff7cd292fbd526eaf861c8f945ddeb07a3",
+          "base_sha": "1050d955ea5a219c72467ad832934ea80682b5fb",
+          "parent_count": 1,
+          "commit_date": "2026-05-27T09:53:09+02:00",
+          "test_files": [
+            "tests/test_stream_lifecycle.py",
+            "tests/test_utils.py"
+          ],
+          "source_files": [
+            "src/click/_compat.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 87,
+          "stable_patch_id": "75a33a4be8f8d9180626ccfd8a236fb47374de26",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "665736bc85a19a7a2357c071394b4a545617faa3",
+          "base_sha": "8240d25bdbb8c081b745199620b8f2fe03b10579",
+          "parent_count": 1,
+          "commit_date": "2026-05-27T11:25:42+02:00",
+          "test_files": [
+            "tests/test_arguments.py",
+            "tests/test_commands.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 73,
+          "stable_patch_id": "a0d701ad61be69a03d5b73c41ac3d6560ae6e47d",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "399919f740bfd26cb30d544877fafd03cfcd9091",
+          "base_sha": "ffcc7494c991c9197902fdf4995e11b2da3e9762",
+          "parent_count": 1,
+          "commit_date": "2026-05-29T16:51:37+02:00",
+          "test_files": [
+            "tests/test_termui.py"
+          ],
+          "source_files": [
+            "src/click/termui.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 45,
+          "stable_patch_id": "533942a0c31645805d390ac6e17df34a4601f4cc",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "051bb0f30b545cf7426deef819811815297c2798",
+          "base_sha": "cd9bdd96a9dcc8e4ecabd45b5c244dbc70034484",
+          "parent_count": 1,
+          "commit_date": "2026-06-03T16:44:52+05:00",
+          "test_files": [
+            "tests/test_termui.py"
+          ],
+          "source_files": [
+            "src/click/_termui_impl.py",
+            "src/click/utils.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 139,
+          "stable_patch_id": "42c22eb54a9875561bca56d8875307f1b8da0f61",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "762c97eef7c1b3779678992f26a553a2a8c80793",
+          "base_sha": "8929d392781c8113bc569f388c15c47b94f86581",
+          "parent_count": 1,
+          "commit_date": "2026-06-10T17:31:37+04:00",
+          "test_files": [
+            "tests/test_basic.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 49,
+          "stable_patch_id": "fc7a710ee7fdabfc98f5ee84cc0c0a10ad8e7d19",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "bec59289d8cf9b9b4010642b2fee483e5f8eeefc",
+          "base_sha": "916883afad450c0c9bbc4212817900949131adbd",
+          "parent_count": 1,
+          "commit_date": "2026-06-14T08:53:53+04:00",
+          "test_files": [
+            "tests/test_basic.py"
+          ],
+          "source_files": [
+            "src/click/decorators.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 121,
+          "stable_patch_id": "c1bd737287a4b0ed27c82e1df65cad980d80d792",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "6f85d26dcd50c1745e81040ed4f2b61f8bf293cf",
+          "base_sha": "df2e5ed8c4e89f51ff4eddb9600d913083613e62",
+          "parent_count": 1,
+          "commit_date": "2026-06-27T12:47:47+04:00",
+          "test_files": [
+            "tests/test_types.py"
+          ],
+          "source_files": [
+            "src/click/types.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 28,
+          "stable_patch_id": "2114e29b25912cf91ec544707398855c5e059590",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "93ba0075f4881b858b61f89a753c7c10e330027e",
+          "base_sha": "240603f240a9ff179d834fede836060d897c6980",
+          "parent_count": 1,
+          "commit_date": "2026-07-01T09:18:55+04:00",
+          "test_files": [
+            "tests/test_termui.py"
+          ],
+          "source_files": [
+            "src/click/termui.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 68,
+          "stable_patch_id": "e5aa71e9cd5668a6371ebf9252305be565e67d5d",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "9f9b149ea30287b4977b800a024ee68144b8c869",
+          "base_sha": "16fc00e2f4a2717a521084f193709a6058afc693",
+          "parent_count": 1,
+          "commit_date": "2026-07-07T15:23:33+02:00",
+          "test_files": [
+            "tests/test_basic.py"
+          ],
+          "source_files": [
+            "src/click/__init__.py",
+            "src/click/decorators.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 84,
+          "stable_patch_id": "c24eab6720d0e4f217820d4153bb3be06ac12d6f",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "07c909f23f0f83b5ca137c167b9a134d66201f67",
+          "base_sha": "7925a3410d7098c28cfca3b2baa6c852666bbd14",
+          "parent_count": 1,
+          "commit_date": "2026-07-08T16:46:39+02:00",
+          "test_files": [
+            "tests/test_utils/test_style.py"
+          ],
+          "source_files": [
+            "src/click/termui.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 103,
+          "stable_patch_id": "8a0f654d032d1611e2d62fe904b28e128544ae43",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "051725fa7e0c69effc9107066d8791c5b99242c3",
+          "base_sha": "7a0a3447f6ddd2c15438c5d098e289323f9f9556",
+          "parent_count": 1,
+          "commit_date": "2026-07-17T12:21:15-07:00",
+          "test_files": [
+            "tests/test_deprecations.py",
+            "tests/test_testing.py"
+          ],
+          "source_files": [
+            "src/click/__init__.py",
+            "src/click/utils.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 73,
+          "stable_patch_id": "4631b1e9ab15f95602acd2baa6fc3be702616d3d",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "0585f456baa6eeb2edbaab7c85fa796a004aef86",
+          "base_sha": "cfa01eeb7894a408af70b29d28c0b24f8680f9fb",
+          "parent_count": 1,
+          "commit_date": "2026-07-22T22:29:17+04:00",
+          "test_files": [
+            "tests/test_imports.py"
+          ],
+          "source_files": [
+            "src/click/termui.py",
+            "src/click/types.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 130,
+          "stable_patch_id": "d1c8e3928c2a1a8d095a4e6ce8bc74e4cdb67803",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "047adef258fc25566163ffc3efd14effc0ef7352",
+          "base_sha": "00e592cea702e0b2caa0dee42489fdb1c22cd845",
+          "parent_count": 1,
+          "commit_date": "2026-07-31T15:09:58+04:00",
+          "test_files": [
+            "tests/test_commands.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 67,
+          "stable_patch_id": "70e5cd884d89af49fcbebd265dbf557e8679d21c",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "a2ac5839f29f61cf7f3f229c67b97d07988e479b",
+          "base_sha": "9c4dfdaebe0e6b2aabc566eb81f6f10eb5cd6ea1",
+          "parent_count": 1,
+          "commit_date": "2026-08-13T13:19:47+04:00",
+          "test_files": [
+            "tests/test_termui.py"
+          ],
+          "source_files": [
+            "src/click/_termui_impl.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 78,
+          "stable_patch_id": "4ed84aa5b6cba7f2f3297cb6c0ae303787afd8a6",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "f316d5cb3aa89b57c14aee54da6ac9062ac5bec4",
+          "base_sha": "8b44edfff7d9a6c895fa804148c16b3a0bc9efb5",
+          "parent_count": 1,
+          "commit_date": "2026-08-15T11:14:23+04:00",
+          "test_files": [
+            "tests/test_termui.py"
+          ],
+          "source_files": [
+            "src/click/_termui_impl.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 43,
+          "stable_patch_id": "e06d08b92af68aa71ac698a4c17efd25efe12afa",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "1f9cd54f686eb343cec714230ad825ce972739ab",
+          "base_sha": "150d1071d69c5cdad7de78590013ffe56cf9e3bb",
+          "parent_count": 1,
+          "commit_date": "2026-08-15T23:24:13+04:00",
+          "test_files": [
+            "tests/test_termui.py"
+          ],
+          "source_files": [
+            "src/click/_termui_impl.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 72,
+          "stable_patch_id": "2f5f18bcbdc8c19c1f152cc32e82a9e5cd76a0cf",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "a1d87858abd77fa8e3ffc204670ccd75b96c4781",
+          "base_sha": "2103e157683c5e4cadc8ee1838df526a54bde9a4",
+          "parent_count": 1,
+          "commit_date": "2026-08-19T19:39:09+04:00",
+          "test_files": [
+            "tests/test_termui.py",
+            "tests/typing/typing_edit.py"
+          ],
+          "source_files": [
+            "src/click/_termui_impl.py",
+            "src/click/termui.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 58,
+          "stable_patch_id": "3af850a5d13fbda516491d4131e3f96eff48c037",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "f58ca3e81424a35626c8a475eb59ab95589008ce",
+          "base_sha": "420c8fb44eeadb537cae69d2fee3796e808558dd",
+          "parent_count": 1,
+          "commit_date": "2026-08-29T08:53:55+02:00",
+          "test_files": [
+            "tests/test_utils/test_sentinel.py"
+          ],
+          "source_files": [
+            "src/click/_utils.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 60,
+          "stable_patch_id": "80c652d2165b1d2b2b3e7857afa9df9430611882",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "271effb3d96da5575eb527216ce3552bd7628fab",
+          "base_sha": "be13b152cf5949a362926322c835fa76019cc6fe",
+          "parent_count": 1,
+          "commit_date": "2026-09-02T08:40:51+02:00",
+          "test_files": [
+            "tests/test_options.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 46,
+          "stable_patch_id": "48e5b352189f9112183eb7873227ec2d8baf0014",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "22177f857a34e3c35ba957553853a37f23feb37e",
+          "base_sha": "7944461a80b780d060899c8835acab3c273a04a6",
+          "parent_count": 1,
+          "commit_date": "2026-09-08T14:43:15+04:00",
+          "test_files": [
+            "tests/test_types/test_Path.py",
+            "tests/typing/typing_path.py"
+          ],
+          "source_files": [
+            "src/click/types.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 84,
+          "stable_patch_id": "6496f4c8a1cfdb01a255ea2f9437cad678f63a30",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "f25f697a439acc2b0d84aa8f5413330f4e2e75cf",
+          "base_sha": "86949d19b930ef68a45566544cb4b9508d895d0d",
+          "parent_count": 1,
+          "commit_date": "2026-09-10T12:18:39+04:00",
+          "test_files": [
+            "tests/test_arguments.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 108,
+          "stable_patch_id": "49f438e56c57ba83226ccbf39e2a49edc9aaed71",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "405a5481e4dbd5022799993d787bd8446137d9a3",
+          "base_sha": "86949d19b930ef68a45566544cb4b9508d895d0d",
+          "parent_count": 1,
+          "commit_date": "2026-09-10T13:05:45+04:00",
+          "test_files": [
+            "tests/test_info_dict.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 92,
+          "stable_patch_id": "277d8c4112356a8d2d93178f282e01ecf4cc991c",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "05f6fd0df4ecbd104eb7a229f9f185c2484dee69",
+          "base_sha": "f25f697a439acc2b0d84aa8f5413330f4e2e75cf",
+          "parent_count": 1,
+          "commit_date": "2026-09-10T13:11:43+04:00",
+          "test_files": [
+            "tests/test_arguments.py"
+          ],
+          "source_files": [
+            "src/click/core.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 37,
+          "stable_patch_id": "504ea55bcf91b8267d017c66b7584242699b81e7",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "f67c2bb6c2f055c1c7a57cd46c3697fc26a7742e",
+          "base_sha": "6d5bac5c712195cbfa9666ba0ecbf0573cdea356",
+          "parent_count": 1,
+          "commit_date": "2026-09-11T11:01:09+04:00",
+          "test_files": [
+            "tests/test_utils/test_make_default_short_help.py"
+          ],
+          "source_files": [
+            "src/click/utils.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 83,
+          "stable_patch_id": "022fdede659df861d7e9a0a9bc84a031f9d87833",
+          "duplicate_of": null
+        }
+      ],
+      "rejected": [
+        {
+          "fix_sha": "2247b35ea1c47c727d7a06e51fa280e12a863ff6",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "9f0bcdf0d868edfc71435cd0aac2dcc08cf94828",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "06b2a678741131fd577ce170e23e5ca0aeba0309",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "b90faad1788bc030bb3320938f07c9189f42d7d0",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a59f7c624fb7272e37d97921047dab8bf3ff0675",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "3cbaa76b6014be7427d1ab06b4af40f01e7c278e",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "bb695aaecdef95832d167fc1d508921745aa824e",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "70689853e39c30e36eb0d83d586cc914a74db9d3",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "d036881798e34289a49b18a5c550c7cf687e5a7a",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "e2bddbc801dabc4efc3c3c1e32b53b3f938d3efc",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "6d5bac5c712195cbfa9666ba0ecbf0573cdea356",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "86949d19b930ef68a45566544cb4b9508d895d0d",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "6aabf099bfdd4c1e75fe8d0e0d4241372b988ab1",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "7944461a80b780d060899c8835acab3c273a04a6",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "7ecc8d7ee4a2e5c0732d6551baeb7597b7a73ade",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "b8a4486d52083981babc1642449420db6b09662e",
+          "reasons": [
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "87f7a316f482d88d7ef45660da12cdcc5a5c14f6",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "00aca23ee9135eedc651c6929c7bc1d39e522431",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "fa99fbd7b96883c60275203b62914d3ce6d51010",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "be13b152cf5949a362926322c835fa76019cc6fe",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "bb86cdea6e83bc8e2711290eeffb4c8654baa7a3",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b0241232f775c45e28c5d5d4e9ea2fbc70b8448f",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "e5cb12ba5e81ca382062a4b513daddb535a576e3",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "cb43e055741b2416bf3ec46b5f84b140cca23e18",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "394088a09a210c152a4295e4a493ffdebd4c5047",
+          "reasons": [
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "00f257bb8e714064bea16425007543bbc0800445",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "b47c0529e99129d4785fecc2cb39a8ec8b4aa5f8",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c4597ed340477f3a69cfb8a9944149fab9d09b74",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "fc518e41218b447e875fe27244ae692c269bcb77",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "cbb5b2df1ee3492115f8c2ee5cbb09e2271fc714",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "94f17e276fbdd7348b88b05170923ecacb7b32bf",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "08a7bc6d2a2af02268b09b3b5fd8079546c81c03",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "4295457ddc7b5ca9a733d59ca40d9651b02b9b1d",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "3cbcf9b11546f4cf10b36d3e2e531733ba6fe001",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "ce57b87ac490ac8744491658d092bd86f571bf58",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "36baa15ff831b939a22bc527cd76ce653ef6f66d",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "dda8db496c69db15d5146d68360f140c2515d6d0",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "420c8fb44eeadb537cae69d2fee3796e808558dd",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "68e7ea7228ca144c52e4d1d282cc09da59f7771f",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "cc1e188bf5ac6267c2a2a81e7b2c8ad7e55d2862",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8b19813f2bfca99f1018a587a8cf54fc959f2e5d",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "2c8cd3ac958a7eb316d67f2d316c27086c4c0369",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "131c86aadddfa5cb6dca8339c9d6294c4eacb8ac",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "e1fd5946ab26aaf372009eaff1acf947140b40fb",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "2103e157683c5e4cadc8ee1838df526a54bde9a4",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a6256bfb5971d5e58585fe7b6c656134e1ade5a4",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "61b69e967e525bd502f5bf42def4d551e761fe0e",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "9835b0f7612d1b1ea180a975fd6d24cf16791ba8",
+          "reasons": [
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "f36d58bbd7f188178de2d4fe1d0292c510375ca7",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "bc32a92cd2ae77afb2352f79ebdf00997f35d333",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "cbd7a4109da16ce58f54c2a618b4c986e3041fcf",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "fc5c7f45da0a4443f60ba2d322fe4bf829977739",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "150d1071d69c5cdad7de78590013ffe56cf9e3bb",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "3ee9309b9c1804528842392c461526760bff0035",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8b44edfff7d9a6c895fa804148c16b3a0bc9efb5",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "9c4dfdaebe0e6b2aabc566eb81f6f10eb5cd6ea1",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "00e592cea702e0b2caa0dee42489fdb1c22cd845",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "0f4738df88e3ea47c40a4a442103596a61cfee79",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "5aa8ac43527f91c4c801a50b485c09576715d340",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "42235de05e38e3b9c9346662a3c6b6a36901b8a1",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "0c9e836c7c22f72492e82c448d1981b59a20795e",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "398f9154317f6c54bf98fe3359672ad5cb851585",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5e906a8afb67242dffdd91404dbf31f469054b15",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "10b43c211b825181cb81ef383e8091fd41750150",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "3b16957cba718a6d77ef680114de8e0830c436ba",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "cfa01eeb7894a408af70b29d28c0b24f8680f9fb",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "c2ed41490baa08002714ab79afa4a41f2d67c02c",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "8ee83ddbf5a7a4c2eac5308c9599c5ee67ee005e",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "fbdd434028fe07ecf35084c945b43b938dfd639f",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "333c28d79cd982990ee98eef61ec20ab1a4f38ba",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "7df2f82305f20f1611a9668b38d26933b648d807",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "7a0a3447f6ddd2c15438c5d098e289323f9f9556",
+          "reasons": [
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "b551fe85714c906565303fae98136d7c72b252ea",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "b3a191bf58db2a4bd13706981af78d41b7b5a056",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8f300853dc5f33120d9872ea0e4c9e00318446b1",
+          "reasons": [
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "b67832c2167e5b0ff6764a8c04a0a9087e697b5a",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a28d839d3e68bb81b77bcd862fb29e35dcf894f9",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "8c1a0a7abbc1c36f70d1f65f3604acc46c5ce6ab",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "71f2bafa541e7f798834e74076786ff4281ac83e",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "3495fba163dd61dea837cd557095df6c21515ac8",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "8a4ce842564ae94ab050062db8525196ad476c19",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "8dd4d60eb5ad4532abdd9b2809a7d9e2aa679b87",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c52f43c8ba734545b222af36ac35d87579031870",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "7925a3410d7098c28cfca3b2baa6c852666bbd14",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "ea811f9540a9117fd0edbfebb0589213bc9f7dc9",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a44e9f05edbfcea04b5ec91d4403976a50381c59",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "9ab346f6b57f2c99388b4e9db58a0961bc3027c8",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "47cc96fb1fcaca88f55c1937afc50ba518d0ca8a",
+          "reasons": [
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "700798252a509ca57bc7a12f7aa7fd67f9f8fd25",
+          "reasons": [
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "18400b2495347c684c8182f775b4aaec0838cc0e",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "1103c5cac2a9336dad3b4b5ce1a25a0bcff49ec0",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "182944f90a0103b87570dbc5a55eff873ca9a4c2",
+          "reasons": [
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a391797d00d2ef32ebc4fb0034462a2ec5e6d3d4",
+          "reasons": [
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "13f075c4bd2d1343eaac528994165750671da351",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "94c191ca6c9598865fc5672b85cf138845b337d5",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "445310365b3a0437d5e46bf57fa2a801b704c30d",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "16fc00e2f4a2717a521084f193709a6058afc693",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "fe3ad76e5807e7a401ed7520f051071c6ae1fa6e",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "8008ab93aa43c44a4008ac871571aa52ee0fffe1",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "6ec99f89261b32f8a50848786eca055e1967659f",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "30749b45c50f4811a3487fc9d11da2b7afc6007f",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "cbc676549ec50e391c75560a8e560f37aa3ab524",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "dbfb10aba610605dc646bf9374e888905366c545",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "240603f240a9ff179d834fede836060d897c6980",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "df2e5ed8c4e89f51ff4eddb9600d913083613e62",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "1ac08db953684e10ed97adbbda81381efd82ce09",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "27b3ee2633f80aeb04d6e15c2fb3c91542efa32b",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "b2e30a175449cfda909ee4fbf4a29a6a071cad53",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "679a7a0eccbdded7a6e85680bdaaf08003765e01",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "c4a6b57bb8a79556ceb6a91b1e756bbaf896ffae",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "748a34d01e0f4f2e5f75e293c1dd8480b16c2068",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "7a16b20e8a8a9bb57c7b4f6f15f60f6597478a49",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "916883afad450c0c9bbc4212817900949131adbd",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "09195f6a92972c4e1bbb5493686456e6ba624520",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "1557e265222c431b1e4d6c4dd6754006ed10dc02",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "d9ff13369ac78d9acff693faa79f26badd566ab3",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "8a1b1a33d739be05b7e91251e3c0dde77c5e152f",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "1ca1cea0f034f370bb6d95cfc9096031d017125a",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "4fc0e90e1c19faf82bc18f8551eb1ed78dc738ac",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "03d3b8a313f2676380f6a34a080b3ca09423082e",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "8929d392781c8113bc569f388c15c47b94f86581",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "237be507dbe3e653f6b41b3ea53266805534e8cd",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a0232a8ffc75269dd10af67881538b12bdf95a9c",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "832ca2231174bff71e0af600a52c1b18612573a2",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5ec03bdba195737aeb8f5b3d9625607c41a35236",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "4df304c658666f34a5ca4335ab0da15832f02f9e",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "cd9bdd96a9dcc8e4ecabd45b5c244dbc70034484",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "65feb6127e33ce6339e0c0ae230a90ea6b3772bc",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "e34e526e4e4738f3c75d4bf7c792de8d302cf4e7",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "9be25a239b5a664ce1ef0f0c20f8be614feeb342",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "e02a981c98cde14152ac38fe2b1d7daae7c37167",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "907470ea03e945fe712d49a3549747d91c72e094",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "534761cde3b1ae4877232c42feee063ca68f8480",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5eea580808f0b563a79066207dfcbf29669e3896",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c3041c6caf4deadf04c4eccf010ea59922d8007c",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "9b3fe6b8b43cd242cc200563dfd6425d51909f43",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "10f78cdb1df9874a8aa1757102ade4efa6a54732",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "a198674bc46e8c95801c78c6d65b88dc254bdc10",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "bff780ff9df7a8d0a271db2f80c17c7be32dc2a1",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "2b8ba4f57414b62b60ae481398547dfce1694248",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "ffcc7494c991c9197902fdf4995e11b2da3e9762",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "567d7e9220d6d6f52104ddbccd333d3f0c5b2d41",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "63ab153198cde6a39192fc5fed9d810f58344a79",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "9f9ae4538cea5ff672f6da51b2df184a4cd4304c",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c48021040a50c659b74e24ac2b11c9c9c6620a21",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "684b3f5b5150761ec1c930bef300eb6169f483d8",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "1a994adbb114d402275a614942e2f838a654e648",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "97210f24eb22399eb6db87d01bfef14f78862d01",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "8240d25bdbb8c081b745199620b8f2fe03b10579",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "88b8e313f7ec09ddd16f33bded0b4c39d7935f58",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "16bf6ccc6b401b2299b8db25d3698e8f18ac272a",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "1050d955ea5a219c72467ad832934ea80682b5fb",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "9830b602440a04576d6a4b19717fd15b5cf4efc5",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "e169e82a6550ec8577e692717db8cf3417795149",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "2b4d35bb8d83b220ae6f76e085c7501e76746e51",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "18c2451fd18a9aa1dd66534108290edfff68f109",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "29bacc773e817b2e49a75b6258399dc3e129b031",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "aef225df47377a1bc3d967327b501f577dd5462c",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "9207bdc073181b0699938a7d7b4d0b7dde23fe4f",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "ea76281c3f5ad062e9f24eb5deaa961ac6a5c0e7",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "bb0cd175d574a06fb4a5a7276ebe9570bb5c083d",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "d5da63588cdef9bf16596d40ea39d1e69954e4f5",
+          "reasons": [
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "e39679ab8d0cf0a8ce203a881c5ae7f44fadaebc",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "9a2d169fcf5c3cce7b0cd5971ca2786e1f72c210",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "77bd81f3f0c9d7fc8e1ca83f641c41489c508991",
+          "reasons": [
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "6a141c3681027e8124ce5a3c70e608dbbebffafb",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "3a40e43e8f61761cb7bd4f3e27ae3060690a84eb",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "648d7c403829013ade629d63ddbfe808f6b2b770",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "5b1aba82745cbde04c75e0bab995e5ddf0804196",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "af54674f806c85182c8dd1b08ea6dd85d7f18cde",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "aa5a8dab430d23f4a5e6f518052b40afca5d54d0",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "bc36cd1a2b3bc18f401a98476154dbc5a2d212c9",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a42300ab9eb032c986ad030fae65f1eb58518dae",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "7064ccf0dbcad268e8f86773003c594f9449c63a",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "6eeb50e948ea136db145280f6f5dd52eca3fa7e5",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "67921d5b71584112eebcbf89596b5f0e6d14c49f",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "too_many_source_files"
+          ]
+        },
+        {
+          "fix_sha": "9c41f46a4015700489ad009266edf1f3893d01d1",
+          "reasons": [
+            "missing_tests",
+            "too_many_source_files"
+          ]
+        },
+        {
+          "fix_sha": "6cb34774f20598aa288332f8da02c5aee85448a6",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5ee8e3123d8ddece6c47eff9a7a7d4ca478c4f37",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "a5f5aa6d4012d256ccca24638f2642fc371e9f77",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "d42f15b71757de791a5781fb179fd972da9169f5",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "7d05a59b9d46a415d85937630d1d812cf477f60a",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "4b24a6c8f6658ef89fd6db4dcaf8ee88eef75dfa",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "ac2cd072555905176955eaf33909ebbcbd94b827",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "dbf4d14c712750c31e15916b659925683150533b",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "9b327da8275bb63bd7bbd43ad8ff9862480da267",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "c6bf75fa74bff6523375cf91f97af0a7aae85fce",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "7fb117a9aeb82e0d5260b8935ab4a8bab6291aec",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "3c12ce7050bf63c9fa522e5d7b95543037da0f63",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "dfb15ee66a119e85def0bd69e39e64f69a883f2f",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "bee33141650ce7c91551f5fac9ebfb0c8fca473e",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "e0d1678ebc10cc663f2bc1973e0399b31415f8db",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "4e869f3a172a58df077932dc80b130cdf4ba9774",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "a9a218cd523dfc41743eeae7a94d1ba763b64b1e",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "b8b9ffeb5d012f5d041685c81152636bf596cf72",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "1bd3a8790932195e4bb891d1f213671ece258416",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "18879025d61fb6a23d68cbce70180264bd987ab8",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "0ab9d5d79bb816916140b2b7b13db3e263eb674b",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c0d16f32f06d21820fde7235817c1ba0f6273211",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "f49391b9c8565aa6f606ce77b4085866243966e2",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "8e1eafd71f042b745d936fb264accc9fcf28c3c6",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "c9e94136b39b1fad4a47ac0d4478fa372bd07ff8",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "37aa0c6568eb156749aea613dd78fe35bc5cfcef",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "613cb9a0c0b7ecf7455b3eefe7004c7839f2f231",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "0c694e006c3a17ad9897f557a7cc3cc107c81572",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "e364f8b362e0dec197d0991950bac0383120b371",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c938ac0a9602350463bcac02a075900f45400cf8",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "cd4674a6de725e1d7cac7ea7b6cd27ea68b4094c",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "41f410fb7528305d7e87c8cfa704f6c2456f57fc",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "e3e69e3bf8d749ac1a632f2ece4d38ec7f6588f5",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "3bb230dcd5d751f8605b46e9df5a541639d5fd4e",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "63274a79d08fdc5c19220696144489f7144a8547",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "fc41aa1d0b62494eb93e92ff3929601221e3abf4",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "b761eda3bad977ec2f485451d85fd8ec365f0bf4",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "98302ac4f49e443a48abd3fbb95c86202b89547d",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "dbdae170879d460e78963f8af35c5cb9c5b86e89",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "1aa2d53d63ff68bf14b35931177aac9270e39713",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "e94e8dc40da6fc3975fe4931ecd8ecbac87f7cc9",
+          "reasons": [
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "7c99ebe23b931f27562d926814423cce85fd9766",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "587e3cc7f4804a4fa62f3dab8839a6e1f8954d7c",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "d959898db264aaf07e70ad4eafa254286f9a5185",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "d65315cfc3577a0e9f1f4e77f8c9cebb0e570164",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "ba745ac64037b7d4cdd0abce10446c0a2861935f",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "84a42d35822ab3aa6607212fc993f37dced5e9ac",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "ec8226954e2657324e7a25fec6657e4fbde33bcb",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "98cba78d0a567eca8f19620a5cb3bcad3f63dbe5",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "3619563d9bf8763360d3f0d95eb76e43f26dea5e",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "843879880e94023317699ac2e85e5f7a44fb1b68",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "63daae27b124b717cffa8b458e1a0a43525f2b34",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "ad39d749be85af02bf191636062eef51323ad5ab",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "bd3b2d6b0fb1f186afb9a3ad72909f0b95392f67",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c040135a74180d65c97c66614f234ea89c337ceb",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "0039359443e73ab1034c63a1f6d58aba22c0ebc8",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "5dd4acdc7b8f99d29603404b3b8d25b1fe9e52e8",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "2fdde68324c386bd967b00ce422daa357432f7cd",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "cf1d891909fa19d40e7c60642b07a0f973a86320",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "0f71fe771ceefd5715b3b375c9b2e3a701c0648e",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "c943271a269e6941fcc51e3506ead074b9dda6be",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "279ce7b01666a57e61e94514b39312c02a3184d2",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "d946074a8fd4bd743dcde12e08e1561f062a2a68",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "61bdc2ae81f6d0dc19bd247504544659245df056",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "efd4daf3e3d9a5455d8045a16b1c73a9ef331104",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5b9630f50fde938b72ad8c99542efe3a6f5717e2",
+          "reasons": [
+            "missing_tests",
+            "too_many_source_files"
+          ]
+        },
+        {
+          "fix_sha": "73e155006526575548d143ef519995f540547e52",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "fed9049f7a07550d560a91b30c5b0b3e17d54981",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c69643b60cf971cd5d8e5d3902632807ceab9b8f",
+          "reasons": [
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "c5cced7b3096804567688df645194e3ed3dfa88b",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "ddede2147c9370ab8275f81db4826b6895d2e7dc",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "d2e4a42ff410d92e88293f3552422a4a284c749b",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "25edc1e31360efba4f64c8c3c540bbbcfb7876da",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "0cd28d6548f92e46396e0ffdd19ec5ea75b4b5e4",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "2d0490b12ceebb5c68a6aa7a9a7bb2a7ad522e86",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a34f960488e777ae795c41de7d33ae3c6edeb6fb",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8d3449517a97b6fd457a025bd9c3d2acfd301fa4",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "3ca8f96c7568ee8ec1ba604d603821d0762243f5",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b03f211e602d915f413068eba87ff08469b38477",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "cf93868770f48556d2caa0a19c65e36302a71c6f",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "235e03ee0cb8d575630427158393a9c6fce39b31",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c8da1fcc2cb4523c1fb5bef7f0ca82394dde1efd",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "a014796098fe79d61f8a78bc9dfd888adfd19c01",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "94004f1b5a4a982e8e33ef8d5f00cfb0e1dabddd",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8a2b48901a08b3d2ec3a9bbd151948a9765368c6",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "30a7f7c8e6cf40c1a09f22ac83377c6ae1d201b5",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "d5fbd32842da361cc9be8658d94a64e9cc417fb5",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "cf0c36d33734af1de9ecd5d3305970eb26ebba7f",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "ded5b692472629154ab5a2f63bd7cdd4deea3146",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "78a4efcdce1067566fa58771afbaeb18e2c1cf0f",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "3e2d92c590c34c92e116acdda71e7678ca50895e",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "6e981edefaeafa6c16b478dc131fba4d936024f1",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "8bd8b4a074c55c03b6eb5666edc44a9c43df38a2",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "5989375dc3953a5709c411e11f658c242319858e",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "d777956105fde08e01dd895dde2b86ccdf558d59",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c06d2d0a6aee6bcc50bd8257be2a4a592f4e75d0",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "f1f191ecd2c790b161187c78e7c88440e9524e5c",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "bb59ba0fd279ca085d1113f0499b6a602ca31081",
+          "reasons": [
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "32ac271a8c566945c6b60d8ee4c74f82284594cb",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "4a352253c9ff013e36d11e4a6820d36d00ff2cd4",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "c07bb936de43fd303f9cfbefe248ab23fd2199c8",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "c7e1ba8448cbcb2cdd9c1c7f4a592e863dcc3995",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "76552ff1e8c85837f911fc34037e702ae4327eda",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "ac5cec5fe54e5a691e7bac17f441ce9498e0744c",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "8c452e00e6772931b7071d9316b82b77e5b8f280",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "8c95c73bd5ef89eac638f85f1904a104ba4b1a32",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a683017931b5bcb211e18685fa623e968727aa3b",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "60cad4ad6583bf885c62d6f4597f3555d1ee1a0f",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "e3c87be8c1de04e8795f97aceabb6326e7342928",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a931cfd59a040c4caa8300b41fd6f698e0548bf3",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "89af4ae2d682e8ab9f14a036bad19e8990d828d4",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "32010b9e9a33fa4981de7052c1ae1a71770613ef",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a7d2a8d93fc4fd503877ea17ec9380dfe93af128",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "790ebd665ce03f25990e037b3e9f16951a2723aa",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "3da1f4390a74d6658c40a78393775d0d04b74175",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "c653ec820093ed1dda41aae8d35bff7834b0344a",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "878de46100e9c29aea9dab5b385b8116863cb5e3",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c8111c2de803e43b14538bc9603ef703ec884a83",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a5cb82f5df32a851a71ade3906e329f50b8cbc09",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "452935115a4073a074069d5428db998766886b8b",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "c9e60ee1b3565ccf6ef206c69dcda75d96bd5772",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "ac2dd7aadf08aa0ce7f75bf0e96b95ad5e62d1b9",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "b55294797ef32e22eb41e7d9657edb8faefa4976",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "1339fd3323357119a9c7a6326c788f80295954ce",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5df10013f7ed8bad94da1e82d58e3711eec1afb3",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "63ea71f9b0544b7c4ba21385a1164a7b29b17e42",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "1458800409ed12076f18451889b0857db36aa522",
+          "reasons": [
+            "requires_one_parent"
+          ]
+        },
+        {
+          "fix_sha": "b1bc8c9c1d531c6e95576d61637796fc3a5fd462",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b96c2601af4e01341b4d2c0db494ebee4aef8f42",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "b0cab0e3e1f87e5d641761bf38cbc568ce88d3cc",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "04ef3a6f473deb2499721a8d11f92a7d2c0912f2",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "feffea5ca2537ed36a1d699d3536a65c676fc5c1",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "a9e62f548af4934a109eae38b588a228102d7058",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "97b300c41b6b241570f598f387e2e018844be0f4",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "e4dbb3e8f4878a80a3a6b8380216f5f49eb7e6a7",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "052c006033729bbb422cbdad0c4fee988ecb5aa5",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "502b7ce7b131473ef00a3586e60bb000f33b4c43",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "a0a37e411820861d48e21b131fdd840abaf746e0",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "57be6fc2b40eb40279d022e6aabc983ee0dfb7a9",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "a1a5e8e2b86ceaf9a0dba56c26978a6c4fdb111f",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "a29ec1a2c1b3bd0c8090729e405335c3069bff27",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "de3e8a3fee4d79f8dc89378283b759bb77e30eee",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5aad9b6bba2a188212a6586a402f3017885e34cd",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "781d6a88bdd30229e72a84cd6753b0235f339679",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "ff795b66ba945239c779b528171f5fe4536cf844",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "dd87ef4f9fa7d6f13e14885e9a6842a21ededebc",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "93d3f9d22e90035bc2b51c2183c15bd4a021376f",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "3299ba1a8a5de34b24a7226a683a837d8a0857e7",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b7f62c4d002e5b5bca3ebef6b995b7338740fe6f",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "81efdc9da4c43d7474170c5bd7c74e910496faac",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "2be9c4c44b178449a70a37e6af18985dadfacedc",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b9a652b5c4f14e9b67e83584db54860cf3299a4e",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "d61103e28f04c99ceeef443e6612ab370cdd6436",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "0dee0ec42666b43f7fe77a537d7afcea05710667",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "014e24af5d82a521afa171c786f0412b809b594a",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "bb7be1f6a91f3fd1267d1a6d68771273d593f9c7",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "6c4a77ba24854dab793a8ff72110a0a24c403c9f",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "5850ef97230f84c74d0234ab0f30f23b398a6eee",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "546f2851f414b07413777ebcae89b2c21a685252",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "ae46cfd6bc997804893adc799589248eadcdbc29",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "777a89e232d5771141be545ff749a7ad2eaa5fc2",
+          "reasons": [
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "b6afbf05ea6dbc8a4e7cdd448dd345c783973137",
+          "reasons": [
+            "requires_one_parent",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "4538229259558c489d0ac0fbea8b1403db559c9f",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "fa7f035ab58dc4d9b8818b92fbc6a8f3c3234af6",
+          "reasons": [
+            "requires_one_parent",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "dacca25f9964d0e776b5481291e68c8ae90b5944",
+          "reasons": [
+            "requires_one_parent",
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "aaf99a3ee6935f321f755bc7c5717a91d321cd39",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "0480a56579de344bf40dcc40be8ec5ffc1b5fab3",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "94715dfeb1082605c7bec3b1e3b30c13ff637fed",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "74e542efe581abf5fa561993377cf3b6439fc7fc",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5590ef46e3c88261a76937836b1b0dd2822c27a2",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        }
+      ],
+      "validation": "not_run",
+      "test_outcomes_inspected": false,
+      "dataset_split": "not_assigned"
+    },
+    {
+      "schema_version": 1,
+      "repo": "python-attrs/attrs",
+      "head_sha": "ee66e7274852438cc23d4240a1a9cd632fda8b52",
+      "as_of": "2026-10-16T03:16:51.368915+00:00",
+      "window_start": "2026-01-16T03:16:51.368915+00:00",
+      "window_months": 9,
+      "commits_scanned": 111,
+      "candidate_count": 9,
+      "rejected_count": 102,
+      "unique_patch_candidates": 9,
+      "duplicate_patch_groups": [],
+      "rejection_counts": {
+        "missing_source": 83,
+        "missing_tests": 94,
+        "too_many_changed_lines": 23,
+        "too_many_source_files": 1
+      },
+      "rejection_counts_overlap": true,
+      "candidates": [
+        {
+          "fix_sha": "ce89f5d11feb0805da9ed10bb165238cc959f1bb",
+          "base_sha": "eccd966d80aff5196efc959316961cfa780439f9",
+          "parent_count": 1,
+          "commit_date": "2026-03-14T14:14:10+01:00",
+          "test_files": [
+            "tests/test_functional.py"
+          ],
+          "source_files": [
+            "src/attr/exceptions.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 21,
+          "stable_patch_id": "03f7199606fe2bef403642d3389fb9d0891b024f",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "af9c510912ce604a94896cc35c27368d5baf6ae6",
+          "base_sha": "ab7f8b2f4c0f747d5b1575247ce35e5adaad182e",
+          "parent_count": 1,
+          "commit_date": "2026-03-14T14:23:53Z",
+          "test_files": [
+            "tests/test_validators.py"
+          ],
+          "source_files": [
+            "src/attr/validators.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 21,
+          "stable_patch_id": "50d52431542c1546bb1ae07e08e077d5d98b4442",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "a572c3a4c558a8b9b48cf989fcd956ab1a279439",
+          "base_sha": "af9c510912ce604a94896cc35c27368d5baf6ae6",
+          "parent_count": 1,
+          "commit_date": "2026-03-14T15:33:41+01:00",
+          "test_files": [
+            "tests/test_setattr.py"
+          ],
+          "source_files": [
+            "src/attr/_make.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 13,
+          "stable_patch_id": "38b89c1be74df8f29769baf2303490ee9362181f",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "48b8611c27779811d161200e17de8da24aae7feb",
+          "base_sha": "3a68d4913221abc6f8ad3be50937f7ae49300a98",
+          "parent_count": 1,
+          "commit_date": "2026-03-14T17:51:51Z",
+          "test_files": [
+            "tests/test_make.py"
+          ],
+          "source_files": [
+            "src/attr/_make.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 48,
+          "stable_patch_id": "6b38e0b43b5cd2cd75ac3ecd294feeb347ee093f",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "0f758fe54a8742110f730ebbaf146e79f3937c8d",
+          "base_sha": "57b314c0dc8e0b80c0ed8f61c0be81965137ea41",
+          "parent_count": 1,
+          "commit_date": "2026-04-16T20:20:58Z",
+          "test_files": [
+            "tests/test_make.py"
+          ],
+          "source_files": [
+            "src/attr/_make.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 108,
+          "stable_patch_id": "9b29d67e2a353f3f229639e8aab35c089eb4a2f3",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "6851ab593cd25f3c14393e9355d57d22bec2a074",
+          "base_sha": "ca0f04585d3fb132c6e2f6baa9d7d966d8036760",
+          "parent_count": 1,
+          "commit_date": "2026-07-31T09:41:48Z",
+          "test_files": [
+            "tests/test_import.py"
+          ],
+          "source_files": [
+            "src/attr/__init__.py",
+            "src/attr/_compat.py",
+            "src/attr/_funcs.py",
+            "src/attr/_make.py",
+            "src/attrs/__init__.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 74,
+          "stable_patch_id": "fe49b17b3182106cf4e53569ff5e0f195096a976",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "97f8d175656bc03c373a1c9038048a4d312c307c",
+          "base_sha": "6851ab593cd25f3c14393e9355d57d22bec2a074",
+          "parent_count": 1,
+          "commit_date": "2026-07-31T13:28:06Z",
+          "test_files": [
+            "tests/test_annotations.py"
+          ],
+          "source_files": [
+            "src/attr/_make.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 20,
+          "stable_patch_id": "36806b9928e05a2967a364accc7df92a0c52958e",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "5aa76a4450c311d87eda43946ec0ecd743572649",
+          "base_sha": "f616f732c6c5f87a8f7a762176422baed250a6be",
+          "parent_count": 1,
+          "commit_date": "2026-08-01T12:40:48Z",
+          "test_files": [
+            "tests/test_validators.py"
+          ],
+          "source_files": [
+            "src/attr/validators.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 65,
+          "stable_patch_id": "e6db406e4df1d5d91b6e01e12987e37e4e360786",
+          "duplicate_of": null
+        },
+        {
+          "fix_sha": "f53fc5440d7f86aac4328aec7a563eb48634177f",
+          "base_sha": "f38b8a3f1625060aa4245930822c34c11c252f83",
+          "parent_count": 1,
+          "commit_date": "2026-08-02T13:46:58+02:00",
+          "test_files": [
+            "tests/test_functional.py"
+          ],
+          "source_files": [
+            "src/attr/_make.py"
+          ],
+          "has_binary": false,
+          "lines_changed": 20,
+          "stable_patch_id": "b392c6ef499302bbbaa937579488d0242c42d5a6",
+          "duplicate_of": null
+        }
+      ],
+      "rejected": [
+        {
+          "fix_sha": "ee66e7274852438cc23d4240a1a9cd632fda8b52",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8f76a5262b3b426bfb6a1127f12d49430d168c8b",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "0a08cee06960e415f735dec4cf2fb91d669e2433",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "644b4e165bfbeee7e127de6fcbda08b64014316f",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "a602f78ff670f22be90fb8aea501a6cc30e10fdd",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "bf47028ae4ec31975de7dfd389148756f15ee525",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "b0c79abeae3f3af1f6de5e900e36d6367bc944e2",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8f767776326faaed11e6c2974798787f6e19b343",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "764bf92a1c96abe4615b59f3e5a7b738b0340a94",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "dc1ca3892c0285f2a3980e1fd08d50728fd1eaec",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "30fd617c45854a5555550c9a0bf921bc3ee28786",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c1dc5dcba16ed827aa6dcad896b41a3afedb4e32",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "3bb6382a7ca4ebe681386e3c6b8106993a4d194f",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "1ea13ff576c14907280d080c33fa5d25f968f30e",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "51e8a602f3a5d9e1e0c3f8ccf014a3567a1f7c78",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "42f56c998ab1ec5883148913b29e89ec597692e5",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b6f6f76d77b48066812d8ebc87e68f5f891baff0",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "24cbcf1b543a7cbc67d74bc4a81602e81466c3fb",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "65c80d7ddf4ca87b9638334fc24e60080d3dcd9b",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "e43b1f9026d18a5ac227e7a7c65c7ccbf5d5e07f",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "58c8e9ade6fa4723199e9fd938e7130f079eb2cd",
+          "reasons": [
+            "missing_tests",
+            "too_many_source_files",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "1dcdab44344ffd121acd8b67448c0d1915bc17e0",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "5c2d9bef37913314101c912fcd95ae9e93ca503e",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "8ea85ef83fa086b2d4b6a1d3d683adca26dac6ca",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "f38b8a3f1625060aa4245930822c34c11c252f83",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "3e01de41b0efb9f51b92cc3372477be92033f4a8",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "29b608137636417fbfdb6586ca42b58a540f8077",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "21b5746de7d428efe190ad9b895f68eff5c67c20",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "9b98a730bf71cabae9bcedb8a3aac72289c23733",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "c1c1e0e25f855be68caf1d1a1dfa832a25acbf58",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "116681b67e3e3c82457df38a64908dbeec2669ea",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "f616f732c6c5f87a8f7a762176422baed250a6be",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "4b5b295bb815bf845fa3570bf63781a88212db40",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "d3a98cf05ab15769003dcca3eae91cdd6504b83b",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "79fb1645a17118666144ead131a88fdc8d8cd59f",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "446b8bf6fcb226d843d9e37b6591f3ace35701fd",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "676b43aef91374bbd10910993b8120b0a4adbfe0",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "557d997e8add985590403d9a2957027094b0013b",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "82b3073c282ba4d06d3c1f8c847b97ba0f3da644",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "27e741360a60f7be64f665934ba2b0d1b5f21d13",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c5baf90dbc3fdb23628ad59e92986c01bae57f4f",
+          "reasons": [
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "ca0f04585d3fb132c6e2f6baa9d7d966d8036760",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c27ba27258b314e8a03506a7677d47a699130b8f",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "3f0e0fd83d632c6186ec2347003d2e3701737507",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c54fa8b6a0f6a22a77e009dc33c9a8803d7c0c3f",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "0b9de0622a6f6b0a3c0264a46eb24f1288e2f2ec",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b56f28cc4bc4bbc59b6b367360ba46be2c40c315",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "92e12eae712ef88c1a7e322cc51b7cd9e271aa3c",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "4c438e0f92dc9a43480c10d9ecdab241bbede12a",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "f06ceaafbe5bdbdafad8a0c01a2daabb89386a42",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "358dec2c61e0213dd454a3240664cfb9924f3b56",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "0537788bacc6110ccabd235616e95ec4f72fa484",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "d544dd2dacb4cbd660891e323ad92751ba65b4e0",
+          "reasons": [
+            "missing_tests",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "45de9beb093d2142517ab7d1ebda6522e3d3c4ac",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "ae37edd71a691b8ca797a0a53d0248543abfe12b",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "b2fedf9a04238749db1ee416bd066a3c2b40b7fd",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "005e2fbe1a93a958946ba04aad0d8cf6e6d17d6a",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "0b20bd1def24f42feffc493e220fe5b91578120a",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "89fae8300f484544c1b7678cea5efe58c551fbb9",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "d2fbfccc1ce77dcc927a86eae9521c95dc4e289c",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "48ea7a120c841912195146a27223840612b2e861",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "24ce123bf0076d90391ee3b40c467927d604d558",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "512bd6d4d7e238a017673cd6b1e087d5544f1711",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "3823062f1296242fe1ac620834540ffae4eba488",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "69a9729a6879b37cee4930c85017da5dbc5fb6dd",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "87b7b4ae050cd75469c5d834172bce5299fa300b",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "57b314c0dc8e0b80c0ed8f61c0be81965137ea41",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "eca2ff52a9412feeafed50db1c4ed85a68a04ad7",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "834136e8f137d4dcc42b3c01f646a38df860ecd4",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "f0e420b71af1a5cd5dbf43efd1a42aece6ce8f4e",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "20734d9cc6e4673c40e4a33bfa2bfaef946533d8",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "9c2b7ed54b134dc1c3f0995fcb71131ebdd1450e",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "0cb5cd692b09e1e95993f7f3389b8664e53b1648",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "4885c5b1af4e9fa4d97b6bffa2fb78a2efa5f047",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "25b74d6a4274d938b1ef15a4df658ad5d2c92310",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "caae397b596cab0e58b23eb83de3894581033e1e",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "7bfc49e9b22d5ba25b6e429524c3d49fee27cb36",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "31e02869da10824b492c378c1dc87ccc720ee5ad",
+          "reasons": [
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "3a68d4913221abc6f8ad3be50937f7ae49300a98",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "ab7f8b2f4c0f747d5b1575247ce35e5adaad182e",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "eccd966d80aff5196efc959316961cfa780439f9",
+          "reasons": [
+            "missing_tests"
+          ]
+        },
+        {
+          "fix_sha": "e92fe52dfe1eb07167e6473724c5a8ada978add0",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "928465a09c508916a7ceb4655a9312accdcc5092",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "058d7324938085c7a7c09537c92d3980d68c643b",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "65964fc4acf0b03e8578464af04b3342a835303c",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "21a1028e2ff0566bc2a77d9c3f0741f02119ad26",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "f3bcc37c3d2dc3199715f825a86b748c3b3805f9",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "2173fc7049f7ea938b754e2563959d3c902dfaf4",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "390efdc41fcac3f6a51c9ed5bb2078c1f820d82f",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "853d78e34de57aa2ecedd933c1b83ee0781b88af",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "46354916414ae32050818fa5e7532f5fa72278db",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "384267d742ab817af7393e08fc72789eedc46dcf",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "6468b669abd8c5f00bf7866e7deb311f99800a8b",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "97432db1abbd8d58f1b9712efc6580b7f613f625",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "fb9ea679f92ae5c911a3fce644fff763da2ca02b",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "53e7a9c3d47ebe431e1c9ca18fda74902a189620",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "c44b8b0052ca3a4594219efa702129e1537d8966",
+          "reasons": [
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "e140354a11de334f14d5345b1ebbde4157e69def",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "587d15a000f3a889e1dbdd000087497e380f09b4",
+          "reasons": [
+            "missing_tests",
+            "missing_source",
+            "too_many_changed_lines"
+          ]
+        },
+        {
+          "fix_sha": "2d6da44be25395cdc96d71eee22fbe0c2d255448",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        },
+        {
+          "fix_sha": "175edec3d5d47604f5ca8a0ff83d22cad3888e0a",
+          "reasons": [
+            "missing_tests",
+            "missing_source"
+          ]
+        }
+      ],
+      "validation": "not_run",
+      "test_outcomes_inspected": false,
+      "dataset_split": "not_assigned"
+    }
+  ],
+  "total_candidates": 95,
+  "total_unique_patch_candidates": 94,
+  "validated_by_audit": 0
+}

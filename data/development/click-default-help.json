@@ -1,0 +1,100 @@
+{
+  "status": "validated_development_task",
+  "fail_to_pass": [
+    "tests/test_options.py::test_show_default_with_empty_string[non-string-comparable-object]"
+  ],
+  "pass_to_pass": [
+    "tests/test_options.py::test_show_default_string",
+    "tests/test_options.py::test_show_default_with_empty_string[empty-string]"
+  ],
+  "synthetic": false,
+  "split": "development_only",
+  "schema_version": 1,
+  "repo": "pallets/click",
+  "held_out_eligible": false,
+  "counts_toward_frozen_benchmark": false,
+  "base_sha": "04ef3a6f473deb2499721a8d11f92a7d2c0912f2",
+  "fix_sha": "d340b0c1202284a1b9d0ca892549208527d586ce",
+  "features": {
+    "files_changed": 2,
+    "lines_changed": 34
+  },
+  "test_scope": [
+    "tests/test_options.py::test_show_default_with_empty_string",
+    "tests/test_options.py::test_show_default_string"
+  ],
+  "runs": [
+    {
+      "stage": "base",
+      "repeat": 1,
+      "exit_code": 1,
+      "collected": 3,
+      "passed": [
+        "tests/test_options.py::test_show_default_string",
+        "tests/test_options.py::test_show_default_with_empty_string[empty-string]"
+      ],
+      "failed": [
+        "tests/test_options.py::test_show_default_with_empty_string[non-string-comparable-object]"
+      ],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "fix",
+      "repeat": 1,
+      "exit_code": 0,
+      "collected": 3,
+      "passed": [
+        "tests/test_options.py::test_show_default_string",
+        "tests/test_options.py::test_show_default_with_empty_string[empty-string]",
+        "tests/test_options.py::test_show_default_with_empty_string[non-string-comparable-object]"
+      ],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "base",
+      "repeat": 2,
+      "exit_code": 1,
+      "collected": 3,
+      "passed": [
+        "tests/test_options.py::test_show_default_string",
+        "tests/test_options.py::test_show_default_with_empty_string[empty-string]"
+      ],
+      "failed": [
+        "tests/test_options.py::test_show_default_with_empty_string[non-string-comparable-object]"
+      ],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "fix",
+      "repeat": 2,
+      "exit_code": 0,
+      "collected": 3,
+      "passed": [
+        "tests/test_options.py::test_show_default_string",
+        "tests/test_options.py::test_show_default_with_empty_string[empty-string]",
+        "tests/test_options.py::test_show_default_with_empty_string[non-string-comparable-object]"
+      ],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    }
+  ],
+  "elapsed_seconds": 3.984,
+  "patches": {
+    "test_patch": "diff --git a/tests/test_options.py b/tests/test_options.py\nindex e335f3c1a0857ba0c45b5ccc8b03fbfa6de6f085..85f6224596f4aff25495c08fbb9bf128474e0eb3 100644\n--- a/tests/test_options.py\n+++ b/tests/test_options.py\n@@ -1259,12 +1259,36 @@ def test_show_default_string(runner):\n     assert \"[default: (unlimited)]\" in message\n \n \n-def test_show_default_with_empty_string(runner):\n-    \"\"\"When show_default is True and default is set to an empty string.\"\"\"\n-    opt = click.Option([\"--limit\"], default=\"\", show_default=True)\n+class _StrictEq:\n+    \"\"\"Object whose ``__eq__`` raises on string comparison (like semver.Version).\"\"\"\n+\n+    def __eq__(self, other):\n+        if isinstance(other, str):\n+            raise ValueError(\"cannot compare to string\")\n+        return NotImplemented\n+\n+    def __str__(self):\n+        return \"strict\"\n+\n+\n+@pytest.mark.parametrize(\n+    (\"default\", \"expected\"),\n+    [\n+        (\"\", '[default: \"\"]'),\n+        (_StrictEq(), \"[default: strict]\"),\n+    ],\n+    ids=[\"empty-string\", \"non-string-comparable-object\"],\n+)\n+def test_show_default_with_empty_string(runner, default, expected):\n+    \"\"\"The empty-string check in help rendering must not break on objects\n+    whose ``__eq__`` raises for string operands.\n+\n+    Regression test for https://github.com/pallets/click/issues/3298.\n+    \"\"\"\n+    opt = click.Option([\"--limit\"], default=default, show_default=True)\n     ctx = click.Context(click.Command(\"cli\"))\n     message = opt.get_help_record(ctx)[1]\n-    assert '[default: \"\"]' in message\n+    assert expected in message\n \n \n def test_do_not_show_no_default(runner):\n",
+    "gold_patch": "diff --git a/src/click/core.py b/src/click/core.py\nindex f0a624be3be3703ec49e1a7202e9b5d320070283..6dc44f399bafbbe499c66c9416aea145ec5f0a71 100644\n--- a/src/click/core.py\n+++ b/src/click/core.py\n@@ -3110,7 +3110,7 @@ class Option(Parameter):\n                 )[1]\n             elif self.is_bool_flag and not self.secondary_opts and not default_value:\n                 default_string = \"\"\n-            elif default_value == \"\":\n+            elif isinstance(default_value, str) and default_value == \"\":\n                 default_string = '\"\"'\n             else:\n                 default_string = str(default_value)\n"
+  },
+  "upstream_license": "Copyright 2014 Pallets\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n1.  Redistributions of source code must retain the above copyright\n    notice, this list of conditions and the following disclaimer.\n\n2.  Redistributions in binary form must reproduce the above copyright\n    notice, this list of conditions and the following disclaimer in the\n    documentation and/or other materials provided with the distribution.\n\n3.  Neither the name of the copyright holder nor the names of its\n    contributors may be used to endorse or promote products derived from\n    this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A\nPARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nHOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED\nTO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR\nPROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF\nLIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\nNEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+  "snapshot_sha256": {
+    "base": "8f24846bc93316de2e159b85125eae1b58acffbb622457b7270e1a011f00f8d0",
+    "fix": "dae0aa4eb107792d0a16380a866fa7f1fae5776dde087df187dfda02aa2a090c"
+  }
+}

@@ -1,6 +1,44 @@
 # Progress
 
-Updated: 2026-10-16 (first real development task validated; model catalog rechecked 2026-10-15)
+Updated: 2026-10-16 (three-repository yield audit complete; model catalog rechecked 2026-10-15)
+
+## Candidate-yield audit — 2026-10-16
+
+- Added mine-audit: NUL-delimited batch Git history/numstats with pinned heads,
+  one captured UTC clock, nine-calendar-month window and ancestry-safe date
+  filtering. Reuses existing eligibility rules, reports overlapping rejection
+  reasons and computes stable patch IDs. No test outcomes or dataset split are
+  produced by the audit. Raw patches are hashed, not saved in the audit.
+- Saved data/yield-audit-2026-10-16.json, as of 03:16:51.368915 UTC, with 772
+  scanned commits: more-itertools 262, Click 399, attrs 111. Filter candidates
+  34/52/9 = 95; distinct patches 34/51/9 = 94. Exact Click duplicate pair is
+  recorded. These are candidate upper bounds, not validated task counts.
+- Reviewed one additional early candidate per repository. more-itertools
+  be5793a55f58ee29521d8cbc9f14019f5833454e validated with 2 fail-to-pass and
+  11 pass-to-pass tests, four offline containers, 9.515 s. Click
+  d340b0c1202284a1b9d0ca892549208527d586ce validated with 1 fail-to-pass and
+  2 pass-to-pass, four containers, 3.984 s. Both repeated consistently.
+- attrs af9c510912ce604a94896cc35c27368d5baf6ae6 collected zero tests, exit 4
+  at all four stages (3.437 s). Recorded rejected validation, not a regression
+  result. Reviewed conftest imports Hypothesis, absent from the pytest-only
+  image. No additional dependency was installed; attrs needs an environment.
+- Saved the three development records with SHA pairs/receipts/patches/licenses.
+  Added LICENSE.txt support to preserve Click's BSD-3-Clause notice and src/
+  support in the offline runner. Existing more-itertools uses MIT. Imported
+  pytest before adding repository source paths. No host repository execution.
+- Added data/development_exclusions.json for all four inspected commits,
+  including the prior bucket example and the rejected attrs attempt. All are
+  excluded from held-out evaluation. Remaining uninspected distinct metadata
+  pools: 32 more-itertools, 50 Click, 8 attrs; validation yield remains unknown.
+- Recommendation: prioritize Click bulk validation under frozen selection and
+  development-exclusion rules. G1 (40 validated benchmark tasks) is NOT passed.
+  No train/held-out split or preregistration was finalized in this step.
+- All 185 offline tests, Ruff, uv lock and whitespace checks passed. Credential
+  pattern scan checked 83 files with no real findings (known mock marker
+  excluded). All validation containers removed. Source caches remain ignored;
+  no API/model calls, payments, new host dependencies or external messages.
+- Local Docker acceptance for the hackathon track still needs organizer
+  confirmation. No organizer outreach was performed or approval claimed.
 
 ## First real development task — 2026-10-16
 
@@ -176,6 +214,10 @@ Updated: 2026-10-16 (first real development task validated; model catalog rechec
 - [Canonical Apache-2.0 text](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 ## Next
+- Prioritize the Click pool: 51 distinct metadata candidates, 50 after excluding
+  the inspected development example. Freeze construction/selection and exclude
+  all four inspected development commits before bulk validation/evaluation.
+  Do not equate a candidate or a single working sample with the 40-task gate.
 - Offline: assess candidate yield/environment requirements, then build history
   enumeration and dependency-compatible task validation. One real inspected
   example now works, but no held-out dataset, solver run or G1 yield claim exists.
@@ -333,7 +375,7 @@ Updated: 2026-10-16 (first real development task validated; model catalog rechec
 ## Measured numbers
 - Python: 3.12.7; uv: 0.13.0. Locked packages: 88, including optional resolutions;
   installed Day 1 packages: 31.
-- Tests: **169 passed** after first real-task validation. Ruff: **passed**.
+- Tests: **185 passed** after history yield audit and sample validation. Ruff: **passed**.
   uv lock check: **passed** during the scaffold milestone; dependencies unchanged.
 - Probe plan: **4 models × 4 variants = 16 sequential requests**.
 - Completion limit: **256 tokens**, reasoning-inclusive limit also set.
@@ -343,8 +385,10 @@ Updated: 2026-10-16 (first real development task validated; model catalog rechec
 - Actual paid inference calls: **0**. Actual provider spend: **$0**.
 - Live latency, tokens and throughput: **not measured**.
 - Validated benchmark tasks: **0**. End-to-end benchmark runs: **0**.
-- Real development-only tasks: **1**, with **1 fail-to-pass** and **9 pass-to-pass**
-  tests, repeated in **4 containers**, **6.312 seconds**. Excluded from held-out.
+- Real development-only tasks: **3 validated** across more-itertools/Click;
+  **1 attrs attempt rejected** (no tests collected). All four excluded from held-out.
+- Nine-month history audit: **772 commits**, **95 candidates**, **94 distinct
+  patches** (more-itertools 34, Click 51, attrs 9). **0 validated by the audit**.
 - Synthetic validation: **1 demo**, **4 container runs**, **2.672 seconds**.
   Regression failed twice before fix and passed twice after; existing test
   passed all four times. No skipped tests or collection/setup/teardown errors.

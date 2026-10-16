@@ -1,0 +1,76 @@
+{
+  "status": "rejected",
+  "fail_to_pass": [],
+  "pass_to_pass": [],
+  "synthetic": false,
+  "split": "development_only",
+  "schema_version": 1,
+  "repo": "python-attrs/attrs",
+  "held_out_eligible": false,
+  "counts_toward_frozen_benchmark": false,
+  "base_sha": "ab7f8b2f4c0f747d5b1575247ce35e5adaad182e",
+  "fix_sha": "af9c510912ce604a94896cc35c27368d5baf6ae6",
+  "features": {
+    "files_changed": 3,
+    "lines_changed": 21
+  },
+  "test_scope": [
+    "tests/test_validators.py::TestDisableValidators"
+  ],
+  "runs": [
+    {
+      "stage": "base",
+      "repeat": 1,
+      "exit_code": 4,
+      "collected": 0,
+      "passed": [],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "fix",
+      "repeat": 1,
+      "exit_code": 4,
+      "collected": 0,
+      "passed": [],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "base",
+      "repeat": 2,
+      "exit_code": 4,
+      "collected": 0,
+      "passed": [],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    },
+    {
+      "stage": "fix",
+      "repeat": 2,
+      "exit_code": 4,
+      "collected": 0,
+      "passed": [],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"
+    }
+  ],
+  "elapsed_seconds": 3.437,
+  "patches": {
+    "test_patch": "diff --git a/tests/test_validators.py b/tests/test_validators.py\nindex 9fd3f2dcbe6742f8434675632ffd2ccb7d37a2be..5ad2308eb89e6dfa8b0f6362969775b69c692fd6 100644\n--- a/tests/test_validators.py\n+++ b/tests/test_validators.py\n@@ -97,6 +97,22 @@ class TestDisableValidators:\n \n         assert _config._run_validators is True\n \n+    def test_disabled_ctx_nested(self):\n+        \"\"\"\n+        Nested contextmanagers restore correct state.\n+        \"\"\"\n+        assert _config._run_validators is True\n+\n+        with validator_module.disabled():\n+            assert _config._run_validators is False\n+\n+            with validator_module.disabled():\n+                assert _config._run_validators is False\n+\n+            assert _config._run_validators is False\n+\n+        assert _config._run_validators is True\n+\n \n class TestInstanceOf:\n     \"\"\"\n",
+    "gold_patch": "diff --git a/changelog.d/1513.change.md b/changelog.d/1513.change.md\nnew file mode 100644\nindex 0000000000000000000000000000000000000000..8cbc63c7754891d7b3dab97e603173909cbc91e0\n--- /dev/null\n+++ b/changelog.d/1513.change.md\n@@ -0,0 +1 @@\n+The `attrs.validators.disabled()` contextmanager can now be nested.\ndiff --git a/src/attr/validators.py b/src/attr/validators.py\nindex 837e003b6c2e5ce485d0b1cd19bfa398f18a8d18..0b1a294432d294c4f154be2d9439d825c3ec0781 100644\n--- a/src/attr/validators.py\n+++ b/src/attr/validators.py\n@@ -79,12 +79,14 @@ def disabled():\n         This context manager is not thread-safe!\n \n     .. versionadded:: 21.3.0\n+    .. versionchanged:: 26.1.0 The contextmanager is nestable.\n     \"\"\"\n+    prev = get_run_validators()\n     set_run_validators(False)\n     try:\n         yield\n     finally:\n-        set_run_validators(True)\n+        set_run_validators(prev)\n \n \n @attrs(repr=False, slots=True, unsafe_hash=True)\n"
+  },
+  "upstream_license": "The MIT License (MIT)\n\nCopyright (c) 2015 Hynek Schlawack and the attrs contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+  "snapshot_sha256": {
+    "base": "d815b6ad06625571deafdcd645915ce6bc64c09b33670dc9decf2cb138905e84",
+    "fix": "c0bcd9af4230ca7854a1232a3aa8efa98a009aad32f94ad2ff7d5cb3d9734cfe"
+  }
+}

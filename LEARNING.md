@@ -1,5 +1,15 @@
 # Learning log
 
+## Candidate yield is not task yield
+
+Our filters found 95 candidate commits across three repositories, but exact
+patch deduplication reduced that to 94. Tests must still establish a regression.
+Click's sample worked in the existing image; attrs collected no tests, so its
+environment failure cannot count as a failing bug test. Git dates also need UTC
+normalization and ancestry traversal that does not assume dates are monotonic.
+Inspected development examples stay out of held-out data, including rejected
+attempts. These distinctions prevent inflated benchmark and success claims.
+
 ## First real task: a falsey callable
 
 A callable object can evaluate as false and still be the intended validator.

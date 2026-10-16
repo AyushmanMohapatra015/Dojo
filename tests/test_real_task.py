@@ -142,3 +142,16 @@ def test_cli_refuses_to_overwrite_existing_file(tmp_path, monkeypatch):
 def test_origin_metadata_never_records_credentials(monkeypatch, tmp_path, remote, expected):
     monkeypatch.setattr(real_task, "git", lambda *args: remote.encode())
     assert real_task.github_origin_slug(tmp_path) == expected
+
+
+def test_license_txt_is_preserved_in_task_record(tmp_path, monkeypatch):
+    repo = tmp_path / "fixture"
+    create_demo(repo)
+    original = real_task.read_snapshot
+
+    def with_license(path, sha):
+        return {**original(path, sha), "LICENSE.txt": b"Synthetic BSD license notice"}
+
+    monkeypatch.setattr(real_task, "read_snapshot", with_license)
+    task = real_task.prepare_candidate(repo, "HEAD")
+    assert task["upstream_license"] == "Synthetic BSD license notice"

@@ -77,8 +77,10 @@ def prepare_candidate(repo: Path, revision: str) -> dict:
         patches[label] = git(repo, "diff", "--no-ext-diff", "--no-textconv", "--no-renames",
                              "--binary", "--full-index", facts["base_sha"], facts["fix_sha"],
                              "--", *paths).decode("utf-8")
+    license_text = next((fixed[name] for name in ("LICENSE", "LICENSE.txt", "LICENSE.rst",
+                                                 "LICENSE.md", "COPYING") if name in fixed), b"")
     return {"facts": facts, "snapshots": {"base": base_with_tests, "fix": fixed},
-            "patches": patches, "upstream_license": fixed.get("LICENSE", b"").decode("utf-8")}
+            "patches": patches, "upstream_license": license_text.decode("utf-8")}
 
 
 def judge_runs(runs: list[dict]) -> dict:

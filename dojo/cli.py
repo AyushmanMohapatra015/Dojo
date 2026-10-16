@@ -13,6 +13,7 @@ import yaml
 from dojo import __version__
 from dojo.mine.demo import create_demo
 from dojo.mine.git_mine import candidate_rejection_reasons, candidate_window, inspect_commit
+from dojo.mine.history import audit_history
 from dojo.mine.real_task import validate_candidate
 from dojo.mine.validate import validate_demo
 from dojo.solve.model import load_models, positive_decimal
@@ -180,6 +181,40 @@ def mine_validate(
     typer.echo(json.dumps(summary, indent=2))
     if report["status"] != "validated_development_task":
         raise typer.Exit(1)
+
+
+@app.command()
+def mine_audit(
+    repo: Annotated[list[Path], typer.Option(help="Repository roots; repeat for multiple repos.")],
+    output: Path | None = None,
+    window_months: Annotated[int, typer.Option(min=6, max=9)] = 9,
+):
+    """Count metadata candidates across history; never run tests or assign held-out data."""
+    try:
+        if output and output.exists():
+            raise FileExistsError("Choose a new output path")
+        if len({path.resolve() for path in repo}) != len(repo):
+            raise ValueError("Duplicate repositories")
+        as_of = datetime.now(UTC)
+        reports = [audit_history(path, as_of=as_of, window_months=window_months) for path in repo]
+        report = {"schema_version": 1, "as_of": as_of.isoformat(), "repositories": reports,
+                  "total_candidates": sum(row["candidate_count"] for row in reports),
+                  "total_unique_patch_candidates": sum(row["unique_patch_candidates"]
+                                                       for row in reports),
+                  "validated_by_audit": 0}
+        if output:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            with output.open("x", encoding="utf-8") as stream:
+                stream.write(json.dumps(report, indent=2) + "\n")
+    except (OSError, ValueError, TypeError, subprocess.SubprocessError):
+        typer.echo("History audit stopped; check repository roots and a new output path.", err=True)
+        raise typer.Exit(2)
+    typer.echo(json.dumps({"total_candidates": report["total_candidates"],
+                          "total_unique_patch_candidates": report["total_unique_patch_candidates"],
+                          "validated_by_audit": 0,
+                          "repositories": [{key: value for key, value in row.items()
+                                            if key not in {"candidates", "rejected"}}
+                                           for row in reports]}, indent=2))
 
 
 for _name in ("bench", "cascade", "reflect", "gate", "eval", "report"):
