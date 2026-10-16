@@ -1,0 +1,52 @@
+{
+  "status": "rejected",
+  "fail_to_pass": [],
+  "pass_to_pass": [],
+  "synthetic": false,
+  "split": "unassigned",
+  "schema_version": 1,
+  "repo": "pallets/click",
+  "held_out_eligible": true,
+  "counts_toward_frozen_benchmark": false,
+  "rejection_reason": "test_or_environment_failure",
+  "base_sha": "7944461a80b780d060899c8835acab3c273a04a6",
+  "fix_sha": "22177f857a34e3c35ba957553853a37f23feb37e",
+  "features": {
+    "files_changed": 4,
+    "lines_changed": 84
+  },
+  "test_scope": [
+    "tests/test_types/test_Path.py",
+    "tests/typing/typing_path.py"
+  ],
+  "runs": [
+    {
+      "stage": "base",
+      "repeat": 1,
+      "exit_code": 2,
+      "collected": 9,
+      "passed": [],
+      "failed": [],
+      "errors": [
+        "tests/typing/typing_path.py"
+      ],
+      "skipped": [],
+      "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875"
+    }
+  ],
+  "elapsed_seconds": 1.219,
+  "patches": {
+    "test_patch": "diff --git a/tests/test_types/test_Path.py b/tests/test_types/test_Path.py\nindex 7461cde8a7cc7df721c8c84bd0d620421d567fa8..09df7bcc4e3152083c0817ed8dfba85a88587be1 100644\n--- a/tests/test_types/test_Path.py\n+++ b/tests/test_types/test_Path.py\n@@ -4,6 +4,7 @@ import platform\n import subprocess\n import sys\n import tempfile\n+import typing as t\n \n import pytest\n \n@@ -183,3 +184,7 @@ def test_path_type(runner, cls, expect):\n     result = runner.invoke(cli, [\"a/b/c.txt\"], standalone_mode=False)\n     assert result.exception is None\n     assert result.return_value == expect\n+\n+\n+def test_path_converted_type_parameter_at_runtime():\n+    assert t.get_args(click.Path[pathlib.Path]) == (pathlib.Path,)\ndiff --git a/tests/typing/typing_path.py b/tests/typing/typing_path.py\nnew file mode 100644\nindex 0000000000000000000000000000000000000000..f12a5d9b05d342b49d3dcb3790dd4cc035e761c1\n--- /dev/null\n+++ b/tests/typing/typing_path.py\n@@ -0,0 +1,34 @@\n+import os\n+import pathlib\n+\n+from typing_extensions import assert_type\n+\n+import click\n+\n+# Without ``path_type``, ``convert`` returns the value it was given.\n+assert_type(click.Path().convert(\"a/b.txt\", None, None), str | bytes | os.PathLike[str])\n+assert_type(click.prompt(\"File\", type=click.Path()), str | bytes | os.PathLike[str])\n+\n+# ``path_type`` narrows the converted value's type for ``convert`` and ``prompt``.\n+assert_type(click.Path(path_type=str).convert(\"a/b.txt\", None, None), str)\n+assert_type(click.Path(path_type=bytes).convert(\"a/b.txt\", None, None), bytes)\n+assert_type(\n+    click.Path(path_type=pathlib.Path).convert(\"a/b.txt\", None, None), pathlib.Path\n+)\n+assert_type(click.prompt(\"File\", type=click.Path(path_type=str)), str)\n+assert_type(click.prompt(\"File\", type=click.Path(path_type=pathlib.Path)), pathlib.Path)\n+\n+assert_type(click.Path(path_type=pathlib.Path)(\"a/b.txt\"), pathlib.Path)\n+assert_type(click.Path(path_type=pathlib.Path)(None), None)\n+\n+# The class can be parameterized explicitly.\n+param_type: click.Path[pathlib.Path] = click.Path(exists=True, path_type=pathlib.Path)\n+assert_type(param_type.convert(\"a/b.txt\", None, None), pathlib.Path)\n+assert_type(param_type.coerce_path_result(\"a/b.txt\"), pathlib.Path)\n+\n+general: click.ParamType[str | bytes | os.PathLike[str]] = click.Path()\n+specific: click.ParamType[pathlib.Path] = click.Path(path_type=pathlib.Path)\n+\n+assert_type(\n+    click.Path(path_type=pathlib.Path)(pathlib.PurePosixPath(\"a/b.txt\")), pathlib.Path\n+)\n",
+    "gold_patch": "diff --git a/CHANGES.md b/CHANGES.md\nindex 7bdf90595cac8a299c03e3e155729b1459ae9a04..c23c7e30b768554e148fab42c0cd518a2cffe28c 100644\n--- a/CHANGES.md\n+++ b/CHANGES.md\n@@ -11,6 +11,8 @@ Unreleased\n   returns `None` for hidden options, so help screens are unchanged. {pr}`3821`\n - Document which types are inferred from `default`, and what an unrecognized\n   `type` callable does to a command-line value. {issue}`3036` {pr}`3808`\n+- `path_type` narrows the converted value's type for `convert` and `prompt`.\n+  {issue}`3822` {pr}`3858`\n \n ## Version 8.5.0\n \ndiff --git a/src/click/types.py b/src/click/types.py\nindex 0eb84621d3ceb92e240f1523e2e58d5951335633..b6e98a965a8fc136f9b1bc16ca7eb3616a21dc1c 100644\n--- a/src/click/types.py\n+++ b/src/click/types.py\n@@ -45,6 +45,17 @@ else:\n _FloatValueT = t.TypeVar(\"_FloatValueT\", bound=float)\n _FloatValueT_co = t.TypeVar(\"_FloatValueT_co\", bound=float, covariant=True)\n \n+if t.TYPE_CHECKING:\n+    _PathT_co = te.TypeVar(\n+        \"_PathT_co\", covariant=True, default=\"str | bytes | os.PathLike[str]\"\n+    )\n+elif sys.version_info >= (3, 13):\n+    _PathT_co = t.TypeVar(\n+        \"_PathT_co\", covariant=True, default=str | bytes | os.PathLike[str]\n+    )\n+else:\n+    _PathT_co = t.TypeVar(\"_PathT_co\", covariant=True)\n+\n \n class ParamTypeInfoDict(t.TypedDict):\n     param_type: str\n@@ -1045,7 +1056,7 @@ class PathInfoDict(ParamTypeInfoDict):\n     allow_dash: bool\n \n \n-class Path(ParamType[str | bytes | os.PathLike[str]]):\n+class Path(ParamType[_PathT_co, str | os.PathLike[str]], t.Generic[_PathT_co]):\n     \"\"\"The ``Path`` type is similar to the :class:`File` type, but\n     returns the filename instead of an open file. Various checks can be\n     enabled to validate the type of file and permissions.\n@@ -1068,6 +1079,9 @@ class Path(ParamType[str | bytes | os.PathLike[str]]):\n         ``None``, keep Python's default, which is ``str``. Useful to\n         convert to :class:`pathlib.Path`.\n \n+    .. versionchanged:: 8.5.1\n+        Reveal the actual type of the value as converted from raw input.\n+\n     .. versionchanged:: 8.1\n         Added the ``executable`` parameter.\n \n@@ -1099,7 +1113,7 @@ class Path(ParamType[str | bytes | os.PathLike[str]]):\n         readable: bool = True,\n         resolve_path: bool = False,\n         allow_dash: bool = False,\n-        path_type: type | None = None,\n+        path_type: type[_PathT_co] | None = None,\n         executable: bool = False,\n     ) -> None:\n         self.exists = exists\n@@ -1110,7 +1124,7 @@ class Path(ParamType[str | bytes | os.PathLike[str]]):\n         self.executable = executable\n         self.resolve_path = resolve_path\n         self.allow_dash = allow_dash\n-        self.type: type | None = path_type\n+        self.type: type[_PathT_co] | None = path_type\n \n         if self.file_okay and not self.dir_okay:\n             self.name = _(\"file\")\n@@ -1130,25 +1144,26 @@ class Path(ParamType[str | bytes | os.PathLike[str]]):\n             **super().to_info_dict(),\n         }\n \n-    def coerce_path_result(\n-        self, value: str | os.PathLike[str]\n-    ) -> str | bytes | os.PathLike[str]:\n-        if self.type is not None and not isinstance(value, self.type):\n-            if self.type is str:\n-                return os.fsdecode(value)\n-            elif self.type is bytes:\n-                return os.fsencode(value)\n+    def coerce_path_result(self, value: str | os.PathLike[str]) -> _PathT_co:\n+        path_type: type[t.Any] | None = self.type\n+        rv: t.Any = value\n+\n+        if path_type is not None and not isinstance(value, path_type):\n+            if path_type is str:\n+                rv = os.fsdecode(value)\n+            elif path_type is bytes:\n+                rv = os.fsencode(value)\n             else:\n-                return t.cast(\"os.PathLike[str]\", self.type(value))\n+                rv = path_type(value)\n \n-        return value\n+        return t.cast(\"_PathT_co\", rv)\n \n     def convert(\n         self,\n         value: str | os.PathLike[str],\n         param: Parameter | None,\n         ctx: Context | None,\n-    ) -> str | bytes | os.PathLike[str]:\n+    ) -> _PathT_co:\n         rv = value\n \n         dash = b\"-\" if isinstance(rv, bytes) else \"-\"\n"
+  },
+  "upstream_license": "Copyright 2014 Pallets\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n1.  Redistributions of source code must retain the above copyright\n    notice, this list of conditions and the following disclaimer.\n\n2.  Redistributions in binary form must reproduce the above copyright\n    notice, this list of conditions and the following disclaimer in the\n    documentation and/or other materials provided with the distribution.\n\n3.  Neither the name of the copyright holder nor the names of its\n    contributors may be used to endorse or promote products derived from\n    this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A\nPARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nHOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED\nTO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR\nPROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF\nLIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\nNEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+  "snapshot_sha256": {
+    "base": "942a36a5ad2006885af3078d73ee778b7b4d4ff528480f883bb810f7f64c4f63",
+    "fix": "cb7bb33c399c8d24220ec31b9e2b0a9de7602ebe67df119916a520e868a94b78"
+  },
+  "task_id": "click_22177f857a34",
+  "selection_id": "fa5823dac74c3563410a4ec525933e169654357bbe3c4c2223f156b060c51160",
+  "registration_commit": "3854f0cb6c2697fd1054c550184a342ba8765c56",
+  "commit_date": "2026-09-08T14:43:15+04:00",
+  "record_sha256": "8b1b574fda94890e61b529a5785db4295f1c7e03f0d427b6be8af275dc475775"
+}

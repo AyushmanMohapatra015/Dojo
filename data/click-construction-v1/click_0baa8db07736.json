@@ -1,0 +1,93 @@
+{
+  "status": "rejected",
+  "fail_to_pass": [],
+  "pass_to_pass": [],
+  "synthetic": false,
+  "split": "unassigned",
+  "schema_version": 1,
+  "repo": "pallets/click",
+  "held_out_eligible": true,
+  "counts_toward_frozen_benchmark": false,
+  "rejection_reason": "base_did_not_fail",
+  "base_sha": "7d05a59b9d46a415d85937630d1d812cf477f60a",
+  "fix_sha": "0baa8db07736fc7ad3d3eed97d4c73b0059c63e1",
+  "features": {
+    "files_changed": 4,
+    "lines_changed": 49
+  },
+  "test_scope": [
+    "tests/test_defaults.py"
+  ],
+  "runs": [
+    {
+      "stage": "base",
+      "repeat": 1,
+      "exit_code": 0,
+      "collected": 43,
+      "passed": [
+        "tests/test_defaults.py::test_basic_defaults[0-type5-False-bool]",
+        "tests/test_defaults.py::test_basic_defaults[1.5-type2-1.5-str]",
+        "tests/test_defaults.py::test_basic_defaults[1.5-type3-1.5-float]",
+        "tests/test_defaults.py::test_basic_defaults[42-type0-42.0-float]",
+        "tests/test_defaults.py::test_basic_defaults[42-type1-42-int]",
+        "tests/test_defaults.py::test_basic_defaults[true-type4-True-bool]",
+        "tests/test_defaults.py::test_default_map_nargs[default_map0-option_kwargs0-cli_args0-expected0]",
+        "tests/test_defaults.py::test_default_map_nargs[default_map1-option_kwargs1-cli_args1-expected1]",
+        "tests/test_defaults.py::test_default_map_nargs[default_map2-option_kwargs2-cli_args2-expected2]",
+        "tests/test_defaults.py::test_default_map_nargs[default_map3-option_kwargs3-cli_args3-expected3]",
+        "tests/test_defaults.py::test_default_map_nargs[default_map4-option_kwargs4-cli_args4-expected4]",
+        "tests/test_defaults.py::test_default_map_source[args0-default_map0-cli-COMMANDLINE]",
+        "tests/test_defaults.py::test_default_map_source[args1-default_map1-mapped-DEFAULT_MAP]",
+        "tests/test_defaults.py::test_default_map_source[args2-default_map2-None-DEFAULT_MAP]",
+        "tests/test_defaults.py::test_default_map_source[args3-default_map3--DEFAULT_MAP]",
+        "tests/test_defaults.py::test_default_map_source[args4-default_map4-0-DEFAULT_MAP]",
+        "tests/test_defaults.py::test_default_map_source[args5-None-original-DEFAULT]",
+        "tests/test_defaults.py::test_default_map_with_callable_flag_value[None-args0-_Marker]",
+        "tests/test_defaults.py::test_default_map_with_callable_flag_value[None-args1-_Marker]",
+        "tests/test_defaults.py::test_default_map_with_callable_flag_value[default_map2-args2-from-map]",
+        "tests/test_defaults.py::test_default_map_with_callable_flag_value[default_map3-args3-lazy-map]",
+        "tests/test_defaults.py::test_default_map_with_callable_flag_value[default_map4-args4-None]",
+        "tests/test_defaults.py::test_default_map_with_callable_flag_value[default_map5-args5-_Marker]",
+        "tests/test_defaults.py::test_flag_default_map",
+        "tests/test_defaults.py::test_flask_debug_env_not_stomped_by_default_flag",
+        "tests/test_defaults.py::test_lookup_default_callable_in_default_map",
+        "tests/test_defaults.py::test_lookup_default_override_respected",
+        "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[None-anything-None]",
+        "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map0-email-a@b.com]",
+        "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map1-nonexistent-None]",
+        "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map3-anything-None]",
+        "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map4-key-None]",
+        "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map5-key-0]",
+        "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map6-key-]",
+        "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map7-key-False]",
+        "tests/test_defaults.py::test_multiple_defaults",
+        "tests/test_defaults.py::test_multiple_flag_default",
+        "tests/test_defaults.py::test_nargs_plus_multiple",
+        "tests/test_defaults.py::test_parameter_source_during_eager_callback",
+        "tests/test_defaults.py::test_parameter_source_during_paramtype_convert",
+        "tests/test_defaults.py::test_parameter_source_on_parse_result_bypass",
+        "tests/test_defaults.py::test_shared_param_prefers_first_default",
+        "tests/test_defaults.py::test_unset_in_default_map"
+      ],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875"
+    }
+  ],
+  "elapsed_seconds": 1.25,
+  "patches": {
+    "test_patch": "diff --git a/tests/test_defaults.py b/tests/test_defaults.py\nindex 88b3e01d8fd286d72253a5a729c8538a73e24459..d7c1d80993e16e5963ec87ed9c08e6aa5c15dd0e 100644\n--- a/tests/test_defaults.py\n+++ b/tests/test_defaults.py\n@@ -388,6 +388,33 @@ def test_flask_debug_env_not_stomped_by_default_flag(runner, monkeypatch):\n     assert result.output.strip() == \"APP_DEBUG=0\"\n \n \n+def test_parameter_source_on_parse_result_bypass(runner):\n+    \"\"\"A losing option keeps its provisional source when ``ctx.params[name]``\n+    is populated by code that bypassed ``handle_parse_result``.\n+\n+    This replicate the pattern documented in the \"Parameter Modifications\" section\n+    of ``docs/advanced.md``. This test highlight the current behavior of\n+    ``get_parameter_source()`` but is not intended as a contract enforcement.\n+    \"\"\"\n+\n+    def hijack(ctx, param, value):\n+        ctx.params[\"target\"] = \"hijacked\"\n+        return value\n+\n+    @click.command()\n+    @click.option(\"--hijacker\", is_eager=True, callback=hijack, expose_value=False)\n+    @click.option(\"--target\", default=\"default_value\")\n+    @click.pass_context\n+    def cli(ctx, target):\n+        source = ctx.get_parameter_source(\"target\")\n+        click.echo(f\"value={target} source={source.name if source else 'None'}\")\n+\n+    result = runner.invoke(cli, [\"--hijacker\", \"anything\"])\n+    assert result.exit_code == 0, result.output\n+    assert \"value=hijacked\" in result.output\n+    assert \"source=DEFAULT\" in result.output\n+\n+\n def test_lookup_default_override_respected(runner):\n     \"\"\"A subclass override of ``lookup_default()`` should be called by Click\n     internals, not bypassed by a private method.\n",
+    "gold_patch": "diff --git a/CHANGES.rst b/CHANGES.rst\nindex 23459bd83b275d5dff8887af4d0b7c4064d27715..eb32cd87d1c6188efb4015401c16b14fbbfc5e91 100644\n--- a/CHANGES.rst\n+++ b/CHANGES.rst\n@@ -6,12 +6,11 @@ Version 8.4.1\n Unreleased\n \n -   ``get_parameter_source()`` is available during eager callbacks and type\n-    conversion again. :issue:`3458`\n+    conversion again. :issue:`3458` :issue:`3484`\n -   Zsh completion scripts parse correctly on Windows. :issue:`3277`\n -   Shell completion of `Choice` `Enum` values produces a valid completion\n     result. :issue:`3015`\n \n-\n Version 8.4.0\n -------------\n \ndiff --git a/docs/advanced.md b/docs/advanced.md\nindex 45e36ef753d4f52c2e7e3bc5fafba04780955ba7..889f5b4103c0e0a5025db66e3ef44f673a2b14b5 100644\n--- a/docs/advanced.md\n+++ b/docs/advanced.md\n@@ -144,8 +144,18 @@ it's good to know that the system works this way.\n             click.echo(f\"{url}: {fp.code}\")\n \n In this case the callback returns the URL unchanged but also passes a\n-second `fp` value to the callback. What's more recommended is to pass\n-the information in a wrapper, however:\n+second `fp` value to the callback.\n+\n+.. caution::\n+\n+   Writing to :attr:`~click.Context.params` directly bypasses Click's\n+   per-parameter pipeline: :meth:`~click.Context.get_parameter_source` returns\n+   ``None`` for it, the value is never run through any :class:`~click.ParamType`\n+   conversion. And if the key collides with a declared parameter, then the\n+   shared-name arbitration loses information about where the value came from.\n+   Prefer the wrapper pattern below when any of those semantics matter.\n+\n+What's more recommended is to pass the information in a wrapper, however:\n \n .. click:example::\n \ndiff --git a/src/click/core.py b/src/click/core.py\nindex 3944bb44036b14d6f10165398e262c6c0f5ca9aa..bf6c813aacbabbe20426d57e9bd2b63df792b01c 100644\n--- a/src/click/core.py\n+++ b/src/click/core.py\n@@ -2665,7 +2665,10 @@ class Parameter(ABC):\n         elif existing_source is not None:\n             # Lost arbitration; restore the winning option's source.\n             ctx.set_parameter_source(self.name, existing_source)\n-        # else: keep the provisional source recorded before process_value.\n+        # else: ctx.params[self.name] was populated by code that bypassed\n+        # handle_parse_result (from another option's callback for example). Keep\n+        # the provisional source recorded before process_value so downstream\n+        # lookups don't return ``None``.\n \n         return value, args\n \n"
+  },
+  "upstream_license": "Copyright 2014 Pallets\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n1.  Redistributions of source code must retain the above copyright\n    notice, this list of conditions and the following disclaimer.\n\n2.  Redistributions in binary form must reproduce the above copyright\n    notice, this list of conditions and the following disclaimer in the\n    documentation and/or other materials provided with the distribution.\n\n3.  Neither the name of the copyright holder nor the names of its\n    contributors may be used to endorse or promote products derived from\n    this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A\nPARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nHOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED\nTO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR\nPROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF\nLIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\nNEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+  "snapshot_sha256": {
+    "base": "52bb552a3b5789daed17bce9eeca4ce569b49f14d41376082880cc0c94ff4532",
+    "fix": "0d1f5073a714d7676a8f83ef515ee2051fa7572d1ddcef950928dd9a8a56e29b"
+  },
+  "task_id": "click_0baa8db07736",
+  "selection_id": "fa5823dac74c3563410a4ec525933e169654357bbe3c4c2223f156b060c51160",
+  "registration_commit": "3854f0cb6c2697fd1054c550184a342ba8765c56",
+  "commit_date": "2026-05-21T15:00:59+02:00",
+  "record_sha256": "2b1b72596f1e306216ba58e0b419840ff4bba8cf87a828b7ff97ba4dfd3164fc"
+}

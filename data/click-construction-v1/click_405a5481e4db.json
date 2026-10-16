@@ -1,0 +1,88 @@
+{
+  "status": "rejected",
+  "fail_to_pass": [],
+  "pass_to_pass": [],
+  "synthetic": false,
+  "split": "unassigned",
+  "schema_version": 1,
+  "repo": "pallets/click",
+  "held_out_eligible": true,
+  "counts_toward_frozen_benchmark": false,
+  "rejection_reason": "base_did_not_fail",
+  "base_sha": "86949d19b930ef68a45566544cb4b9508d895d0d",
+  "fix_sha": "405a5481e4dbd5022799993d787bd8446137d9a3",
+  "features": {
+    "files_changed": 3,
+    "lines_changed": 92
+  },
+  "test_scope": [
+    "tests/test_info_dict.py"
+  ],
+  "runs": [
+    {
+      "stage": "base",
+      "repeat": 1,
+      "exit_code": 0,
+      "collected": 38,
+      "passed": [
+        "tests/test_info_dict.py::test_argument_to_info_dict_nargs",
+        "tests/test_info_dict.py::test_command[Command]",
+        "tests/test_info_dict.py::test_command[Group]",
+        "tests/test_info_dict.py::test_command[Nested Group]",
+        "tests/test_info_dict.py::test_command_to_info_dict_multiple_arguments",
+        "tests/test_info_dict.py::test_context",
+        "tests/test_info_dict.py::test_param_to_info_dict_deprecated_help[custom-label-argument]",
+        "tests/test_info_dict.py::test_param_to_info_dict_deprecated_help[custom-label-option]",
+        "tests/test_info_dict.py::test_param_to_info_dict_deprecated_help[help-argument]",
+        "tests/test_info_dict.py::test_param_to_info_dict_deprecated_help[help-option]",
+        "tests/test_info_dict.py::test_param_to_info_dict_deprecated_help[no-help-argument]",
+        "tests/test_info_dict.py::test_param_to_info_dict_deprecated_help[no-help-option]",
+        "tests/test_info_dict.py::test_param_to_info_dict_help[None-argument]",
+        "tests/test_info_dict.py::test_param_to_info_dict_help[None-option]",
+        "tests/test_info_dict.py::test_param_to_info_dict_help[empty-argument]",
+        "tests/test_info_dict.py::test_param_to_info_dict_help[empty-option]",
+        "tests/test_info_dict.py::test_param_to_info_dict_help[multi-line-argument]",
+        "tests/test_info_dict.py::test_param_to_info_dict_help[multi-line-option]",
+        "tests/test_info_dict.py::test_param_to_info_dict_help[single-line-argument]",
+        "tests/test_info_dict.py::test_param_to_info_dict_help[single-line-option]",
+        "tests/test_info_dict.py::test_parameter[Argument]",
+        "tests/test_info_dict.py::test_parameter[Bool ParamType]",
+        "tests/test_info_dict.py::test_parameter[Choice ParamType]",
+        "tests/test_info_dict.py::test_parameter[DateTime ParamType]",
+        "tests/test_info_dict.py::test_parameter[FLOAT ParamType]",
+        "tests/test_info_dict.py::test_parameter[File ParamType]",
+        "tests/test_info_dict.py::test_parameter[Flag Option]",
+        "tests/test_info_dict.py::test_parameter[FloatRange ParamType]",
+        "tests/test_info_dict.py::test_parameter[Func ParamType]",
+        "tests/test_info_dict.py::test_parameter[INT ParamType]",
+        "tests/test_info_dict.py::test_parameter[IntRange ParamType]",
+        "tests/test_info_dict.py::test_parameter[Option]",
+        "tests/test_info_dict.py::test_parameter[Path ParamType]",
+        "tests/test_info_dict.py::test_parameter[STRING ParamType]",
+        "tests/test_info_dict.py::test_parameter[Tuple ParamType]",
+        "tests/test_info_dict.py::test_parameter[UNPROCESSED ParamType]",
+        "tests/test_info_dict.py::test_parameter[UUID ParamType]",
+        "tests/test_info_dict.py::test_paramtype_no_name"
+      ],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875"
+    }
+  ],
+  "elapsed_seconds": 1.203,
+  "patches": {
+    "test_patch": "diff --git a/tests/test_info_dict.py b/tests/test_info_dict.py\nindex 725bc8bba556399101a04599626b04570578bbbd..58babcca8c3f0380a86fc3c605cf28b9676a10d0 100644\n--- a/tests/test_info_dict.py\n+++ b/tests/test_info_dict.py\n@@ -276,6 +276,14 @@ def test_paramtype_no_name():\n     assert TestType().to_info_dict()[\"name\"] == \"TestType\"\n \n \n+PARAM_KINDS = [\n+    pytest.param(lambda **kwargs: click.Option([\"--name\"], **kwargs), id=\"option\"),\n+    pytest.param(lambda **kwargs: click.Argument([\"name\"], **kwargs), id=\"argument\"),\n+]\n+\"\"\"Both concrete kinds of parameter, built from the same keyword arguments.\"\"\"\n+\n+\n+@pytest.mark.parametrize(\"make_param\", PARAM_KINDS)\n @pytest.mark.parametrize(\n     (\"help_in\", \"help_out\"),\n     [\n@@ -289,9 +297,31 @@ def test_paramtype_no_name():\n         ),\n     ],\n )\n-def test_argument_to_info_dict_help(help_in, help_out):\n-    arg = click.Argument([\"name\"], help=help_in)\n-    assert arg.to_info_dict()[\"help\"] == help_out\n+def test_param_to_info_dict_help(make_param, help_in, help_out):\n+    \"\"\"`Parameter` owns the help string, so every kind dedents it the same way.\"\"\"\n+    assert make_param(help=help_in).to_info_dict()[\"help\"] == help_out\n+\n+\n+@pytest.mark.parametrize(\"make_param\", PARAM_KINDS)\n+@pytest.mark.parametrize(\n+    (\"help_in\", \"deprecated\", \"help_out\"),\n+    [\n+        pytest.param(None, True, \"(DEPRECATED)\", id=\"no-help\"),\n+        pytest.param(\n+            \"Pack the basket.\", True, \"Pack the basket. (DEPRECATED)\", id=\"help\"\n+        ),\n+        pytest.param(\n+            \"Pack the basket.\",\n+            \"USE THE CRATE\",\n+            \"Pack the basket. (DEPRECATED: USE THE CRATE)\",\n+            id=\"custom-label\",\n+        ),\n+    ],\n+)\n+def test_param_to_info_dict_deprecated_help(make_param, help_in, deprecated, help_out):\n+    \"\"\"A deprecated parameter of any kind gets the same label appended.\"\"\"\n+    param = make_param(help=help_in, required=False, deprecated=deprecated)\n+    assert param.to_info_dict()[\"help\"] == help_out\n \n \n def test_argument_to_info_dict_nargs():\n",
+    "gold_patch": "diff --git a/CHANGES.md b/CHANGES.md\nindex c23c7e30b768554e148fab42c0cd518a2cffe28c..1b8a5fbbad053ead1ff69dd14f2c28fa2432c8c7 100644\n--- a/CHANGES.md\n+++ b/CHANGES.md\n@@ -13,6 +13,9 @@ Unreleased\n   `type` callable does to a command-line value. {issue}`3036` {pr}`3808`\n - `path_type` narrows the converted value's type for `convert` and `prompt`.\n   {issue}`3822` {pr}`3858`\n+- {class}`Parameter` accepts a new `help` argument and {class}`Option` and {class}`Argument`\n+  inherits it. {meth}`Parameter.to_info_dict` now reports `help` for every kind of parameter.\n+  {pr}`3861`\n \n ## Version 8.5.0\n \ndiff --git a/src/click/core.py b/src/click/core.py\nindex 18a43ac5fc37397502d7f147852a51dea809f8cc..a0f12c23e1bca80584e693c120be8b5ba8a3d0cd 100644\n--- a/src/click/core.py\n+++ b/src/click/core.py\n@@ -2259,6 +2259,12 @@ class Parameter(ABC):\n                         its deprecation in --help. The message can be customized\n                         by using a string as the value. A deprecated parameter\n                         cannot be required, a ValueError will be raised otherwise.\n+    :param help: the help string. It is dedented and get a deprecated label if\n+        appropriate.\n+\n+    .. versionchanged:: 8.5.1\n+        New ``help`` parameter to replace the one from :class:`Option` and\n+        :class:`Argument`.\n \n     .. versionchanged:: 8.2.0\n         Introduction of ``deprecated``.\n@@ -2323,6 +2329,7 @@ class Parameter(ABC):\n         t.Callable[[Context, Parameter, str], list[CompletionItem] | list[str]] | None\n     )\n     deprecated: bool | str\n+    help: str | None\n \n     def __init__(\n         self,\n@@ -2352,6 +2359,7 @@ class Parameter(ABC):\n         ]\n         | None = None,\n         deprecated: bool | str = False,\n+        help: str | None = None,\n     ) -> None:\n         self.name, self.opts, self.secondary_opts = self._parse_decls(\n             param_decls or (), expose_value\n@@ -2384,6 +2392,15 @@ class Parameter(ABC):\n         self._custom_shell_complete = shell_complete\n         self.deprecated = deprecated\n \n+        if help:\n+            help = inspect.cleandoc(help)\n+\n+        if deprecated:\n+            label = _format_deprecated_label(deprecated)\n+            help = f\"{help} {label}\" if help else label\n+\n+        self.help = help\n+\n         if __debug__:\n             if self.type.is_composite and nargs != self.type.arity:\n                 raise ValueError(\n@@ -2429,6 +2446,7 @@ class Parameter(ABC):\n             \"multiple\": self.multiple,\n             \"default\": self._hide_unset(self.default),\n             \"envvar\": self.envvar,\n+            \"help\": self.help,\n         }\n \n     def __repr__(self) -> str:\n@@ -2971,7 +2989,6 @@ class Option(Parameter):\n \n     count: bool\n     allow_from_autoenv: bool\n-    help: str | None\n     show_default: bool | str | None\n     show_choices: bool\n     show_envvar: bool\n@@ -2997,11 +3014,13 @@ class Option(Parameter):\n         deprecated: bool | str = False,\n         **attrs: t.Any,\n     ) -> None:\n-        if help:\n-            help = inspect.cleandoc(help)\n-\n         super().__init__(\n-            param_decls, type=type, multiple=multiple, deprecated=deprecated, **attrs\n+            param_decls,\n+            type=type,\n+            multiple=multiple,\n+            deprecated=deprecated,\n+            help=help,\n+            **attrs,\n         )\n \n         # Phase 1: prompt-related attributes. ``_infer_flag_kind`` reads ``self.prompt``\n@@ -3016,10 +3035,6 @@ class Option(Parameter):\n         else:\n             prompt_text = prompt\n \n-        if deprecated:\n-            label = _format_deprecated_label(deprecated)\n-            help = f\"{help} {label}\" if help else label\n-\n         self.prompt = prompt_text\n         self.confirmation_prompt = confirmation_prompt\n         self.prompt_required = prompt_required\n@@ -3049,7 +3064,6 @@ class Option(Parameter):\n             self.default = 0\n \n         self.allow_from_autoenv = allow_from_autoenv\n-        self.help = help\n         self.show_default = show_default\n         self.show_choices = show_choices\n         self.show_envvar = show_envvar\n@@ -3211,7 +3225,6 @@ class Option(Parameter):\n         info_dict = super().to_info_dict()\n         info_dict.update(\n             default=self._hide_unset(self._resolve_lazy_default(self.default)),\n-            help=self.help,\n             prompt=self.prompt,\n             is_flag=self.is_flag,\n             flag_value=self.flag_activation_value,\n@@ -3734,23 +3747,7 @@ class Argument(Parameter):\n         if \"multiple\" in attrs:\n             raise TypeError(\"__init__() got an unexpected keyword argument 'multiple'.\")\n \n-        deprecated = attrs.get(\"deprecated\", False)\n-\n-        if help:\n-            help = inspect.cleandoc(help)\n-\n-        if deprecated:\n-            label = _format_deprecated_label(deprecated)\n-            help = f\"{help} {label}\" if help else label\n-\n-        self.help = help\n-\n-        super().__init__(param_decls, required=required, **attrs)\n-\n-    def to_info_dict(self) -> dict[str, t.Any]:\n-        info_dict = super().to_info_dict()\n-        info_dict.update(help=self.help)\n-        return info_dict\n+        super().__init__(param_decls, required=required, help=help, **attrs)\n \n     @property\n     def human_readable_name(self) -> str:\n"
+  },
+  "upstream_license": "Copyright 2014 Pallets\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n1.  Redistributions of source code must retain the above copyright\n    notice, this list of conditions and the following disclaimer.\n\n2.  Redistributions in binary form must reproduce the above copyright\n    notice, this list of conditions and the following disclaimer in the\n    documentation and/or other materials provided with the distribution.\n\n3.  Neither the name of the copyright holder nor the names of its\n    contributors may be used to endorse or promote products derived from\n    this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A\nPARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nHOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED\nTO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR\nPROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF\nLIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\nNEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+  "snapshot_sha256": {
+    "base": "17a7e1e71eaa1b56e5b79a69a8699d7f46baabcb710942adef75dc8db308be35",
+    "fix": "d38207d8f31fea12814dae5f6ec8c97b59d1f19d0fec10513888ef0add3682b9"
+  },
+  "task_id": "click_405a5481e4db",
+  "selection_id": "fa5823dac74c3563410a4ec525933e169654357bbe3c4c2223f156b060c51160",
+  "registration_commit": "3854f0cb6c2697fd1054c550184a342ba8765c56",
+  "commit_date": "2026-09-10T13:05:45+04:00",
+  "record_sha256": "a7ab6802b65d4fce9595e03b151be219cdd03bbbecc6a877c30bb3fa84dcf922"
+}

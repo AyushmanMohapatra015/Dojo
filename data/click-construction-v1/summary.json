@@ -1,0 +1,355 @@
+{
+  "schema_version": 1,
+  "selection_id": "fa5823dac74c3563410a4ec525933e169654357bbe3c4c2223f156b060c51160",
+  "registration_commit": "3854f0cb6c2697fd1054c550184a342ba8765c56",
+  "candidate_count": 50,
+  "processed_count": 50,
+  "eligible_count": 34,
+  "rejected_count": 16,
+  "complete": true,
+  "G1_passed": false,
+  "train": [
+    "click_6de212151893",
+    "click_4f9086bf8fd9",
+    "click_607316f9dea8",
+    "click_8762c7752cf1",
+    "click_4e4c7a69b795",
+    "click_1241abaed4e4",
+    "click_3a3e0350b6a2",
+    "click_2468b70997a6",
+    "click_19fd4d6e18bc",
+    "click_831c8f0948af",
+    "click_fc6c7c47edd6",
+    "click_a09c1c655eef",
+    "click_0551bf53588a",
+    "click_a3321c9ca14d",
+    "click_32ae2acd3474",
+    "click_becbde5cf416",
+    "click_c3535905c77a",
+    "click_665736bc85a1",
+    "click_399919f740bf",
+    "click_051bb0f30b54"
+  ],
+  "held_out": [
+    "click_762c97eef7c1",
+    "click_bec59289d8cf",
+    "click_6f85d26dcd50",
+    "click_93ba0075f488",
+    "click_9f9b149ea302",
+    "click_07c909f23f0f",
+    "click_a2ac5839f29f",
+    "click_f316d5cb3aa8",
+    "click_1f9cd54f686e",
+    "click_f58ca3e81424",
+    "click_271effb3d96d",
+    "click_f25f697a439a",
+    "click_05f6fd0df4ec",
+    "click_f67c2bb6c2f0"
+  ],
+  "held_out_ids_sha256": "579a42ce83e1388c8f47150b9157a473cdd5138eadbcd1258d35dbaa17138f2c",
+  "model_calls": 0,
+  "model_evaluation_registered": false,
+  "issue_prompts_complete": false,
+  "results": [
+    {
+      "task_id": "click_d8e987eae723",
+      "fix_sha": "d8e987eae723fbb0ccc355d125d0e179a1bf5fd8",
+      "status": "rejected",
+      "rejection_reason": "base_did_not_fail"
+    },
+    {
+      "task_id": "click_6de212151893",
+      "fix_sha": "6de212151893e4072ca21779b7b6f4cb82452f51",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_4f9086bf8fd9",
+      "fix_sha": "4f9086bf8fd98aca1d804bf742f4f1ceb6c12295",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_607316f9dea8",
+      "fix_sha": "607316f9dea85ee81f8a215f5d5ae20f7f4fff71",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_39413d9b1d78",
+      "fix_sha": "39413d9b1d782317e72e82ec09d437bef8359078",
+      "status": "rejected",
+      "rejection_reason": "base_did_not_fail"
+    },
+    {
+      "task_id": "click_8762c7752cf1",
+      "fix_sha": "8762c7752cf1632d082c76922b15fef06ac3a2f1",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_4e4c7a69b795",
+      "fix_sha": "4e4c7a69b7953ccb8c14e92368ca65d9525f1d2b",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_1241abaed4e4",
+      "fix_sha": "1241abaed4e441582a21f4bf90c8482de02b92df",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_e3c0898975a7",
+      "fix_sha": "e3c0898975a7e095a3f11fd2d13035872a55a3e5",
+      "status": "rejected",
+      "rejection_reason": "base_did_not_fail"
+    },
+    {
+      "task_id": "click_3a3e0350b6a2",
+      "fix_sha": "3a3e0350b6a2ea3e799440d48e779acabcf44de9",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_2468b70997a6",
+      "fix_sha": "2468b70997a6ec27ced4b4867954c90da3f92075",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_19fd4d6e18bc",
+      "fix_sha": "19fd4d6e18bc9fce451f92f422696b11169faa57",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_831c8f0948af",
+      "fix_sha": "831c8f0948af519e45b90801d7430ff25451f972",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_fc6c7c47edd6",
+      "fix_sha": "fc6c7c47edd6110b6bd5a1a5297b2035214b0cd1",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_a09c1c655eef",
+      "fix_sha": "a09c1c655eef3d43181eb46036b66cf058d72df4",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_0551bf53588a",
+      "fix_sha": "0551bf53588ae87f462d336f24f853a156fefe3a",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_a3321c9ca14d",
+      "fix_sha": "a3321c9ca14ddb951f04ac981f275b0de2f46208",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_d15f3c23a177",
+      "fix_sha": "d15f3c23a177e80c324e1ee9681c9449c31ac965",
+      "status": "rejected",
+      "rejection_reason": "test_or_environment_failure"
+    },
+    {
+      "task_id": "click_32ae2acd3474",
+      "fix_sha": "32ae2acd3474a57d2450ea849545b2e1258bf76a",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_0baa8db07736",
+      "fix_sha": "0baa8db07736fc7ad3d3eed97d4c73b0059c63e1",
+      "status": "rejected",
+      "rejection_reason": "base_did_not_fail"
+    },
+    {
+      "task_id": "click_4d3db84b2515",
+      "fix_sha": "4d3db84b251518e97299a38a5ca4bab3d01873a2",
+      "status": "rejected",
+      "rejection_reason": "test_or_environment_failure"
+    },
+    {
+      "task_id": "click_becbde5cf416",
+      "fix_sha": "becbde5cf416441627f779e8dd34e57738ee1c1f",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_c3535905c77a",
+      "fix_sha": "c3535905c77a29afc84861b29d3ad366ce5451bd",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_ddf20d067378",
+      "fix_sha": "ddf20d0673788ebe8ec28b6031a24a36cba92115",
+      "status": "rejected",
+      "rejection_reason": "base_did_not_fail"
+    },
+    {
+      "task_id": "click_82f377c547e1",
+      "fix_sha": "82f377c547e1867d073f02bb8f476214d07e245b",
+      "status": "rejected",
+      "rejection_reason": "test_or_environment_failure"
+    },
+    {
+      "task_id": "click_745464765a3f",
+      "fix_sha": "745464765a3fc9ddd5f9e445e5a2ca37efd63237",
+      "status": "rejected",
+      "rejection_reason": "test_or_environment_failure"
+    },
+    {
+      "task_id": "click_7eb57cff7cd2",
+      "fix_sha": "7eb57cff7cd292fbd526eaf861c8f945ddeb07a3",
+      "status": "rejected",
+      "rejection_reason": "validation_timeout"
+    },
+    {
+      "task_id": "click_665736bc85a1",
+      "fix_sha": "665736bc85a19a7a2357c071394b4a545617faa3",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_399919f740bf",
+      "fix_sha": "399919f740bfd26cb30d544877fafd03cfcd9091",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_051bb0f30b54",
+      "fix_sha": "051bb0f30b545cf7426deef819811815297c2798",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_762c97eef7c1",
+      "fix_sha": "762c97eef7c1b3779678992f26a553a2a8c80793",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_bec59289d8cf",
+      "fix_sha": "bec59289d8cf9b9b4010642b2fee483e5f8eeefc",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_6f85d26dcd50",
+      "fix_sha": "6f85d26dcd50c1745e81040ed4f2b61f8bf293cf",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_93ba0075f488",
+      "fix_sha": "93ba0075f4881b858b61f89a753c7c10e330027e",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_9f9b149ea302",
+      "fix_sha": "9f9b149ea30287b4977b800a024ee68144b8c869",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_07c909f23f0f",
+      "fix_sha": "07c909f23f0f83b5ca137c167b9a134d66201f67",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_051725fa7e0c",
+      "fix_sha": "051725fa7e0c69effc9107066d8791c5b99242c3",
+      "status": "rejected",
+      "rejection_reason": "test_or_environment_failure"
+    },
+    {
+      "task_id": "click_0585f456baa6",
+      "fix_sha": "0585f456baa6eeb2edbaab7c85fa796a004aef86",
+      "status": "rejected",
+      "rejection_reason": "base_did_not_fail"
+    },
+    {
+      "task_id": "click_047adef258fc",
+      "fix_sha": "047adef258fc25566163ffc3efd14effc0ef7352",
+      "status": "rejected",
+      "rejection_reason": "unstable_or_non_regression_outcomes"
+    },
+    {
+      "task_id": "click_a2ac5839f29f",
+      "fix_sha": "a2ac5839f29f61cf7f3f229c67b97d07988e479b",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_f316d5cb3aa8",
+      "fix_sha": "f316d5cb3aa89b57c14aee54da6ac9062ac5bec4",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_1f9cd54f686e",
+      "fix_sha": "1f9cd54f686eb343cec714230ad825ce972739ab",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_a1d87858abd7",
+      "fix_sha": "a1d87858abd77fa8e3ffc204670ccd75b96c4781",
+      "status": "rejected",
+      "rejection_reason": "test_or_environment_failure"
+    },
+    {
+      "task_id": "click_f58ca3e81424",
+      "fix_sha": "f58ca3e81424a35626c8a475eb59ab95589008ce",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_271effb3d96d",
+      "fix_sha": "271effb3d96da5575eb527216ce3552bd7628fab",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_22177f857a34",
+      "fix_sha": "22177f857a34e3c35ba957553853a37f23feb37e",
+      "status": "rejected",
+      "rejection_reason": "test_or_environment_failure"
+    },
+    {
+      "task_id": "click_f25f697a439a",
+      "fix_sha": "f25f697a439acc2b0d84aa8f5413330f4e2e75cf",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_405a5481e4db",
+      "fix_sha": "405a5481e4dbd5022799993d787bd8446137d9a3",
+      "status": "rejected",
+      "rejection_reason": "base_did_not_fail"
+    },
+    {
+      "task_id": "click_05f6fd0df4ec",
+      "fix_sha": "05f6fd0df4ecbd104eb7a229f9f185c2484dee69",
+      "status": "eligible_task",
+      "rejection_reason": null
+    },
+    {
+      "task_id": "click_f67c2bb6c2f0",
+      "fix_sha": "f67c2bb6c2f055c1c7a57cd46c3697fc26a7742e",
+      "status": "eligible_task",
+      "rejection_reason": null
+    }
+  ]
+}

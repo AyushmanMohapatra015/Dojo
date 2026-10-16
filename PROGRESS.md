@@ -1,6 +1,49 @@
 # Progress
 
-Updated: 2026-10-16 (Click construction protocol prepared; model catalog rechecked 2026-10-15)
+Updated: 2026-10-16 (Click construction results verified)
+
+## Click construction v1 results - 2026-10-16
+
+- Owner resumed work after the pause. All 50 frozen candidates completed:
+  34 eligible (68%), 16 rejected. G1 (at least 40 tasks) is NOT passed.
+- Rejections: base_did_not_fail 7; test_or_environment_failure 7;
+  unstable_or_non_regression_outcomes 1; validation_timeout 1.
+- Preserved all individual hashed records, summary, eligible JSONL and split
+  under data/click-construction-v1. Chronological split: 20 train / 14 held-out.
+  Eligible tasks contain 139 fail-to-pass cases; 9 tasks have stable skips,
+  reported and excluded from scoring. No rules or candidates were repaired.
+- Added offline artifact checks: frozen provenance, record hashes/identities,
+  four-run eligibility evidence, pinned image, exact JSONL export and consistent
+  summary/split/hash. These checks do not rerun containers or call models.
+- All 194 offline tests, Ruff, project-local uv lock check (88 packages) and
+  whitespace checks passed. Credential-pattern scan: 143 files, no findings.
+  GitHub confirmed the existing Dojo repository remains private. Publishing
+  this reviewed checkpoint uses a normal push, with no visibility changes.
+- Next dataset milestone: separately preregister expansion using the audited
+  more-itertools pool; preserve v1 and cross-check exclusions/duplicates.
+- Issue prompts, solver-safe task views and model evaluation registration remain
+  incomplete. No model calls or provider spending; live inference stays locked.
+
+## Pause checkpoint - 2026-10-16
+
+- Owner explicitly requested a pause. Do not start further development or live
+  requests until the owner resumes.
+- The already-running frozen Click batch finished all 50 candidates: 34 eligible,
+  16 rejected. G1 requires 40 eligible tasks and is NOT passed. The construction
+  split contains 20 train and 14 held-out IDs; these are not model results.
+- Results are saved locally in data/click-construction-v1/, including individual
+  records, summary.json, eligible-tasks.jsonl, split.lock.json and run-meta.json.
+  Registration commit: 3854f0cb6c2697fd1054c550184a342ba8765c56 (already pushed).
+- Batch process exited successfully; no dojo-validation containers remain.
+  Zero model calls were made. Live inference stays locked.
+- Raw batch artifacts and this pause note are retained locally, pending final
+  cross-artifact integrity checks, credential review and a reviewed commit/push.
+  Last pre-batch verification: 192 offline tests and Ruff passed.
+- Resume here: review the completed records and rejection reasons, verify hashes
+  and split consistency, document the 34/50 yield honestly, then test and publish
+  that checkpoint. Preserve the frozen v1 protocol and outcomes; do not change
+  filters or rerun selectively to meet the target. Plan any pool expansion as a
+  separate, preregistered step. Issue prompts/model evaluation remain incomplete.
 
 ## Click construction v1 registration preparation — 2026-10-16
 

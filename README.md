@@ -2,17 +2,17 @@
 
 Benchmark Nemotron on your own repository, measure cost versus success, and keep
 only repository notes that earn their place. See [BUILD_SPEC.md](BUILD_SPEC.md).
-Single-commit filtering, synthetic Docker validation and one real development
-task are implemented; see [the mining exercise](docs/mining-first-step.md) and
-[real-task validation](docs/real-task-first-step.md). Full-history mining, the
-solver, benchmark scoring, analysis and dashboard remain later milestones.
+Commit filtering, history auditing and frozen offline batch validation are
+implemented; see [the mining exercise](docs/mining-first-step.md) and
+[real-task validation](docs/real-task-first-step.md). The solver, model benchmark
+scoring, analysis and dashboard remain later milestones.
 
 History candidate auditing is available via `dojo mine-audit`; see the
 [three-repository yield report](docs/candidate-yield.md). Candidate counts are
 separate from validated tasks and do not establish benchmark readiness.
 
-The next construction stage has a committed-before-validation Click candidate
-manifest and reproducible offline batch runner; see
+The Click construction batch completed with a committed-before-validation
+candidate manifest and reproducible offline batch runner; see
 [Click construction](docs/click-construction.md). Model evaluation remains locked.
 
 ## Setup
@@ -113,7 +113,10 @@ as verified until a successful live run is recorded in [PROGRESS.md](PROGRESS.md
 `configs/` contains model metadata and proposed solver defaults. `scripts/`
 contains the verifier entry point. `tests/` contains offline spend and reporting
 checks. `docker/` and `dashboard/` describe later implementation work. `data/`
-will hold benchmark artifacts. No held-out data is generated or evaluated yet.
+holds construction artifacts: the frozen Click batch yielded 34 eligible tasks
+from 50 candidates, split into 20 train and 14 held-out tasks. The 40-task gate
+is not met. No model evaluation has run; see
+[construction results](docs/click-construction.md#measured-result---2026-10-16).
 
 ## License
 

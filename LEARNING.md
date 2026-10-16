@@ -102,3 +102,13 @@ author and committer email addresses. Changing user.email affects new commits;
 it does not repair earlier ones. Before the first successful push, the three
 local commits were backed up and rewritten to use the GitHub no-reply address,
 with their file trees and messages preserved. GitHub's privacy protection stays on.
+
+## Construction result - observations to discuss
+
+A candidate commit is only a possibility: in the frozen Click batch, 50 candidates
+produced 34 eligible tasks. A test that already passes before the fix cannot show
+the regression we need, and a broken test environment cannot demonstrate whether
+the fix works. Freezing the rules before running the batch prevents us from
+changing the definition of success to reach our target. The 20/14 split separates
+future training and evaluation work; it does not mean a model has been evaluated.
+These are implementation notes; the owner's own milestone reflection is pending.

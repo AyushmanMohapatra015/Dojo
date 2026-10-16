@@ -1,0 +1,43 @@
+{
+  "selection_id": "fa5823dac74c3563410a4ec525933e169654357bbe3c4c2223f156b060c51160",
+  "registration_commit": "3854f0cb6c2697fd1054c550184a342ba8765c56",
+  "train": [
+    "click_6de212151893",
+    "click_4f9086bf8fd9",
+    "click_607316f9dea8",
+    "click_8762c7752cf1",
+    "click_4e4c7a69b795",
+    "click_1241abaed4e4",
+    "click_3a3e0350b6a2",
+    "click_2468b70997a6",
+    "click_19fd4d6e18bc",
+    "click_831c8f0948af",
+    "click_fc6c7c47edd6",
+    "click_a09c1c655eef",
+    "click_0551bf53588a",
+    "click_a3321c9ca14d",
+    "click_32ae2acd3474",
+    "click_becbde5cf416",
+    "click_c3535905c77a",
+    "click_665736bc85a1",
+    "click_399919f740bf",
+    "click_051bb0f30b54"
+  ],
+  "held_out": [
+    "click_762c97eef7c1",
+    "click_bec59289d8cf",
+    "click_6f85d26dcd50",
+    "click_93ba0075f488",
+    "click_9f9b149ea302",
+    "click_07c909f23f0f",
+    "click_a2ac5839f29f",
+    "click_f316d5cb3aa8",
+    "click_1f9cd54f686e",
+    "click_f58ca3e81424",
+    "click_271effb3d96d",
+    "click_f25f697a439a",
+    "click_05f6fd0df4ec",
+    "click_f67c2bb6c2f0"
+  ],
+  "held_out_ids_sha256": "579a42ce83e1388c8f47150b9157a473cdd5138eadbcd1258d35dbaa17138f2c"
+}

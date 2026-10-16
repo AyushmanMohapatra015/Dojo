@@ -1,0 +1,52 @@
+{
+  "status": "rejected",
+  "fail_to_pass": [],
+  "pass_to_pass": [],
+  "synthetic": false,
+  "split": "unassigned",
+  "schema_version": 1,
+  "repo": "pallets/click",
+  "held_out_eligible": true,
+  "counts_toward_frozen_benchmark": false,
+  "rejection_reason": "test_or_environment_failure",
+  "base_sha": "2103e157683c5e4cadc8ee1838df526a54bde9a4",
+  "fix_sha": "a1d87858abd77fa8e3ffc204670ccd75b96c4781",
+  "features": {
+    "files_changed": 5,
+    "lines_changed": 58
+  },
+  "test_scope": [
+    "tests/test_termui.py",
+    "tests/typing/typing_edit.py"
+  ],
+  "runs": [
+    {
+      "stage": "base",
+      "repeat": 1,
+      "exit_code": 2,
+      "collected": 282,
+      "passed": [],
+      "failed": [],
+      "errors": [
+        "tests/typing/typing_edit.py"
+      ],
+      "skipped": [],
+      "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875"
+    }
+  ],
+  "elapsed_seconds": 1.344,
+  "patches": {
+    "test_patch": "diff --git a/tests/test_termui.py b/tests/test_termui.py\nindex 9da8ffb2166c3858dcb6a258500af0fdd53d0470..1825b198709dec01f4eb261f876389492a4bbfbf 100644\n--- a/tests/test_termui.py\n+++ b/tests/test_termui.py\n@@ -421,13 +421,13 @@ def test_getchar_windows_exceptions(runner, monkeypatch, key_char, exc):\n         click.getchar()\n \n \n-@pytest.mark.skipif(platform.system() == \"Windows\", reason=\"No sed on Windows.\")\n+@pytest.mark.skipif(WIN, reason=\"No sed on Windows.\")\n def test_fast_edit(runner):\n     result = click.edit(\"a\\nb\", editor=\"sed -i~ 's/$/Test/'\")\n     assert result == \"aTest\\nbTest\\n\"\n \n \n-@pytest.mark.skipif(platform.system() == \"Windows\", reason=\"No sed on Windows.\")\n+@pytest.mark.skipif(WIN, reason=\"No sed on Windows.\")\n def test_edit(runner):\n     with tempfile.NamedTemporaryFile(mode=\"w\") as named_tempfile:\n         named_tempfile.write(\"a\\nb\\n\")\n@@ -448,6 +448,19 @@ def test_edit(runner):\n             assert reopened_file.read() == \"aTest\\nbTest\\n\"\n \n \n+@pytest.mark.skipif(WIN, reason=\"No sed on Windows.\")\n+@pytest.mark.parametrize(\"use_iterable\", [False, True], ids=[\"single\", \"iterable\"])\n+def test_edit_pathlib(runner, tmp_path, use_iterable):\n+    \"\"\"Issue #2869: ``filename`` accepts ``os.PathLike`` values.\"\"\"\n+    file_path = tmp_path / \"file.txt\"\n+    file_path.write_text(\"a\\nb\\n\", encoding=\"UTF-8\")\n+    filename = [file_path] if use_iterable else file_path\n+\n+    result = click.edit(filename=filename, editor=\"sed -i~ 's/$/Test/'\")\n+    assert result is None\n+    assert file_path.read_text(encoding=\"UTF-8\") == \"aTest\\nbTest\\n\"\n+\n+\n @pytest.mark.parametrize(\n     (\"editor_cmd\", \"filenames\", \"expected_args\"),\n     [\ndiff --git a/tests/typing/typing_edit.py b/tests/typing/typing_edit.py\nnew file mode 100644\nindex 0000000000000000000000000000000000000000..848ba94cbe144be91f50252e77dacedb9755f964\n--- /dev/null\n+++ b/tests/typing/typing_edit.py\n@@ -0,0 +1,10 @@\n+from pathlib import Path\n+\n+from typing_extensions import assert_type\n+\n+import click\n+\n+# ``filename`` accepts a path or an iterable of paths.\n+assert_type(click.edit(filename=\"f.txt\"), None)\n+assert_type(click.edit(filename=Path(\"f.txt\")), None)\n+assert_type(click.edit(filename=[\"f.txt\", Path(\"g.txt\")]), None)\n",
+    "gold_patch": "diff --git a/CHANGES.md b/CHANGES.md\nindex 7b5f488c9bc37e31a94ba9bd5dd831a292296198..42ca48b5865605b3ac87d96b3ccc22739b04aa87 100644\n--- a/CHANGES.md\n+++ b/CHANGES.md\n@@ -89,6 +89,8 @@ Unreleased\n   bare `less`. {pr}`3777`\n - Improve raw mode detection by parsing the option tokens. {issue}`3416`\n   {pr}`3777`\n+- {func}`edit` accepts `os.PathLike` values for `filename`, in addition to\n+  strings. {issue}`2869` {pr}`3781`\n \n ## Version 8.4.2\n \ndiff --git a/src/click/_termui_impl.py b/src/click/_termui_impl.py\nindex 9fcc7f61a8def9dda1e3d3b15d34abef68b2d264..70aabf8f17c56ce5ed559ea88ce233a7944dbe3a 100644\n--- a/src/click/_termui_impl.py\n+++ b/src/click/_termui_impl.py\n@@ -710,7 +710,7 @@ class Editor:\n                 return editor\n         return \"vi\"\n \n-    def edit_files(self, filenames: cabc.Iterable[str]) -> None:\n+    def edit_files(self, filenames: cabc.Iterable[str | os.PathLike[str]]) -> None:\n         \"\"\"Open files in the user's editor.\"\"\"\n         import shlex\n         import subprocess\ndiff --git a/src/click/termui.py b/src/click/termui.py\nindex bb53f9c4d39c238736807ebd0b52be042c1e98aa..e1315f23744ee9055126971c1cf350428aeab06b 100644\n--- a/src/click/termui.py\n+++ b/src/click/termui.py\n@@ -4,6 +4,7 @@ import collections.abc as cabc\n import inspect\n import io\n import itertools\n+import os\n import re\n import sys\n import typing as t\n@@ -837,7 +838,10 @@ def edit(\n     env: cabc.Mapping[str, str] | None = None,\n     require_save: bool = True,\n     extension: str = \".txt\",\n-    filename: str | cabc.Iterable[str] | None = None,\n+    filename: str\n+    | os.PathLike[str]\n+    | cabc.Iterable[str | os.PathLike[str]]\n+    | None = None,\n ) -> None: ...\n \n \n@@ -847,7 +851,10 @@ def edit(\n     env: cabc.Mapping[str, str] | None = None,\n     require_save: bool = True,\n     extension: str = \".txt\",\n-    filename: str | cabc.Iterable[str] | None = None,\n+    filename: str\n+    | os.PathLike[str]\n+    | cabc.Iterable[str | os.PathLike[str]]\n+    | None = None,\n ) -> str | bytes | bytearray | None:\n     r\"\"\"Edits the given text in the defined editor.  If an editor is given\n     (should be the full path to the executable but the regular operating\n@@ -874,16 +881,20 @@ def edit(\n                       highlighting.\n     :param filename: if provided it will edit this file instead of the\n                      provided text contents.  It will not use a temporary\n-                     file as an indirection in that case. If the editor supports\n-                     editing multiple files at once, a sequence of files may be\n-                     passed as well. Invoke `click.file` once per file instead\n-                     if multiple files cannot be managed at once or editing the\n-                     files serially is desired.\n+                     file as an indirection in that case. It accepts a path\n+                     or any iterable of paths. If the editor supports\n+                     editing multiple files at once, a sequence of files may\n+                     be passed as well. Invoke `click.file` once per file\n+                     instead if multiple files cannot be managed at once or\n+                     editing the files serially is desired.\n \n     .. versionchanged:: 8.2.0\n         ``filename`` now accepts any ``Iterable[str]`` in addition to a ``str``\n         if the ``editor`` supports editing multiple files at once.\n \n+    .. versionchanged:: 8.5.0\n+        ``filename`` accepts ``os.PathLike`` values in addition to strings.\n+\n     \"\"\"\n     from ._termui_impl import Editor\n \n@@ -892,7 +903,7 @@ def edit(\n     if filename is None:\n         return ed.edit(text)\n \n-    if isinstance(filename, str):\n+    if isinstance(filename, (str, os.PathLike)):\n         filename = (filename,)\n \n     ed.edit_files(filenames=filename)\n"
+  },
+  "upstream_license": "Copyright 2014 Pallets\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n1.  Redistributions of source code must retain the above copyright\n    notice, this list of conditions and the following disclaimer.\n\n2.  Redistributions in binary form must reproduce the above copyright\n    notice, this list of conditions and the following disclaimer in the\n    documentation and/or other materials provided with the distribution.\n\n3.  Neither the name of the copyright holder nor the names of its\n    contributors may be used to endorse or promote products derived from\n    this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A\nPARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nHOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED\nTO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR\nPROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF\nLIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\nNEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+  "snapshot_sha256": {
+    "base": "0e92c51c654e2fcaf17101077d66fc00379acfc72a0bb747f48170a52fa128fc",
+    "fix": "556038932ed31d1568295208fba7ff2385211e80d6ed20b94884dd50456f910a"
+  },
+  "task_id": "click_a1d87858abd7",
+  "selection_id": "fa5823dac74c3563410a4ec525933e169654357bbe3c4c2223f156b060c51160",
+  "registration_commit": "3854f0cb6c2697fd1054c550184a342ba8765c56",
+  "commit_date": "2026-08-19T19:39:09+04:00",
+  "record_sha256": "d8f627d9d1679e722116ad586c888444547774977592ae0de639b129572cc18d"
+}

@@ -1,0 +1,51 @@
+{
+  "status": "rejected",
+  "fail_to_pass": [],
+  "pass_to_pass": [],
+  "synthetic": false,
+  "split": "unassigned",
+  "schema_version": 1,
+  "repo": "pallets/click",
+  "held_out_eligible": true,
+  "counts_toward_frozen_benchmark": false,
+  "rejection_reason": "test_or_environment_failure",
+  "base_sha": "e0d1678ebc10cc663f2bc1973e0399b31415f8db",
+  "fix_sha": "d15f3c23a177e80c324e1ee9681c9449c31ac965",
+  "features": {
+    "files_changed": 2,
+    "lines_changed": 6
+  },
+  "test_scope": [
+    "tests/test_utils.py"
+  ],
+  "runs": [
+    {
+      "stage": "base",
+      "repeat": 1,
+      "exit_code": 2,
+      "collected": 0,
+      "passed": [],
+      "failed": [],
+      "errors": [
+        "tests/test_utils.py"
+      ],
+      "skipped": [],
+      "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875"
+    }
+  ],
+  "elapsed_seconds": 1.313,
+  "patches": {
+    "test_patch": "diff --git a/tests/test_utils.py b/tests/test_utils.py\nindex ec68d307e09ac32b93685b7a1667cecd28df4bb8..a16493b2d279e8a485f7a6b70aac1608405464dd 100644\n--- a/tests/test_utils.py\n+++ b/tests/test_utils.py\n@@ -15,6 +15,7 @@ import pytest\n \n import click._termui_impl\n import click.utils\n+from click._compat import MAC\n from click._compat import WIN\n from click._utils import UNSET\n \n@@ -309,6 +310,10 @@ EchoViaPagerTest = namedtuple(\n \n \n @pytest.mark.skipif(WIN, reason=\"Different behavior on windows.\")\n+@pytest.mark.skipif(\n+    MAC and sys.version_info >= (3, 13) and sys._is_gil_enabled(),\n+    reason=\"Generator exception tests are flaky in Python 3.14t on macOS.\",\n+)\n @pytest.mark.parametrize(\n     \"pager_cmd\", [\"cat\", \"cat \", \" cat \", \"less\", \" less\", \" less \"]\n )\n",
+    "gold_patch": "diff --git a/src/click/_compat.py b/src/click/_compat.py\nindex 134c4f38934be0a0be78a6d2a3ab100fe60389b2..36c0e5397575c0778d77e7b7304568acd5729448 100644\n--- a/src/click/_compat.py\n+++ b/src/click/_compat.py\n@@ -12,6 +12,7 @@ from weakref import WeakKeyDictionary\n \n CYGWIN = sys.platform.startswith(\"cygwin\")\n WIN = sys.platform.startswith(\"win\")\n+MAC = sys.platform == \"darwin\"\n auto_wrap_for_ansi: t.Callable[[t.TextIO], t.TextIO] | None = None\n _ansi_re = re.compile(r\"\\033\\[[;?0-9]*[a-zA-Z]\")\n \n"
+  },
+  "upstream_license": "Copyright 2014 Pallets\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n1.  Redistributions of source code must retain the above copyright\n    notice, this list of conditions and the following disclaimer.\n\n2.  Redistributions in binary form must reproduce the above copyright\n    notice, this list of conditions and the following disclaimer in the\n    documentation and/or other materials provided with the distribution.\n\n3.  Neither the name of the copyright holder nor the names of its\n    contributors may be used to endorse or promote products derived from\n    this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A\nPARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nHOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED\nTO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR\nPROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF\nLIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\nNEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+  "snapshot_sha256": {
+    "base": "0aa94c56ef39895e94488be6848d61614999bc715c667ea623a166e405344e0c",
+    "fix": "288db0ca1ddcade07fe060ade4fc707fea991dfee19b612eea7a8ac80ba25c16"
+  },
+  "task_id": "click_d15f3c23a177",
+  "selection_id": "fa5823dac74c3563410a4ec525933e169654357bbe3c4c2223f156b060c51160",
+  "registration_commit": "3854f0cb6c2697fd1054c550184a342ba8765c56",
+  "commit_date": "2026-05-18T14:01:46-07:00",
+  "record_sha256": "08961d9c750d18dc3842887e0aa72c018307e9bb398fcd2c664e270c40bdcc3d"
+}

@@ -1,0 +1,51 @@
+{
+  "status": "rejected",
+  "fail_to_pass": [],
+  "pass_to_pass": [],
+  "synthetic": false,
+  "split": "unassigned",
+  "schema_version": 1,
+  "repo": "pallets/click",
+  "held_out_eligible": true,
+  "counts_toward_frozen_benchmark": false,
+  "rejection_reason": "base_did_not_fail",
+  "base_sha": "b6afbf05ea6dbc8a4e7cdd448dd345c783973137",
+  "fix_sha": "d8e987eae723fbb0ccc355d125d0e179a1bf5fd8",
+  "features": {
+    "files_changed": 3,
+    "lines_changed": 48
+  },
+  "test_scope": [
+    "tests/test_testing_logging.py"
+  ],
+  "runs": [
+    {
+      "stage": "base",
+      "repeat": 1,
+      "exit_code": 0,
+      "collected": 1,
+      "passed": [
+        "tests/test_testing_logging.py::test_runner_logger"
+      ],
+      "failed": [],
+      "errors": [],
+      "skipped": [],
+      "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875"
+    }
+  ],
+  "elapsed_seconds": 1.235,
+  "patches": {
+    "test_patch": "diff --git a/tests/test_testing_logging.py b/tests/test_testing_logging.py\nnew file mode 100644\nindex 0000000000000000000000000000000000000000..a987bcc3478cf5ad5eb5e66aa79cb19c23e2308d\n--- /dev/null\n+++ b/tests/test_testing_logging.py\n@@ -0,0 +1,25 @@\n+import logging\n+\n+import click\n+from click.testing import CliRunner\n+\n+\n+# Minimized version of:\n+# https://github.com/pallets/click/issues/824#issuecomment-3027263262\n+#\n+# Test needs to be run as \"pytest --log-cli-level 30 tests/test_testing_logging.py\"\n+# to test the intended functionality.\n+def test_runner_logger():\n+    logger = logging.getLogger(__name__)\n+\n+    @click.command()\n+    @click.option(\"--name\", prompt=\"Your name\", help=\"The person to greet.\")\n+    def hello(name):\n+        logger.warning(\"Greeting user now...\")\n+        click.echo(f\"Hello, {name}!\")\n+\n+    runner = CliRunner()\n+    result = runner.invoke(hello, input=\"Peter\")\n+    assert result.exit_code == 0\n+    # FIXME: second half of the output is missing with --log-cli-level 30.\n+    assert result.output in (\"Your name: Peter\\n\", \"Your name: Peter\\nHello, Peter!\\n\")\n",
+    "gold_patch": "diff --git a/CHANGES.rst b/CHANGES.rst\nindex 8744c61752259552029ed108b15fd8eb7257b5c2..2832e939b3dae07a7e8d843cc9ae0336686ec131 100644\n--- a/CHANGES.rst\n+++ b/CHANGES.rst\n@@ -6,6 +6,8 @@ Unreleased\n     used without an explicit value. :issue:`3084`\n -   Hide ``Sentinel.UNSET`` values as ``None`` when using ``lookup_default()``.\n     :issue:`3136` :pr:`3199` :pr:`3202` :pr:`3209` :pr:`3212` :pr:`3224`\n+-   Prevent ``_NamedTextIOWrapper`` from closing streams owned by ``StreamMixer``.\n+    :issue:`824` :issue:`2993` :pr:`3139`\n \n Version 8.3.1\n --------------\ndiff --git a/src/click/testing.py b/src/click/testing.py\nindex f6f60b809a065e2d67de5a7ec13d9d3c51b5e760..ebfd54dc77a081b6ecf63522a70c5d53ec360a68 100644\n--- a/src/click/testing.py\n+++ b/src/click/testing.py\n@@ -98,18 +98,6 @@ class StreamMixer:\n         self.stdout: io.BytesIO = BytesIOCopy(copy_to=self.output)\n         self.stderr: io.BytesIO = BytesIOCopy(copy_to=self.output)\n \n-    def __del__(self) -> None:\n-        \"\"\"\n-        Guarantee that embedded file-like objects are closed in a\n-        predictable order, protecting against races between\n-        self.output being closed and other streams being flushed on close\n-\n-        .. versionadded:: 8.2.2\n-        \"\"\"\n-        self.stderr.close()\n-        self.stdout.close()\n-        self.output.close()\n-\n \n class _NamedTextIOWrapper(io.TextIOWrapper):\n     def __init__(\n@@ -119,6 +107,15 @@ class _NamedTextIOWrapper(io.TextIOWrapper):\n         self._name = name\n         self._mode = mode\n \n+    def close(self) -> None:\n+        \"\"\"\n+        The buffer this object contains belongs to some other object, so\n+        prevent the default __del__ implementation from closing that buffer.\n+\n+        .. versionadded:: 8.3.2\n+        \"\"\"\n+        ...\n+\n     @property\n     def name(self) -> str:\n         return self._name\n"
+  },
+  "upstream_license": "Copyright 2014 Pallets\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n1.  Redistributions of source code must retain the above copyright\n    notice, this list of conditions and the following disclaimer.\n\n2.  Redistributions in binary form must reproduce the above copyright\n    notice, this list of conditions and the following disclaimer in the\n    documentation and/or other materials provided with the distribution.\n\n3.  Neither the name of the copyright holder nor the names of its\n    contributors may be used to endorse or promote products derived from\n    this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A\nPARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nHOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED\nTO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR\nPROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF\nLIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\nNEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+  "snapshot_sha256": {
+    "base": "e90af72e928e99b70aeef50564a0d5f5164a86d8eca97fd950ce55cecfb80450",
+    "fix": "860e43c788f5b306fbe37043f5ccd78d6124834ee59394138afc055f78b2201a"
+  },
+  "task_id": "click_d8e987eae723",
+  "selection_id": "fa5823dac74c3563410a4ec525933e169654357bbe3c4c2223f156b060c51160",
+  "registration_commit": "3854f0cb6c2697fd1054c550184a342ba8765c56",
+  "commit_date": "2026-02-28T13:03:13+04:00",
+  "record_sha256": "d8a95447a2022a3c8f3a4a1eccdf047b7530ec529f32c56301ee6530819ecc4c"
+}
