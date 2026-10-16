@@ -1,6 +1,24 @@
 # Progress
 
-Updated: 2026-10-16 (more-itertools expansion selection frozen)
+Updated: 2026-10-16 (more-itertools execution registration prepared)
+
+## More-itertools execution registration - 2026-10-16
+
+- Implemented a separate sequential batch runner in dojo/mine/expansion_batch.py,
+  preserving all original Click sources and the frozen expansion selection.
+- Execution lock: data/more-itertools-execution.lock.json; execution ID
+  761913c5dcc32ae551603d8075caf2d760af927769eeb39fafc5f0779617d3d5.
+  It hashes all execution dependencies/protocols and prior Click evidence.
+- Candidate runs require committed registration with matching source, input
+  provenance, immutable image and no existing validation containers. Checked
+  resume verifies candidate identities, execution IDs and canonical record hashes.
+- Tested fake interrupted resume, concurrent lock rejection, timeout sanitization,
+  changed/uncommitted registration rejection and complete-batch combined G1.
+- Pre-run checks: 203 offline tests, Ruff, lockfile (88 packages) and whitespace
+  checks pass; credential-pattern scan: 151 files, no findings. Repo stays private.
+- Preparing the pre-run commit/push; no expansion candidate has run yet. Next:
+  run all 32 sequentially, publish every result and preserve Click split labels.
+  No model calls or provider spending; inference remains disabled.
 
 ## More-itertools expansion selection - 2026-10-16
 
