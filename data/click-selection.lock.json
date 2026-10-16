@@ -1,0 +1,540 @@
+{
+  "schema_version": 1,
+  "protocol": "click-construction-v1",
+  "repo": "pallets/click",
+  "head_sha": "2247b35ea1c47c727d7a06e51fa280e12a863ff6",
+  "as_of": "2026-10-16T03:16:51.368915+00:00",
+  "audit_sha256": "eee15f703fa154ec58c9d70440adac4d4e10f4829dbc28933c86f1eb82b84a0b",
+  "exclusions_sha256": "235088f897ed546ff45fac81246b7f56e9b350f8bf9d0dd9eb250fe46387a7f4",
+  "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875",
+  "candidate_count": 50,
+  "candidates": [
+    {
+      "task_id": "click_d8e987eae723",
+      "fix_sha": "d8e987eae723fbb0ccc355d125d0e179a1bf5fd8",
+      "base_sha": "b6afbf05ea6dbc8a4e7cdd448dd345c783973137",
+      "commit_date": "2026-02-28T13:03:13+04:00",
+      "test_files": [
+        "tests/test_testing_logging.py"
+      ],
+      "stable_patch_id": "ca6c2bc31dcbd1aa7beb4f9a425819124a33ea33"
+    },
+    {
+      "task_id": "click_6de212151893",
+      "fix_sha": "6de212151893e4072ca21779b7b6f4cb82452f51",
+      "base_sha": "1339fd3323357119a9c7a6326c788f80295954ce",
+      "commit_date": "2026-04-09T14:46:44+02:00",
+      "test_files": [
+        "tests/test_defaults.py"
+      ],
+      "stable_patch_id": "8ce2452f870b49f1a69198ef5fcfabdf74eabbc9"
+    },
+    {
+      "task_id": "click_4f9086bf8fd9",
+      "fix_sha": "4f9086bf8fd98aca1d804bf742f4f1ceb6c12295",
+      "base_sha": "1339fd3323357119a9c7a6326c788f80295954ce",
+      "commit_date": "2026-04-09T16:23:44+02:00",
+      "test_files": [
+        "tests/test_testing.py"
+      ],
+      "stable_patch_id": "02374d75a2494847a91a9fc049c637748c194f0f"
+    },
+    {
+      "task_id": "click_607316f9dea8",
+      "fix_sha": "607316f9dea85ee81f8a215f5d5ae20f7f4fff71",
+      "base_sha": "878de46100e9c29aea9dab5b385b8116863cb5e3",
+      "commit_date": "2026-04-13T20:28:39+02:00",
+      "test_files": [
+        "tests/test_options.py",
+        "tests/test_termui.py"
+      ],
+      "stable_patch_id": "8b47d900f7d8727ceceedcd4fca1cb9c1943ea80"
+    },
+    {
+      "task_id": "click_39413d9b1d78",
+      "fix_sha": "39413d9b1d782317e72e82ec09d437bef8359078",
+      "base_sha": "607316f9dea85ee81f8a215f5d5ae20f7f4fff71",
+      "commit_date": "2026-04-13T20:29:10+02:00",
+      "test_files": [
+        "tests/test_termui.py"
+      ],
+      "stable_patch_id": "a4edfa7ad9a200ee983a0ce606eda43cc3a59f22"
+    },
+    {
+      "task_id": "click_8762c7752cf1",
+      "fix_sha": "8762c7752cf1632d082c76922b15fef06ac3a2f1",
+      "base_sha": "878de46100e9c29aea9dab5b385b8116863cb5e3",
+      "commit_date": "2026-04-14T09:55:10+02:00",
+      "test_files": [
+        "tests/test_testing.py"
+      ],
+      "stable_patch_id": "565ea65e6133086f330e9c01236059638eb0a39a"
+    },
+    {
+      "task_id": "click_4e4c7a69b795",
+      "fix_sha": "4e4c7a69b7953ccb8c14e92368ca65d9525f1d2b",
+      "base_sha": "f1f191ecd2c790b161187c78e7c88440e9524e5c",
+      "commit_date": "2026-04-21T13:05:06+02:00",
+      "test_files": [
+        "tests/test_options.py"
+      ],
+      "stable_patch_id": "494ebeeebe2c473c0ddfd156dc94ec2b1f6befd8"
+    },
+    {
+      "task_id": "click_1241abaed4e4",
+      "fix_sha": "1241abaed4e441582a21f4bf90c8482de02b92df",
+      "base_sha": "f1f191ecd2c790b161187c78e7c88440e9524e5c",
+      "commit_date": "2026-04-21T18:02:12+02:00",
+      "test_files": [
+        "tests/test_formatting.py"
+      ],
+      "stable_patch_id": "c8bd920c9357319ba17235151c47a6ab2b04aa28"
+    },
+    {
+      "task_id": "click_e3c0898975a7",
+      "fix_sha": "e3c0898975a7e095a3f11fd2d13035872a55a3e5",
+      "base_sha": "f1f191ecd2c790b161187c78e7c88440e9524e5c",
+      "commit_date": "2026-04-22T12:04:22-07:00",
+      "test_files": [
+        "tests/test_defaults.py",
+        "tests/test_options.py",
+        "tests/test_termui.py",
+        "tests/test_types.py"
+      ],
+      "stable_patch_id": "606d3ae0f240c2866f07dcf70ef9e30b451c83d7"
+    },
+    {
+      "task_id": "click_3a3e0350b6a2",
+      "fix_sha": "3a3e0350b6a2ea3e799440d48e779acabcf44de9",
+      "base_sha": "8bd8b4a074c55c03b6eb5666edc44a9c43df38a2",
+      "commit_date": "2026-04-27T16:55:53+02:00",
+      "test_files": [
+        "tests/test_defaults.py"
+      ],
+      "stable_patch_id": "636c046bde199a1092273afce6e47b161d5d1ccb"
+    },
+    {
+      "task_id": "click_2468b70997a6",
+      "fix_sha": "2468b70997a6ec27ced4b4867954c90da3f92075",
+      "base_sha": "ddede2147c9370ab8275f81db4826b6895d2e7dc",
+      "commit_date": "2026-04-30T00:20:22+01:00",
+      "test_files": [
+        "tests/test_utils.py"
+      ],
+      "stable_patch_id": "1e11243edb0740b54e050cc0253b9565bf078d01"
+    },
+    {
+      "task_id": "click_19fd4d6e18bc",
+      "fix_sha": "19fd4d6e18bc9fce451f92f422696b11169faa57",
+      "base_sha": "c69643b60cf971cd5d8e5d3902632807ceab9b8f",
+      "commit_date": "2026-04-30T00:37:31+01:00",
+      "test_files": [
+        "tests/test_shell_completion.py"
+      ],
+      "stable_patch_id": "733bc9af8ae90b8d8373bd63939ce804bfa39b2a"
+    },
+    {
+      "task_id": "click_831c8f0948af",
+      "fix_sha": "831c8f0948af519e45b90801d7430ff25451f972",
+      "base_sha": "19fd4d6e18bc9fce451f92f422696b11169faa57",
+      "commit_date": "2026-04-30T00:53:14+01:00",
+      "test_files": [
+        "tests/test_commands.py",
+        "tests/test_options.py"
+      ],
+      "stable_patch_id": "ba64519f315589631793ee45cf78e16b19e2702e"
+    },
+    {
+      "task_id": "click_fc6c7c47edd6",
+      "fix_sha": "fc6c7c47edd6110b6bd5a1a5297b2035214b0cd1",
+      "base_sha": "5b9630f50fde938b72ad8c99542efe3a6f5717e2",
+      "commit_date": "2026-05-08T15:47:47+02:00",
+      "test_files": [
+        "tests/test_types.py"
+      ],
+      "stable_patch_id": "aa47ec921a9c08352345442017fb4a23ecedcd80"
+    },
+    {
+      "task_id": "click_a09c1c655eef",
+      "fix_sha": "a09c1c655eef3d43181eb46036b66cf058d72df4",
+      "base_sha": "fc6c7c47edd6110b6bd5a1a5297b2035214b0cd1",
+      "commit_date": "2026-05-08T16:04:59+02:00",
+      "test_files": [
+        "tests/test_termui.py"
+      ],
+      "stable_patch_id": "282237e7ca72296e7f78e997ab64825029493942"
+    },
+    {
+      "task_id": "click_0551bf53588a",
+      "fix_sha": "0551bf53588ae87f462d336f24f853a156fefe3a",
+      "base_sha": "7c99ebe23b931f27562d926814423cce85fd9766",
+      "commit_date": "2026-05-16T08:39:31+02:00",
+      "test_files": [
+        "tests/test_formatting.py"
+      ],
+      "stable_patch_id": "43fed046164bec3d665663ddd162aef7c6042483"
+    },
+    {
+      "task_id": "click_a3321c9ca14d",
+      "fix_sha": "a3321c9ca14ddb951f04ac981f275b0de2f46208",
+      "base_sha": "b8b9ffeb5d012f5d041685c81152636bf596cf72",
+      "commit_date": "2026-05-18T12:13:50-07:00",
+      "test_files": [
+        "tests/test_shell_completion.py"
+      ],
+      "stable_patch_id": "6dba366759bb56cd29874d324fea82e47e5ffc30"
+    },
+    {
+      "task_id": "click_d15f3c23a177",
+      "fix_sha": "d15f3c23a177e80c324e1ee9681c9449c31ac965",
+      "base_sha": "e0d1678ebc10cc663f2bc1973e0399b31415f8db",
+      "commit_date": "2026-05-18T14:01:46-07:00",
+      "test_files": [
+        "tests/test_utils.py"
+      ],
+      "stable_patch_id": "c99a9bffe98da6a8959fc4a8c200b5aa213c9d13"
+    },
+    {
+      "task_id": "click_32ae2acd3474",
+      "fix_sha": "32ae2acd3474a57d2450ea849545b2e1258bf76a",
+      "base_sha": "bee33141650ce7c91551f5fac9ebfb0c8fca473e",
+      "commit_date": "2026-05-18T16:43:31-07:00",
+      "test_files": [
+        "tests/test_shell_completion.py"
+      ],
+      "stable_patch_id": "cbf968d6ab42e0f675556d9f86475af10049d0ac"
+    },
+    {
+      "task_id": "click_0baa8db07736",
+      "fix_sha": "0baa8db07736fc7ad3d3eed97d4c73b0059c63e1",
+      "base_sha": "7d05a59b9d46a415d85937630d1d812cf477f60a",
+      "commit_date": "2026-05-21T15:00:59+02:00",
+      "test_files": [
+        "tests/test_defaults.py"
+      ],
+      "stable_patch_id": "e9ef4621aeeab249f8c12a5cb7e763507ac43641"
+    },
+    {
+      "task_id": "click_4d3db84b2515",
+      "fix_sha": "4d3db84b251518e97299a38a5ca4bab3d01873a2",
+      "base_sha": "d42f15b71757de791a5781fb179fd972da9169f5",
+      "commit_date": "2026-05-21T15:43:31-07:00",
+      "test_files": [
+        "tests/test_utils.py"
+      ],
+      "stable_patch_id": "614095ce65bfed0aeeec0bb681cfc22f2ab7d920"
+    },
+    {
+      "task_id": "click_becbde5cf416",
+      "fix_sha": "becbde5cf416441627f779e8dd34e57738ee1c1f",
+      "base_sha": "a5f5aa6d4012d256ccca24638f2642fc371e9f77",
+      "commit_date": "2026-05-21T20:35:58-07:00",
+      "test_files": [
+        "tests/test_termui.py",
+        "tests/test_testing.py"
+      ],
+      "stable_patch_id": "a2e6ea4e21e5be187ab87b205f57bbf68941a2d2"
+    },
+    {
+      "task_id": "click_c3535905c77a",
+      "fix_sha": "c3535905c77a29afc84861b29d3ad366ce5451bd",
+      "base_sha": "bc36cd1a2b3bc18f401a98476154dbc5a2d212c9",
+      "commit_date": "2026-05-23T09:05:16+02:00",
+      "test_files": [
+        "tests/test_shell_completion.py"
+      ],
+      "stable_patch_id": "e26fd8778ff76cc64e298877b2e08750a9ebf6b7"
+    },
+    {
+      "task_id": "click_ddf20d067378",
+      "fix_sha": "ddf20d0673788ebe8ec28b6031a24a36cba92115",
+      "base_sha": "b7e5fd4cc7de70280eccd39f2bb956df617e5519",
+      "commit_date": "2026-05-23T10:14:55+02:00",
+      "test_files": [
+        "tests/test_shell_completion.py"
+      ],
+      "stable_patch_id": "c1bca574591eb8368468294bac56dbc6580167e6"
+    },
+    {
+      "task_id": "click_82f377c547e1",
+      "fix_sha": "82f377c547e1867d073f02bb8f476214d07e245b",
+      "base_sha": "648d7c403829013ade629d63ddbfe808f6b2b770",
+      "commit_date": "2026-05-23T15:59:39+02:00",
+      "test_files": [
+        "tests/test_commands.py",
+        "tests/test_options.py"
+      ],
+      "stable_patch_id": "812fdc31d5005ac1c1fe9070f6249634af4bca65"
+    },
+    {
+      "task_id": "click_745464765a3f",
+      "fix_sha": "745464765a3fc9ddd5f9e445e5a2ca37efd63237",
+      "base_sha": "bc36cd1a2b3bc18f401a98476154dbc5a2d212c9",
+      "commit_date": "2026-05-23T07:31:27-07:00",
+      "test_files": [
+        "tests/test_utils.py"
+      ],
+      "stable_patch_id": "dde3e51c48a257d9c456ce3794c65f385623c42e"
+    },
+    {
+      "task_id": "click_7eb57cff7cd2",
+      "fix_sha": "7eb57cff7cd292fbd526eaf861c8f945ddeb07a3",
+      "base_sha": "1050d955ea5a219c72467ad832934ea80682b5fb",
+      "commit_date": "2026-05-27T09:53:09+02:00",
+      "test_files": [
+        "tests/test_stream_lifecycle.py",
+        "tests/test_utils.py"
+      ],
+      "stable_patch_id": "75a33a4be8f8d9180626ccfd8a236fb47374de26"
+    },
+    {
+      "task_id": "click_665736bc85a1",
+      "fix_sha": "665736bc85a19a7a2357c071394b4a545617faa3",
+      "base_sha": "8240d25bdbb8c081b745199620b8f2fe03b10579",
+      "commit_date": "2026-05-27T11:25:42+02:00",
+      "test_files": [
+        "tests/test_arguments.py",
+        "tests/test_commands.py"
+      ],
+      "stable_patch_id": "a0d701ad61be69a03d5b73c41ac3d6560ae6e47d"
+    },
+    {
+      "task_id": "click_399919f740bf",
+      "fix_sha": "399919f740bfd26cb30d544877fafd03cfcd9091",
+      "base_sha": "ffcc7494c991c9197902fdf4995e11b2da3e9762",
+      "commit_date": "2026-05-29T16:51:37+02:00",
+      "test_files": [
+        "tests/test_termui.py"
+      ],
+      "stable_patch_id": "533942a0c31645805d390ac6e17df34a4601f4cc"
+    },
+    {
+      "task_id": "click_051bb0f30b54",
+      "fix_sha": "051bb0f30b545cf7426deef819811815297c2798",
+      "base_sha": "cd9bdd96a9dcc8e4ecabd45b5c244dbc70034484",
+      "commit_date": "2026-06-03T16:44:52+05:00",
+      "test_files": [
+        "tests/test_termui.py"
+      ],
+      "stable_patch_id": "42c22eb54a9875561bca56d8875307f1b8da0f61"
+    },
+    {
+      "task_id": "click_762c97eef7c1",
+      "fix_sha": "762c97eef7c1b3779678992f26a553a2a8c80793",
+      "base_sha": "8929d392781c8113bc569f388c15c47b94f86581",
+      "commit_date": "2026-06-10T17:31:37+04:00",
+      "test_files": [
+        "tests/test_basic.py"
+      ],
+      "stable_patch_id": "fc7a710ee7fdabfc98f5ee84cc0c0a10ad8e7d19"
+    },
+    {
+      "task_id": "click_bec59289d8cf",
+      "fix_sha": "bec59289d8cf9b9b4010642b2fee483e5f8eeefc",
+      "base_sha": "916883afad450c0c9bbc4212817900949131adbd",
+      "commit_date": "2026-06-14T08:53:53+04:00",
+      "test_files": [
+        "tests/test_basic.py"
+      ],
+      "stable_patch_id": "c1bd737287a4b0ed27c82e1df65cad980d80d792"
+    },
+    {
+      "task_id": "click_6f85d26dcd50",
+      "fix_sha": "6f85d26dcd50c1745e81040ed4f2b61f8bf293cf",
+      "base_sha": "df2e5ed8c4e89f51ff4eddb9600d913083613e62",
+      "commit_date": "2026-06-27T12:47:47+04:00",
+      "test_files": [
+        "tests/test_types.py"
+      ],
+      "stable_patch_id": "2114e29b25912cf91ec544707398855c5e059590"
+    },
+    {
+      "task_id": "click_93ba0075f488",
+      "fix_sha": "93ba0075f4881b858b61f89a753c7c10e330027e",
+      "base_sha": "240603f240a9ff179d834fede836060d897c6980",
+      "commit_date": "2026-07-01T09:18:55+04:00",
+      "test_files": [
+        "tests/test_termui.py"
+      ],
+      "stable_patch_id": "e5aa71e9cd5668a6371ebf9252305be565e67d5d"
+    },
+    {
+      "task_id": "click_9f9b149ea302",
+      "fix_sha": "9f9b149ea30287b4977b800a024ee68144b8c869",
+      "base_sha": "16fc00e2f4a2717a521084f193709a6058afc693",
+      "commit_date": "2026-07-07T15:23:33+02:00",
+      "test_files": [
+        "tests/test_basic.py"
+      ],
+      "stable_patch_id": "c24eab6720d0e4f217820d4153bb3be06ac12d6f"
+    },
+    {
+      "task_id": "click_07c909f23f0f",
+      "fix_sha": "07c909f23f0f83b5ca137c167b9a134d66201f67",
+      "base_sha": "7925a3410d7098c28cfca3b2baa6c852666bbd14",
+      "commit_date": "2026-07-08T16:46:39+02:00",
+      "test_files": [
+        "tests/test_utils/test_style.py"
+      ],
+      "stable_patch_id": "8a0f654d032d1611e2d62fe904b28e128544ae43"
+    },
+    {
+      "task_id": "click_051725fa7e0c",
+      "fix_sha": "051725fa7e0c69effc9107066d8791c5b99242c3",
+      "base_sha": "7a0a3447f6ddd2c15438c5d098e289323f9f9556",
+      "commit_date": "2026-07-17T12:21:15-07:00",
+      "test_files": [
+        "tests/test_deprecations.py",
+        "tests/test_testing.py"
+      ],
+      "stable_patch_id": "4631b1e9ab15f95602acd2baa6fc3be702616d3d"
+    },
+    {
+      "task_id": "click_0585f456baa6",
+      "fix_sha": "0585f456baa6eeb2edbaab7c85fa796a004aef86",
+      "base_sha": "cfa01eeb7894a408af70b29d28c0b24f8680f9fb",
+      "commit_date": "2026-07-22T22:29:17+04:00",
+      "test_files": [
+        "tests/test_imports.py"
+      ],
+      "stable_patch_id": "d1c8e3928c2a1a8d095a4e6ce8bc74e4cdb67803"
+    },
+    {
+      "task_id": "click_047adef258fc",
+      "fix_sha": "047adef258fc25566163ffc3efd14effc0ef7352",
+      "base_sha": "00e592cea702e0b2caa0dee42489fdb1c22cd845",
+      "commit_date": "2026-07-31T15:09:58+04:00",
+      "test_files": [
+        "tests/test_commands.py"
+      ],
+      "stable_patch_id": "70e5cd884d89af49fcbebd265dbf557e8679d21c"
+    },
+    {
+      "task_id": "click_a2ac5839f29f",
+      "fix_sha": "a2ac5839f29f61cf7f3f229c67b97d07988e479b",
+      "base_sha": "9c4dfdaebe0e6b2aabc566eb81f6f10eb5cd6ea1",
+      "commit_date": "2026-08-13T13:19:47+04:00",
+      "test_files": [
+        "tests/test_termui.py"
+      ],
+      "stable_patch_id": "4ed84aa5b6cba7f2f3297cb6c0ae303787afd8a6"
+    },
+    {
+      "task_id": "click_f316d5cb3aa8",
+      "fix_sha": "f316d5cb3aa89b57c14aee54da6ac9062ac5bec4",
+      "base_sha": "8b44edfff7d9a6c895fa804148c16b3a0bc9efb5",
+      "commit_date": "2026-08-15T11:14:23+04:00",
+      "test_files": [
+        "tests/test_termui.py"
+      ],
+      "stable_patch_id": "e06d08b92af68aa71ac698a4c17efd25efe12afa"
+    },
+    {
+      "task_id": "click_1f9cd54f686e",
+      "fix_sha": "1f9cd54f686eb343cec714230ad825ce972739ab",
+      "base_sha": "150d1071d69c5cdad7de78590013ffe56cf9e3bb",
+      "commit_date": "2026-08-15T23:24:13+04:00",
+      "test_files": [
+        "tests/test_termui.py"
+      ],
+      "stable_patch_id": "2f5f18bcbdc8c19c1f152cc32e82a9e5cd76a0cf"
+    },
+    {
+      "task_id": "click_a1d87858abd7",
+      "fix_sha": "a1d87858abd77fa8e3ffc204670ccd75b96c4781",
+      "base_sha": "2103e157683c5e4cadc8ee1838df526a54bde9a4",
+      "commit_date": "2026-08-19T19:39:09+04:00",
+      "test_files": [
+        "tests/test_termui.py",
+        "tests/typing/typing_edit.py"
+      ],
+      "stable_patch_id": "3af850a5d13fbda516491d4131e3f96eff48c037"
+    },
+    {
+      "task_id": "click_f58ca3e81424",
+      "fix_sha": "f58ca3e81424a35626c8a475eb59ab95589008ce",
+      "base_sha": "420c8fb44eeadb537cae69d2fee3796e808558dd",
+      "commit_date": "2026-08-29T08:53:55+02:00",
+      "test_files": [
+        "tests/test_utils/test_sentinel.py"
+      ],
+      "stable_patch_id": "80c652d2165b1d2b2b3e7857afa9df9430611882"
+    },
+    {
+      "task_id": "click_271effb3d96d",
+      "fix_sha": "271effb3d96da5575eb527216ce3552bd7628fab",
+      "base_sha": "be13b152cf5949a362926322c835fa76019cc6fe",
+      "commit_date": "2026-09-02T08:40:51+02:00",
+      "test_files": [
+        "tests/test_options.py"
+      ],
+      "stable_patch_id": "48e5b352189f9112183eb7873227ec2d8baf0014"
+    },
+    {
+      "task_id": "click_22177f857a34",
+      "fix_sha": "22177f857a34e3c35ba957553853a37f23feb37e",
+      "base_sha": "7944461a80b780d060899c8835acab3c273a04a6",
+      "commit_date": "2026-09-08T14:43:15+04:00",
+      "test_files": [
+        "tests/test_types/test_Path.py",
+        "tests/typing/typing_path.py"
+      ],
+      "stable_patch_id": "6496f4c8a1cfdb01a255ea2f9437cad678f63a30"
+    },
+    {
+      "task_id": "click_f25f697a439a",
+      "fix_sha": "f25f697a439acc2b0d84aa8f5413330f4e2e75cf",
+      "base_sha": "86949d19b930ef68a45566544cb4b9508d895d0d",
+      "commit_date": "2026-09-10T12:18:39+04:00",
+      "test_files": [
+        "tests/test_arguments.py"
+      ],
+      "stable_patch_id": "49f438e56c57ba83226ccbf39e2a49edc9aaed71"
+    },
+    {
+      "task_id": "click_405a5481e4db",
+      "fix_sha": "405a5481e4dbd5022799993d787bd8446137d9a3",
+      "base_sha": "86949d19b930ef68a45566544cb4b9508d895d0d",
+      "commit_date": "2026-09-10T13:05:45+04:00",
+      "test_files": [
+        "tests/test_info_dict.py"
+      ],
+      "stable_patch_id": "277d8c4112356a8d2d93178f282e01ecf4cc991c"
+    },
+    {
+      "task_id": "click_05f6fd0df4ec",
+      "fix_sha": "05f6fd0df4ecbd104eb7a229f9f185c2484dee69",
+      "base_sha": "f25f697a439acc2b0d84aa8f5413330f4e2e75cf",
+      "commit_date": "2026-09-10T13:11:43+04:00",
+      "test_files": [
+        "tests/test_arguments.py"
+      ],
+      "stable_patch_id": "504ea55bcf91b8267d017c66b7584242699b81e7"
+    },
+    {
+      "task_id": "click_f67c2bb6c2f0",
+      "fix_sha": "f67c2bb6c2f055c1c7a57cd46c3697fc26a7742e",
+      "base_sha": "6d5bac5c712195cbfa9666ba0ecbf0573cdea356",
+      "commit_date": "2026-09-11T11:01:09+04:00",
+      "test_files": [
+        "tests/test_utils/test_make_default_short_help.py"
+      ],
+      "stable_patch_id": "022fdede659df861d7e9a0a9bc84a031f9d87833"
+    }
+  ],
+  "rules": {
+    "scope": "all changed Python test files",
+    "repeat_per_stage": 2,
+    "per_container_seconds": 12,
+    "total_task_seconds": 60,
+    "stable_skips": "identical across both stages and repeats; reported, not scored",
+    "install_project": "offline --no-deps --no-build-isolation into /tmp/site",
+    "fail_fast": "reject after first invalid stage; eligibility always requires four runs",
+    "no_repair_or_resample": true,
+    "train_fraction": "floor(0.6 * eligible_count)",
+    "split_order": "UTC commit date then full fix SHA",
+    "model_evaluation": "forbidden until separate completed preregistration",
+    "G1_target": 40
+  },
+  "selection_id": "fa5823dac74c3563410a4ec525933e169654357bbe3c4c2223f156b060c51160"
+}

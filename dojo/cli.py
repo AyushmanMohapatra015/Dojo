@@ -14,6 +14,7 @@ from dojo import __version__
 from dojo.mine.demo import create_demo
 from dojo.mine.git_mine import candidate_rejection_reasons, candidate_window, inspect_commit
 from dojo.mine.history import audit_history
+from dojo.mine.pool import freeze_click, validate_frozen_pool
 from dojo.mine.real_task import validate_candidate
 from dojo.mine.validate import validate_demo
 from dojo.solve.model import load_models, positive_decimal
@@ -215,6 +216,32 @@ def mine_audit(
                           "repositories": [{key: value for key, value in row.items()
                                             if key not in {"candidates", "rejected"}}
                                            for row in reports]}, indent=2))
+
+
+@app.command()
+def mine_freeze_click():
+    """Freeze Click candidates from the saved audit; commit before running the batch."""
+    try:
+        report = freeze_click()
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+        typer.echo("Selection not frozen: check saved audit, exclusions, local Click image "
+                   "and that no selection file already exists.", err=True)
+        raise typer.Exit(2)
+    typer.echo(json.dumps({key: report[key] for key in
+                          ("selection_id", "candidate_count", "image_id")}, indent=2))
+
+
+@app.command()
+def mine_validate_frozen(repo: Path = Path("data/repos/click"),
+                         output_dir: Path = Path("data/click-construction-v1")):
+    """Measure the committed Click pool offline; stop on infrastructure errors."""
+    try:
+        report = validate_frozen_pool(repo, output_dir, progress=typer.echo)
+    except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError):
+        typer.echo("Batch stopped. Completed records remain; inspect protocol, Docker and "
+                   "any run lock/containers before resuming. No model requests were sent.", err=True)
+        raise typer.Exit(2)
+    typer.echo(json.dumps({key: value for key, value in report.items() if key != "results"}, indent=2))
 
 
 for _name in ("bench", "cascade", "reflect", "gate", "eval", "report"):

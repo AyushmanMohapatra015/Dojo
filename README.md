@@ -11,6 +11,10 @@ History candidate auditing is available via `dojo mine-audit`; see the
 [three-repository yield report](docs/candidate-yield.md). Candidate counts are
 separate from validated tasks and do not establish benchmark readiness.
 
+The next construction stage has a committed-before-validation Click candidate
+manifest and reproducible offline batch runner; see
+[Click construction](docs/click-construction.md). Model evaluation remains locked.
+
 ## Setup
 
 Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/getting-started/installation/).

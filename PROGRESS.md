@@ -1,6 +1,30 @@
 # Progress
 
-Updated: 2026-10-16 (three-repository yield audit complete; model catalog rechecked 2026-10-15)
+Updated: 2026-10-16 (Click construction protocol prepared; model catalog rechecked 2026-10-15)
+
+## Click construction v1 registration preparation — 2026-10-16
+
+- Froze 50 Click candidates from the audited 51 distinct patches after excluding
+  the inspected development example (and patch-identical equivalents).
+  Selection ID fa5823dac74c3563410a4ec525933e169654357bbe3c4c2223f156b060c51160.
+- PREREGISTER.md Stage A now specifies construction before batch outcomes:
+  whole changed test files, two repeats per stage, strict errors/consistency,
+  identical pre-existing skips only, fail-fast rejection, fixed limits and
+  chronological 60/40 split after quality checks. Stage B model evaluation is
+  explicitly incomplete and forbidden. No held-out model results exist.
+- Added a resumable, record-hashed batch runner that verifies registration
+  source/provenance against Git before execution; concurrent/stale locks,
+  tampered records and uncertain Docker cleanup stop work. Improved snapshot
+  reads to raw Git object batches, preserving path/type/size checks.
+- Built the separate local Click image, ID
+  sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875,
+  with pytest 9.1.1 / flit_core 3.12.0. Offline snapshot installation supports
+  source/metadata/subprocess imports. Host dependencies unchanged.
+- Smoke-tested only the already-inspected Click example with this environment:
+  validated in four fresh containers, 9.906 seconds. No frozen-pool task has yet
+  run. All 192 offline tests and Ruff pass; dependency lock unchanged.
+- Preparing the committed/pushed protocol checkpoint before measuring the
+  frozen pool. No API/model requests, charges or external messages occurred.
 
 ## Candidate-yield audit — 2026-10-16
 
@@ -375,7 +399,7 @@ Updated: 2026-10-16 (three-repository yield audit complete; model catalog rechec
 ## Measured numbers
 - Python: 3.12.7; uv: 0.13.0. Locked packages: 88, including optional resolutions;
   installed Day 1 packages: 31.
-- Tests: **185 passed** after history yield audit and sample validation. Ruff: **passed**.
+- Tests: **192 passed** after frozen construction/resume checks. Ruff: **passed**.
   uv lock check: **passed** during the scaffold milestone; dependencies unchanged.
 - Probe plan: **4 models × 4 variants = 16 sequential requests**.
 - Completion limit: **256 tokens**, reasoning-inclusive limit also set.

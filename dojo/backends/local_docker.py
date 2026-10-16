@@ -11,7 +11,8 @@ DOCKER = ["docker", "--host", ("npipe:////./pipe/dockerDesktopLinuxEngine" if os
 
 # Trusted harness. Repository files are received over stdin, not a host mount.
 RUNNER = r'''
-import io, json, os, pathlib, sys, tarfile
+import io, json, os, pathlib, subprocess, sys, tarfile
+control = json.loads(sys.argv[1]) if len(sys.argv) > 1 else {}
 root = pathlib.Path('/tmp/work')
 root.mkdir()
 payload = sys.stdin.buffer.read(20 * 1024 * 1024 + 1)
@@ -35,6 +36,14 @@ with tarfile.open(fileobj=io.BytesIO(payload), mode='r:') as archive:
 os.chdir(root)
 os.environ['PYTEST_DISABLE_PLUGIN_AUTOLOAD'] = '1'
 os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
+if control.get('install_project'):
+    subprocess.run([sys.executable, '-I', '-m', 'pip', 'install', '--no-deps',
+                    '--no-build-isolation', '--no-index', '--no-cache-dir',
+                    '--disable-pip-version-check', '--target=/tmp/site', str(root)],
+                    check=True, capture_output=True, timeout=8)
+    sys.path.insert(0, '/tmp/site')
+    os.environ['PYTHONPATH'] = '/tmp/work/src:/tmp/work:/tmp/site'
+    os.environ['PATH'] = '/tmp/site/bin:' + os.environ.get('PATH', '')
 import pytest
 sys.path.insert(0, str(root))
 if (root / 'src').is_dir(): sys.path.insert(0, str(root / 'src'))
@@ -53,7 +62,7 @@ class Receipt:
             elif report.failed: self.failed.append(report.nodeid)
         elif report.failed: self.errors.append(report.nodeid)
 receipt = Receipt()
-selection = json.loads(sys.argv[1]) if len(sys.argv) > 1 else ['tests/test_calculator.py']
+selection = control.get('selectors') or ['tests/test_calculator.py']
 code = pytest.main(['-q', '-c', '/dev/null', '--rootdir=/tmp/work', '-p', 'no:cacheprovider',
                     '--confcutdir=/tmp/work', '--override-ini=addopts=', *selection],
                     plugins=[receipt])
@@ -63,13 +72,16 @@ print('DOJO_RECEIPT=' + json.dumps(dict(exit_code=int(code), collected=receipt.c
 '''
 
 
-def container_command(name: str, image_id: str, selectors: tuple[str, ...] = ()) -> list[str]:
+def container_command(
+    name: str, image_id: str, selectors: tuple[str, ...] = (), *, install_project: bool = False,
+) -> list[str]:
     return [*DOCKER, "run", "--name", name, "--pull=never", "--network=none",
             "--read-only", "--cap-drop=ALL", "--security-opt=no-new-privileges",
             "--user=65534:65534", "--pids-limit=64", "--memory=256m", "--cpus=1",
             "--tmpfs=/tmp:rw,noexec,nosuid,size=64m", "--workdir=/tmp", "--no-healthcheck",
             "--entrypoint=python", "-i", image_id, "-I", "-c", RUNNER,
-            *([json.dumps(selectors)] if selectors else [])]
+            *([json.dumps({"selectors": selectors, "install_project": install_project})]
+              if selectors or install_project else [])]
 
 
 def run_demo_tests(archive: bytes, *, timeout: float) -> dict:
@@ -77,26 +89,38 @@ def run_demo_tests(archive: bytes, *, timeout: float) -> dict:
     return run_repo_tests(archive, timeout=timeout)
 
 
-def run_repo_tests(archive: bytes, *, timeout: float, selectors: tuple[str, ...] = ()) -> dict:
+def run_repo_tests(
+    archive: bytes, *, timeout: float, selectors: tuple[str, ...] = (),
+    image_ref: str = IMAGE, install_project: bool = False,
+) -> dict:
     """Run selected tests from a previously reviewed snapshot, entirely in Docker."""
     for selector in selectors:
         path = selector.split("::", 1)[0]
         if (not path or path.startswith(("-", "/")) or ".." in path.split("/")
                 or "\\" in selector or ":" in path or not path.endswith(".py")):
             raise ValueError("Invalid test selector")
-    image = subprocess.run([*DOCKER, "image", "inspect", IMAGE, "--format", "{{.Id}}"],
+    if image_ref not in {IMAGE, "dojo-validation-click:local"} and not (
+        image_ref.startswith("sha256:") and len(image_ref) == 71
+        and all(char in "0123456789abcdef" for char in image_ref[7:])
+    ):
+        raise ValueError("Only reviewed local validation images are allowed")
+    image = subprocess.run([*DOCKER, "image", "inspect", image_ref, "--format", "{{.Id}}"],
                            capture_output=True, check=True, timeout=10)
     image_id = image.stdout.decode("ascii").strip()
     if not image_id.startswith("sha256:"):
         raise ValueError("Missing local validation image")
     name = "dojo-validation-" + uuid.uuid4().hex
     try:
-        result = subprocess.run(container_command(name, image_id, selectors), input=archive,
+        result = subprocess.run(container_command(name, image_id, selectors,
+                                                   install_project=install_project), input=archive,
                                 capture_output=True, check=True, timeout=timeout)
     finally:
         # Only the unique container name created for this run is eligible for removal.
-        cleanup = subprocess.run([*DOCKER, "rm", "--force", name], check=False,
-                                 capture_output=True, timeout=5)
+        try:
+            cleanup = subprocess.run([*DOCKER, "rm", "--force", name], check=False,
+                                     capture_output=True, timeout=5)
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise RuntimeError("Container cleanup status is unknown; stop") from exc
         if cleanup.returncode and b"No such container" not in cleanup.stderr:
             raise RuntimeError("Demo container cleanup failed")
     receipts = [line.removeprefix(b"DOJO_RECEIPT=") for line in result.stdout.splitlines()

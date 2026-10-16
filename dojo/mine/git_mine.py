@@ -43,12 +43,12 @@ def candidate_window(as_of: datetime, window_months: int) -> datetime:
                          day=min(as_of.day, monthrange(year, month)[1]))
 
 
-def git(repo: Path, *args: str) -> bytes:
+def git(repo: Path, *args: str, input_data: bytes | None = None) -> bytes:
     """Run read-only Git commands; callers supply arguments, never shell text."""
     result = subprocess.run(
         ["git", "--no-pager", "-c", "safe.directory=" + str(repo.resolve()),
          "-c", "diff.external=", "-C", str(repo), *args],
-        capture_output=True, check=True, timeout=30,
+        input=input_data, capture_output=True, check=True, timeout=30,
     )
     return result.stdout
 
