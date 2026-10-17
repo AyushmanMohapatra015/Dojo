@@ -1,3 +1,26 @@
+# More-itertools construction v2 results
+
+Execution v2 was registered and pushed in commit
+`b7bf7c4a03c865b42df4899d7915a4f92235a3b3` before any v2 candidate ran. The
+runner completed all 32 candidates under the frozen protocol. **29 are eligible
+and 3 are rejected**; each rejection is `base_did_not_fail`. With Click v1's 34
+eligible tasks, the active construction benchmark has **63 eligible tasks**, so
+the frozen G1 threshold of 40 is met. The earlier more-itertools v1 result is
+historical and is not added to this count.
+
+The v2 split has **17 train and 12 held-out tasks**. Surviving prior labels were
+preserved, including `more_itertools_3eb4053e1aac` as held out; the Click v1
+20/14 split and held-out hash remain unchanged. The v2 held-out ID hash is
+`e08e303338a29a280bc29b442baa84e71e2409de3301bab191f7e2957b576aec`.
+
+Every candidate record, the summary, exact eligible JSONL, and split lock are
+preserved under `data/more-itertools-construction-v2/`. The registered integrity
+check passed after completion. The execution used the immutable local pytest
+image, no network or installation, a 60-second container limit and a shared
+300-second task limit. It made **zero model calls**. G1 is a dataset construction
+gate only: issue prompts are incomplete, model evaluation is unregistered, and
+inference remains locked. These results do not establish hackathon compliance.
+
 # More-itertools construction v1: measurement limitation
 
 Execution was registered and pushed in commit

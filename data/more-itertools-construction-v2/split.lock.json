@@ -1,0 +1,39 @@
+{
+  "selection_id": "f7d214ae289c8a1e894cdb83733441748a24786b257f69cf973fdc9999771200",
+  "execution_id": "0d7f98d8507bcc70e923345050ad0c3a41bd75fe0193d4a86d0a8317cc7a86c0",
+  "registration_commit": "b7bf7c4a03c865b42df4899d7915a4f92235a3b3",
+  "train": [
+    "more_itertools_f91c7339f163",
+    "more_itertools_db4f41b28050",
+    "more_itertools_8089263d2374",
+    "more_itertools_d63a26e56eac",
+    "more_itertools_93c1cf8484f0",
+    "more_itertools_71b46b06fb48",
+    "more_itertools_52cfcfedc310",
+    "more_itertools_edb3346f835c",
+    "more_itertools_ba7ef9425f69",
+    "more_itertools_842a2b17a8e3",
+    "more_itertools_43decdd76072",
+    "more_itertools_f51a53bfd2fe",
+    "more_itertools_d64a7d6971bf",
+    "more_itertools_958990e22c4a",
+    "more_itertools_d992be0de938",
+    "more_itertools_069b30002a98",
+    "more_itertools_0e6acdf9b607"
+  ],
+  "held_out": [
+    "more_itertools_dc2664b4a7c6",
+    "more_itertools_7847d4324a58",
+    "more_itertools_ce676d24136e",
+    "more_itertools_1fd388bc2379",
+    "more_itertools_6b1907de293a",
+    "more_itertools_752799b5c88e",
+    "more_itertools_e426d256b90b",
+    "more_itertools_def2dabea858",
+    "more_itertools_2b8d5cddce4e",
+    "more_itertools_670b715b307a",
+    "more_itertools_3eb4053e1aac",
+    "more_itertools_f89d7a3331ba"
+  ],
+  "held_out_ids_sha256": "e08e303338a29a280bc29b442baa84e71e2409de3301bab191f7e2957b576aec"
+}

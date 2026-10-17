@@ -1,6 +1,28 @@
 # Progress
 
-Updated: 2026-10-17 (v2 candidate execution registration prepared)
+Updated: 2026-10-17 (v2 candidate construction results complete)
+
+## V2 candidate construction results - 2026-10-17
+
+- Completed every one of the 32 preregistered more-itertools candidates using
+  execution ID 0d7f98d8507bcc70e923345050ad0c3a41bd75fe0193d4a86d0a8317cc7a86c0.
+  Results: 29 eligible, 3 rejected; all three rejection reasons are
+  `base_did_not_fail`. All individual records and exports are saved under
+  data/more-itertools-construction-v2.
+- The registered integrity check passes. Combined active construction count is
+  63 (34 Click v1 + 29 more-itertools v2); frozen G1 threshold of 40 is met.
+  Historical more-itertools v1 is excluded from the combined count.
+- New split: 17 train / 12 held out. Surviving earlier labels were preserved,
+  including more_itertools_3eb4053e1aac as held out. Click's 20/14 split and
+  held-out hash are unchanged. New held-out ID hash:
+  e08e303338a29a280bc29b442baa84e71e2409de3301bab191f7e2957b576aec.
+- The unchanged v2 protocol uses the pinned local pytest-only image, no network
+  and no installation, 60 seconds per container and 300 seconds per task.
+  Zero model calls or provider spend. Issue prompts are incomplete, model
+  evaluation is unregistered, and inference remains locked.
+- Next: construct solver-safe issue prompts and review whether this dataset is
+  suitable for a separately registered offline solver evaluation. Do not run
+  models or unlock provider inference at this step.
 
 ## V2 candidate execution registration - 2026-10-17
 

@@ -1,0 +1,1408 @@
+{
+  "schema_version": 2,
+  "repo": "more-itertools/more-itertools",
+  "synthetic": false,
+  "status": "eligible_task",
+  "rejection_reason": null,
+  "fail_to_pass": [
+    "tests/test_recipes.py::FirstTrueTests::test_pred"
+  ],
+  "pass_to_pass": [
+    "tests/test_recipes.py::AllEqualTests::test_empty",
+    "tests/test_recipes.py::AllEqualTests::test_false",
+    "tests/test_recipes.py::AllEqualTests::test_groupby_calls",
+    "tests/test_recipes.py::AllEqualTests::test_key",
+    "tests/test_recipes.py::AllEqualTests::test_one",
+    "tests/test_recipes.py::AllEqualTests::test_tricky",
+    "tests/test_recipes.py::AllEqualTests::test_true",
+    "tests/test_recipes.py::BatchedTests::test_basic",
+    "tests/test_recipes.py::BatchedTests::test_strict",
+    "tests/test_recipes.py::BeforeAndAfterTests::test_empty",
+    "tests/test_recipes.py::BeforeAndAfterTests::test_nested_remainder",
+    "tests/test_recipes.py::BeforeAndAfterTests::test_never_false",
+    "tests/test_recipes.py::BeforeAndAfterTests::test_never_true",
+    "tests/test_recipes.py::BeforeAndAfterTests::test_some_true",
+    "tests/test_recipes.py::ConsumeTests::test_negative_consume",
+    "tests/test_recipes.py::ConsumeTests::test_null_consume",
+    "tests/test_recipes.py::ConsumeTests::test_sanity",
+    "tests/test_recipes.py::ConsumeTests::test_total_consume",
+    "tests/test_recipes.py::Convolvetests::test_derivative",
+    "tests/test_recipes.py::Convolvetests::test_infinite_signal",
+    "tests/test_recipes.py::Convolvetests::test_moving_average",
+    "tests/test_recipes.py::DotproductTests::test_happy_path",
+    "tests/test_recipes.py::FactorTests::test_basic",
+    "tests/test_recipes.py::FactorTests::test_cross_check",
+    "tests/test_recipes.py::FirstTrueTests::test_default",
+    "tests/test_recipes.py::FirstTrueTests::test_nothing_true",
+    "tests/test_recipes.py::FirstTrueTests::test_something_true",
+    "tests/test_recipes.py::FlattenTests::test_basic_usage",
+    "tests/test_recipes.py::FlattenTests::test_single_level",
+    "tests/test_recipes.py::GrouperTests::test_basic",
+    "tests/test_recipes.py::GrouperTests::test_fill",
+    "tests/test_recipes.py::GrouperTests::test_ignore",
+    "tests/test_recipes.py::GrouperTests::test_invalid_incomplete",
+    "tests/test_recipes.py::GrouperTests::test_strict",
+    "tests/test_recipes.py::GrouperTests::test_strict_fails",
+    "tests/test_recipes.py::IterExceptTests::test_exact_exception",
+    "tests/test_recipes.py::IterExceptTests::test_first",
+    "tests/test_recipes.py::IterExceptTests::test_generic_exception",
+    "tests/test_recipes.py::IterExceptTests::test_multiple",
+    "tests/test_recipes.py::IterExceptTests::test_uncaught_exception_is_raised",
+    "tests/test_recipes.py::IterIndexTests::test_basic",
+    "tests/test_recipes.py::IterIndexTests::test_start",
+    "tests/test_recipes.py::IterIndexTests::test_stop",
+    "tests/test_recipes.py::LoopsTests::test_basic",
+    "tests/test_recipes.py::MatMulTests::test_m_by_n",
+    "tests/test_recipes.py::MatMulTests::test_n_by_n",
+    "tests/test_recipes.py::MultinomialTests::test_basic",
+    "tests/test_recipes.py::NcyclesTests::test_happy_path",
+    "tests/test_recipes.py::NcyclesTests::test_null_case",
+    "tests/test_recipes.py::NcyclesTests::test_pathological_case",
+    "tests/test_recipes.py::NthCombinationTests::test_basic",
+    "tests/test_recipes.py::NthCombinationTests::test_invalid_index",
+    "tests/test_recipes.py::NthCombinationTests::test_invalid_r",
+    "tests/test_recipes.py::NthCombinationTests::test_long",
+    "tests/test_recipes.py::NthPermutationTests::test_invalid_index",
+    "tests/test_recipes.py::NthPermutationTests::test_invalid_r",
+    "tests/test_recipes.py::NthPermutationTests::test_long",
+    "tests/test_recipes.py::NthPermutationTests::test_negative_index",
+    "tests/test_recipes.py::NthPermutationTests::test_null",
+    "tests/test_recipes.py::NthPermutationTests::test_r_equal_to_n",
+    "tests/test_recipes.py::NthPermutationTests::test_r_less_than_n",
+    "tests/test_recipes.py::NthTests::test_basic",
+    "tests/test_recipes.py::NthTests::test_default",
+    "tests/test_recipes.py::NthTests::test_negative_item_raises",
+    "tests/test_recipes.py::PadnoneTests::test_basic",
+    "tests/test_recipes.py::PartitionTests::test_arbitrary",
+    "tests/test_recipes.py::PartitionTests::test_bool",
+    "tests/test_recipes.py::PartitionTests::test_pred_is_none",
+    "tests/test_recipes.py::PolynomialDerivativeTests::test_basic",
+    "tests/test_recipes.py::PolynomialEvalTests::test_basic",
+    "tests/test_recipes.py::PolynomialFromRootsTests::test_basic",
+    "tests/test_recipes.py::PolynomialFromRootsTests::test_large",
+    "tests/test_recipes.py::PowersetTests::test_combinatorics",
+    "tests/test_recipes.py::PrependTests::test_basic",
+    "tests/test_recipes.py::PrependTests::test_multiple",
+    "tests/test_recipes.py::PrimeFunctionTests::test_is_prime_pseudoprimes",
+    "tests/test_recipes.py::PrimeFunctionTests::test_primes",
+    "tests/test_recipes.py::PrimeFunctionTests::test_special_primes",
+    "tests/test_recipes.py::QuantifyTests::test_custom_predicate",
+    "tests/test_recipes.py::QuantifyTests::test_happy_path",
+    "tests/test_recipes.py::RandomCombinationTests::test_no_replacement",
+    "tests/test_recipes.py::RandomCombinationTests::test_pseudorandomness",
+    "tests/test_recipes.py::RandomCombinationWithReplacementTests::test_pseudorandomness",
+    "tests/test_recipes.py::RandomCombinationWithReplacementTests::test_replacement",
+    "tests/test_recipes.py::RandomPermutationTests::test_full_permutation",
+    "tests/test_recipes.py::RandomPermutationTests::test_partial_permutation",
+    "tests/test_recipes.py::RandomProductTests::test_list_with_repeat",
+    "tests/test_recipes.py::RandomProductTests::test_simple_lists",
+    "tests/test_recipes.py::RepeatfuncTests::test_added_arguments",
+    "tests/test_recipes.py::RepeatfuncTests::test_finite_repeat",
+    "tests/test_recipes.py::RepeatfuncTests::test_null_times",
+    "tests/test_recipes.py::RepeatfuncTests::test_simple_repeat",
+    "tests/test_recipes.py::ReshapeTests::test_basic",
+    "tests/test_recipes.py::ReshapeTests::test_empty",
+    "tests/test_recipes.py::ReshapeTests::test_multidimensional",
+    "tests/test_recipes.py::ReshapeTests::test_zero",
+    "tests/test_recipes.py::RoundrobinTests::test_even_groups",
+    "tests/test_recipes.py::RoundrobinTests::test_uneven_groups",
+    "tests/test_recipes.py::RunningMeanTests::test_basic",
+    "tests/test_recipes.py::RunningMeanTests::test_maxlen",
+    "tests/test_recipes.py::RunningMedianTests::test_error_cases",
+    "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median",
+    "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median_windowed",
+    "tests/test_recipes.py::SieveTests::test_basic",
+    "tests/test_recipes.py::SieveTests::test_prime_counts",
+    "tests/test_recipes.py::SieveTests::test_small_numbers",
+    "tests/test_recipes.py::SlidingWindowTests::test_deque_version",
+    "tests/test_recipes.py::SlidingWindowTests::test_islice_version",
+    "tests/test_recipes.py::SlidingWindowTests::test_zero",
+    "tests/test_recipes.py::SubslicesTests::test_basic",
+    "tests/test_recipes.py::SumOfSquaresTests::test_basic",
+    "tests/test_recipes.py::TabulateTests::test_count",
+    "tests/test_recipes.py::TabulateTests::test_simple_tabulate",
+    "tests/test_recipes.py::TailTests::test_iterator_equal",
+    "tests/test_recipes.py::TailTests::test_iterator_greater",
+    "tests/test_recipes.py::TailTests::test_iterator_less",
+    "tests/test_recipes.py::TailTests::test_sized_equal",
+    "tests/test_recipes.py::TailTests::test_sized_greater",
+    "tests/test_recipes.py::TailTests::test_sized_less",
+    "tests/test_recipes.py::TakeTests::test_negative_take",
+    "tests/test_recipes.py::TakeTests::test_null_take",
+    "tests/test_recipes.py::TakeTests::test_simple_take",
+    "tests/test_recipes.py::TakeTests::test_take_too_much",
+    "tests/test_recipes.py::TestRandomDerangement::test_basics",
+    "tests/test_recipes.py::TotientTests::test_basic",
+    "tests/test_recipes.py::TransposeTests::test_basic",
+    "tests/test_recipes.py::TransposeTests::test_empty",
+    "tests/test_recipes.py::TransposeTests::test_incompatible_error",
+    "tests/test_recipes.py::TriplewiseTests::test_basic",
+    "tests/test_recipes.py::UniqueEverseenTests::test_custom_key",
+    "tests/test_recipes.py::UniqueEverseenTests::test_everseen",
+    "tests/test_recipes.py::UniqueEverseenTests::test_unhashable",
+    "tests/test_recipes.py::UniqueEverseenTests::test_unhashable_key",
+    "tests/test_recipes.py::UniqueJustseenTests::test_custom_key",
+    "tests/test_recipes.py::UniqueJustseenTests::test_justseen",
+    "tests/test_recipes.py::UniqueTests::test_basic",
+    "tests/test_recipes.py::UniqueTests::test_key",
+    "tests/test_recipes.py::UniqueTests::test_reverse"
+  ],
+  "stable_skips": [],
+  "fix_sha": "d63a26e56eac21ef874d243d2230123464539ed5",
+  "base_sha": "d0c20f594667738b714a1f7786da82e0de70fbf5",
+  "test_scope": [
+    "tests/test_recipes.py"
+  ],
+  "runs": [
+    {
+      "stage": "base",
+      "repeat": 1,
+      "collector_protocol": "method-subtests-v2",
+      "exit_code": 1,
+      "collected": 139,
+      "passed": [
+        "tests/test_recipes.py::AllEqualTests::test_empty",
+        "tests/test_recipes.py::AllEqualTests::test_false",
+        "tests/test_recipes.py::AllEqualTests::test_groupby_calls",
+        "tests/test_recipes.py::AllEqualTests::test_key",
+        "tests/test_recipes.py::AllEqualTests::test_one",
+        "tests/test_recipes.py::AllEqualTests::test_tricky",
+        "tests/test_recipes.py::AllEqualTests::test_true",
+        "tests/test_recipes.py::BatchedTests::test_basic",
+        "tests/test_recipes.py::BatchedTests::test_strict",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_empty",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_nested_remainder",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_never_false",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_never_true",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_some_true",
+        "tests/test_recipes.py::ConsumeTests::test_negative_consume",
+        "tests/test_recipes.py::ConsumeTests::test_null_consume",
+        "tests/test_recipes.py::ConsumeTests::test_sanity",
+        "tests/test_recipes.py::ConsumeTests::test_total_consume",
+        "tests/test_recipes.py::Convolvetests::test_derivative",
+        "tests/test_recipes.py::Convolvetests::test_infinite_signal",
+        "tests/test_recipes.py::Convolvetests::test_moving_average",
+        "tests/test_recipes.py::DotproductTests::test_happy_path",
+        "tests/test_recipes.py::FactorTests::test_basic",
+        "tests/test_recipes.py::FactorTests::test_cross_check",
+        "tests/test_recipes.py::FirstTrueTests::test_default",
+        "tests/test_recipes.py::FirstTrueTests::test_nothing_true",
+        "tests/test_recipes.py::FirstTrueTests::test_something_true",
+        "tests/test_recipes.py::FlattenTests::test_basic_usage",
+        "tests/test_recipes.py::FlattenTests::test_single_level",
+        "tests/test_recipes.py::GrouperTests::test_basic",
+        "tests/test_recipes.py::GrouperTests::test_fill",
+        "tests/test_recipes.py::GrouperTests::test_ignore",
+        "tests/test_recipes.py::GrouperTests::test_invalid_incomplete",
+        "tests/test_recipes.py::GrouperTests::test_strict",
+        "tests/test_recipes.py::GrouperTests::test_strict_fails",
+        "tests/test_recipes.py::IterExceptTests::test_exact_exception",
+        "tests/test_recipes.py::IterExceptTests::test_first",
+        "tests/test_recipes.py::IterExceptTests::test_generic_exception",
+        "tests/test_recipes.py::IterExceptTests::test_multiple",
+        "tests/test_recipes.py::IterExceptTests::test_uncaught_exception_is_raised",
+        "tests/test_recipes.py::IterIndexTests::test_basic",
+        "tests/test_recipes.py::IterIndexTests::test_start",
+        "tests/test_recipes.py::IterIndexTests::test_stop",
+        "tests/test_recipes.py::LoopsTests::test_basic",
+        "tests/test_recipes.py::MatMulTests::test_m_by_n",
+        "tests/test_recipes.py::MatMulTests::test_n_by_n",
+        "tests/test_recipes.py::MultinomialTests::test_basic",
+        "tests/test_recipes.py::NcyclesTests::test_happy_path",
+        "tests/test_recipes.py::NcyclesTests::test_null_case",
+        "tests/test_recipes.py::NcyclesTests::test_pathological_case",
+        "tests/test_recipes.py::NthCombinationTests::test_basic",
+        "tests/test_recipes.py::NthCombinationTests::test_invalid_index",
+        "tests/test_recipes.py::NthCombinationTests::test_invalid_r",
+        "tests/test_recipes.py::NthCombinationTests::test_long",
+        "tests/test_recipes.py::NthPermutationTests::test_invalid_index",
+        "tests/test_recipes.py::NthPermutationTests::test_invalid_r",
+        "tests/test_recipes.py::NthPermutationTests::test_long",
+        "tests/test_recipes.py::NthPermutationTests::test_negative_index",
+        "tests/test_recipes.py::NthPermutationTests::test_null",
+        "tests/test_recipes.py::NthPermutationTests::test_r_equal_to_n",
+        "tests/test_recipes.py::NthPermutationTests::test_r_less_than_n",
+        "tests/test_recipes.py::NthTests::test_basic",
+        "tests/test_recipes.py::NthTests::test_default",
+        "tests/test_recipes.py::NthTests::test_negative_item_raises",
+        "tests/test_recipes.py::PadnoneTests::test_basic",
+        "tests/test_recipes.py::PartitionTests::test_arbitrary",
+        "tests/test_recipes.py::PartitionTests::test_bool",
+        "tests/test_recipes.py::PartitionTests::test_pred_is_none",
+        "tests/test_recipes.py::PolynomialDerivativeTests::test_basic",
+        "tests/test_recipes.py::PolynomialEvalTests::test_basic",
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_basic",
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_large",
+        "tests/test_recipes.py::PowersetTests::test_combinatorics",
+        "tests/test_recipes.py::PrependTests::test_basic",
+        "tests/test_recipes.py::PrependTests::test_multiple",
+        "tests/test_recipes.py::PrimeFunctionTests::test_is_prime_pseudoprimes",
+        "tests/test_recipes.py::PrimeFunctionTests::test_primes",
+        "tests/test_recipes.py::PrimeFunctionTests::test_special_primes",
+        "tests/test_recipes.py::QuantifyTests::test_custom_predicate",
+        "tests/test_recipes.py::QuantifyTests::test_happy_path",
+        "tests/test_recipes.py::RandomCombinationTests::test_no_replacement",
+        "tests/test_recipes.py::RandomCombinationTests::test_pseudorandomness",
+        "tests/test_recipes.py::RandomCombinationWithReplacementTests::test_pseudorandomness",
+        "tests/test_recipes.py::RandomCombinationWithReplacementTests::test_replacement",
+        "tests/test_recipes.py::RandomPermutationTests::test_full_permutation",
+        "tests/test_recipes.py::RandomPermutationTests::test_partial_permutation",
+        "tests/test_recipes.py::RandomProductTests::test_list_with_repeat",
+        "tests/test_recipes.py::RandomProductTests::test_simple_lists",
+        "tests/test_recipes.py::RepeatfuncTests::test_added_arguments",
+        "tests/test_recipes.py::RepeatfuncTests::test_finite_repeat",
+        "tests/test_recipes.py::RepeatfuncTests::test_null_times",
+        "tests/test_recipes.py::RepeatfuncTests::test_simple_repeat",
+        "tests/test_recipes.py::ReshapeTests::test_basic",
+        "tests/test_recipes.py::ReshapeTests::test_empty",
+        "tests/test_recipes.py::ReshapeTests::test_multidimensional",
+        "tests/test_recipes.py::ReshapeTests::test_zero",
+        "tests/test_recipes.py::RoundrobinTests::test_even_groups",
+        "tests/test_recipes.py::RoundrobinTests::test_uneven_groups",
+        "tests/test_recipes.py::RunningMeanTests::test_basic",
+        "tests/test_recipes.py::RunningMeanTests::test_maxlen",
+        "tests/test_recipes.py::RunningMedianTests::test_error_cases",
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median",
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median_windowed",
+        "tests/test_recipes.py::SieveTests::test_basic",
+        "tests/test_recipes.py::SieveTests::test_prime_counts",
+        "tests/test_recipes.py::SieveTests::test_small_numbers",
+        "tests/test_recipes.py::SlidingWindowTests::test_deque_version",
+        "tests/test_recipes.py::SlidingWindowTests::test_islice_version",
+        "tests/test_recipes.py::SlidingWindowTests::test_zero",
+        "tests/test_recipes.py::SubslicesTests::test_basic",
+        "tests/test_recipes.py::SumOfSquaresTests::test_basic",
+        "tests/test_recipes.py::TabulateTests::test_count",
+        "tests/test_recipes.py::TabulateTests::test_simple_tabulate",
+        "tests/test_recipes.py::TailTests::test_iterator_equal",
+        "tests/test_recipes.py::TailTests::test_iterator_greater",
+        "tests/test_recipes.py::TailTests::test_iterator_less",
+        "tests/test_recipes.py::TailTests::test_sized_equal",
+        "tests/test_recipes.py::TailTests::test_sized_greater",
+        "tests/test_recipes.py::TailTests::test_sized_less",
+        "tests/test_recipes.py::TakeTests::test_negative_take",
+        "tests/test_recipes.py::TakeTests::test_null_take",
+        "tests/test_recipes.py::TakeTests::test_simple_take",
+        "tests/test_recipes.py::TakeTests::test_take_too_much",
+        "tests/test_recipes.py::TestRandomDerangement::test_basics",
+        "tests/test_recipes.py::TotientTests::test_basic",
+        "tests/test_recipes.py::TransposeTests::test_basic",
+        "tests/test_recipes.py::TransposeTests::test_empty",
+        "tests/test_recipes.py::TransposeTests::test_incompatible_error",
+        "tests/test_recipes.py::TriplewiseTests::test_basic",
+        "tests/test_recipes.py::UniqueEverseenTests::test_custom_key",
+        "tests/test_recipes.py::UniqueEverseenTests::test_everseen",
+        "tests/test_recipes.py::UniqueEverseenTests::test_unhashable",
+        "tests/test_recipes.py::UniqueEverseenTests::test_unhashable_key",
+        "tests/test_recipes.py::UniqueJustseenTests::test_custom_key",
+        "tests/test_recipes.py::UniqueJustseenTests::test_justseen",
+        "tests/test_recipes.py::UniqueTests::test_basic",
+        "tests/test_recipes.py::UniqueTests::test_key",
+        "tests/test_recipes.py::UniqueTests::test_reverse"
+      ],
+      "failed": [
+        "tests/test_recipes.py::FirstTrueTests::test_pred"
+      ],
+      "skipped": [],
+      "errors": [],
+      "subtests": {
+        "tests/test_recipes.py::BatchedTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::FactorTests::test_basic": {
+          "passed": 11,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_fill": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_ignore": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_strict": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_strict_fails": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::IterIndexTests::test_basic": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::IterIndexTests::test_start": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::MultinomialTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PadnoneTests::test_basic": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialDerivativeTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialEvalTests::test_basic": {
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_basic": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_is_prime_pseudoprimes": {
+          "passed": 98,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_primes": {
+          "passed": 9592,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_special_primes": {
+          "passed": 18,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::ReshapeTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::ReshapeTests::test_multidimensional": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMeanTests::test_basic": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMeanTests::test_maxlen": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median_windowed": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SieveTests::test_prime_counts": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SieveTests::test_small_numbers": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SlidingWindowTests::test_islice_version": {
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SubslicesTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SumOfSquaresTests::test_basic": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::TotientTests::test_basic": {
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::TriplewiseTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        }
+      },
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+      "harness_sha256": "2a7892cc9a553d9dba060664b9d5cb899293d4dab08bfb5c8f6bbf8dc152bea2",
+      "container_seconds": 8.547,
+      "elapsed_seconds": 8.671
+    },
+    {
+      "stage": "fix",
+      "repeat": 1,
+      "collector_protocol": "method-subtests-v2",
+      "exit_code": 0,
+      "collected": 139,
+      "passed": [
+        "tests/test_recipes.py::AllEqualTests::test_empty",
+        "tests/test_recipes.py::AllEqualTests::test_false",
+        "tests/test_recipes.py::AllEqualTests::test_groupby_calls",
+        "tests/test_recipes.py::AllEqualTests::test_key",
+        "tests/test_recipes.py::AllEqualTests::test_one",
+        "tests/test_recipes.py::AllEqualTests::test_tricky",
+        "tests/test_recipes.py::AllEqualTests::test_true",
+        "tests/test_recipes.py::BatchedTests::test_basic",
+        "tests/test_recipes.py::BatchedTests::test_strict",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_empty",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_nested_remainder",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_never_false",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_never_true",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_some_true",
+        "tests/test_recipes.py::ConsumeTests::test_negative_consume",
+        "tests/test_recipes.py::ConsumeTests::test_null_consume",
+        "tests/test_recipes.py::ConsumeTests::test_sanity",
+        "tests/test_recipes.py::ConsumeTests::test_total_consume",
+        "tests/test_recipes.py::Convolvetests::test_derivative",
+        "tests/test_recipes.py::Convolvetests::test_infinite_signal",
+        "tests/test_recipes.py::Convolvetests::test_moving_average",
+        "tests/test_recipes.py::DotproductTests::test_happy_path",
+        "tests/test_recipes.py::FactorTests::test_basic",
+        "tests/test_recipes.py::FactorTests::test_cross_check",
+        "tests/test_recipes.py::FirstTrueTests::test_default",
+        "tests/test_recipes.py::FirstTrueTests::test_nothing_true",
+        "tests/test_recipes.py::FirstTrueTests::test_pred",
+        "tests/test_recipes.py::FirstTrueTests::test_something_true",
+        "tests/test_recipes.py::FlattenTests::test_basic_usage",
+        "tests/test_recipes.py::FlattenTests::test_single_level",
+        "tests/test_recipes.py::GrouperTests::test_basic",
+        "tests/test_recipes.py::GrouperTests::test_fill",
+        "tests/test_recipes.py::GrouperTests::test_ignore",
+        "tests/test_recipes.py::GrouperTests::test_invalid_incomplete",
+        "tests/test_recipes.py::GrouperTests::test_strict",
+        "tests/test_recipes.py::GrouperTests::test_strict_fails",
+        "tests/test_recipes.py::IterExceptTests::test_exact_exception",
+        "tests/test_recipes.py::IterExceptTests::test_first",
+        "tests/test_recipes.py::IterExceptTests::test_generic_exception",
+        "tests/test_recipes.py::IterExceptTests::test_multiple",
+        "tests/test_recipes.py::IterExceptTests::test_uncaught_exception_is_raised",
+        "tests/test_recipes.py::IterIndexTests::test_basic",
+        "tests/test_recipes.py::IterIndexTests::test_start",
+        "tests/test_recipes.py::IterIndexTests::test_stop",
+        "tests/test_recipes.py::LoopsTests::test_basic",
+        "tests/test_recipes.py::MatMulTests::test_m_by_n",
+        "tests/test_recipes.py::MatMulTests::test_n_by_n",
+        "tests/test_recipes.py::MultinomialTests::test_basic",
+        "tests/test_recipes.py::NcyclesTests::test_happy_path",
+        "tests/test_recipes.py::NcyclesTests::test_null_case",
+        "tests/test_recipes.py::NcyclesTests::test_pathological_case",
+        "tests/test_recipes.py::NthCombinationTests::test_basic",
+        "tests/test_recipes.py::NthCombinationTests::test_invalid_index",
+        "tests/test_recipes.py::NthCombinationTests::test_invalid_r",
+        "tests/test_recipes.py::NthCombinationTests::test_long",
+        "tests/test_recipes.py::NthPermutationTests::test_invalid_index",
+        "tests/test_recipes.py::NthPermutationTests::test_invalid_r",
+        "tests/test_recipes.py::NthPermutationTests::test_long",
+        "tests/test_recipes.py::NthPermutationTests::test_negative_index",
+        "tests/test_recipes.py::NthPermutationTests::test_null",
+        "tests/test_recipes.py::NthPermutationTests::test_r_equal_to_n",
+        "tests/test_recipes.py::NthPermutationTests::test_r_less_than_n",
+        "tests/test_recipes.py::NthTests::test_basic",
+        "tests/test_recipes.py::NthTests::test_default",
+        "tests/test_recipes.py::NthTests::test_negative_item_raises",
+        "tests/test_recipes.py::PadnoneTests::test_basic",
+        "tests/test_recipes.py::PartitionTests::test_arbitrary",
+        "tests/test_recipes.py::PartitionTests::test_bool",
+        "tests/test_recipes.py::PartitionTests::test_pred_is_none",
+        "tests/test_recipes.py::PolynomialDerivativeTests::test_basic",
+        "tests/test_recipes.py::PolynomialEvalTests::test_basic",
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_basic",
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_large",
+        "tests/test_recipes.py::PowersetTests::test_combinatorics",
+        "tests/test_recipes.py::PrependTests::test_basic",
+        "tests/test_recipes.py::PrependTests::test_multiple",
+        "tests/test_recipes.py::PrimeFunctionTests::test_is_prime_pseudoprimes",
+        "tests/test_recipes.py::PrimeFunctionTests::test_primes",
+        "tests/test_recipes.py::PrimeFunctionTests::test_special_primes",
+        "tests/test_recipes.py::QuantifyTests::test_custom_predicate",
+        "tests/test_recipes.py::QuantifyTests::test_happy_path",
+        "tests/test_recipes.py::RandomCombinationTests::test_no_replacement",
+        "tests/test_recipes.py::RandomCombinationTests::test_pseudorandomness",
+        "tests/test_recipes.py::RandomCombinationWithReplacementTests::test_pseudorandomness",
+        "tests/test_recipes.py::RandomCombinationWithReplacementTests::test_replacement",
+        "tests/test_recipes.py::RandomPermutationTests::test_full_permutation",
+        "tests/test_recipes.py::RandomPermutationTests::test_partial_permutation",
+        "tests/test_recipes.py::RandomProductTests::test_list_with_repeat",
+        "tests/test_recipes.py::RandomProductTests::test_simple_lists",
+        "tests/test_recipes.py::RepeatfuncTests::test_added_arguments",
+        "tests/test_recipes.py::RepeatfuncTests::test_finite_repeat",
+        "tests/test_recipes.py::RepeatfuncTests::test_null_times",
+        "tests/test_recipes.py::RepeatfuncTests::test_simple_repeat",
+        "tests/test_recipes.py::ReshapeTests::test_basic",
+        "tests/test_recipes.py::ReshapeTests::test_empty",
+        "tests/test_recipes.py::ReshapeTests::test_multidimensional",
+        "tests/test_recipes.py::ReshapeTests::test_zero",
+        "tests/test_recipes.py::RoundrobinTests::test_even_groups",
+        "tests/test_recipes.py::RoundrobinTests::test_uneven_groups",
+        "tests/test_recipes.py::RunningMeanTests::test_basic",
+        "tests/test_recipes.py::RunningMeanTests::test_maxlen",
+        "tests/test_recipes.py::RunningMedianTests::test_error_cases",
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median",
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median_windowed",
+        "tests/test_recipes.py::SieveTests::test_basic",
+        "tests/test_recipes.py::SieveTests::test_prime_counts",
+        "tests/test_recipes.py::SieveTests::test_small_numbers",
+        "tests/test_recipes.py::SlidingWindowTests::test_deque_version",
+        "tests/test_recipes.py::SlidingWindowTests::test_islice_version",
+        "tests/test_recipes.py::SlidingWindowTests::test_zero",
+        "tests/test_recipes.py::SubslicesTests::test_basic",
+        "tests/test_recipes.py::SumOfSquaresTests::test_basic",
+        "tests/test_recipes.py::TabulateTests::test_count",
+        "tests/test_recipes.py::TabulateTests::test_simple_tabulate",
+        "tests/test_recipes.py::TailTests::test_iterator_equal",
+        "tests/test_recipes.py::TailTests::test_iterator_greater",
+        "tests/test_recipes.py::TailTests::test_iterator_less",
+        "tests/test_recipes.py::TailTests::test_sized_equal",
+        "tests/test_recipes.py::TailTests::test_sized_greater",
+        "tests/test_recipes.py::TailTests::test_sized_less",
+        "tests/test_recipes.py::TakeTests::test_negative_take",
+        "tests/test_recipes.py::TakeTests::test_null_take",
+        "tests/test_recipes.py::TakeTests::test_simple_take",
+        "tests/test_recipes.py::TakeTests::test_take_too_much",
+        "tests/test_recipes.py::TestRandomDerangement::test_basics",
+        "tests/test_recipes.py::TotientTests::test_basic",
+        "tests/test_recipes.py::TransposeTests::test_basic",
+        "tests/test_recipes.py::TransposeTests::test_empty",
+        "tests/test_recipes.py::TransposeTests::test_incompatible_error",
+        "tests/test_recipes.py::TriplewiseTests::test_basic",
+        "tests/test_recipes.py::UniqueEverseenTests::test_custom_key",
+        "tests/test_recipes.py::UniqueEverseenTests::test_everseen",
+        "tests/test_recipes.py::UniqueEverseenTests::test_unhashable",
+        "tests/test_recipes.py::UniqueEverseenTests::test_unhashable_key",
+        "tests/test_recipes.py::UniqueJustseenTests::test_custom_key",
+        "tests/test_recipes.py::UniqueJustseenTests::test_justseen",
+        "tests/test_recipes.py::UniqueTests::test_basic",
+        "tests/test_recipes.py::UniqueTests::test_key",
+        "tests/test_recipes.py::UniqueTests::test_reverse"
+      ],
+      "failed": [],
+      "skipped": [],
+      "errors": [],
+      "subtests": {
+        "tests/test_recipes.py::BatchedTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::FactorTests::test_basic": {
+          "passed": 11,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_fill": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_ignore": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_strict": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_strict_fails": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::IterIndexTests::test_basic": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::IterIndexTests::test_start": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::MultinomialTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PadnoneTests::test_basic": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialDerivativeTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialEvalTests::test_basic": {
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_basic": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_is_prime_pseudoprimes": {
+          "passed": 98,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_primes": {
+          "passed": 9592,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_special_primes": {
+          "passed": 18,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::ReshapeTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::ReshapeTests::test_multidimensional": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMeanTests::test_basic": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMeanTests::test_maxlen": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median_windowed": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SieveTests::test_prime_counts": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SieveTests::test_small_numbers": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SlidingWindowTests::test_islice_version": {
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SubslicesTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SumOfSquaresTests::test_basic": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::TotientTests::test_basic": {
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::TriplewiseTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        }
+      },
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+      "harness_sha256": "2a7892cc9a553d9dba060664b9d5cb899293d4dab08bfb5c8f6bbf8dc152bea2",
+      "container_seconds": 8.359,
+      "elapsed_seconds": 8.5
+    },
+    {
+      "stage": "base",
+      "repeat": 2,
+      "collector_protocol": "method-subtests-v2",
+      "exit_code": 1,
+      "collected": 139,
+      "passed": [
+        "tests/test_recipes.py::AllEqualTests::test_empty",
+        "tests/test_recipes.py::AllEqualTests::test_false",
+        "tests/test_recipes.py::AllEqualTests::test_groupby_calls",
+        "tests/test_recipes.py::AllEqualTests::test_key",
+        "tests/test_recipes.py::AllEqualTests::test_one",
+        "tests/test_recipes.py::AllEqualTests::test_tricky",
+        "tests/test_recipes.py::AllEqualTests::test_true",
+        "tests/test_recipes.py::BatchedTests::test_basic",
+        "tests/test_recipes.py::BatchedTests::test_strict",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_empty",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_nested_remainder",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_never_false",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_never_true",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_some_true",
+        "tests/test_recipes.py::ConsumeTests::test_negative_consume",
+        "tests/test_recipes.py::ConsumeTests::test_null_consume",
+        "tests/test_recipes.py::ConsumeTests::test_sanity",
+        "tests/test_recipes.py::ConsumeTests::test_total_consume",
+        "tests/test_recipes.py::Convolvetests::test_derivative",
+        "tests/test_recipes.py::Convolvetests::test_infinite_signal",
+        "tests/test_recipes.py::Convolvetests::test_moving_average",
+        "tests/test_recipes.py::DotproductTests::test_happy_path",
+        "tests/test_recipes.py::FactorTests::test_basic",
+        "tests/test_recipes.py::FactorTests::test_cross_check",
+        "tests/test_recipes.py::FirstTrueTests::test_default",
+        "tests/test_recipes.py::FirstTrueTests::test_nothing_true",
+        "tests/test_recipes.py::FirstTrueTests::test_something_true",
+        "tests/test_recipes.py::FlattenTests::test_basic_usage",
+        "tests/test_recipes.py::FlattenTests::test_single_level",
+        "tests/test_recipes.py::GrouperTests::test_basic",
+        "tests/test_recipes.py::GrouperTests::test_fill",
+        "tests/test_recipes.py::GrouperTests::test_ignore",
+        "tests/test_recipes.py::GrouperTests::test_invalid_incomplete",
+        "tests/test_recipes.py::GrouperTests::test_strict",
+        "tests/test_recipes.py::GrouperTests::test_strict_fails",
+        "tests/test_recipes.py::IterExceptTests::test_exact_exception",
+        "tests/test_recipes.py::IterExceptTests::test_first",
+        "tests/test_recipes.py::IterExceptTests::test_generic_exception",
+        "tests/test_recipes.py::IterExceptTests::test_multiple",
+        "tests/test_recipes.py::IterExceptTests::test_uncaught_exception_is_raised",
+        "tests/test_recipes.py::IterIndexTests::test_basic",
+        "tests/test_recipes.py::IterIndexTests::test_start",
+        "tests/test_recipes.py::IterIndexTests::test_stop",
+        "tests/test_recipes.py::LoopsTests::test_basic",
+        "tests/test_recipes.py::MatMulTests::test_m_by_n",
+        "tests/test_recipes.py::MatMulTests::test_n_by_n",
+        "tests/test_recipes.py::MultinomialTests::test_basic",
+        "tests/test_recipes.py::NcyclesTests::test_happy_path",
+        "tests/test_recipes.py::NcyclesTests::test_null_case",
+        "tests/test_recipes.py::NcyclesTests::test_pathological_case",
+        "tests/test_recipes.py::NthCombinationTests::test_basic",
+        "tests/test_recipes.py::NthCombinationTests::test_invalid_index",
+        "tests/test_recipes.py::NthCombinationTests::test_invalid_r",
+        "tests/test_recipes.py::NthCombinationTests::test_long",
+        "tests/test_recipes.py::NthPermutationTests::test_invalid_index",
+        "tests/test_recipes.py::NthPermutationTests::test_invalid_r",
+        "tests/test_recipes.py::NthPermutationTests::test_long",
+        "tests/test_recipes.py::NthPermutationTests::test_negative_index",
+        "tests/test_recipes.py::NthPermutationTests::test_null",
+        "tests/test_recipes.py::NthPermutationTests::test_r_equal_to_n",
+        "tests/test_recipes.py::NthPermutationTests::test_r_less_than_n",
+        "tests/test_recipes.py::NthTests::test_basic",
+        "tests/test_recipes.py::NthTests::test_default",
+        "tests/test_recipes.py::NthTests::test_negative_item_raises",
+        "tests/test_recipes.py::PadnoneTests::test_basic",
+        "tests/test_recipes.py::PartitionTests::test_arbitrary",
+        "tests/test_recipes.py::PartitionTests::test_bool",
+        "tests/test_recipes.py::PartitionTests::test_pred_is_none",
+        "tests/test_recipes.py::PolynomialDerivativeTests::test_basic",
+        "tests/test_recipes.py::PolynomialEvalTests::test_basic",
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_basic",
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_large",
+        "tests/test_recipes.py::PowersetTests::test_combinatorics",
+        "tests/test_recipes.py::PrependTests::test_basic",
+        "tests/test_recipes.py::PrependTests::test_multiple",
+        "tests/test_recipes.py::PrimeFunctionTests::test_is_prime_pseudoprimes",
+        "tests/test_recipes.py::PrimeFunctionTests::test_primes",
+        "tests/test_recipes.py::PrimeFunctionTests::test_special_primes",
+        "tests/test_recipes.py::QuantifyTests::test_custom_predicate",
+        "tests/test_recipes.py::QuantifyTests::test_happy_path",
+        "tests/test_recipes.py::RandomCombinationTests::test_no_replacement",
+        "tests/test_recipes.py::RandomCombinationTests::test_pseudorandomness",
+        "tests/test_recipes.py::RandomCombinationWithReplacementTests::test_pseudorandomness",
+        "tests/test_recipes.py::RandomCombinationWithReplacementTests::test_replacement",
+        "tests/test_recipes.py::RandomPermutationTests::test_full_permutation",
+        "tests/test_recipes.py::RandomPermutationTests::test_partial_permutation",
+        "tests/test_recipes.py::RandomProductTests::test_list_with_repeat",
+        "tests/test_recipes.py::RandomProductTests::test_simple_lists",
+        "tests/test_recipes.py::RepeatfuncTests::test_added_arguments",
+        "tests/test_recipes.py::RepeatfuncTests::test_finite_repeat",
+        "tests/test_recipes.py::RepeatfuncTests::test_null_times",
+        "tests/test_recipes.py::RepeatfuncTests::test_simple_repeat",
+        "tests/test_recipes.py::ReshapeTests::test_basic",
+        "tests/test_recipes.py::ReshapeTests::test_empty",
+        "tests/test_recipes.py::ReshapeTests::test_multidimensional",
+        "tests/test_recipes.py::ReshapeTests::test_zero",
+        "tests/test_recipes.py::RoundrobinTests::test_even_groups",
+        "tests/test_recipes.py::RoundrobinTests::test_uneven_groups",
+        "tests/test_recipes.py::RunningMeanTests::test_basic",
+        "tests/test_recipes.py::RunningMeanTests::test_maxlen",
+        "tests/test_recipes.py::RunningMedianTests::test_error_cases",
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median",
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median_windowed",
+        "tests/test_recipes.py::SieveTests::test_basic",
+        "tests/test_recipes.py::SieveTests::test_prime_counts",
+        "tests/test_recipes.py::SieveTests::test_small_numbers",
+        "tests/test_recipes.py::SlidingWindowTests::test_deque_version",
+        "tests/test_recipes.py::SlidingWindowTests::test_islice_version",
+        "tests/test_recipes.py::SlidingWindowTests::test_zero",
+        "tests/test_recipes.py::SubslicesTests::test_basic",
+        "tests/test_recipes.py::SumOfSquaresTests::test_basic",
+        "tests/test_recipes.py::TabulateTests::test_count",
+        "tests/test_recipes.py::TabulateTests::test_simple_tabulate",
+        "tests/test_recipes.py::TailTests::test_iterator_equal",
+        "tests/test_recipes.py::TailTests::test_iterator_greater",
+        "tests/test_recipes.py::TailTests::test_iterator_less",
+        "tests/test_recipes.py::TailTests::test_sized_equal",
+        "tests/test_recipes.py::TailTests::test_sized_greater",
+        "tests/test_recipes.py::TailTests::test_sized_less",
+        "tests/test_recipes.py::TakeTests::test_negative_take",
+        "tests/test_recipes.py::TakeTests::test_null_take",
+        "tests/test_recipes.py::TakeTests::test_simple_take",
+        "tests/test_recipes.py::TakeTests::test_take_too_much",
+        "tests/test_recipes.py::TestRandomDerangement::test_basics",
+        "tests/test_recipes.py::TotientTests::test_basic",
+        "tests/test_recipes.py::TransposeTests::test_basic",
+        "tests/test_recipes.py::TransposeTests::test_empty",
+        "tests/test_recipes.py::TransposeTests::test_incompatible_error",
+        "tests/test_recipes.py::TriplewiseTests::test_basic",
+        "tests/test_recipes.py::UniqueEverseenTests::test_custom_key",
+        "tests/test_recipes.py::UniqueEverseenTests::test_everseen",
+        "tests/test_recipes.py::UniqueEverseenTests::test_unhashable",
+        "tests/test_recipes.py::UniqueEverseenTests::test_unhashable_key",
+        "tests/test_recipes.py::UniqueJustseenTests::test_custom_key",
+        "tests/test_recipes.py::UniqueJustseenTests::test_justseen",
+        "tests/test_recipes.py::UniqueTests::test_basic",
+        "tests/test_recipes.py::UniqueTests::test_key",
+        "tests/test_recipes.py::UniqueTests::test_reverse"
+      ],
+      "failed": [
+        "tests/test_recipes.py::FirstTrueTests::test_pred"
+      ],
+      "skipped": [],
+      "errors": [],
+      "subtests": {
+        "tests/test_recipes.py::BatchedTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::FactorTests::test_basic": {
+          "passed": 11,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_fill": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_ignore": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_strict": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_strict_fails": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::IterIndexTests::test_basic": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::IterIndexTests::test_start": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::MultinomialTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PadnoneTests::test_basic": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialDerivativeTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialEvalTests::test_basic": {
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_basic": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_is_prime_pseudoprimes": {
+          "passed": 98,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_primes": {
+          "passed": 9592,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_special_primes": {
+          "passed": 18,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::ReshapeTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::ReshapeTests::test_multidimensional": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMeanTests::test_basic": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMeanTests::test_maxlen": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median_windowed": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SieveTests::test_prime_counts": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SieveTests::test_small_numbers": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SlidingWindowTests::test_islice_version": {
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SubslicesTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SumOfSquaresTests::test_basic": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::TotientTests::test_basic": {
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::TriplewiseTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        }
+      },
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+      "harness_sha256": "2a7892cc9a553d9dba060664b9d5cb899293d4dab08bfb5c8f6bbf8dc152bea2",
+      "container_seconds": 8.391,
+      "elapsed_seconds": 8.516
+    },
+    {
+      "stage": "fix",
+      "repeat": 2,
+      "collector_protocol": "method-subtests-v2",
+      "exit_code": 0,
+      "collected": 139,
+      "passed": [
+        "tests/test_recipes.py::AllEqualTests::test_empty",
+        "tests/test_recipes.py::AllEqualTests::test_false",
+        "tests/test_recipes.py::AllEqualTests::test_groupby_calls",
+        "tests/test_recipes.py::AllEqualTests::test_key",
+        "tests/test_recipes.py::AllEqualTests::test_one",
+        "tests/test_recipes.py::AllEqualTests::test_tricky",
+        "tests/test_recipes.py::AllEqualTests::test_true",
+        "tests/test_recipes.py::BatchedTests::test_basic",
+        "tests/test_recipes.py::BatchedTests::test_strict",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_empty",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_nested_remainder",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_never_false",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_never_true",
+        "tests/test_recipes.py::BeforeAndAfterTests::test_some_true",
+        "tests/test_recipes.py::ConsumeTests::test_negative_consume",
+        "tests/test_recipes.py::ConsumeTests::test_null_consume",
+        "tests/test_recipes.py::ConsumeTests::test_sanity",
+        "tests/test_recipes.py::ConsumeTests::test_total_consume",
+        "tests/test_recipes.py::Convolvetests::test_derivative",
+        "tests/test_recipes.py::Convolvetests::test_infinite_signal",
+        "tests/test_recipes.py::Convolvetests::test_moving_average",
+        "tests/test_recipes.py::DotproductTests::test_happy_path",
+        "tests/test_recipes.py::FactorTests::test_basic",
+        "tests/test_recipes.py::FactorTests::test_cross_check",
+        "tests/test_recipes.py::FirstTrueTests::test_default",
+        "tests/test_recipes.py::FirstTrueTests::test_nothing_true",
+        "tests/test_recipes.py::FirstTrueTests::test_pred",
+        "tests/test_recipes.py::FirstTrueTests::test_something_true",
+        "tests/test_recipes.py::FlattenTests::test_basic_usage",
+        "tests/test_recipes.py::FlattenTests::test_single_level",
+        "tests/test_recipes.py::GrouperTests::test_basic",
+        "tests/test_recipes.py::GrouperTests::test_fill",
+        "tests/test_recipes.py::GrouperTests::test_ignore",
+        "tests/test_recipes.py::GrouperTests::test_invalid_incomplete",
+        "tests/test_recipes.py::GrouperTests::test_strict",
+        "tests/test_recipes.py::GrouperTests::test_strict_fails",
+        "tests/test_recipes.py::IterExceptTests::test_exact_exception",
+        "tests/test_recipes.py::IterExceptTests::test_first",
+        "tests/test_recipes.py::IterExceptTests::test_generic_exception",
+        "tests/test_recipes.py::IterExceptTests::test_multiple",
+        "tests/test_recipes.py::IterExceptTests::test_uncaught_exception_is_raised",
+        "tests/test_recipes.py::IterIndexTests::test_basic",
+        "tests/test_recipes.py::IterIndexTests::test_start",
+        "tests/test_recipes.py::IterIndexTests::test_stop",
+        "tests/test_recipes.py::LoopsTests::test_basic",
+        "tests/test_recipes.py::MatMulTests::test_m_by_n",
+        "tests/test_recipes.py::MatMulTests::test_n_by_n",
+        "tests/test_recipes.py::MultinomialTests::test_basic",
+        "tests/test_recipes.py::NcyclesTests::test_happy_path",
+        "tests/test_recipes.py::NcyclesTests::test_null_case",
+        "tests/test_recipes.py::NcyclesTests::test_pathological_case",
+        "tests/test_recipes.py::NthCombinationTests::test_basic",
+        "tests/test_recipes.py::NthCombinationTests::test_invalid_index",
+        "tests/test_recipes.py::NthCombinationTests::test_invalid_r",
+        "tests/test_recipes.py::NthCombinationTests::test_long",
+        "tests/test_recipes.py::NthPermutationTests::test_invalid_index",
+        "tests/test_recipes.py::NthPermutationTests::test_invalid_r",
+        "tests/test_recipes.py::NthPermutationTests::test_long",
+        "tests/test_recipes.py::NthPermutationTests::test_negative_index",
+        "tests/test_recipes.py::NthPermutationTests::test_null",
+        "tests/test_recipes.py::NthPermutationTests::test_r_equal_to_n",
+        "tests/test_recipes.py::NthPermutationTests::test_r_less_than_n",
+        "tests/test_recipes.py::NthTests::test_basic",
+        "tests/test_recipes.py::NthTests::test_default",
+        "tests/test_recipes.py::NthTests::test_negative_item_raises",
+        "tests/test_recipes.py::PadnoneTests::test_basic",
+        "tests/test_recipes.py::PartitionTests::test_arbitrary",
+        "tests/test_recipes.py::PartitionTests::test_bool",
+        "tests/test_recipes.py::PartitionTests::test_pred_is_none",
+        "tests/test_recipes.py::PolynomialDerivativeTests::test_basic",
+        "tests/test_recipes.py::PolynomialEvalTests::test_basic",
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_basic",
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_large",
+        "tests/test_recipes.py::PowersetTests::test_combinatorics",
+        "tests/test_recipes.py::PrependTests::test_basic",
+        "tests/test_recipes.py::PrependTests::test_multiple",
+        "tests/test_recipes.py::PrimeFunctionTests::test_is_prime_pseudoprimes",
+        "tests/test_recipes.py::PrimeFunctionTests::test_primes",
+        "tests/test_recipes.py::PrimeFunctionTests::test_special_primes",
+        "tests/test_recipes.py::QuantifyTests::test_custom_predicate",
+        "tests/test_recipes.py::QuantifyTests::test_happy_path",
+        "tests/test_recipes.py::RandomCombinationTests::test_no_replacement",
+        "tests/test_recipes.py::RandomCombinationTests::test_pseudorandomness",
+        "tests/test_recipes.py::RandomCombinationWithReplacementTests::test_pseudorandomness",
+        "tests/test_recipes.py::RandomCombinationWithReplacementTests::test_replacement",
+        "tests/test_recipes.py::RandomPermutationTests::test_full_permutation",
+        "tests/test_recipes.py::RandomPermutationTests::test_partial_permutation",
+        "tests/test_recipes.py::RandomProductTests::test_list_with_repeat",
+        "tests/test_recipes.py::RandomProductTests::test_simple_lists",
+        "tests/test_recipes.py::RepeatfuncTests::test_added_arguments",
+        "tests/test_recipes.py::RepeatfuncTests::test_finite_repeat",
+        "tests/test_recipes.py::RepeatfuncTests::test_null_times",
+        "tests/test_recipes.py::RepeatfuncTests::test_simple_repeat",
+        "tests/test_recipes.py::ReshapeTests::test_basic",
+        "tests/test_recipes.py::ReshapeTests::test_empty",
+        "tests/test_recipes.py::ReshapeTests::test_multidimensional",
+        "tests/test_recipes.py::ReshapeTests::test_zero",
+        "tests/test_recipes.py::RoundrobinTests::test_even_groups",
+        "tests/test_recipes.py::RoundrobinTests::test_uneven_groups",
+        "tests/test_recipes.py::RunningMeanTests::test_basic",
+        "tests/test_recipes.py::RunningMeanTests::test_maxlen",
+        "tests/test_recipes.py::RunningMedianTests::test_error_cases",
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median",
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median_windowed",
+        "tests/test_recipes.py::SieveTests::test_basic",
+        "tests/test_recipes.py::SieveTests::test_prime_counts",
+        "tests/test_recipes.py::SieveTests::test_small_numbers",
+        "tests/test_recipes.py::SlidingWindowTests::test_deque_version",
+        "tests/test_recipes.py::SlidingWindowTests::test_islice_version",
+        "tests/test_recipes.py::SlidingWindowTests::test_zero",
+        "tests/test_recipes.py::SubslicesTests::test_basic",
+        "tests/test_recipes.py::SumOfSquaresTests::test_basic",
+        "tests/test_recipes.py::TabulateTests::test_count",
+        "tests/test_recipes.py::TabulateTests::test_simple_tabulate",
+        "tests/test_recipes.py::TailTests::test_iterator_equal",
+        "tests/test_recipes.py::TailTests::test_iterator_greater",
+        "tests/test_recipes.py::TailTests::test_iterator_less",
+        "tests/test_recipes.py::TailTests::test_sized_equal",
+        "tests/test_recipes.py::TailTests::test_sized_greater",
+        "tests/test_recipes.py::TailTests::test_sized_less",
+        "tests/test_recipes.py::TakeTests::test_negative_take",
+        "tests/test_recipes.py::TakeTests::test_null_take",
+        "tests/test_recipes.py::TakeTests::test_simple_take",
+        "tests/test_recipes.py::TakeTests::test_take_too_much",
+        "tests/test_recipes.py::TestRandomDerangement::test_basics",
+        "tests/test_recipes.py::TotientTests::test_basic",
+        "tests/test_recipes.py::TransposeTests::test_basic",
+        "tests/test_recipes.py::TransposeTests::test_empty",
+        "tests/test_recipes.py::TransposeTests::test_incompatible_error",
+        "tests/test_recipes.py::TriplewiseTests::test_basic",
+        "tests/test_recipes.py::UniqueEverseenTests::test_custom_key",
+        "tests/test_recipes.py::UniqueEverseenTests::test_everseen",
+        "tests/test_recipes.py::UniqueEverseenTests::test_unhashable",
+        "tests/test_recipes.py::UniqueEverseenTests::test_unhashable_key",
+        "tests/test_recipes.py::UniqueJustseenTests::test_custom_key",
+        "tests/test_recipes.py::UniqueJustseenTests::test_justseen",
+        "tests/test_recipes.py::UniqueTests::test_basic",
+        "tests/test_recipes.py::UniqueTests::test_key",
+        "tests/test_recipes.py::UniqueTests::test_reverse"
+      ],
+      "failed": [],
+      "skipped": [],
+      "errors": [],
+      "subtests": {
+        "tests/test_recipes.py::BatchedTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::FactorTests::test_basic": {
+          "passed": 11,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_fill": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_ignore": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_strict": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::GrouperTests::test_strict_fails": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::IterIndexTests::test_basic": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::IterIndexTests::test_start": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::MultinomialTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PadnoneTests::test_basic": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialDerivativeTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialEvalTests::test_basic": {
+          "passed": 10,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PolynomialFromRootsTests::test_basic": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_is_prime_pseudoprimes": {
+          "passed": 98,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_primes": {
+          "passed": 9592,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::PrimeFunctionTests::test_special_primes": {
+          "passed": 18,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::ReshapeTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::ReshapeTests::test_multidimensional": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMeanTests::test_basic": {
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMeanTests::test_maxlen": {
+          "passed": 4,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median_windowed": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SieveTests::test_prime_counts": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SieveTests::test_small_numbers": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SlidingWindowTests::test_islice_version": {
+          "passed": 8,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SubslicesTests::test_basic": {
+          "passed": 6,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::SumOfSquaresTests::test_basic": {
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::TotientTests::test_basic": {
+          "passed": 9,
+          "failed": 0,
+          "skipped": 0
+        },
+        "tests/test_recipes.py::TriplewiseTests::test_basic": {
+          "passed": 5,
+          "failed": 0,
+          "skipped": 0
+        }
+      },
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+      "harness_sha256": "2a7892cc9a553d9dba060664b9d5cb899293d4dab08bfb5c8f6bbf8dc152bea2",
+      "container_seconds": 8.343,
+      "elapsed_seconds": 8.469
+    }
+  ],
+  "elapsed_seconds": 34.453,
+  "held_out_eligible": true,
+  "split": "unassigned",
+  "counts_toward_frozen_benchmark": false,
+  "prior_quality_outcomes_seen": true,
+  "patches": {
+    "test_patch": "diff --git a/tests/test_recipes.py b/tests/test_recipes.py\nindex 814b63fd3113888a490001982ec055357668e979..dcbdde886fb2ec3588191ae15866466bad6d6efd 100644\n--- a/tests/test_recipes.py\n+++ b/tests/test_recipes.py\n@@ -522,7 +522,7 @@ class FirstTrueTests(TestCase):\n     def test_pred(self):\n         \"\"\"Test with a custom predicate\"\"\"\n         self.assertEqual(\n-            mi.first_true([2, 4, 6], pred=lambda x: x % 3 == 0), 6\n+            mi.first_true([2, 4, 6], predicate=lambda x: x % 3 == 0), 6\n         )\n \n \n",
+    "gold_patch": "diff --git a/more_itertools/more.py b/more_itertools/more.py\nindex 6b0360e00fe92b78ba89db49f64ebff1b75901f3..7a3bae380c8c1145cad59eb04f5fb70b57620cb7 100755\n--- a/more_itertools/more.py\n+++ b/more_itertools/more.py\n@@ -5227,7 +5227,7 @@ def nth_prime(n, *, approximate=False):\n \n     # Search from the midpoint and return the first odd prime\n     odd = floor((lb + ub) / 2) | 1\n-    return first_true(count(odd, step=2), pred=is_prime)\n+    return first_true(count(odd, step=2), predicate=is_prime)\n \n \n def argmin(iterable, *, key=None):\ndiff --git a/more_itertools/recipes.py b/more_itertools/recipes.py\nindex 7548fc3119a1cd0ef58566753c2a0ff048667146..acab086e1ef30058ab20cb63fe3fae2ff670ba72 100644\n--- a/more_itertools/recipes.py\n+++ b/more_itertools/recipes.py\n@@ -557,7 +557,7 @@ def iter_except(func, exception, first=None):\n             yield func()\n \n \n-def first_true(iterable, default=None, pred=None):\n+def first_true(iterable, default=None, predicate=None):\n     \"\"\"\n     Returns the first true value in the iterable.\n \n@@ -568,13 +568,13 @@ def first_true(iterable, default=None, pred=None):\n \n         >>> first_true(range(10))\n         1\n-        >>> first_true(range(10), pred=lambda x: x > 5)\n+        >>> first_true(range(10), predicate=lambda x: x > 5)\n         6\n-        >>> first_true(range(10), default='missing', pred=lambda x: x > 9)\n+        >>> first_true(range(10), default='missing', predicate=lambda x: x > 9)\n         'missing'\n \n     \"\"\"\n-    return next(filter(pred, iterable), default)\n+    return next(filter(predicate, iterable), default)\n \n \n def random_product(*iterables, repeat=1):\ndiff --git a/more_itertools/recipes.pyi b/more_itertools/recipes.pyi\nindex 50263d4b0dc6dfc12d8ff98e5b3235065579bcd3..b77f90d30fa09d3df3c0c089eeaf320dd8e9b57d 100644\n--- a/more_itertools/recipes.pyi\n+++ b/more_itertools/recipes.pyi\n@@ -133,13 +133,13 @@ def iter_except(\n ) -> Iterator[_T | _U]: ...\n @overload\n def first_true(\n-    iterable: Iterable[_T], *, pred: Callable[[_T], object] | None = ...\n+    iterable: Iterable[_T], *, predicate: Callable[[_T], object] | None = ...\n ) -> _T | None: ...\n @overload\n def first_true(\n     iterable: Iterable[_T],\n     default: _U,\n-    pred: Callable[[_T], object] | None = ...,\n+    predicate: Callable[[_T], object] | None = ...,\n ) -> _T | _U: ...\n def random_product(\n     *iterables: Iterable[_T], repeat: int = ...\n"
+  },
+  "upstream_license": "Copyright (c) 2012 Erik Rose\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+  "snapshot_sha256": {
+    "base": "e45da8a8f6052addbe3ee7fa72cd157bfaa07a5f79265ec4692c96d4c0bbea17",
+    "fix": "e76096a6f8c126008f6112c18e01ae86d4f4633aa04151144718ab6609e9b4eb"
+  },
+  "selection_id": "f7d214ae289c8a1e894cdb83733441748a24786b257f69cf973fdc9999771200",
+  "execution_id": "0d7f98d8507bcc70e923345050ad0c3a41bd75fe0193d4a86d0a8317cc7a86c0",
+  "registration_commit": "b7bf7c4a03c865b42df4899d7915a4f92235a3b3",
+  "task_id": "more_itertools_d63a26e56eac",
+  "commit_date": "2026-03-31T21:12:03-05:00",
+  "record_sha256": "d2a51e0c65d6c31df14b704fb90594195d1f308885982d28a64b210787adcdf6"
+}
