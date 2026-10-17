@@ -1,6 +1,37 @@
 # Progress
 
-Updated: 2026-10-17 (standalone subtest-aware collector v2 implemented)
+Updated: 2026-10-17 (v2 sandbox integration and development checks)
+
+## V2 sandbox integration - 2026-10-17
+
+- Added a separate local Docker backend using ReceiptV2, the existing immutable
+  pytest-only image and reviewed archive extraction. No original v1 source or
+  artifact changes. No network, mounts, credentials, privileged mode or installs.
+- Existing CPU/memory/tmpfs/non-root/read-only/cleanup safeguards retained. The
+  v2 development PID limit is 128: an inspected whole-file development test
+  starts 100 threads and could not pass v1's 64 limit. This is not a pool repair.
+- Preserved the initial 64-PID attempt in data/development/sandbox-v2/v2-sandbox-smoke.json:
+  four runs, 620 methods each, rejected due to the concurrency test failing at
+  base and fix; container times 24.360-28.766 seconds. Earlier 12-second limits
+  are not adequate for these whole-file development fixtures.
+- A separate script measures synthetic plus already-inspected bucket/repeat
+  fixtures with whole changed test files and independent repeats. Current
+  128-PID attempt is saved separately under data/development/sandbox-v2;
+  60 seconds is a development measurement
+  allowance, not registered candidate policy. See docs/v2-sandbox-development.md.
+- The 128-PID attempt succeeded: synthetic outcomes correct; bucket 620 methods,
+  1 fail-to-pass / 619 pass-to-pass; repeat 567 methods, 2 fail-to-pass /
+  565 pass-to-pass. Each has four fresh-container runs and no stable skips.
+  Container times 19.813-24.828 seconds; complete smoke elapsed 184.469 seconds.
+- Propose 60 seconds/container and shared 300 seconds/task for v2, based only on
+  these development measurements. These limits are not yet registered.
+- Verification: all 233 offline tests, Ruff, lockfile (88 packages) and whitespace
+  checks passed. Credential-pattern scan: 200 files, no findings. No validation
+  containers remain; original v1 registration/evidence checks pass. Repo private.
+- Next: register a separate v2 execution policy
+  before any candidate reruns. Benchmark count remains 35, with G1 unmet.
+- No new pool candidates, model calls, provider spend, image builds or package
+  installations. Existing Docker Desktop was started through its CLI.
 
 ## Subtest-aware collection - 2026-10-17
 

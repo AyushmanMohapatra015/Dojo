@@ -122,3 +122,13 @@ prevented a false success, but it also limited useful tasks. An environment or
 collector rejection tells us what our measurement supports, not whether an
 upstream fix is correct. We preserved all 32 expansion outcomes and need a new,
 tested protocol version to handle this. The owner's own reflection is pending.
+
+## Sandbox development - implementation observation
+
+Passing a selected regression class does not establish that a whole changed
+test file can run in the same environment. Our inspected development file also
+starts 100 concurrent worker threads, exceeding the old 64-PID sandbox limit.
+We preserved that failed attempt and tested a bounded 128-PID development setup
+without changing v1 results. Resource limits and timing are part of the test
+environment and must be registered before candidate execution. The owner's own
+reflection is pending.

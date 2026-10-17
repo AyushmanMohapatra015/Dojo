@@ -17,8 +17,9 @@ candidate manifest and reproducible offline batch runner; see
 The [more-itertools expansion](docs/more-itertools-results.md) completed all 32
 candidates with one eligible task, for 35 combined tasks. The 40-task target is
 unmet; subtest collection and timeout limitations need a new protocol version.
-A [standalone subtest-aware collector](docs/subtest-collector-v2.md) is tested on
-synthetic examples; sandbox integration and v2 execution registration are pending.
+A [subtest-aware collector](docs/subtest-collector-v2.md) has a separate
+[development sandbox integration](docs/v2-sandbox-development.md). Candidate v2
+execution registration and reruns remain pending.
 
 ## Setup
 

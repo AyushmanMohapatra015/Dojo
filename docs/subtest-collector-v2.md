@@ -1,7 +1,8 @@
 # Subtest-aware collector v2
 
-Status: standalone implementation with synthetic tests. Not wired into Docker,
-not an execution registration, and not evidence of new eligible benchmark tasks.
+Status: implemented with synthetic tests and a separate
+[development Docker integration](v2-sandbox-development.md). This is not a
+candidate execution registration or evidence of new eligible benchmark tasks.
 Both frozen v1 runners, their records and split labels remain unchanged.
 
 The scoring unit is a collected test method/item, not each nested subtest.
@@ -38,8 +39,8 @@ Only these trusted synthetic fixtures run on the host. Provider keys and tracing
 environment variables are not forwarded to subprocesses; plugin autoload is off.
 No candidate repository tests, Docker runs, model calls or new installs occur.
 
-Next: connect this collector to a separate sandbox runner, retaining existing
-resource/isolation/cleanup safeguards. Verify behavior and timing on synthetic
-and already-inspected development fixtures, then register a new v2 execution
+The separate sandbox runner retains isolation/cleanup safeguards and uses a
+bounded 128-PID limit for a 100-thread inspected development fixture. Verify
+behavior and timing on those development fixtures, then register a new v2 execution
 protocol before any candidate reruns. Disclose prior quality outcomes and define
 how v2 replaces v1 tasks without duplicate counting or silent split changes.
