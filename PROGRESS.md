@@ -1,6 +1,33 @@
 # Progress
 
-Updated: 2026-10-17 (v2 sandbox integration and development checks)
+Updated: 2026-10-17 (v2 candidate execution registration prepared)
+
+## V2 candidate execution registration - 2026-10-17
+
+- Implemented dojo/mine/construction_v2.py and the separate policy in
+  docs/more-itertools-execution-v2.md, preserving all previous source/evidence.
+  Same 32 candidates and whole changed test files; no v2 candidate has run.
+- Froze data/more-itertools-execution-v2.lock.json. Execution ID:
+  0d7f98d8507bcc70e923345050ad0c3a41bd75fe0193d4a86d0a8317cc7a86c0.
+  It hashes runtime sources, prior protocols/results/splits, development
+  measurements and dependency metadata, checked against its registration commit.
+- Fixed limits: 60 seconds/container; shared 300 seconds/task including snapshot
+  preparation, image checks and cleanup; record serialization excluded. Same
+  immutable image, method-level collector, bounded 128 threads / 256 MiB / 1 CPU.
+- V2 replaces more-itertools v1; do not union versions or retain v1-only successes.
+  Click labels unchanged. Preserve surviving prior more-itertools labels, then
+  fill train quota chronologically from newly eligible tasks. Explicitly disclose
+  prior quality outcomes; no model outcomes exist and evaluation stays locked.
+- Added offline tests for replacement/G1 math, pinned labels, deadlines, partial
+  timeout receipts, identity drift, sanitized unsupported snapshots, registration,
+  interrupted resume and rehashed-record identity tampering. Local image inspection
+  failures now stop as infrastructure errors instead of candidate timeouts.
+- Verification: 242 offline tests, Ruff, dependency lock (88 packages) and
+  whitespace checks pass. Credential-pattern scan: 204 files, no findings;
+  existing GitHub destination remains private. Publishing reviewed registration.
+- Next: check the committed registration,
+  then run all 32 as a separate step and publish every result. Measured count
+  remains 35 eligible tasks; G1 is NOT passed. No provider calls or spending.
 
 ## V2 sandbox integration - 2026-10-17
 

@@ -88,3 +88,12 @@ def test_image_mismatch_and_unbounded_timeouts_never_start_container(monkeypatch
     for timeout in (0, -1, float("inf"), float("nan"), 181):
         with pytest.raises(ValueError):
             backend.run_repo_tests(b"archive", selectors=("tests/test_more.py",), timeout=timeout)
+
+
+def test_image_inspection_timeout_is_infrastructure_failure(monkeypatch):
+    def unavailable(*args, **kwargs):
+        raise subprocess.TimeoutExpired("image inspect", 10)
+
+    monkeypatch.setattr(backend.subprocess, "run", unavailable)
+    with pytest.raises(RuntimeError, match="inspection"):
+        backend.run_repo_tests(b"archive", selectors=("tests/test_more.py",), timeout=60)

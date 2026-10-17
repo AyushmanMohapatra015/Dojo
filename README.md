@@ -19,7 +19,8 @@ candidates with one eligible task, for 35 combined tasks. The 40-task target is
 unmet; subtest collection and timeout limitations need a new protocol version.
 A [subtest-aware collector](docs/subtest-collector-v2.md) has a separate
 [development sandbox integration](docs/v2-sandbox-development.md). Candidate v2
-execution registration and reruns remain pending.
+execution policy is specified in [v2 registration](docs/more-itertools-execution-v2.md);
+candidate reruns remain a separate next step.
 
 ## Setup
 

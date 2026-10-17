@@ -59,8 +59,11 @@ def run_repo_tests(archive, *, selectors, timeout):
     started = time.monotonic()
     name = "dojo-validation-v2-" + uuid.uuid4().hex
     command = container_command(name, selectors)
-    image = subprocess.run([*v1.DOCKER, "image", "inspect", IMAGE_ID, "--format", "{{.Id}}"],
-                           capture_output=True, check=True, timeout=10)
+    try:
+        image = subprocess.run([*v1.DOCKER, "image", "inspect", IMAGE_ID, "--format", "{{.Id}}"],
+                               capture_output=True, check=True, timeout=10)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError("Local image inspection failed; stop") from exc
     if image.stdout.decode("ascii").strip() != IMAGE_ID:
         raise RuntimeError("Pinned local image identity mismatch")
     container_started = time.monotonic()
