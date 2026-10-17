@@ -1,6 +1,28 @@
 # Progress
 
-Updated: 2026-10-16 (more-itertools batch completed: combined 35 eligible tasks)
+Updated: 2026-10-17 (standalone subtest-aware collector v2 implemented)
+
+## Subtest-aware collection - 2026-10-17
+
+- Added standalone dojo/backends/receipt_v2.py. Aggregates nested pytest/unittest
+  subtests at the collected method level, retaining compact outcome counters.
+  A later success cannot erase a nested failure, skip or setup/teardown error.
+- Rejects incomplete/duplicate parent phases, unknown nodes, collection errors,
+  skipped modules and duplicate collection IDs. Keeps ordinary method skips
+  separate for possible stable-skip exclusion by a future registered judge.
+- Added synthetic hook tests and actual pytest 9.1.1 fixture runs: 10,000 nested
+  passes, nested assertion/exception/skip, pytest subtests, teardown errors and
+  independent repeated fail-before/pass-after processes. No upstream code runs
+  on host; synthetic subprocesses do not receive provider/tracing credentials.
+- This collector is not wired into either frozen v1 runner and no candidate
+  reruns occurred. All previous evidence/splits unchanged. G1 remains unmet at
+  35 eligible tasks; no model calls, spend, installations or new images.
+- Verification: all 220 offline tests pass, including original registration and
+  artifact checks. Ruff, dependency lock (88 packages) and whitespace checks pass.
+  Credential-pattern scan: 193 files, no findings. Existing Dojo repo is private.
+- Next: sandbox integration and development-fixture timing checks, then a new
+  committed execution registration before v2 candidate validation. Full design
+  and limits are recorded in docs/subtest-collector-v2.md.
 
 ## More-itertools construction v1 results - 2026-10-16
 
