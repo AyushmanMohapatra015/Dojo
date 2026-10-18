@@ -80,8 +80,8 @@ class SolverInput:
     source_archive: bytes
 
 
-def build_solver_input(repo: Path, record: dict, issue: dict) -> SolverInput:
-    """Read the actual parent tree, never construction's base-with-fixed-tests."""
+def reviewed_issue_text(record: dict, issue: dict) -> str:
+    """Check approval and artifact identity; semantic review remains editorial."""
     record_hash = checked_hash(record)
     text = issue.get("text")
     if (record.get("status") != "eligible_task" or issue.get("status") != "approved"
@@ -97,6 +97,12 @@ def build_solver_input(repo: Path, record: dict, issue: dict) -> SolverInput:
     if (re.search(r"diff --git|@@ .*@@|```|\b[0-9a-f]{40}\b", text)
             or any(ord(char) < 32 and char not in "\n\t" for char in text)):
         raise ValueError("Issue contains an unsupported patch, identity or control artifact")
+    return text
+
+
+def build_solver_input(repo: Path, record: dict, issue: dict) -> SolverInput:
+    """Read the actual parent tree, never construction's base-with-fixed-tests."""
+    text = reviewed_issue_text(record, issue)
     if github_origin_slug(repo) != record["repo"]:
         raise ValueError("Wrong source repository")
     parent = git(repo, "rev-parse", record["fix_sha"] + "^1").decode().strip()

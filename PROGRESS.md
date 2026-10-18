@@ -1,6 +1,34 @@
 # Progress
 
-Updated: 2026-10-18 (solver input boundary and issue review workflow)
+Updated: 2026-10-18 (63 issue descriptions authored and manifest frozen)
+
+## Issue descriptions v1 - 2026-10-18
+
+- Authored and semantically self-reviewed all 63 descriptions. Preserved every
+  task binding and original split: 37 train / 26 held out. Text hashes and named
+  review provenance are recorded in data/issue-review-v1.json.
+- Explicit provenance: retrospective requests informed by upstream subjects and
+  non-test reference source changes; not original user-filed issues. Hidden test
+  assertions were not used as authoring input. Independent review is pending.
+- Verified every solver input in memory using its original base tree. Froze
+  data/issue-prompts-v1.lock.json with text/record/archive/source hashes;
+  manifest ID cf3a35d43c7a065956bf93ac86b2e4c8247f35ecac89c830b2732fb5a359b4c7.
+  No code was extracted or executed; no containers or provider/model calls ran.
+- Suitability review found feature requests/API changes as well as bug fixes,
+  related task families and two identical non-test source changes in distinct
+  records. Both duplicate-source tasks are held out. Existing labels/evidence
+  remain intact; docs/issue-review-v1.md discloses these limits. Do not claim
+  63 semantically independent bugs or infer model success from construction.
+- Added review-integrity checks for drift, incomplete/duplicate rows, task
+  ordering, fixed split labels, content approvals and manifest/source bindings.
+- Verification: all 262 offline tests, Ruff, the unchanged 88-package dependency
+  lock and whitespace checks pass.
+- Added docs/SECOND_AGENT_HANDOFF.md with a read-only independent review task,
+  separate worktree guidance and credential/permission boundaries. Antigravity
+  was not installed, connected or granted project access by this task.
+- Next: independent review of descriptions and solver boundary, then implement
+  the offline solver/sandbox slice and complete separate model preregistration.
+  Stage B remains unregistered and paid inference remains locked.
 
 ## Solver input boundary - 2026-10-18
 

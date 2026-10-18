@@ -1,637 +1,702 @@
 {
   "schema_version": 1,
   "model_evaluation_registered": false,
-  "issues_complete": false,
+  "issues_complete": true,
   "tasks": [
     {
       "task_id": "click_6de212151893",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "10d9a4e090eecfc32a9c8ea1d97ffb2b8a7c7950bcabfdb9aab579bb2db7db5a",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Context default_map can contain the UNSET sentinel. Such an entry should behave like an absent default, allowing the parameter default and normal value-source handling to apply. An explicit None entry must still count as a supplied default. Preserve callable defaults and ordinary mapped values.",
+      "text_sha256": "d977dffd408b91b2db9579dee84b96bdf73530636f606120aa67be588e3f47b6",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_4f9086bf8fd9",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "5eb24b5846527ed5318b5af7458618b8fd1a1822a0daefb74afed107f6fd891d",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Interactive pdb debugging inside CliRunner isolation currently reads exhausted captured input and sends debugger output into the captured command result. Allow pdb-based debugging to interact with the original terminal while Click command output remains captured. Honor explicitly supplied debugger streams, and restore normal debugger behavior when isolation ends.",
+      "text_sha256": "f0438b11ee2c3432a20f248e0393f31ed4c4d8ff7f992a199628e2d952527b64",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_607316f9dea8",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "55352d55badc7aafcc6025a22b4dd4adf59e77e34d434a271107960fe551453c",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Support a custom display label for a prompt default. When show_default is a string, click.prompt and prompted options should display that label in parentheses instead of exposing the actual default. Accepting the default must still return its real value. Preserve the existing boolean show_default behavior.",
+      "text_sha256": "7d2057892f20629a7fc9df580bc508dd55f17e1023920fe178412baecb3e1687",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_8762c7752cf1",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "a8b4bed88359c419cf7ce42170ca5b8c662a97d8606310b9f9b56cd8a443c415",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Code running inside CliRunner can fail when native consumers request a file descriptor from redirected stdout or stderr. Preserve access to each original stream descriptor while continuing to capture Python output. If an original stream has no usable descriptor, keep that unsupported case well behaved rather than inventing a descriptor.",
+      "text_sha256": "ab68f1376600545b64225e94a9a9aaab6ea0229f49fea9df2b194b449d89fc26",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_4e4c7a69b795",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "64cb6a17cb80cd523c5814f7d7c2b3c30e7a5ea13f29066de19c0d3082261e60",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "An option configured with a non-basic Python object as flag_value currently turns that object into text when no explicit type is supplied. Preserve the original object and its identity in that case. Keep normal type inference for strings, integers, floats and booleans, and respect explicitly configured types.",
+      "text_sha256": "b9b96fdd26c32a0254dd164b6640d312998548b4cfb53fa3feff84c859639a89",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_1241abaed4e4",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "8942076d47a6fbd581385365563493d16b6e36ee5c1d310e3111b19d2a1ff392",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "A usage error can suggest a help option that a command has shadowed with another parameter, so the suggested command does not actually show help. The hint should name an available help spelling and prefer a readable long spelling when several are available. Do not suggest a shadowed spelling.",
+      "text_sha256": "060ce711d8a652aa4a6160e37b9e8d275555f634b3553de3d1d83a04f9f6e297",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_3a3e0350b6a2",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "f6506522be04cabd2297fab12bd8ab576db4f440a2aeeb8e322825202f9a42fc",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Multi-value parameters cannot reliably consume a string supplied through Context.default_map. Interpret those strings consistently with the parameter type and the existing environment-variable behavior for multiple values. Keep single-value strings and already structured mapped defaults working normally.",
+      "text_sha256": "56a45750e4443f7f439641e4231b629b1d3658ed5e76a0083f76bc493340f331",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_2468b70997a6",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "07fadeb2c76b44d9a232076c2582a6b097b5f24f491f6d264f33febf51b8629a",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "On Linux, editing input for prompt and confirm can erase prompt text with backspace or wrap lines at the wrong position. Prompt text should remain intact during readline editing and wrapping. Preserve stderr-directed prompts and the existing Windows terminal behavior.",
+      "text_sha256": "dc3961a83535428372c3355bce06289fed16f9f423ee0463264348f7b53203d7",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_19fd4d6e18bc",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "1f12f7071feac8cfd88b053c75e6df43359a40ef04a8b70ab52be7b3ee1389ba",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Fish shell completions break when a completion description spans multiple lines. Completion candidates should retain their value and optional help without corrupting record boundaries, including when help is absent. Ensure the generated Fish integration and completion output agree on the format.",
+      "text_sha256": "d38003df894235aa5ea96585b062bc399d7ac29721d4f11425163b70a516f2ad",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_831c8f0948af",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "a7df8d6a722a7db4e1c2dc2fd7ce033f5021d4e29ee0786492574de43355f2b0",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Misspelled subcommands currently produce an unhelpful generic usage error. Add a public NoSuchCommand error with the unavailable command name and suggestions for close registered command names. Preserve custom error messages and the no-match case. Keep unknown-option suggestions consistent in formatting and available for iterable candidate collections.",
+      "text_sha256": "360736c4cddf1239cbee853570c0a22d7c2c942cc99bcf7972855511ea413bf2",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "feature_request"
     },
     {
       "task_id": "click_fc6c7c47edd6",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "04bddde3e367ad618657c528f2b8f42dea254782b947adbd333dcd050be379d9",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "When a callable parameter converter raises ValueError with an explanation, Click discards that explanation and reports the rejected value instead. Include the explanation in the conversion failure. If the exception has no message, retain a useful value-based fallback, including for values requiring safe text conversion.",
+      "text_sha256": "35be0ebe96ac6119cc8acd2d159b0ac9e3c662e6cf450e1e7bd09acc4b1e7502",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_a09c1c655eef",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "18ff3cb929dcae34b54e5a97a3f9e9f701f1a40f7533b9c1bb2011ae99b75b48",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "For prompt with hide_input enabled, validation failures always show a generic message, hiding useful safe explanations from custom types. Preserve explanatory errors when they contain no secret input. If a message includes a representation of the entered value, redact it; if exposing the message cannot be made unambiguous, retain a generic error.",
+      "text_sha256": "0dd9860064485fd95821be2964d041fcbf9f79f009083352ae407092dbec3cb3",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_0551bf53588a",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "3badcc8b274eb903e01a2c4149f8d9ba16144d8df818eb0992cc54a0449c5410",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "HelpFormatter.write_usage produces unwanted trailing characters when there are no argument or option metavariables. Empty usage arguments should produce a clean program/prefix line with a single line ending and no stray trailing padding. Nonempty usage formatting should continue to work.",
+      "text_sha256": "342c38e9eba6e71c18ea2f5af5a1bca6bd35279021809d7066ec476d8021522b",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_a3321c9ca14d",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "f4479517b4131ca367581625c00548bb23205f86790cc4b1a666ff7a375543b8",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Shell-completion scripts and completion responses acquire Windows CRLF translation when written through text stdout, which breaks shell compatibility. Their output should retain Unix line endings on Windows as well as Unix. Preserve the appropriate final-newline behavior for generated source and completion responses.",
+      "text_sha256": "0d6b77a575682666dc086b9e73e148e3d94b290292b2219cf668b2b4fb5b7f99",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_32ae2acd3474",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "9c78484f18f74b6e0a5587883c7434446010e12ce42a702b0f64424edef5d4a6",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Choice shell completion ignores a customized normalize_choice behavior and therefore disagrees with normal parameter conversion. Candidate matching should use the same normalization contract, with the current context, while retaining case-sensitive and case-insensitive behavior.",
+      "text_sha256": "dbdd062ab0a396ebb861a30428874dc2fcfb00372bf95a6c5c4c68fe3038aa57",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_becbde5cf416",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "9a698a9ca32735e0c3eacfd2f922e92e4ef1f6e78b3bc14b32d2e5bb588e017d",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Using the pager fallback can close a caller-owned standard output stream or its binary buffer. Paging to an existing stream must leave that stream usable afterward. Preserve text and binary output support while keeping ownership of pager-created resources separate from borrowed streams.",
+      "text_sha256": "faf3fcccce16b677bef8e4926e312c7cf570947409672adbe73ae92e5a9113a9",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_c3535905c77a",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "d18fe7c6b1571c7f3ff13197f67f2b72c4d2434b1147368a63e21edc03a55343",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Fish completion still fails because the generated shell script and the completion response disagree about field boundaries. Candidates with multiline help must appear as individual completions with readable descriptions; embedded tabs in help must not create extra fields. Keep completions without help usable.",
+      "text_sha256": "0049440ad689f8a8655778affeb2b14191f51e48ce94da175e0fccf7eb585888",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_665736bc85a1",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "a13911238c71381a9ad8e6d4c9d224a7b5e5850d3848b4d1d21c6a346fa7ce8a",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "A Group configured with invoke_without_command displays its subcommand as required in usage, even though invocation without one is valid. Show the leading subcommand as optional for both chained and ordinary groups. Groups that require a subcommand and explicit subcommand metavariables should retain their existing meaning.",
+      "text_sha256": "cbf308e4eb4390f85bc13a91fd7c52eb30dd5f95e406714a3b12d7859dc4323d",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_399919f740bf",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "6176ba1a4027716e75f667d92ed374a8574fbf68315acb9da28c13898528c732",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "echo_via_pager with a slow generator buffers small updates, leaving users waiting until enough text accumulates. Make each produced text chunk visible to the pager promptly so incremental output works. Preserve the generator-based interface and ordinary paging behavior.",
+      "text_sha256": "21a24c9318d408d00c9cf0b0e0135a1d8c171e1a1cf27f01e017b667a4369c1e",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_051bb0f30b54",
       "repo": "pallets/click",
       "split": "train",
       "record_sha256": "f2cd024191ec0b720ed7f54695cfd486d1b08a60bf0709d8338bc6c77b384511",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "After a pager operation completes, garbage collection of a temporary text wrapper can close borrowed stdout even when the immediate context did not close it. Keep borrowed streams usable after wrapper collection and after write/flush failures. Missing or unusable pager commands should fall back safely, while pager-owned resources still receive cleanup.",
+      "text_sha256": "6dd26d09ff88712698561da5d38725099ffe73485a8b4af4c06d36c8cd14743f",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_762c97eef7c1",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "921e881400d1f3301517381f6b2eda39d6f1bd687207d7d96eef7fe20ba7897c",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Usage for an optional argument whose type already displays a bracketed choice or date metavar contains redundant outer brackets. Render optionality without doubling those brackets. Preserve required arguments, custom metavariables, argument multiplicity and deprecated-argument indicators.",
+      "text_sha256": "707e4647ec2826209b09dc32570a4748dca2520e30448a4c71159944579217d4",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_bec59289d8cf",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "bbf121c61e787be7dd110e8bc1a87d49b416db35ba40651dbf94e8ac16091fad",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "version_option cannot discover an installed version when the application import name differs from its distribution name. Support unambiguous import-to-distribution resolution for detected or supplied package names while preferring an actual distribution match. Report missing or ambiguous mappings clearly, and preserve explicit version overrides.",
+      "text_sha256": "f6045b9e5cf865f9d12be227241df3dae1c4a2c83e7e59390f1badfbb5177539",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_6f85d26dcd50",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "d210535f1150eb9397a3b8d4b295046b10189f50c659e451869be0149fb9300e",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Path conversion can raise BytesWarning under Python strict bytes-warning mode when checking dash input. Handle both text and bytes dash values without cross-type comparisons. Preserve allow_dash and file_okay semantics for dash values and ordinary paths.",
+      "text_sha256": "54bfaca91d55e4dcf6df878c6db2e3d01a63a8242da5830a3a59ddc879ad24eb",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_93ba0075f488",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "c9cec225b10dba1c055d8f467bc34028850aba4c3dd71d45323606926aa0af1e",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Colored prompt and confirm text includes raw ANSI escapes when the selected output stream does not support color, including CliRunner capture. Apply normal Click color policy to the prompt itself, for stdout and stderr, while preserving explicitly enabled color and readline interaction.",
+      "text_sha256": "ac050a427fa2136b742f8a989d8792a66c8404ec1e72b5fba739a2ce5bf00447",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_9f9b149ea302",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "55cb7cb76ce7c7f25d8a77cfc8d60d57ad96504fe755bafe60978b6be5256b60",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Add a public custom_version_option decorator for applications that need version output beyond the fixed version_option fields. Its callback accepts the current Context and returns the text to print before exiting. Support custom option spellings and option keyword arguments; avoid running the callback when the option is absent or parsing is resilient. Preserve version_option behavior.",
+      "text_sha256": "bd541e4ed3566bb38d9250b4997e398a1cc8b60aec0c7f7e061f55aedf38b0f5",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "feature_request"
     },
     {
       "task_id": "click_07c909f23f0f",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "777a279688283b0d1c13eb599eeb8941fae94ce23296362bf1fb303afb1bc727",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "style ignores palette index zero and handles invalid foreground/background colors inconsistently. Accept valid named colors, integer palette indices from zero through 255, and three-component integer RGB values in the same bounds. Reject unsupported names, booleans, malformed components and out-of-range values with ValueError. None should continue to mean no color.",
+      "text_sha256": "53f6e0142d6ea16f501e0ab49d8401a528be29f973f427c516592fb6577096ca",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_a2ac5839f29f",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "2f70e54bcff83c3961a1ce7fa329a65bc385f4f441e8d398047c90b2b08b8d4e",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "The temporary-file pager receives text output, but its file currently rejects text writes. Make text paging through that backend work while preserving command invocation and temporary-file cleanup.",
+      "text_sha256": "8783479d62fa82d8ef2efa1a39711e599cb9deb43e11f4323e78d478997d9d38",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_f316d5cb3aa8",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "20d7969d2f776b74cb8f1e0bce9a4e5bb6a2c0c83f9328962a2bdc3695e68f97",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "A progress bar using update_min_steps can finish with its position short of the actual completed count when the total is not a multiple of the update threshold. On completion, account for the final remainder and display the true final position without counting it twice.",
+      "text_sha256": "3ad07e4995508321308e0062d598e9f6bc28bf4d268232c7dc266005efc6f947",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_1f9cd54f686e",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "814e661e7817c2bfeb4db630e689fe4565695fc0531150aa1a5659245b4c0ff9",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "When temporary-file paging fails, cleanup on Windows can raise a PermissionError because the file remains open, replacing the original failure. Clean up the temporary resource on both success and failure while preserving the original paging exception.",
+      "text_sha256": "3f709ca7639a9c3c600645fe90a09827b0a5191baaebe0a079ed52b476688255",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_f58ca3e81424",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "824b2a6fdbeb4c749876ecbf8aed3180586759119be6dabe69f701e953ff0255",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Sentinel members such as UNSET should preserve their singleton identity across shallow copy, deep copy and pickle round trips. These operations currently fail or reconstruct incorrectly. Support the normal pickle protocols without changing member identity or representation.",
+      "text_sha256": "51fd316be52f44fc8d49caef6fc7207b7dd7749d5bb8688250a1c6a25d5120f6",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_271effb3d96d",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "4d351f2ce613940f7f5daa22d8f8f51493be1209aa2a5361f416334dcc8aaf87",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Expose Option.get_help_spec(ctx), returning the option spelling/metavariable text independently of its description. It must work for hidden options as well as visible ones and preserve the existing formatting of aliases, secondary spellings and value metavariables. Normal help output should continue to hide hidden options.",
+      "text_sha256": "97c758e70f492ea9d0759a1077f8d64c1dd27898e96a3b09e0838ff835891735",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "feature_request"
     },
     {
       "task_id": "click_f25f697a439a",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "ed6e6b59693543d48b6f645b2f4144717113397f03abee0fbaa6d460ce372ed8",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "When any positional argument has help text, the Positional arguments help section currently omits its undocumented siblings. List every positional argument in declaration order, using an empty description where none is provided. If no argument is documented, keep the section absent. Preserve normal option help.",
+      "text_sha256": "c3adc1dcabbe76d62629b49eff4390df406f0876a2469e828d8c4d56845296ab",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "click_05f6fd0df4ec",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "c031f8065f9029c3539d324ff4b4b331a151d3d9e69db15e80d1e4ff5922ac5f",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Argument.get_help_record(ctx) returns None for an undocumented positional argument, making its help-row API inconsistent. Always return the argument metavar and a text description, using an empty description when necessary. Keep the command help section conditional on whether any argument is documented.",
+      "text_sha256": "d34ad5729fa83ea1bcfba8dc3fe516ce59ed7b52fa6a43f614907fc2f95eb143",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "api_change"
     },
     {
       "task_id": "click_f67c2bb6c2f0",
       "repo": "pallets/click",
       "split": "held_out",
       "record_sha256": "5719fe5c1ae436fc75689311400f48eac41797f1ac5331e3fc2043a0377e83eb",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Automatic short help stops too early at abbreviations and mishandles edge cases in length reduction. Distinguish abbreviations followed by lowercase continuation from sentence endings, use the first paragraph, and normalize whitespace. Preserve whole words, including hyphenated words, when shortening; handle empty/no-rewrap-only text and very small limits without crashing.",
+      "text_sha256": "677b887af1b2927b64fcf4af3b0f669f185e38c811525d83d210a3237b59e6a6",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_f91c7339f163",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "efcb541f0da080cc4e4e541f407c5d10efb9071f0f796a0fcf058b6108491252",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Add a public sized_iterator(iterable, length) wrapper for an iterable whose size is known externally. It should behave as an iterator yielding the original items and support len using the supplied length, so tools such as progress indicators can obtain that size without eagerly consuming the iterable.",
+      "text_sha256": "3d34f3e078231ce0d3a964a72b7c689a892ab5c3c3e7766c43981c7765e3b800",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "feature_request"
     },
     {
       "task_id": "more_itertools_db4f41b28050",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "d90ae8d7952985170804701917dd632fbff5be0110db74710cdff0ce1c0f4e2a",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Add a public running_mean(iterable) recipe that lazily yields the arithmetic mean of every nonempty prefix of the input. It should produce one result per input item and no results for empty input, and be available through the usual recipe and package exports.",
+      "text_sha256": "0a3bae5bbc4c650ab2fad47031bfa1bbe7b9428e10cdc9206db1670b7bfa9a57",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "feature_request"
     },
     {
       "task_id": "more_itertools_8089263d2374",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "be093e3d805d72964135ae6da0dc25ba40a8f7fcde09ec2b8f81b81a6600f149",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Change unique_everseen to require hashable deduplication keys instead of silently accepting unhashable items through a potentially quadratic fallback. Unhashable items without a suitable key transformation should raise TypeError. Preserve first-occurrence order and support an optional key that produces hashable values.",
+      "text_sha256": "5a0fac4654d1ca2e1e7aa17c63d96eed89f1291b6a186214a4f958f456213406",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "api_change"
     },
     {
       "task_id": "more_itertools_d63a26e56eac",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "d2a51e0c65d6c31df14b704fb90594195d1f308885982d28a64b210787adcdf6",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "The requested first_true public API names its filtering keyword predicate rather than pred. Support that keyword while preserving default handling and first matching-item behavior. Existing package callers, including nth_prime, must continue to work with this API change.",
+      "text_sha256": "04278ceb32b933855d2614fb41167231cd1b2f0ff51ab8cbf35467abbe4f4391",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "api_change"
     },
     {
       "task_id": "more_itertools_93c1cf8484f0",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "ad07bcc6480fde45d39c3e11f7efa0849d726a1d90b2197037aceb073922343e",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Restore the first_true filtering keyword pred for compatibility with existing callers. Calls using pred should return the first matching value or the supplied default when no value matches. Package callers such as nth_prime must continue to work after the compatibility restoration.",
+      "text_sha256": "057a63a428fc0f6910b422d183238186bfdd3f6f83f504ab5e05c00abd210b28",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "compatibility_restore"
     },
     {
       "task_id": "more_itertools_71b46b06fb48",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "faf15b6530e16cf098389b2e7299ce05b60f9c11a470c76bfad6ae33b9fc8bbc",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "windowed accepts a zero window size and emits an empty window, contrary to the requested positive-size contract. Reject zero and negative window sizes with ValueError. Preserve ordinary window generation, fill values and valid step behavior.",
+      "text_sha256": "92760b6e4ad361a510e118c48a4287ef93d28ea01c8765d2b4271837fcb450e4",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "api_change"
     },
     {
       "task_id": "more_itertools_52cfcfedc310",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "b8d56a830c3fd4048f2463f975a5d3c5ea37508c1ae5eaa2758f1c0c7506cd1d",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Restore the public more_itertools pairwise helper and its recipe export. It should yield successive overlapping pairs from an iterable, returning no pairs for fewer than two items. Keep its iterator behavior compatible with the standard-library pairwise operation.",
+      "text_sha256": "803bcf36cf3f4bace1ca0696101bc52517ab70cd736e5421c9bfe0428fecb222",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "compatibility_restore"
     },
     {
       "task_id": "more_itertools_edb3346f835c",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "3f899fa1b91d38b905ee57c2755ca8a06fce006ef3c2720c97670087f639453b",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Reversing an empty numeric_range raises an exception. reversed on an empty numeric range should return an empty iterator, including for empty increasing and decreasing ranges. Preserve reversal of nonempty ranges.",
+      "text_sha256": "10735a5fe51380fa6b4454806312c3233574e4da791555b856c47b0a3053189f",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_ba7ef9425f69",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "8e93e2d3e20229e8c7049a8d1efd4cfdca587e1737b3a2c788f7ce65d0e8881b",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Allow direct indexing of a seekable iterator to inspect already cached items. Positive indices should address cached items from the beginning and negative indices from the end, without advancing the source or changing the current iteration position. Preserve normal behavior for an out-of-range cache index.",
+      "text_sha256": "598db637615feb8d762f50ef093a81296e7e8014e23d3986b8c016d6fa07bc73",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "feature_request"
     },
     {
       "task_id": "more_itertools_842a2b17a8e3",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "1bde6b62ff6fcee49d8a2e5afe16324dc359a30ab361a7c0443948779ed214b8",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Add public subfactorial(n), returning the exact number of permutations of n elements that leave no element in its original position. Handle nonnegative integer sizes, including the empty permutation convention, and raise ValueError for negative sizes. Make the function available through normal package exports.",
+      "text_sha256": "c081457574e03aaccf7e41091cefc5cdd381a8ded092773e1900a5ad618c7426",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "feature_request"
     },
     {
       "task_id": "more_itertools_43decdd76072",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "96157e8a4a6402b6804aae47fb61a9c1d8601b92ccf695d771fdeb1e9ac63653",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "iter_index supports negative start and stop bounds for sequences but fails for general finite iterables. Apply the same from-the-end bounds to iterator inputs and return indices in the original iterable. Preserve the existing nonnegative-bound behavior.",
+      "text_sha256": "3a635bcc0fad353077bb75006d4fc14ec33be4a0bfc2ff5f2496a0f9758e7b55",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_f51a53bfd2fe",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "55b1e7caa9d8b8a1757279273b543da85c5720902f089e3f4e50510dfb409746",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "interleave_evenly fails when given no input iterables. Treat the empty collection of inputs as an empty result, including when an empty lengths collection is provided. Preserve behavior for nonempty sets of iterables.",
+      "text_sha256": "ee3c46a0c859f314d4a0dd3b807839176bf21d8fd68bd046af622b6dd8804912",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_d64a7d6971bf",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "deacfe2b64d45cb2e6002ba30ebad1cf9a0135a8cf8510566ea56775571b7f0f",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "tail with a negative requested count behaves inconsistently for sized sequences and general iterables. Reject negative counts with ValueError regardless of the input type. Preserve the empty result for zero and the final n-item behavior for valid counts.",
+      "text_sha256": "e1a6951b079d6fa6e23884260e64b779fd58570143e23911098f657b18f2b32c",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_958990e22c4a",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "bae6cfd6ea2dc2a3a189165805e744ddd2090a177a298821fb61c6c2fa9f8493",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "sliced accepts a negative slice size instead of reporting an invalid request consistently. Raise ValueError for a negative size and preserve normal chunk slicing and strict-mode behavior for supported sizes.",
+      "text_sha256": "96a2fd19152f88f188e240b8aff3755dfdf68be627ca89c32275057c1183a34f",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_d992be0de938",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "4e539942ee35cb676fa17bf8fc7748cd322658d4249d30ca5d3ab1b209cf91f3",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Windowed running_min and running_max choose a later object when several window items compare equally, unlike the stable behavior users expect from min and max. Prefer the earliest equal item still inside the active window, and move to the next eligible item only when necessary. Preserve the computed extrema and window expiration behavior.",
+      "text_sha256": "07f7f5b4a3eaee946708854a5d3b7b5012d86170f45ea12929fcf4b75e7aedd1",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_069b30002a98",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "1fa18e40a6c519ce8fb48716ca8f875818b1e1bd6937a1248d313a053594552f",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "numeric_range equality and hashing disagree for ranges representing the same sequence, especially singleton ranges with different steps. Make equality reflect sequence identity like built-in range: empty sequences compare equally, singleton values ignore irrelevant step differences, and longer sequences account for their length and progression. Equal ranges must have equal hashes.",
+      "text_sha256": "fa4530a42f56b215439dbf21e77a1173eaf596e07ffa5655a6710f437d147bac",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_0e6acdf9b607",
       "repo": "more-itertools/more-itertools",
       "split": "train",
       "record_sha256": "d43a4f48baed04563880b492867065099d1cdf171d924eb97190e86b7e58e85c",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "chunked with a negative n can fail with an indirect or confusing error. Reject negative sizes with a clear ValueError. Preserve existing behavior for zero, None, valid chunk sizes and strict mode.",
+      "text_sha256": "484109763ce2ca7e82df6a9cb5055555d9396f24849966de0ec7b6a183d85339",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_dc2664b4a7c6",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "7e79b0d8bd4b1ccbc40a9f26a000a0e9562528235bf389459456f2062a251f1d",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "For numeric_range using inexact numeric arithmetic, length, membership and index can disagree with the values yielded by iteration near boundaries. Make these operations consistent with the actual produced values for increasing and decreasing ranges. Preserve exact-number behavior and reject values that are not produced rather than using approximate membership.",
+      "text_sha256": "0e7e0c97547a837ea78d68515ad080474dcb8cf56073824a1c22d88c86da6ac5",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_7847d4324a58",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "a5402554e7b778c0e2ea7ddc059ddd6f4241d788b0c35ab10b6a86e1f9e5e82b",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "value_chain treats TypeError raised while consuming a valid iterator as if the input were a scalar, hiding a real failure. Continue to yield genuinely noniterable scalar values directly, but propagate TypeError originating during iteration of a valid iterable. Preserve normal flattening behavior.",
+      "text_sha256": "26ee170357ad4b67cc72b246e4725745c8850cc1ec56ac85b74fb9de68dd4efa",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_ce676d24136e",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "0903f89749bebb455dae1c4284b495a05371b54360e22bcfc634099fc2fed7f9",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "split_before, split_after and split_when yield an unwanted empty group for empty input when maxsplit is zero. In that case return no groups. For nonempty input and zero allowed splits, retain the single complete group; preserve normal splitting for other limits.",
+      "text_sha256": "24fade945776590cf4a3312b70831220d78e75b6101581ea28483e1b512ecaf8",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_1fd388bc2379",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "5cea009f63000621335aa789c804c59a19d561492acb47ae1b049bb189d5a7be",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Running statistics helpers accept or inconsistently reject noninteger maxlen values. running_mean, running_min, running_max and running_statistics should accept integer-like objects through the index protocol and reject values such as floats and strings with TypeError. Preserve unbounded None mode and the existing positive-window requirement.",
+      "text_sha256": "0c0cb1bb7926445e9d539854e9de6b746316364f86adf844f8ec51cc51d19b9b",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_6b1907de293a",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "bafb54847cd01dc168d5e18f6a049115600f355027c7bd78e22b2385bad321f4",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "With seekable(maxlen=0), peek and truth-value checks consume and lose the next source item because there is no replay cache. Repeated lookahead must leave the next item available to normal iteration, including for falsey values and exhausted input. Keep the visible replay cache empty.",
+      "text_sha256": "87400d2455dc1ef575491c158caf78260fd2a8fba405afe5e834a7040f44b8d3",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_752799b5c88e",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "92f1c75587e4e73cafe9670cbf7f0ab62c85778fa1b563febdf6a679525868a1",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Reversing numeric_range can produce different numeric values or an incorrect sequence when fractional steps are involved. The result should contain exactly the forward-produced values in reverse order, including their arithmetic representation and endpoint behavior. Empty ranges should still reverse to empty iterators.",
+      "text_sha256": "49c9e1a6fd56e2a133029fd6b234faf10f5a2f8948a62d4a094eda67f0fd0eb7",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_e426d256b90b",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "82a9d694b925bb5199da172435ab8754cecac2bb5dc8e5c1dd5808b2761efac0",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "zip_broadcast obtains an iterator from the same iterable more than once, which breaks inputs whose iterator creation is stateful or permitted only once. Consume each nonscalar input through a single iterator acquisition while retaining scalar broadcasting, configurable scalar types and strict-length checking.",
+      "text_sha256": "fb3023ea25bb1ae75808a21acbf88e25391b99bd7d70f4f3356980f76bcaa8f3",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_def2dabea858",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "aee2456cdecde8c9c92865b60860b4853511b85a74e8d0be9e3e89f0f1f0d7d8",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "one and only ignore a user-supplied exception object when that exception has a false truth value. Honor explicitly supplied too_short and too_long exceptions as appropriate, preserving their identity. Use the existing default errors only when no custom exception is provided, and retain normal single-item results.",
+      "text_sha256": "f73c1884290be5c5da33e9b4bdd4c96d10a1d15960b17dd6965c3994cfc75371",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_2b8d5cddce4e",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "8e00aece42f0705735aade45452465bd4688a22eff657852aa1d6006cddafe2b",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Looking up a missing bucket key can make that nonexistent key appear in subsequent bucket key iteration. Missing lookups and membership probes must not invent keys. Actual keys should remain discoverable even when their items were delivered directly or their cached items have been consumed; preserve validator behavior.",
+      "text_sha256": "906d16efb757138eb94e9fb9fceb584cbace5f80c751d2ac949b07389c472d40",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_670b715b307a",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "92fd6b5957c8153fc4dd01dd6275bef95c6f87ba1d34c5d76485cb4fba28ea25",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Running statistics helpers need consistent maxlen type handling. running_mean, running_min, running_max and running_statistics should accept integer-like objects supporting the index protocol and reject floats or strings with TypeError. Preserve None for unbounded operation and the existing rules for positive window sizes.",
+      "text_sha256": "372bf301fd1ec88f3fb21dda0506c906ac1de198ee5d36258be21f1b2f1e906a",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_3eb4053e1aac",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "1e47e916fef1fba42624a76409bdd9bf2aed2f22af9038c9cc976d1079af1992",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "A zero-cache seekable iterator can accumulate nested lookahead storage after many peek or truth-value checks, eventually causing excessive overhead or recursion failures. Keep that lookahead storage bounded while preserving the next item, repeated lookahead, falsey values, exhaustion and an empty public replay cache.",
+      "text_sha256": "c8e1703fa824891484a6463422b86023d74106ca6cc73598f95358448290222b",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     },
     {
       "task_id": "more_itertools_f89d7a3331ba",
       "repo": "more-itertools/more-itertools",
       "split": "held_out",
       "record_sha256": "a5079b8b869c4d862aa4ecd5c1af2e6272b784e8ce040af00c9b7b36b52a0f46",
-      "status": "pending_review",
-      "text": "",
-      "text_sha256": "",
-      "reviewer": ""
+      "status": "approved",
+      "text": "Make ichunked agree with chunked for zero and negative chunk sizes. Zero should yield no chunks without consuming the input, and a negative size should raise ValueError. Preserve lazy iteration for valid sizes and the existing behavior for None.",
+      "text_sha256": "0808a31ae054d3c97f922119a26e2ff3e3dfcae7f5abc479c4bea8e48dcf4ace",
+      "reviewer": "Codex author and self-review; not an independent review",
+      "task_kind": "bug_fix"
     }
-  ]
+  ],
+  "description_provenance": "Retrospective behavioral descriptions authored from upstream commit subjects and non-test source changes. Not original user-filed issues. No hidden test assertions were used as authoring input.",
+  "review_method": "Single Codex author with semantic self-review; no independent reviewer or external agent has reviewed these descriptions."
 }

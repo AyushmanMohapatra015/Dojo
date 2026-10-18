@@ -1,5 +1,16 @@
 # Learning log
 
+## Issue authoring - implementation observation
+
+A fail-before/pass-after task is not necessarily a bug: the same construction
+checks also accept new features and deliberate API changes. Different full Git
+patches can even share identical source changes while differing in tests or
+context. We kept the frozen labels and documented these relationships. Our
+descriptions were written with knowledge of reference source changes, so we
+must disclose that provenance and avoid presenting them as original independent
+issues. Self-review also differs from an independent review. The owner's own
+milestone reflection is pending.
+
 ## Solver inputs - implementation observation
 
 The base snapshot used to validate a mined bug already contains the new hidden

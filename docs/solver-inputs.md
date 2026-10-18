@@ -28,7 +28,8 @@ metadata to the agent. The caller must pass only this result to the future
 agent. Repository text and issues remain untrusted input. Base files have the
 existing path/type/size checks and execute only in the future sandbox.
 
-This step creates the review workflow and input boundary. All 63 issue texts
-still require review; no benchmark solver inputs have been exported. Stage B
-model evaluation is unregistered. The next step is to author/review the issue
-descriptions before freezing the final issue manifest and solver protocol.
+The queue now contains 63 authored descriptions with semantic self-review;
+independent review has not occurred. See [issue review](issue-review-v1.md) for
+provenance, task-family limitations and the separate issue manifest check.
+Solver inputs may be constructed in memory to verify their identity; no
+benchmark agent has received them. Stage B model evaluation is unregistered.
