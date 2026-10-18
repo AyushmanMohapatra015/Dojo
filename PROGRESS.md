@@ -1,6 +1,29 @@
 # Progress
 
-Updated: 2026-10-17 (v2 candidate construction results complete)
+Updated: 2026-10-18 (solver input boundary and issue review workflow)
+
+## Solver input boundary - 2026-10-18
+
+- Added dojo/solve/task_view.py and docs/solver-inputs.md. The inventory command
+  verified active construction evidence and created an evaluator-only issue
+  review queue for all 63 eligible tasks, preserving their split labels.
+- SolverInput exposes only the reviewed issue text and an archive from the
+  original base commit. Construction's base-with-fixed-tests, reference patch,
+  fix identity, receipts and split metadata are never fields of this interface.
+  Existing original base tests remain visible; no Git history is archived.
+- Approval binds exact issue text and task-record hashes to a named reviewer.
+  Pending, changed or misbound descriptions and obvious patch artifacts reject.
+  Hashes and artifact checks do not replace semantic review for solution leakage.
+- Eleven synthetic tests pass, including original base source/test identity,
+  excluded reference/scorer data and changed-approval rejection. All 253 offline
+  tests pass, including frozen evidence checks. Ruff, the 88-package dependency
+  lock and whitespace checks pass.
+- All 63 issue descriptions still require authoring and semantic review; this
+  step completes the input boundary and review workflow, not issue content.
+  Dataset remains 63 eligible construction tasks; no model outcomes or spending.
+- Next: author and review behavioral issue descriptions, preserve labels, then
+  freeze the issue manifest before completing separate model preregistration.
+  Provider inference remains locked. No solver or container run was performed.
 
 ## V2 candidate construction results - 2026-10-17
 

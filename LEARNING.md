@@ -1,5 +1,14 @@
 # Learning log
 
+## Solver inputs - implementation observation
+
+The base snapshot used to validate a mined bug already contains the new hidden
+tests. Giving that snapshot to an agent would expose the evaluation. The solver
+instead receives the original parent tree, with its existing tests, and a reviewed
+behavioral issue description. A record hash proves which data was approved; it
+cannot prove that prose avoids revealing the solution. Semantic review is a
+separate requirement. The owner's own milestone reflection is pending.
+
 ## Candidate yield is not task yield
 
 Our filters found 95 candidate commits across three repositories, but exact
