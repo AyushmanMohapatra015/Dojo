@@ -1,6 +1,35 @@
 # Progress
 
-Updated: 2026-10-19 (Antigravity review assessed; runtime integrity hardening next)
+Updated: 2026-10-19 (versioned runtime input guard verified on all 63 tasks)
+
+## Runtime input guard v2 - 2026-10-19
+
+- Added dojo/solve/input_guard_v2.py and docs/runtime-input-v2.md, preserving all
+  frozen construction sources, issue descriptions and the original issue manifest.
+  Future solver consumers must use this task-ID-only entry point; v1 remains
+  available for historical reproduction only.
+- Pinned the reviewed manifest ID in runtime code. Checked manifest/inventory
+  digests, frozen source hashes, exact record/text bindings and saved split.
+  Rehashing changed records, issues or the entire manifest cannot change the
+  trusted anchor. The returned interface still has only issue text and archive.
+- Git reads disable replacement objects/lazy fetching, strip inherited Git
+  environment overrides/tracing, disable global/system configuration and deny
+  transports. Replacement refs/grafts reject, including refs added during reading.
+  Final archive bytes must match the frozen original-base SHA-256.
+- Thirteen synthetic regression tests pass: reproduce the original bypass,
+  verify v2 rejection, inherited override isolation, late replacement, archive
+  drift, rehashed input edits, wrong repositories/roots, missing records and
+  changed frozen sources. Original base tests remain visible; fix-only files
+  and fixed source do not enter the accepted archive.
+- Ran the new check command successfully on all 63 actual task archives:
+  37 train / 26 held out, matching manifest
+  cf3a35d43c7a065956bf93ac86b2e4c8247f35ecac89c830b2732fb5a359b4c7.
+- Full verification: 275 offline tests pass, including all frozen evidence checks.
+  Ruff, the unchanged 88-package dependency lock and whitespace checks pass.
+- No upstream code, model/provider call or container ran. No source filtering,
+  task relabelling, new dependency or issue-manifest change occurred.
+- Next: implement the offline fake-model solver slice using v2 inputs. Stage B
+  registration and provider spending gates remain pending; live inference locked.
 
 ## Antigravity review assessment - 2026-10-19
 

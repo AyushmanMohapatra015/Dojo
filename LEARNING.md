@@ -1,5 +1,14 @@
 # Learning log
 
+## Runtime input identity - implementation observation
+
+Recomputing a file's hash checks consistency, but it does not establish that the
+file is the one we approved. The runtime needs an independent trusted hash to
+compare against. Git also supports replacement objects: a normal blob read can
+return substituted contents while a caller still names the original commit.
+Our new boundary disables substitution and compares the final archive with the
+reviewed manifest before returning input. The owner's own reflection is pending.
+
 ## Issue authoring - implementation observation
 
 A fail-before/pass-after task is not necessarily a bug: the same construction
