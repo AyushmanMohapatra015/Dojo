@@ -95,6 +95,10 @@ program and revoking its account access are separate actions; complete both.
   delete Program Files as a substitute for uninstalling.
 - [ ] Remove project-only uv/dependency environments and temporary installers/logs
   after verifying the exact paths. Do not delete the project source or .git.
+  Review PDF reading on 2026-10-19 used pypdf and pymupdf through temporary
+  `uv run --no-project --with` cache environments; neither was added to project
+  dependencies. Ignored .pytest_tmp contains rendered pages and a synthetic
+  replacement-object reproduction. Include these temporary artifacts in cleanup.
 - [ ] After verifying the final backup/push and confirming recovery is unnecessary,
   remove the local email-repair bundle .git/dojo-before-email-fix.bundle. It holds
   the original commits with personal email metadata. Remove only that file;

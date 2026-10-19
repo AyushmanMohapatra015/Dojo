@@ -1,6 +1,25 @@
 # Progress
 
-Updated: 2026-10-18 (63 issue descriptions authored and manifest frozen)
+Updated: 2026-10-19 (Antigravity review assessed; runtime integrity hardening next)
+
+## Antigravity review assessment - 2026-10-19
+
+- Read all 11 PDF pages and assessed findings against the current checkpoint.
+  Detailed decisions and source fingerprint: docs/antigravity-review-assessment.md.
+- Confirmed a concrete standalone input-integrity gap using a synthetic repo:
+  Git replacement blobs can change archive content while the declared commit IDs
+  and parent check remain unchanged. The existing manifest comparison detects
+  changed archives, but the standalone builder does not enforce that comparison.
+  No benchmark repository was modified; no model received an altered input.
+- Accepted family/duplicate disclosure and targeted test recommendations.
+  Rejected incorrect claims about URL/backtick hash matching, JSON formatting
+  changing canonical hashes, and lock creation during the per-task loop.
+- Runtime sources, frozen descriptions, manifests and task labels are unchanged.
+  Provider calls/spend remain zero. No full test rerun for this documentation-only
+  assessment; the previous full checkpoint had 262 passing offline tests.
+- Next: versioned runtime input guard enforcing trusted task/text/archive hashes
+  and rejecting object substitution, then the offline fake-model solver slice.
+  Model evaluation remains unregistered and live inference stays locked.
 
 ## Issue descriptions v1 - 2026-10-18
 
