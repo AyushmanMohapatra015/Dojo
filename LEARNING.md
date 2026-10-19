@@ -1,5 +1,14 @@
 # Learning log
 
+## Offline solver controller - implementation observation
+
+A model saying "done" is not a test result, and a shell command exiting with
+zero does not establish that visible tests passed. The controller tracks those
+signals separately. If a patch changes after a test passed, that old test result
+no longer describes the current patch. Scripted adapters let us check this
+bookkeeping and stopping behavior before connecting real execution or billing.
+The owner's own milestone reflection is pending.
+
 ## Runtime input identity - implementation observation
 
 Recomputing a file's hash checks consistency, but it does not establish that the

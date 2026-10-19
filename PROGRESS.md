@@ -1,6 +1,32 @@
 # Progress
 
-Updated: 2026-10-19 (versioned runtime input guard verified on all 63 tasks)
+Updated: 2026-10-19 (offline fake-model solver controller implemented)
+
+## Offline solver controller - 2026-10-19
+
+- Added a bounded fake-model controller, scripted sandbox and observable-signal
+  types. This slice accepts exact offline fake adapters only. No real transport,
+  shell execution, extraction, Docker adapter or provider call is implemented.
+- Strict one-action JSON contract: bash or explicit finish. Invalid/duplicate
+  actions receive feedback and consume a turn. Fixed step, observation, reply,
+  token-unit and wall-clock limits; command allowance is capped by time remaining.
+- Token accounting is explicitly synthetic UTF-8-byte-based accounting, not a
+  provider tokenizer, cost estimate or authorization to spend promotional credits.
+- Visible test status requires explicit test feedback, not any successful command.
+  Patch changes invalidate stale test status. Self-reported completion is never
+  scored as correctness. Result fields explicitly mark simulation_only/not_scored.
+- Runnable synthetic demo: python -m dojo.solve.simulation demo. Observed four
+  scripted model turns / three canned commands, nonempty synthetic patch, passing
+  synthetic visible-test feedback, zero stalls and self-reported completion.
+  These observations are NOT benchmark/model performance measurements.
+- Added 32 offline controller regressions, including a test that forbids process
+  execution during the demo. The task wrapper uses input_guard_v2 and stops
+  before model dispatch if input preparation rejects. No benchmark tasks ran.
+- Verification: all 307 offline tests, Ruff, the unchanged 88-package dependency
+  lock and whitespace checks pass. The runnable synthetic demo also completed.
+- Next: bounded offline Docker solver adapter on synthetic development fixtures,
+  then hidden-test restoration/scoring and mini-swe-agent/provider integration.
+  Stage B registration and live inference remain locked; no provider spend.
 
 ## Runtime input guard v2 - 2026-10-19
 
