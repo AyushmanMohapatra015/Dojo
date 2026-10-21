@@ -154,6 +154,15 @@ Split: oldest ~60% = **train**, newest ~40% = **held-out**; write `data/split.lo
 
 ### 7.2 Solver
 - Wrap mini-swe-agent; litellm `openai/<model-id>` with per-model `api_base` from `configs/models.yaml`.
+
+  **Recorded implementation decision, 2026-10-21 (tasks 4h/4i):** this proposed
+  runtime is superseded by Dojo's custom strict JSON-action controller. No
+  mini-swe-agent/LiteLLM runtime integration is claimed. Upstream v2.4.6/MIT
+  interfaces were reviewed; rationale, compatibility boundaries and future
+  versioning requirements are in `docs/model-controller-boundary.md`. Locked
+  optional dependencies remain unchanged. Registration and cache identity must
+  name the actual custom scaffold; live transport remains gated at tasks 6/8.
+
 - Bash-only text actions. `max_steps=40` (config), observation truncation ~3,000 chars, per-run token ceiling, per-command timeout.
 - Sampling: follow each model card (Lightning: temp 1.0, top_p 0.95). `force_nonempty_content=True` via `chat_template_kwargs` for coding agents; thinking on/off + budget — **VERIFY Token Factory forwards `extra_body.chat_template_kwargs`**.
 - **Scoring:** apply the agent's diff, **restore hidden test files** (agent edits to tests are discarded), run `fail_to_pass` + `pass_to_pass`.

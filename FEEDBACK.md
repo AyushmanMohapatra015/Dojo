@@ -1,5 +1,18 @@
 # Platform feedback
 
+## 2026-10-21 - local tool/environment observation, upstream cause unconfirmed
+
+- A sandboxed read-only exec could not start: CreateProcess was rejected with
+  `helper_unknown_error: setup refresh had errors`. An explicitly approved
+  escalated retry of the read succeeded. This affected local tool startup, not
+  Token Factory; no provider request or charge occurred.
+- Classification: environment/tool-startup observation, not a confirmed upstream
+  code defect. Root cause, affected version and independent minimal reproduction
+  are unknown. No public issue or patch is ready from this evidence alone.
+- The owner requests notifications for service defects as contribution leads.
+  Future confirmed defects need sanitized versions/reproduction, expected/actual
+  behavior and a meaningful regression. No issue/contact is sent automatically.
+
 ## 2026-10-13 — Day 1 documentation checks
 
 - The Markdown catalog and machine-readable catalog agree on the four requested

@@ -1,6 +1,35 @@
 # Progress
 
-Updated: 2026-10-21 (tasks 4f and 4g verified)
+Updated: 2026-10-21 (tasks 4h/4i; owner now runs Git commands)
+
+## Tasks 4h/4i: model interface and consistent run settings - 2026-10-21
+
+- Added validated host request/reply contracts, explicit synthetic/provider usage
+  provenance, a provider transport that always refuses execution and a configured
+  scripted controller bridge. No key lookup/client/network/retry is introduced.
+- RunSettings and python -m dojo.solve.plan share validated context, seed,
+  sampling, thinking/reply, token, step, observation and time bounds. Requests
+  are clamped to remaining wall time. Unknown usage or malformed output stops
+  before executing actions. No synthetic token count is a real spending bound.
+- Custom JSON-action controller selected over upstream mini-swe-agent runtime;
+  reviewed v2.4.6 MIT and adapter interfaces, recorded explicit BUILD_SPEC
+  deviation and scaffold identity requirements. No upstream code vendored or
+  LiteLLM runtime integration claimed; dependency locks unchanged.
+- Added 53 focused regression cases, including all four configurations,
+  pre-dispatch limits, malformed prices, invalid CLI settings, unknown usage,
+  sanitized errors, no retries and remaining-time propagation. Final full suite:
+  667 passed in 47.13 seconds. Ruff/lock/diff checks passed; all frozen-file
+  hashes and 63-task input bindings intact; credential-pattern scan found none.
+- Preserved construction CLI and frozen artifacts. The new CLI is offline-only;
+  product bench/cache wiring remains 5e, provider enforcement remains gated 6/8.
+- Prepared one bounded web-agent packet under 13h: 79,108 bytes, 16 allowlisted
+  sources/context files, completeness checked; major cache/crash/spending design
+  review plus detailed owner workflow. No external upload or sharing
+  performed. New feedback policy distinguishes suspected environment issues
+  from reproducible upstream bugs; no issue or support message sent.
+- Owner now runs Git add/commit/push manually. No staging, commit or push done in
+  this checkpoint. Next implementation: 5a/5b. Pending 4j threat-model decision,
+  financial/Stage B gates and owner-written learning exercises remain explicit.
 
 ## Task 4g: original-input Docker profiles - 2026-10-21
 

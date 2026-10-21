@@ -5,6 +5,7 @@ import math
 import time
 from dataclasses import dataclass
 
+from dojo.solve.contracts import ModelBoundaryError, ModelLimitError
 from dojo.solve.sandbox import FakeSandbox
 from dojo.solve.signals import ObservableSignals
 from dojo.solve.task_view import SolverInput
@@ -64,7 +65,8 @@ class ScriptedModel:
         self.replies = tuple(replies)
         self.seen: list[tuple[Message, ...]] = []
 
-    def complete(self, messages: tuple[Message, ...], *, max_tokens: int) -> FakeReply:
+    def complete(self, messages: tuple[Message, ...], *, max_tokens: int,
+                 timeout_seconds: float = 60) -> FakeReply:
         index = len(self.seen)
         if index >= len(self.replies):
             raise StopIteration
@@ -151,7 +153,8 @@ def _run_loop(view, model, sandbox, limits=None, *, clock=time.monotonic):
     done = False
     reason = "step_cap"
     for _ in range(limits.max_steps):
-        if clock() >= deadline:
+        now = clock()
+        if now >= deadline:
             reason = "deadline"
             break
         prompt_size = sum(synthetic_tokens(message.content) for message in messages)
@@ -159,9 +162,17 @@ def _run_loop(view, model, sandbox, limits=None, *, clock=time.monotonic):
             reason = "token_cap"
             break
         try:
-            response = model.complete(tuple(messages), max_tokens=limits.reply_tokens)
+            response = model.complete(tuple(messages), max_tokens=limits.reply_tokens,
+                                      timeout_seconds=min(limits.command_timeout_seconds,
+                                                          deadline - now))
         except StopIteration:
             reason = "script_exhausted"
+            break
+        except ModelLimitError as exc:
+            reason = exc.reason
+            break
+        except (ModelBoundaryError, TimeoutError):
+            reason = "model_error"
             break
         turns += 1
         prompt_used += prompt_size

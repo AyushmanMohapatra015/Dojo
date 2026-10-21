@@ -10,5 +10,6 @@
 - If something in the spec is marked VERIFY, check it and record the answer. Don't assume.
 - Work in small steps: explain what each step does before acting, then recap what we learned.
 - Help the owner learn alongside implementation; preserve the owner-written learning work in BUILD_SPEC.md.
-- The owner now authorizes committing and pushing completed, reviewed project checkpoints whenever appropriate. Run relevant checks, review staged files for credentials/private data, preserve the existing private Dojo remote and push normally. Do not force-push, change repository visibility, or make unrelated GitHub/account changes.
+- The owner now performs Git add, commit and push manually. Finish implementation/checks, review changed files for credentials/private data, then provide exact scoped commands. Do not stage, commit or push unless the owner explicitly asks again. Preserve the private remote; no force-push or unrelated account changes.
+- Notify the owner of service/tool defects encountered. Distinguish a suspected environment failure from a reproduced upstream defect; record minimal sanitized evidence and report readiness in FEEDBACK.md. Do not file issues or contact maintainers without authorization.
 - At project completion, remind the owner and review PROJECT_CLEANUP.md before final handoff; keep its tool inventory current.

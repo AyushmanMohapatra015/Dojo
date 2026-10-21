@@ -2,7 +2,7 @@
 
 Updated: 2026-10-21. BUILD_SPEC.md defines the product; this file is the live
 execution checklist; PROGRESS.md holds checkpoint history/evidence. Baseline:
-614 offline tests after tasks 4f/4g, 63 construction tasks (37 train / 26 held-out), no provider
+667 offline tests after tasks 4h/4i, 63 construction tasks (37 train / 26 held-out), no provider
 calls/spend. Scaffolds and synthetic checks are not completed benchmark results.
 
 ## Tracking rules
@@ -14,7 +14,8 @@ calls/spend. Scaffolds and synthetic checks are not completed benchmark results.
   current slice. PLANNED: not started. GATED: prerequisite missing. OPTIONAL:
   explicit decision needed; never silently omit it.
 - Complete a reviewable slice, verify it, update this plan/progress/learning,
-  inspect credentials, commit and push privately. Existing account/spending,
+  inspect credentials, then provide scoped Git commands for the owner to run.
+  The owner now handles staging/commits/pushes. Existing account/spending,
   owner-learning and frozen-artifact rules remain in force.
 - Record external findings as confirmed, hypothesis, rejected or limitation;
   link accepted work to an ID before implementation. Unknown future tasks get
@@ -90,8 +91,8 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 4e | DONE | Shared git-text-empty-v1 exporter; twelve real Git apply/reverse scenarios, actual Docker file round-trip and both scorers; docs/patch-export.md and data/development/empty-patches/export-score-smoke-v1.json. Review finding 3 resolved. |
 | 4f | DONE | Actual scripted controller/Docker/scorer flow: correct fix passes, unchanged/test-only edits fail despite visible passes, timeout not scored; hidden canary/IDs/receipts excluded from agent contexts. docs/solver-flow.md and data/development/solver-flow/flow-smoke-v1.json. |
 | 4g | DONE | Native images/collectors and original-only visible selectors; all 63 inputs prepared read-only, eight synthetic flows and runtime setup verified. See docs/profiled-sandbox.md; real-task execution remains gated. |
-| 4h | NEXT | Provider/controller interface and documented mini-swe-agent reuse/custom-wrapper choice, compatibility/license and BUILD_SPEC deviation if any. |
-| 4i | PLANNED | Enforce model/config token/reply/step/time limits consistently across adapters and CLI. |
+| 4h | DONE | Validated host request/reply/usage contract, locked provider transport and scripted controller bridge; custom controller decision and v2.4.6 MIT review explicitly recorded in BUILD_SPEC and docs/model-controller-boundary.md. No live or LiteLLM integration claimed. |
+| 4i | DONE | RunSettings shared by configured adapter and offline python -m dojo.solve.plan CLI; context/token/reply/step/time/sampling/thinking validation and failure-path tests. Frozen construction CLI unchanged. Provider tokenizer/enforcement verification stays gated at 6/8; product bench wiring at 5e. |
 | 4j | PARTIAL | Explicit scoring threat model/sign-off: interpreter evasion reproduced; FD/AST checks are not authentication. Decide stronger isolation scope honestly. |
 | 4k | OPTIONAL | Bounded cleanup retry/final verification with total deadline and own-container-only removal; review finding 6, retain stop-on-uncertainty. |
 | 4l | DONE | Preserve/document source-first Click imports and conservative legacy teardown-skip handling; findings 4/5, no frozen collector rewrite. |
@@ -100,8 +101,8 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 
 | ID | Status | Task / acceptance evidence |
 |---|---|---|
-| 5a | PLANNED | SQLite task/run/result/signal schemas with separate candidate/evidence/execution states. |
-| 5b | PLANNED | Cache keys cover task/input/scaffold/config/model/endpoint/params/bundle/seed; no stale replay. |
+| 5a | NEXT | SQLite task/run/result/signal schemas with separate candidate/evidence/execution states. External packet 13h requests design review; independently verify proposals. |
+| 5b | NEXT | Cache keys cover task/input/scaffold/config/model/endpoint/params/bundle/seed; no stale replay. |
 | 5c | PLANNED | Atomic writes, concurrency/resume, interrupted/unknown runs and checked exports; no implicit refunds. |
 | 5d | PLANNED | Actual tokens/cost/steps/time, final diff and truncated private trajectory; evaluator evidence stays separate. |
 | 5e | PLANNED | Working bench/cost/report CLI plus clear unsupported/pending/error states and example commands. |
@@ -207,9 +208,11 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 13b | DONE | Principal PDF assessment: findings 1/2 -> 4d DONE; 3 -> 4e DONE; 4/5 -> 4l documented; cleanup -> 4k decision. Patch rejected as supplied; no new work lost. |
 | 13c | DONE | Richer handoff checklist in docs/web-agent-review-guide.md: current commit/hashes, dependencies, callers/tests/config/images, synthetic examples, limits and exact acceptance commands. |
 | 13d | DONE | Primary integration here; evidence labels, minimal reproductions and complete Markdown/source; no automatic merge/credentials/account access. |
-| 13e | PLANNED | For each assignment, list included files and omitted assumptions; provide missing dependency/interface/build snippets before requesting implementation. |
+| 13e | PARTIAL | Cache/accounting packet v1 lists included sources, hashes, locked versions and omitted scorer/input assumptions; continue supplements for precise missing interfaces. |
 | 13f | PLANNED | Reproduce returned findings; record accepted/rejected/deferred/limitation outcomes; assign implementation IDs before edits. |
 | 13g | PLANNED | Consult at 7g/9g/final UX/submission; flag meaningful blockers promptly and request focused help when useful. |
+| 13h | DONE | docs/reviews/cache-accounting-packet-v1.md and docs/parallel-agent-workflow.md; one allowlisted packet for tasks 5a-5f design review with source hashes, limits and no held-out/account data. Await owner sharing/response at 13f. |
+| 13i | PARTIAL | Service/tool defect log under 1f: sanitized observations, reproduction/confidence and upstream report readiness; notify owner, no automatic issue filing. |
 
 ## 14. Submission/publication
 
@@ -247,6 +250,8 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 16d | GATED | If L3 proceeds, owner-written gate decisions and rejection reasons. |
 | 16e | PARTIAL | Owner milestone reflections/video explanation; distinguish from AI-written implementation notes. |
 
-Completed this checkpoint: **4f and 4g**. Next implementation checkpoint: **4h**.
+Completed this checkpoint: **4h and 4i**, with requested web-agent handoff **13h**.
+Next implementation checkpoint: **5a/5b**. Scoring threat-model decision **4j**
+remains open and must be resolved before registered model evaluation.
 Eligible urgent account/rules/context work may proceed alongside offline tasks;
 this never authorizes gated paid work or unrelated stretch implementation.

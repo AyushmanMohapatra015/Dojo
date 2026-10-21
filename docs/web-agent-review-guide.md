@@ -6,11 +6,11 @@ explicit assumptions, then bring its findings back here for verification.
 
 ## Current high-value assignment
 
-Review the hidden-test scoring boundary and contract-based Docker scorer.
-Focus on false passes, result accounting, protected files, cleanup and limits.
-This is independent review, not a request to rewrite the project or run models.
-It can proceed while development continues here. Other useful later assignments
-are the paired bootstrap/cascade math and a final demo/submission review.
+Current assignment: tasks 5a-5f cache identity, concurrent/crashed execution and
+accounting recovery. Use docs/reviews/cache-accounting-packet-v1.md and follow
+docs/parallel-agent-workflow.md. The earlier scoring packet below remains a
+historical review snapshot; do not send it as the current source automatically.
+Other later assignments are paired bootstrap/cascade math and submission review.
 
 ## Required context for every future assignment (ACTION_PLAN 13c-13f)
 
@@ -57,7 +57,7 @@ are the paired bootstrap/cascade math and a final demo/submission review.
    docs/reviews/web-agent-scoring-feedback-v1.md. A Markdown/text response makes
    checking references and code easier than an image-only PDF.
 6. We will reproduce important findings, assess tradeoffs, implement accepted
-   changes, run relevant checks and push a separate reviewed checkpoint here.
+   changes and run relevant checks here. The owner now runs supplied Git commands.
    Suggestions are not automatically correct or authorized for integration.
 
 The packet records its baseline commit and hashes. If source changes after

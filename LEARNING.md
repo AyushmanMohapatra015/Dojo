@@ -1,5 +1,16 @@
 # Learning log
 
+## Tasks 4h/4i - implementation observation
+
+A model adapter needs a contract for requests, usage and failures, not just a
+function returning text. Unknown usage must stop a run, and a configured limit
+must reach the actual dispatch boundary. Shared validated settings prevent CLI
+and adapter behavior from drifting. Synthetic admission checks help test this
+logic but cannot establish real tokenization, billing or service enforcement.
+An external reviewer can work effectively from a small complete source packet
+with versions, tests and explicit omissions. Review output is a proposal until
+reproduced here. Owner-written learning exercises remain pending.
+
 ## Tasks 4f/4g - implementation observation
 
 A visible test pass is feedback, not proof of a correct solution: unchanged code
