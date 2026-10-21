@@ -1,0 +1,131 @@
+{
+  "protocol": "synthetic-scoring-v1",
+  "synthetic": true,
+  "counts_toward_frozen_benchmark": false,
+  "held_out_eligible": false,
+  "provider_calls": 0,
+  "model_calls": 0,
+  "cost_usd": "0.00",
+  "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+  "cleanup_complete": true,
+  "harness_sha256": "1052012310d3fc6332458d95f7cc2f78b088c5cda575ce6984550f52c28372e3",
+  "cases": {
+    "correct_fix": {
+      "status": "passed",
+      "reason": "all_required_tests_pass",
+      "passed": [
+        "tests/test_calculator.py::test_positive_numbers",
+        "tests/test_calculator.py::test_zero"
+      ],
+      "failed": [],
+      "synthetic": true,
+      "counts_toward_frozen_benchmark": false,
+      "provider_calls": 0
+    },
+    "unchanged": {
+      "status": "failed",
+      "reason": "required_test_failed",
+      "passed": [
+        "tests/test_calculator.py::test_zero"
+      ],
+      "failed": [
+        "tests/test_calculator.py::test_positive_numbers"
+      ],
+      "synthetic": true,
+      "counts_toward_frozen_benchmark": false,
+      "provider_calls": 0
+    },
+    "test_only_cheat": {
+      "status": "failed",
+      "reason": "required_test_failed",
+      "passed": [
+        "tests/test_calculator.py::test_zero"
+      ],
+      "failed": [
+        "tests/test_calculator.py::test_positive_numbers"
+      ],
+      "synthetic": true,
+      "counts_toward_frozen_benchmark": false,
+      "provider_calls": 0
+    },
+    "deleted_tests": {
+      "status": "failed",
+      "reason": "required_test_failed",
+      "passed": [
+        "tests/test_calculator.py::test_zero"
+      ],
+      "failed": [
+        "tests/test_calculator.py::test_positive_numbers"
+      ],
+      "synthetic": true,
+      "counts_toward_frozen_benchmark": false,
+      "provider_calls": 0
+    },
+    "fixed_with_deleted_tests": {
+      "status": "passed",
+      "reason": "all_required_tests_pass",
+      "passed": [
+        "tests/test_calculator.py::test_positive_numbers",
+        "tests/test_calculator.py::test_zero"
+      ],
+      "failed": [],
+      "synthetic": true,
+      "counts_toward_frozen_benchmark": false,
+      "provider_calls": 0
+    },
+    "injected_conftest": {
+      "status": "failed",
+      "reason": "required_test_failed",
+      "passed": [
+        "tests/test_calculator.py::test_zero"
+      ],
+      "failed": [
+        "tests/test_calculator.py::test_positive_numbers"
+      ],
+      "synthetic": true,
+      "counts_toward_frozen_benchmark": false,
+      "provider_calls": 0
+    },
+    "deleted_source": {
+      "status": "invalid_evidence",
+      "reason": "receipt_integrity",
+      "passed": [],
+      "failed": [],
+      "synthetic": true,
+      "counts_toward_frozen_benchmark": false,
+      "provider_calls": 0
+    },
+    "visible_only_fix": {
+      "status": "failed",
+      "reason": "required_test_failed",
+      "passed": [
+        "tests/test_calculator.py::test_zero"
+      ],
+      "failed": [
+        "tests/test_calculator.py::test_positive_numbers"
+      ],
+      "synthetic": true,
+      "counts_toward_frozen_benchmark": false,
+      "provider_calls": 0
+    },
+    "regression": {
+      "status": "failed",
+      "reason": "required_test_failed",
+      "passed": [
+        "tests/test_calculator.py::test_positive_numbers"
+      ],
+      "failed": [
+        "tests/test_calculator.py::test_zero"
+      ],
+      "synthetic": true,
+      "counts_toward_frozen_benchmark": false,
+      "provider_calls": 0
+    }
+  },
+  "source_sha256": {
+    "dojo/eval/development_scoring.py": "414d1a6232fc2ce37e9f81c7bce73bffd736c0eb4870dd14b00bde356f128d02",
+    "dojo/eval/scoring_development.py": "7829de72100b1e7a8e63454a8796a2e9754d1581ff8d579ddfc10fa768f2f52f",
+    "dojo/solve/docker_sandbox.py": "bbdeda8baa864b3a8b484310b7d7c79c0d149016ebc45efe2df4314d424e070a"
+  },
+  "record_sha256": "97a702a04cbef5966513f262f44c7500750921d668f58b775a8a0d5665ea7dcd"
+}

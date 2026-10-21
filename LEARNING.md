@@ -1,5 +1,16 @@
 # Learning log
 
+## Hidden-test scoring - development reference
+
+Passing the agent's visible tests can still mean the actual bug is unfixed. A
+candidate that returns zero passes our calculator's original test but fails the
+hidden positive-number test. Returning five does the opposite, so both the new
+and original tests must be checked. Restoration also discards newly injected
+test hooks, not just edits to an existing test file. This synthetic reference
+checks candidate snapshots against their diffs without executing patches on the
+host. The owner's independent restoration implementation and reflection remain
+pending, as requested in BUILD_SPEC.md.
+
 ## Docker solver commands - implementation observation
 
 An agent needs file edits to persist, but keeping its old processes alive across

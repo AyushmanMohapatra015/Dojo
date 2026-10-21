@@ -1,6 +1,37 @@
 # Progress
 
-Updated: 2026-10-21 (isolated Docker solver development adapter verified)
+Updated: 2026-10-21 (synthetic hidden-test restoration and scoring verified)
+
+## Synthetic hidden-test scoring - 2026-10-21
+
+- Added an explicitly synthetic calculator scoring reference. It checks that
+  an exported workspace matches its diff, retains only the fixture's approved
+  source edits, discards added test hooks and restores evaluator-owned tests.
+  Reconstruction uses checked snapshot bytes; standalone patch application is
+  not yet supported. No repository code or patch programs run on the host.
+- Fresh scoring containers reuse the pinned immutable image and local isolated
+  Docker configuration. Receipts require exact expected fail-to-pass and
+  pass-to-pass IDs with no missing/extra/duplicate outcomes. Infrastructure,
+  collection and cleanup problems cannot be counted as a successful fix.
+- Nine real local-Docker fixtures behaved as expected: correct fix passed;
+  unchanged source, test-only edits, deleted tests, injected conftest, visible-
+  only fixes and regressions failed; deleted source produced invalid evidence;
+  a correct fix with deleted tests passed after trusted restoration.
+- Saved immutable development evidence under
+  data/development/solver-scoring/restoration-smoke-v1.json. This is synthetic
+  evidence, not benchmark/model performance. All scoring containers cleaned up.
+- Verification: 361 offline tests pass (31 new scoring regressions), Ruff and
+  the unchanged 88-package dependency lock pass. No tools were installed and
+  no provider/model requests ran; provider spending remains zero.
+- Limitations: calculator-only source allowlist, no benchmark task integration,
+  no general skip/subtest protocol support and no claim of protection against
+  arbitrary Python source attacking pytest in the same interpreter. The owner's
+  hand-written restoration/scoring learning requirement remains pending; this
+  development reference does not mark it complete.
+- Next: trusted real-task scoring contract covering both frozen collector
+  protocols, protected test/support paths and stable skips; then integration
+  with the solver/provider adapter. Stage B registration, credit-expiry
+  confirmation and live-inference gates remain pending.
 
 ## Docker solver development adapter - 2026-10-21
 
