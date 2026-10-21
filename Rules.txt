@@ -1,5 +1,6 @@
 # Rules
 - BUILD_SPEC.md is the plan. Do only the step I ask for, then stop and summarize.
+- ACTION_PLAN.md is the live numbered execution checklist derived from BUILD_SPEC.md. Add every new task/review follow-up before implementation, keep stable IDs/status/dependencies/evidence current, and reference active IDs in checkpoints. Preserve canonical/frozen artifacts; record scope/schedule changes rather than silently omitting work.
 - Never print or log secrets. Read keys from the environment only.
 - Never run paid model jobs without a spend cap. Ask me before any run that could cost over $1.
 - The owner now permits carefully monitored promotional-credit usage and plans card removal after project completion. No out-of-pocket/card-funded spending is authorized. Support confirms there is no provider hard cap; never promise that local controls guarantee zero charges.

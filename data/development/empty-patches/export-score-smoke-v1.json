@@ -1,0 +1,97 @@
+{
+  "protocol": "empty-patch-development-v1",
+  "action_plan_task": "4e",
+  "patch_protocol": "git-text-empty-v1",
+  "synthetic": true,
+  "counts_toward_frozen_benchmark": false,
+  "held_out_eligible": false,
+  "provider_calls": 0,
+  "model_calls": 0,
+  "cost_usd": "0.00",
+  "checks": {
+    "actual_solver_creation_deletion": true,
+    "solver_round_trip": true,
+    "both_scoring_profiles": true,
+    "cleanup_complete": true
+  },
+  "solver_patch_sha256": "5877ced1e0b8064618612b5e033da8d78c842003ee201bab2da7de92a90c170a",
+  "scoring": {
+    "legacy-v1": {
+      "status": "passed",
+      "reason": "all_required_tests_pass",
+      "phase": "test",
+      "candidate_outcome": "solved",
+      "baseline_verified": false,
+      "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875",
+      "harness_sha256": "ad0cbe041a351cceeb04611665358d1c44c8ea13b3bf328a903277fff8f416c5",
+      "prepared_archive_sha256": "8d82b3df51c2f0f1e56dfc5c00dcccd4a93b96ba247d5ba92f42ddb92f5da759",
+      "envelope": {
+        "phase": "pytest",
+        "report": {
+          "exit_code": 0,
+          "collected": 3,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": []
+        },
+        "install_exit_code": null
+      },
+      "synthetic": true,
+      "counts_toward_frozen_benchmark": false,
+      "provider_calls": 0
+    },
+    "method-subtests-v2": {
+      "status": "passed",
+      "reason": "all_required_tests_pass",
+      "phase": "test",
+      "candidate_outcome": "solved",
+      "baseline_verified": false,
+      "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+      "harness_sha256": "058eee84c13a1215dd36fad73894247f508ab60ce80cb09e7c22bd4b5c377cc4",
+      "prepared_archive_sha256": "f0e6fd5e5db14dc3b38f1f16459af24cc6274493545c7b079758645e9d228509",
+      "envelope": {
+        "phase": "pytest",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 0,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_nested",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 2,
+              "failed": 0,
+              "skipped": 0
+            }
+          }
+        },
+        "install_exit_code": null
+      },
+      "synthetic": true,
+      "counts_toward_frozen_benchmark": false,
+      "provider_calls": 0
+    }
+  },
+  "source_sha256": {
+    "dojo/solve/patches.py": "284b1a656a455ecbf98cd3fdf69fd16b34a1d04cec503847b8df531d8b12d258",
+    "dojo/solve/docker_sandbox.py": "3d0d3b998ffd8881e69c87c7c2ee0059c8f5d174bd151e61426c7d6f90fc59d4",
+    "dojo/eval/scoring_contract.py": "f9170391dacfd443ef3e5ada9b5507c9e38cd0f5ad19b4ad2e855b50b0681e7e",
+    "dojo/eval/docker_scoring_v2.py": "593fbfd204f27b3d2825481246981e66c6f917dd96240c4d403d6e428249b363",
+    "dojo/eval/patch_development.py": "754b3ece74928048238b99e7301997189cb313ed2f27f2ffe3b2ba0bcdf285e5"
+  },
+  "record_sha256": "ae7cb67c65006a6b1c873e923a9d789b8db0d963c432120a0ef95a313e3fb4fd"
+}

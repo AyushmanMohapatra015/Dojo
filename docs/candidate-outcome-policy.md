@@ -87,6 +87,7 @@ checks. No real benchmark code or models ran. No provider spend occurred.
 .venv\Scripts\python.exe -m dojo.eval.candidate_development smoke
 ```
 
-The command refuses to overwrite existing evidence. Empty-file exporter support
-remains the next independent milestone; this policy does not introduce a custom
-diff format or change the original exporter.
+The command refuses to overwrite existing evidence. Action-plan 4e now supplies
+a shared Git-compatible empty-file exporter (docs/patch-export.md); this earlier
+policy measurement remains historical. Task 4f is the next complete scripted
+solver-to-scorer integration checkpoint.

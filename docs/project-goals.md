@@ -11,10 +11,10 @@ spending, change account permissions, bypass project rules or publish the repo.
 1. Stay in the existing Dojo chat/project. Type slash commands in the Codex chat
    composer, not the PowerShell command prompt.
 2. Enter /goal followed by the milestone and acceptance conditions. Example:
-   /goal Implement interoperable empty-file diff support across Dojo solver and
-   scorer; verify synthetic add/delete/application cases, preserve frozen
-   artifacts and live-call locks, update progress, and push a reviewed private
-   checkpoint. Stop after this milestone.
+   /goal Complete ACTION_PLAN.md task 4f: one scripted synthetic solver-to-scorer
+   trace with evaluator data excluded from agent observations; preserve frozen
+   artifacts and live-call locks, verify evidence, update progress and push a
+   reviewed private checkpoint. Stop after this milestone.
 3. Enter /goal to view status; /goal edit to revise the objective.
 4. Use /goal pause and /goal resume to control work. /goal clear removes it.
 5. At completion, review the evidence and choose the next milestone. Mention
@@ -27,10 +27,17 @@ belong in project files, referenced by the goal.
 
 ## Roadmap and acceptance conditions
 
+ACTION_PLAN.md is now the canonical numbered execution checklist. Its stable
+task IDs cover all known implementation, review, verification, optional-scope,
+submission and cleanup work. This goal overview is an index, not another task
+tracker: goal 1 maps to 4d, goal 2 to 4e, goal 3 to 4f, goal 4 to 4g-7g, goal 5
+to 6/8/9, and goal 6 to 10/14/15. Add discovered work to ACTION_PLAN before
+implementation and reference its IDs in future goal objectives and checkpoints.
+
 | Milestone | Status | Done means |
 |---|---|---|
 | 1. Candidate outcome and receipt isolation | Verified in this checkpoint | Structured candidate/integrity outcomes, healthy baseline checks, lifetime stream isolation, both synthetic profiles verified, tests/docs/evidence and reviewed private push. |
-| 2. Empty-file patch support | Planned | Solver exporter and scorer agree; new/deleted empty Python files produce interoperable diffs verified by real synthetic application; unsupported formats fail clearly. |
+| 2. Empty-file patch support | Implemented; task 4e | Shared exporter, actual Git application/reversal, Docker solver round-trip and both scoring profiles verified; see ACTION_PLAN.md and docs/patch-export.md. |
 | 3. Synthetic solver-to-scorer integration | Planned | One scripted candidate trace reaches scoring with no evaluator data in agent messages; failures and costs stay separate and evidence is development-only. |
 | 4. Real-task adapter and Stage B | Planned | Reviewed source policy, compatible collectors/runtime, registered evaluation design, cache/accounting and owner learning requirements addressed. No live runs yet. |
 | 5. NVIDIA/Nebius integration and measured results | Gated | Confirm usable credit expiry/balance, satisfy spending controls, verify live transport/provider parameters, obtain a monitored tiny probe, then execute a registered affordable evaluation. Never infer spending approval from a goal. |

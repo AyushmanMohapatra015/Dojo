@@ -17,9 +17,10 @@ Workspace regular files carry between commands through a bounded, validated
 snapshot. Shell environment, working-directory changes, Git metadata, caches
 and processes do not persist. The host retains the original baseline and
 computes the final text diff against it; the agent cannot rewrite that baseline.
-New/deleted text files and missing final newlines are represented. Binary diffs,
-empty-file create/delete, quoted/whitespace patch paths, symlinks and special
-files reject until supported by a separately reviewed exporter.
+New/deleted text files and missing final newlines are represented. Action-plan
+task 4e adds shared Git-format empty-file creation/deletion support; see
+docs/patch-export.md and the new versioned development evidence. Binary/non-UTF-8
+changes, quoted/whitespace paths, symlinks and special files remain unsupported.
 
 `dojo-visible-tests` is a host-recognized command requesting the configured
 visible Python test files through the reviewed pytest collector. Success

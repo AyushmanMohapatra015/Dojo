@@ -1,7 +1,6 @@
 """Bounded local Docker command adapter; workspace files persist, processes do not."""
 
 import base64
-import difflib
 import hashlib
 import inspect
 import io
@@ -21,12 +20,14 @@ from dojo.backends.local_docker_v2 import IMAGE_ID
 from dojo.backends.receipt_v2 import ReceiptV2
 from dojo.mine.real_task import MAX_BYTES, MAX_FILES, safe_path
 from dojo.mine.validate import snapshot_archive
+from dojo.solve import patches
+from dojo.solve.patches import make_patch
 from dojo.solve.sandbox import FakeStep
 
 VISIBLE_TEST_COMMAND = "dojo-visible-tests"
 OUTPUT_BYTES = 3000
 RECEIPT_BYTES = 24 * 1024 * 1024
-PATCH_BYTES = 1024 * 1024
+PATCH_BYTES = patches.PATCH_BYTES
 
 
 @dataclass(frozen=True)
@@ -113,33 +114,6 @@ def files_from_archive(payload):
                 raise ValueError("Unsupported snapshot member")
             files[member.name] = archive.extractfile(member).read()
     return files
-
-
-def make_patch(base, current):
-    result = []
-    size = 0
-    for name in sorted(base.keys() | current.keys()):
-        old, new = base.get(name, b""), current.get(name, b"")
-        if old == new and (name in base) == (name in current):
-            continue
-        if any(char.isspace() or char == '"' for char in name):
-            raise ValueError("Quoted patch paths need a later patch exporter")
-        if b"\0" in old or b"\0" in new:
-            raise ValueError("Binary patch export is unsupported")
-        if not old and not new:
-            raise ValueError("Empty-file creation/deletion needs a later patch exporter")
-        lines = difflib.unified_diff(old.decode("utf-8").splitlines(keepends=True),
-                                     new.decode("utf-8").splitlines(keepends=True),
-                                     fromfile="a/" + name if name in base else "/dev/null",
-                                     tofile="b/" + name if name in current else "/dev/null")
-        for line in lines:
-            if not line.endswith("\n"):
-                line += "\n\\ No newline at end of file\n"
-            size += len(line.encode())
-            if size > PATCH_BYTES:
-                raise ValueError("Patch export exceeds adapter limits")
-            result.append(line)
-    return "".join(result)
 
 
 PRELUDE = r'''
@@ -253,6 +227,7 @@ def visible_status(report, exit_code):
 
 class DockerSandbox:
     backend = "local_docker"
+    patch_protocol = patches.PATCH_PROTOCOL
 
     def __init__(self, selectors=("tests/test_calculator.py",)):
         if not selectors or any(not _valid_name(name) or not name.endswith(".py") for name in selectors):

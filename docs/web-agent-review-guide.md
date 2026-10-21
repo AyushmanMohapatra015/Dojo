@@ -12,6 +12,30 @@ This is independent review, not a request to rewrite the project or run models.
 It can proceed while development continues here. Other useful later assignments
 are the paired bootstrap/cascade math and a final demo/submission review.
 
+## Required context for every future assignment (ACTION_PLAN 13c-13f)
+
+- State the exact numbered task, desired outcome, current commit, source hashes,
+  implemented versus scaffolded pieces, and compatibility/financial boundaries.
+- Include complete relevant functions plus imports, callers, return types,
+  validators, configuration and existing failure-path tests. If a helper is
+  critical to the assignment, provide its source rather than asking the agent
+  to trust an omitted assumption.
+- Supply selected locked dependency versions, container image IDs/build details,
+  OS/Python/runtime assumptions and synthetic input/output fixtures. Source
+  package imports, installation and collector behavior need this context.
+- Provide the exact acceptance commands, observed baseline output, constraints
+  on frozen files, known limitations and already rejected approaches. Do not
+  demand compatibility claims without the evidence needed to establish them.
+- Ask the reviewer to distinguish static inference from executed evidence,
+  request precise missing excerpts and retain all existing gates. Prefer a
+  minimal proposed patch and meaningful regressions over a forced page count.
+- Request complete Markdown or plain source files. PDF may accompany a review,
+  but clipped code is not an implementable patch. Check completeness before
+  sharing and do not silently overwrite a previously shared snapshot.
+- On return, reproduce claims here, record disposition, and add accepted work
+  to ACTION_PLAN before changes. No packet includes keys, private account data,
+  real held-out hidden tests or reference fixes.
+
 ## Steps
 
 1. Open docs/reviews/web-agent-scoring-review-v1.md locally. It contains the

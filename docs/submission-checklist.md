@@ -1,8 +1,9 @@
 # Submission checkpoint
 
-Recorded 2026-10-21 from the requirements supplied by the owner. This is a
-planning checklist, not an independent verification of current official rules.
-Recheck the official rules before final submission.
+Recorded 2026-10-21 from the owner's requirements and rechecked against the
+official rules on the same date. ACTION_PLAN.md is the numbered execution
+tracker; this file is a submission acceptance checklist. Recheck before handoff.
+Source: https://nebiusglobalaihackathon.devpost.com/rules .
 
 Target: Coding and Agentic Engineering. Dojo helps developers compare coding
 model configurations against tests from their own repository history, then
@@ -14,9 +15,10 @@ measure whether selective model escalation saves money at comparable success.
   Nebius Token Factory or Nebius AI Cloud. Local synthetic Docker tests alone
   do not demonstrate this. Actual provider integration and measured runs remain
   pending; financial gates still apply.
-- [ ] Confirm the Coding track's execution requirements against official rules:
-  whether Token Factory inference plus local execution suffices or cloud-hosted
-  code execution is required. Do not claim qualification before resolving this.
+- [x] Official rules define runs-on-Nebius as a runtime Token Factory inference
+  call or AI Cloud compute. This resolves the platform definition for our planned
+  NVIDIA inference plus local Docker architecture. Actual working runtime
+  evidence is still pending; no cloud-hosted executor is required by that definition.
 - [ ] Choose the submission category explicitly.
 - [ ] Working demo URL, hosted application or accessible test build, with clear
   instructions and a coherent path from selecting a repo to reading results.

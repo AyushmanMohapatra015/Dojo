@@ -1,6 +1,46 @@
 # Progress
 
-Updated: 2026-10-21 (candidate policy and receipt isolation goal verified)
+Updated: 2026-10-21 (numbered action plan established; task 4e verified)
+
+## Action plan and task 4e: interoperable empty-file patches - 2026-10-21
+
+- Consolidated all known BUILD_SPEC work, existing checkpoints, verification
+  blockers, external review findings, optional integrations, owner learning,
+  submission and cleanup into ACTION_PLAN.md: 123 permanent subtask IDs across
+  16 workstreams, with statuses, acceptance evidence and gate dependencies.
+  Rules now require adding new work/review follow-ups before implementation.
+  Goal roadmap indexes this checklist; progress updates reference active IDs.
+- Honest schedule checkpoint: core architecture followed, original calendar
+  behind. Official deadline rechecked as Oct 30 10:00 PDT / 22:30 IST; target
+  remains Oct 29 with Oct 27 freeze. Targets/critical path and missing account
+  prerequisites are explicit; no guarantee or permission bypass inferred from
+  longer work sessions. Rules explicitly define runtime Token Factory inference
+  as runs-on-Nebius; actual NVIDIA runtime evidence remains missing at 8.
+- External review context policy (13c-13f) now requires relevant complete helpers,
+  callers/tests/config/build/image versions, current source identity, synthetic
+  examples, exact acceptance commands, omitted assumptions and existing gates.
+  Request Markdown/source rather than clipped PDF code; reproduce before merging.
+- Completed 4e: shared git-text-empty-v1 exporter is used by the actual Docker
+  solver and scoring preparation. Git mode/empty-blob metadata represents empty
+  creation/deletion; regular changes have explicit diff boundaries. UTF-8/LF
+  hunk handling preserves CRLF and other separator bytes. Changed binary/non-UTF-8
+  content and unsupported paths still reject clearly; 1 MiB cap includes metadata.
+- Twelve real Git apply/reverse scenarios reproduced exact expected trees.
+  Actual Docker solver created/deleted empty package files, successfully scored,
+  and restored the exact original bytes. Both collector profiles consumed the
+  shared format successfully. Initial restore probe required parent-directory
+  recreation because only files persist between commands; corrected and verified.
+  Successful evidence: data/development/empty-patches/export-score-smoke-v1.json.
+- Verification: all 597 offline tests pass (25 new exporter/application/evidence
+  checks), Ruff, unchanged 88-package lock and whitespace checks pass. Successful
+  four-container smoke cleaned up; saved digest and final source hashes match.
+  Credential scan of 295 files found no matches. No tools/images installed,
+  benchmark/model/provider jobs, account actions or paid usage; spend remains $0.
+- Historical construction/issue records, frozen sources and earlier development
+  evidence are preserved. Cache identity/registration must bind exporter protocol
+  and source identity at 5b/7a. Scoring threat model and owner learning remain open.
+- Next: 4f, full scripted synthetic controller-to-scorer trace. Gated work and
+  every newly discovered task must remain tracked in ACTION_PLAN.md.
 
 ## Candidate policy and lifetime stream isolation goal - 2026-10-21
 

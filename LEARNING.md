@@ -1,5 +1,16 @@
 # Learning log
 
+## Task 4e and numbered execution planning - implementation observation
+
+An empty file needs an existence change even though it has no lines to diff.
+Git mode/empty-blob metadata works; two unified headers alone do not. Applying
+and reversing patches against real synthetic files checks more than asserting
+that a string contains those headers. Empty directories also disappear between
+file-only solver snapshots, so restoration must recreate parents. A numbered
+plan makes dependencies, review corrections and optional go/no-go decisions
+visible without pretending the original calendar is still on schedule. The
+owner's own reflection and hand-written learning exercises remain pending.
+
 ## Candidate-error attribution and goals - implementation observation
 
 A collection error is not enough evidence to blame a candidate: the environment
