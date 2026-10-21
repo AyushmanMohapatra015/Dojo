@@ -7,7 +7,7 @@ explicit assumptions, then bring its findings back here for verification.
 ## Current high-value assignment
 
 Current assignment: tasks 5a-5f cache identity, concurrent/crashed execution and
-accounting recovery. Use docs/reviews/cache-accounting-packet-v1.md and follow
+accounting recovery. Use docs/reviews/cache-accounting-packet-v2.md and follow
 docs/parallel-agent-workflow.md. The earlier scoring packet below remains a
 historical review snapshot; do not send it as the current source automatically.
 Other later assignments are paired bootstrap/cascade math and submission review.

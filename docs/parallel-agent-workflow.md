@@ -12,9 +12,9 @@ spending-state reconciliation for tasks 5a-5f. Existing CreditLedger code and
 controller interfaces are supplied. The reviewer must preserve financial gates
 and distinguish static conclusions from tests it actually executed.
 
-Use `docs/reviews/cache-accounting-packet-v1.md`. This is ONE Markdown attachment,
+Use `docs/reviews/cache-accounting-packet-v2.md`. This is ONE Markdown attachment,
 containing the prompt, source manifest and selected complete files. The original
-assignment is `docs/reviews/cache-review-assignment-v1.md`; sending it alone lacks
+assignment is `docs/reviews/cache-review-assignment-v2.md`; sending it alone lacks
 the source required for a dependable code/design review.
 
 1. Start a fresh web-agent chat. Use a capable reasoning model; medium/high is
@@ -27,15 +27,16 @@ the source required for a dependable code/design review.
    are unsupported, paste its text in numbered messages at FILE headings. Tell
    the agent to wait for `END OF REVIEW PACKET` before analyzing. Do not paste
    local paths alone: a web chat cannot read this machine from a path.
-4. Let it work while development continues here. It should return SQL/state
-   designs, cache-key rules, minimal source proposals, crash/concurrency tests
-   and uncertainties, rather than a general project review or a long essay.
+4. Let it work while development continues here. V2 requires complete db.py,
+   schemas.py and test_run_cache.py proposals, SQL/state/crash-accounting design,
+   exact synthetic fixtures and explicit acceptance checks. Scorer/input types,
+   packaging/runtime constraints and conservative decision defaults are supplied.
 5. If it needs more context, bring its exact file/function questions here. We
    will supply a focused supplement. Do not add the entire repository to make
    it guess less. Generated snapshots are versioned; don't overwrite a packet
    already shared. Source hashes identify the reviewed working snapshot.
 6. Ask for complete Markdown and plain source files. Save the response as
-   `docs/reviews/cache-accounting-feedback-v1.md` or paste it here. Keep code out
+   `docs/reviews/cache-accounting-feedback-v2.md` or paste it here. Keep code out
    of screenshots/PDF-only output so proposed changes can be checked exactly.
 7. Say: "Review this against our current source, reproduce important findings,
    add accepted work to ACTION_PLAN, and integrate only validated changes."
@@ -47,14 +48,14 @@ the source required for a dependable code/design review.
 
 Paste with the attachment:
 
-> Follow the assignment at the top of this complete Dojo review packet. Treat its
-> file hashes as the reviewed snapshot, including uncommitted changes. Perform a
-> principal-engineering design review of tasks 5a-5f with financial crash safety.
-> Work only from supplied evidence; ask for exact missing interfaces. Preserve
-> all live-call, spending, held-out and publication gates. Return the requested
-> concrete SQL/state/cache-key design, failure traces, meaningful tests and minimal
-> proposed patches. Label static analysis versus execution honestly. Do not
-> access accounts, make API calls or claim your proposals were tested locally.
+> Follow the complete v2 implementation assignment through END OF REVIEW PACKET.
+> Deliver complete schemas.py, db.py and tests/test_run_cache.py using one
+> consistent API, plus the required state/identity/ledger crash-safety design.
+> Use the supplied source, exact interface excerpts, synthetic fixture and
+> conservative defaults. Preserve all existing gates and ledger behavior. Label
+> proposals and unexecuted tests honestly. Do not substitute a general review for
+> the requested code. If output limits require parts, number them and finish with
+> END OF IMPLEMENTATION. No account access or provider calls are authorized.
 
 ## Later assignments and model choice
 

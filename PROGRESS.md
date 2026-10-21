@@ -1,5 +1,29 @@
 # Progress
 
+## Task 13h2: implementation-ready external context - 2026-10-21
+
+- Owner requested complete upfront context rather than relying on web-agent
+  follow-up questions. Audit found v1 lacked exact scorer result types and left
+  implementation outputs too discretionary. Replaced the current handoff with
+  separately versioned v2; v1 retained unchanged.
+- V2 requires complete schemas.py/db.py/test_run_cache.py proposals, consistent
+  public API, state/ownership/identity semantics, cache/ledger crash matrix and
+  regression assertions. Added exact current input/scorer interfaces, complete
+  relevant source/tests, packaging/locked runtime constraints, synthetic fixture
+  metadata and conservative defaults. Scorer internals are explicitly not cache
+  implementation dependencies. Financial bridge remains design-only.
+- Existing ledger permits only one unfinished reservation globally, generates
+  its own IDs and has no reconciliation/refund/unblock API. Packet makes these
+  constraints explicit so an external proposal cannot assume parallel live
+  reservations or atomic writes across separate databases.
+- Builder allows only fixed v1/v2 outputs/allowlists and refuses overwrites.
+  Current instructions point to v2. No project cache implementation changed,
+  no external upload, no paid call, no staging/commit/push performed.
+- Verified the 134,576-byte packet: all 22 embedded file hashes/content, five
+  exact AST excerpts, complete end marker, no credential-pattern findings and
+  overwrite refusal. Original v1 SHA-256 remains unchanged. Builder lint and
+  diff checks passed; application code was unchanged, so no full-suite rerun.
+
 Updated: 2026-10-21 (tasks 4h/4i; owner now runs Git commands)
 
 ## Tasks 4h/4i: model interface and consistent run settings - 2026-10-21
