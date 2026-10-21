@@ -1,0 +1,423 @@
+{
+  "protocol": "contract-scoring-development-v1",
+  "synthetic": true,
+  "held_out_eligible": false,
+  "counts_toward_frozen_benchmark": false,
+  "model_calls": 0,
+  "provider_calls": 0,
+  "cost_usd": "0.00",
+  "cases": {
+    "legacy-v1": {
+      "fixed": {
+        "status": "passed",
+        "reason": "all_required_tests_pass",
+        "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875",
+        "harness_sha256": "cde1350bdc33a24602353b2291770a2c4e86924df5f013ae6ec92576d4725069",
+        "prepared_archive_sha256": "41c079c9d78b72c205d8d4c8b379dae100cc98d23e5f2fae1d266815b98282b5",
+        "report": {
+          "exit_code": 0,
+          "collected": 3,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": []
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "unchanged": {
+        "status": "failed",
+        "reason": "required_test_failed",
+        "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875",
+        "harness_sha256": "cde1350bdc33a24602353b2291770a2c4e86924df5f013ae6ec92576d4725069",
+        "prepared_archive_sha256": "a8ce37304dc516134c3ae1fb28a1a3ae33c0a64b9f2f4d21f5dc2ae0878386a2",
+        "report": {
+          "exit_code": 1,
+          "collected": 3,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [
+            "tests/test_scoring_fixture.py::test_fix"
+          ],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": []
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "test_tampering": {
+        "status": "failed",
+        "reason": "required_test_failed",
+        "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875",
+        "harness_sha256": "cde1350bdc33a24602353b2291770a2c4e86924df5f013ae6ec92576d4725069",
+        "prepared_archive_sha256": "a8ce37304dc516134c3ae1fb28a1a3ae33c0a64b9f2f4d21f5dc2ae0878386a2",
+        "report": {
+          "exit_code": 1,
+          "collected": 3,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [
+            "tests/test_scoring_fixture.py::test_fix"
+          ],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": []
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "fixed_deleted_tests": {
+        "status": "passed",
+        "reason": "all_required_tests_pass",
+        "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875",
+        "harness_sha256": "cde1350bdc33a24602353b2291770a2c4e86924df5f013ae6ec92576d4725069",
+        "prepared_archive_sha256": "41c079c9d78b72c205d8d4c8b379dae100cc98d23e5f2fae1d266815b98282b5",
+        "report": {
+          "exit_code": 0,
+          "collected": 3,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": []
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "new_required_skip": {
+        "status": "failed",
+        "reason": "required_test_skipped",
+        "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875",
+        "harness_sha256": "cde1350bdc33a24602353b2291770a2c4e86924df5f013ae6ec92576d4725069",
+        "prepared_archive_sha256": "ae23ae2419a7c1858fca0c388e6a2718b6683e6ef351dfa473f4c013c925ab3d",
+        "report": {
+          "exit_code": 0,
+          "collected": 3,
+          "passed": [],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_optional",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "errors": []
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "regression": {
+        "status": "failed",
+        "reason": "required_test_failed",
+        "image_id": "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875",
+        "harness_sha256": "cde1350bdc33a24602353b2291770a2c4e86924df5f013ae6ec92576d4725069",
+        "prepared_archive_sha256": "c410c12bdbd2596d1abc8b4f9f0b3455798ad16d0e4e8d34ed03f79a8a116912",
+        "report": {
+          "exit_code": 1,
+          "collected": 3,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix"
+          ],
+          "failed": [
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": []
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "deleted_source": {
+        "status": "runner_error",
+        "reason": "offline_installation_failed",
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false
+      }
+    },
+    "method-subtests-v2": {
+      "fixed": {
+        "status": "passed",
+        "reason": "all_required_tests_pass",
+        "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+        "harness_sha256": "27deaacb0351c879d7a00ec825db62a67d73512991826708d181007ebfab7d33",
+        "prepared_archive_sha256": "a2254cbe11066b048b476b297a61911cfd08394ed560adaeafc9a5c5c2cd3f1d",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 0,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_nested",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 2,
+              "failed": 0,
+              "skipped": 0
+            }
+          }
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "unchanged": {
+        "status": "failed",
+        "reason": "required_test_failed",
+        "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+        "harness_sha256": "27deaacb0351c879d7a00ec825db62a67d73512991826708d181007ebfab7d33",
+        "prepared_archive_sha256": "4f94c7ec808a3d61395c373410a5bb4e88a75b9eb2a0bdd59f9c325c7a3dd7ec",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 1,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_nested"
+          ],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 0,
+              "failed": 2,
+              "skipped": 0
+            }
+          }
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "test_tampering": {
+        "status": "failed",
+        "reason": "required_test_failed",
+        "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+        "harness_sha256": "27deaacb0351c879d7a00ec825db62a67d73512991826708d181007ebfab7d33",
+        "prepared_archive_sha256": "4f94c7ec808a3d61395c373410a5bb4e88a75b9eb2a0bdd59f9c325c7a3dd7ec",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 1,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_nested"
+          ],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 0,
+              "failed": 2,
+              "skipped": 0
+            }
+          }
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "fixed_deleted_tests": {
+        "status": "passed",
+        "reason": "all_required_tests_pass",
+        "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+        "harness_sha256": "27deaacb0351c879d7a00ec825db62a67d73512991826708d181007ebfab7d33",
+        "prepared_archive_sha256": "a2254cbe11066b048b476b297a61911cfd08394ed560adaeafc9a5c5c2cd3f1d",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 0,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_nested",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 2,
+              "failed": 0,
+              "skipped": 0
+            }
+          }
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "new_required_skip": {
+        "status": "failed",
+        "reason": "required_test_skipped",
+        "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+        "harness_sha256": "27deaacb0351c879d7a00ec825db62a67d73512991826708d181007ebfab7d33",
+        "prepared_archive_sha256": "043d3be05f21d61e5d74b7085b567c3ad8894aebb388b8890e70af364240b2d4",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 0,
+          "collected": 4,
+          "passed": [],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_nested",
+            "tests/test_scoring_fixture.py::test_optional",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 0,
+              "failed": 0,
+              "skipped": 2
+            }
+          }
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "regression": {
+        "status": "failed",
+        "reason": "required_test_failed",
+        "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+        "harness_sha256": "27deaacb0351c879d7a00ec825db62a67d73512991826708d181007ebfab7d33",
+        "prepared_archive_sha256": "c35154ae9c6ba8689e38c11fdac4b94aaada6486a9d25b19d53d6bd17acd83e2",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 1,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix"
+          ],
+          "failed": [
+            "tests/test_scoring_fixture.py::test_nested",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 0,
+              "failed": 2,
+              "skipped": 0
+            }
+          }
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "deleted_source": {
+        "status": "invalid_evidence",
+        "reason": "runner_exit_or_collection",
+        "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+        "harness_sha256": "27deaacb0351c879d7a00ec825db62a67d73512991826708d181007ebfab7d33",
+        "prepared_archive_sha256": "d5a7c098d80950106997f668849d6883bc9dfa2a5e8926efb400320cac5f531a",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 2,
+          "collected": 0,
+          "passed": [],
+          "failed": [],
+          "skipped": [],
+          "errors": [
+            "tests/test_scoring_fixture.py"
+          ],
+          "subtests": {}
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      },
+      "nested_failure": {
+        "status": "failed",
+        "reason": "required_test_failed",
+        "image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+        "harness_sha256": "27deaacb0351c879d7a00ec825db62a67d73512991826708d181007ebfab7d33",
+        "prepared_archive_sha256": "3c5f4234ac3445393779ff2ff3814c5bc45e2eced1008a9cc298d0cd8c7594b0",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 1,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [
+            "tests/test_scoring_fixture.py::test_nested"
+          ],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 1,
+              "failed": 1,
+              "skipped": 0
+            }
+          }
+        },
+        "synthetic": true,
+        "counts_toward_frozen_benchmark": false,
+        "provider_calls": 0
+      }
+    }
+  },
+  "checks": {
+    "legacy-v1_timeout_rejected": true,
+    "offline_install_failure_raised": true,
+    "method-subtests-v2_timeout_rejected": true,
+    "cleanup_complete": true
+  },
+  "source_sha256": {
+    "dojo/eval/scoring_contract.py": "f9170391dacfd443ef3e5ada9b5507c9e38cd0f5ad19b4ad2e855b50b0681e7e",
+    "dojo/eval/docker_scoring.py": "e3e4625f129fc14ef5ec6a78a15232cad820d198e9bcda52f3bac0ae3c022c76",
+    "dojo/eval/contract_development.py": "45576e3fa4779e02dc6ca6417c497878d5d5279bda7185a878eb1dbe65393d08",
+    "dojo/solve/docker_sandbox.py": "bbdeda8baa864b3a8b484310b7d7c79c0d149016ebc45efe2df4314d424e070a"
+  },
+  "record_sha256": "16c20437993a5e8ce676b214d6c74ab1196e011579b98528572b880156ff5eda"
+}

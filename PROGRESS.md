@@ -1,6 +1,44 @@
 # Progress
 
-Updated: 2026-10-21 (trusted real-task scoring contracts verified)
+Updated: 2026-10-21 (contract Docker scorer and web-agent review packet verified)
+
+## Contract Docker scoring and external review packet - 2026-10-21
+
+- Added a bounded contract-based scorer for both frozen execution profiles.
+  Legacy Click uses its immutable image, original collector and offline pip
+  installation inside the container; more-itertools uses its pinned v2 image
+  and subtest-aware collector. Frozen construction files remain unchanged.
+- Container execution retains explicit local Docker, no pulls/network/mounts/
+  forwarded host environment, non-root UID/GID, read-only root, dropped
+  capabilities and bounded resources. Host output is bounded to 1 MiB, execution
+  to at most 60 seconds, and cleanup removes only the operation's unique container.
+  Noisy/duplicate/malformed receipts and duplicate JSON keys reject.
+- Entry point accepts synthetic task IDs only. Benchmark scoring remains locked
+  until Stage B review. No provider adapter, benchmark evaluation or agent
+  feedback path is enabled by this checkpoint.
+- Real local-Docker evidence saved exclusively to
+  data/development/contract-scoring/runner-smoke-v1.json: 15 synthetic candidate
+  outcomes, two timeout checks and one deliberate offline-installation failure;
+  all 18 operations cleaned up. Correct fixes passed, test/config tampering and
+  regressions failed, and nested subtest failure dominated the parent outcome.
+- Learned that deleting Click's package prevents offline installation and
+  raises an execution error, whereas deleting the v2 module produces invalid
+  collection evidence. Neither is silently turned into a passing result.
+- Prepared docs/reviews/web-agent-scoring-review-v1.md: a self-contained context,
+  dependency and eight-source-file snapshot for an owner-operated web reviewer.
+  docs/web-agent-review-guide.md explains manual sharing and return of findings.
+  No external assistant was contacted or private code uploaded by this agent.
+  Returned advice must be reproduced/reviewed before incorporation here.
+- Verification: all 480 offline tests pass (42 new runner/evidence regressions),
+  Ruff, unchanged 88-package lock and whitespace checks pass. Credential scan
+  of 277 files found no matches; GitHub remains private. No host dependencies
+  or images installed; no model/provider calls; provider spending remains $0.
+- Limits: same-interpreter Python receipt forgery remains outside the current
+  protection claim. Owner-written scoring exercise, Stage B execution policy,
+  registration and live-inference/credit-expiry gates remain pending.
+- Next: one scripted synthetic solver-to-scorer trace that keeps evaluator
+  reports separate from agent observations. Then finish real-task adapter and
+  evaluation registration; review returned web-agent findings when available.
 
 ## Trusted real-task scoring contracts - 2026-10-21
 

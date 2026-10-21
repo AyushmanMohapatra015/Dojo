@@ -1,5 +1,15 @@
 # Learning log
 
+## Contract-based Docker scoring - implementation observation
+
+Different repositories need different execution setup even with the same pytest
+version. Click must be installed offline to preserve its construction behavior;
+more-itertools uses the subtest-aware collector directly. Deleting a package can
+prevent installation entirely, which is an execution error rather than a normal
+failing assertion. A web-only reviewer can inspect these choices from a small
+versioned source packet, without credentials or access to the whole workspace.
+The owner's hand-written scoring exercise and reflection remain pending.
+
 ## Real-task scoring contracts - implementation observation
 
 A skipped test is not automatically a new failure: some tasks had the same
