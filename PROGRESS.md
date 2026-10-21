@@ -2,6 +2,21 @@
 
 Updated: 2026-10-21 (synthetic hidden-test restoration and scoring verified)
 
+## Submission requirements reminder - 2026-10-21
+
+- Recorded the owner's supplied requirements and judging criteria in
+  docs/submission-checklist.md. Prioritize actual NVIDIA-model use through Nebius,
+  a coherent working demo, public video, reproducible README and final public
+  source with the existing Apache-2.0 license. Current synthetic checks alone
+  do not satisfy the provider-use requirement.
+- Repository remains private. Public submission requires a separate privacy /
+  credential-history review and owner approval before visibility changes.
+  Coding-track execution qualification still needs official clarification.
+- Primary integration remains here; another owner-operated agent is available
+  for bounded troubleshooting/review if needed. No credentials are to be shared.
+- Diagnosed the earlier read batch's exit 1: rg found no AGENTS.md; the file
+  reads succeeded. No broader permissions are needed for that no-match result.
+
 ## Synthetic hidden-test scoring - 2026-10-21
 
 - Added an explicitly synthetic calculator scoring reference. It checks that
