@@ -1,6 +1,26 @@
 # Progress
 
-Updated: 2026-10-21 (task 4f scripted solver-to-scorer flow verified)
+Updated: 2026-10-21 (tasks 4f and 4g verified)
+
+## Task 4g: original-input Docker profiles - 2026-10-21
+
+- Added shared reviewed image/profile metadata, native legacy/V2 visible
+  collectors, offline Click installation and original-only visible selectors.
+  Sandbox source hashes bind the visible policy to the approved input archive.
+  No hidden/gold scope determines agent test permissions.
+- Prepared all 63 approved inputs read-only (34 Click, 29 more-itertools), with
+  2-43 original visible files each. No actual task code was executed; no Stage B
+  benchmark registration or model adapter is implied by preparation.
+- Eight synthetic controller-to-scorer flows passed on both native profiles:
+  fixed passes, unchanged/tampering fail, timeout remains unscored. Runtime
+  checks verified UID, installation metadata and no install-artifact patch.
+  Evidence: data/development/profiled-solver/profile-smoke-v1.json; cleanup done.
+- Full suite: 614 passed; Ruff, dependency lock and diff checks passed. Zero
+  provider/model calls and zero API spend. No partner service was activated.
+- docs/profiled-sandbox.md documents broad original-file test selection, repeated
+  offline install and setup-failure behavior. Actual suite timing remains unknown.
+- Completed requested tasks 4f/4g. Next: 4h interface/reuse/license decision.
+  Financial/registration gates and owner-written exercises remain pending.
 
 ## Task 4f: complete scripted solver-to-scorer flow - 2026-10-21
 

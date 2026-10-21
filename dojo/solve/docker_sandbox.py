@@ -207,8 +207,10 @@ def container_command(name):
             "-I", "-c", harness()]
 
 
-def visible_status(report, exit_code):
-    if (not isinstance(report, dict) or report.get("collector_protocol") != "method-subtests-v2"
+def visible_status(report, exit_code, *, collector_protocol="method-subtests-v2"):
+    if (collector_protocol not in {"legacy-v1", "method-subtests-v2"}
+            or not isinstance(report, dict)
+            or report.get("collector_protocol", "legacy-v1") != collector_protocol
             or report.get("exit_code") != exit_code or type(report.get("collected")) is not int):
         raise RuntimeError("Invalid visible-test receipt")
     groups = [report.get(key) for key in ("passed", "failed", "skipped")]
@@ -240,15 +242,25 @@ class DockerSandbox:
         self.image_id = IMAGE_ID
         self.harness_sha256 = hashlib.sha256(harness().encode()).hexdigest()
 
+    def _container_command(self, name):
+        return container_command(name)
+
+    def _control(self, command, timeout):
+        return {"mode": "visible_tests" if command == VISIBLE_TEST_COMMAND else "bash",
+                "command": command, "timeout": timeout, "selectors": self.selectors}
+
+    def _visible_status(self, report, code):
+        return visible_status(report, code)
+
     def start(self, archive):
         if self.base is not None:
             raise RuntimeError("Use a fresh Docker sandbox")
         files = files_from_archive(archive)
         if any(name not in files for name in self.selectors):
             raise ValueError("Visible test files must exist in the original base")
-        image = _bounded_run([*DOCKER, "image", "inspect", IMAGE_ID, "--format", "{{.Id}}"],
+        image = _bounded_run([*DOCKER, "image", "inspect", self.image_id, "--format", "{{.Id}}"],
                              timeout=10, output_limit=4096)
-        if image.returncode or image.stdout.decode().strip() != IMAGE_ID:
+        if image.returncode or image.stdout.decode().strip() != self.image_id:
             raise RuntimeError("Pinned local solver image is unavailable")
         self.base, self.current = files, dict(files)
 
@@ -261,11 +273,11 @@ class DockerSandbox:
                 or not 0 < timeout <= 60):
             raise ValueError("Invalid command or deadline")
         mode = "visible_tests" if command == VISIBLE_TEST_COMMAND else "bash"
-        control = {"mode": mode, "command": command, "timeout": timeout, "selectors": self.selectors}
+        control = self._control(command, timeout)
         payload = json.dumps(control).encode() + b"\n" + snapshot_archive(self.current)
         name = "dojo-solver-" + uuid.uuid4().hex
         try:
-            result = _bounded_run(container_command(name), input_data=payload, timeout=timeout)
+            result = _bounded_run(self._container_command(name), input_data=payload, timeout=timeout)
             if result.returncode:
                 raise RuntimeError("Solver container failed")
             lines = [line.removeprefix(b"DOJO_SOLVER_RECEIPT=") for line in result.stdout.splitlines()
@@ -289,7 +301,7 @@ class DockerSandbox:
             test = report["test_report"]
             visible = None
             if mode == "visible_tests":
-                visible = visible_status(test, report["exit_code"])
+                visible = self._visible_status(test, report["exit_code"])
                 self.visible_tests_pass = visible
             feedback = FakeStep(command, report["output"][:OUTPUT_BYTES], report["exit_code"],
                                 report["timed_out"], visible_tests_pass=visible)

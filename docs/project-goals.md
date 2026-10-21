@@ -38,8 +38,8 @@ implementation and reference its IDs in future goal objectives and checkpoints.
 |---|---|---|
 | 1. Candidate outcome and receipt isolation | Verified in this checkpoint | Structured candidate/integrity outcomes, healthy baseline checks, lifetime stream isolation, both synthetic profiles verified, tests/docs/evidence and reviewed private push. |
 | 2. Empty-file patch support | Implemented; task 4e | Shared exporter, actual Git application/reversal, Docker solver round-trip and both scoring profiles verified; see ACTION_PLAN.md and docs/patch-export.md. |
-| 3. Synthetic solver-to-scorer integration | Planned | One scripted candidate trace reaches scoring with no evaluator data in agent messages; failures and costs stay separate and evidence is development-only. |
-| 4. Real-task adapter and Stage B | Planned | Reviewed source policy, compatible collectors/runtime, registered evaluation design, cache/accounting and owner learning requirements addressed. No live runs yet. |
+| 3. Synthetic solver-to-scorer integration | Verified; task 4f | Four scripted outcomes verified with evaluator-only data excluded from agent contexts; see docs/solver-flow.md. |
+| 4. Real-task adapter and Stage B | Partial; task 4g verified | Native profiles and read-only input preparation verified; see docs/profiled-sandbox.md. Registration, cache/accounting and owner learning remain pending. No live runs yet. |
 | 5. NVIDIA/Nebius integration and measured results | Gated | Confirm usable credit expiry/balance, satisfy spending controls, verify live transport/provider parameters, obtain a monitored tiny probe, then execute a registered affordable evaluation. Never infer spending approval from a goal. |
 | 6. Results explorer and submission | Planned | Evidence-backed frontier/cascade results, coherent usable demo, reproducible README, feedback, <=3-minute public video, approved public source/license and verified track qualification. |
 

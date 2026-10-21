@@ -10,18 +10,12 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 
+from dojo.backends.profiles import PROFILES
 from dojo.mine.git_mine import ChangedFile
 from dojo.mine.pool import digest
 from dojo.mine.validate import snapshot_archive
 from dojo.solve import input_guard_v2 as guard
 from dojo.solve.docker_sandbox import _valid_name, files_from_archive, make_patch
-
-PROFILES = {
-    "pallets/click": ("src/click/", "legacy-v1",
-                      "sha256:6794463c9014b7ee687d70c940cf0b29ae001ba3318fa844f83b194ba35fd875"),
-    "more-itertools/more-itertools": ("more_itertools/", "method-subtests-v2",
-                                     "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad"),
-}
 
 
 @dataclass(frozen=True)

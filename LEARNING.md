@@ -1,5 +1,15 @@
 # Learning log
 
+## Tasks 4f/4g - implementation observation
+
+A visible test pass is feedback, not proof of a correct solution: unchanged code
+and edited tests can both look successful to an agent. Separate hidden scoring
+must decide correctness without returning its data into the agent conversation.
+Repository environments also differ: installing Click metadata and interpreting
+legacy receipts require explicit profiles. Preparing 63 input archives only
+proves preparation; synthetic executions do not establish real-task success.
+These are implementation notes, not the owner's required written exercises.
+
 ## Task 4e and numbered execution planning - implementation observation
 
 An empty file needs an existence change even though it has no lines to diff.
