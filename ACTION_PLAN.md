@@ -88,8 +88,8 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 4c | DONE | Both scoring contracts/collectors, exact IDs/stable skips and protected restoration reference. |
 | 4d | DONE | Candidate-error policy, fresh baseline attribution and lifetime FD isolation; 828a86d. Principal review findings 1/2. |
 | 4e | DONE | Shared git-text-empty-v1 exporter; twelve real Git apply/reverse scenarios, actual Docker file round-trip and both scorers; docs/patch-export.md and data/development/empty-patches/export-score-smoke-v1.json. Review finding 3 resolved. |
-| 4f | NEXT | Scripted solver-to-scorer trace; prove evaluator data never enters agent observations; label synthetic costs/results. |
-| 4g | PLANNED | Real-task Docker profiles, original images/selectors/import/install and explicit visible-test policy; no gold-based permission list. |
+| 4f | DONE | Actual scripted controller/Docker/scorer flow: correct fix passes, unchanged/test-only edits fail despite visible passes, timeout not scored; hidden canary/IDs/receipts excluded from agent contexts. docs/solver-flow.md and data/development/solver-flow/flow-smoke-v1.json. |
+| 4g | NEXT | Real-task Docker profiles, original images/selectors/import/install and explicit visible-test policy; no gold-based permission list. |
 | 4h | PLANNED | Provider/controller interface and documented mini-swe-agent reuse/custom-wrapper choice, compatibility/license and BUILD_SPEC deviation if any. |
 | 4i | PLANNED | Enforce model/config token/reply/step/time limits consistently across adapters and CLI. |
 | 4j | PARTIAL | Explicit scoring threat model/sign-off: interpreter evasion reproduced; FD/AST checks are not authentication. Decide stronger isolation scope honestly. |
@@ -247,6 +247,6 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 16d | GATED | If L3 proceeds, owner-written gate decisions and rejection reasons. |
 | 16e | PARTIAL | Owner milestone reflections/video explanation; distinguish from AI-written implementation notes. |
 
-Completed this checkpoint: **4e**. Next implementation checkpoint: **4f**.
+Completed this checkpoint: **4f**. Next implementation checkpoint: **4g**.
 Eligible urgent account/rules/context work may proceed alongside offline tasks;
 this never authorizes gated paid work or unrelated stretch implementation.

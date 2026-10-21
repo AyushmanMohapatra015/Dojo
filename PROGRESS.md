@@ -1,6 +1,30 @@
 # Progress
 
-Updated: 2026-10-21 (numbered action plan established; task 4e verified)
+Updated: 2026-10-21 (task 4f scripted solver-to-scorer flow verified)
+
+## Task 4f: complete scripted solver-to-scorer flow - 2026-10-21
+
+- Added four actual controller/Docker/evaluator synthetic flows. A source fix
+  passes; unchanged source and visible-test tampering fail hidden evaluation
+  despite passing visible feedback/self-reported completion. A timeout does not
+  send incomplete workspace state to scoring. No provider adapter is involved.
+- Only original SolverInput reaches the sandbox. Hidden-only canary, expected
+  hidden node IDs and scorer receipts are checked against every model-visible
+  context. Evaluation makes no new model call or agent-workspace mutation.
+  Agent signals and separate hidden decision remain distinct in the evidence.
+- Saved data/development/solver-flow/flow-smoke-v1.json; all containers cleaned
+  up. Seven focused offline flow/boundary/evidence tests and Ruff passed; previous
+  full-suite baseline is 597. Full regression suite follows the second requested
+  task, 4g. No model/provider calls, partner activation, installs or spend.
+- Partner resource decisions documented in docs/partner-resources.md with current
+  primary docs: Tavily planned at 11; LangSmith sanitized opt-in at 12i; Toloka/
+  Tandem require concrete use/verified terms. Public page names Tendem by Toloka;
+  confirm the owner's actual offer before equating names. No private redemption
+  link, account data or credential was requested.
+- GATED means a missing prerequisite prevents starting the task, not that it is
+  cancelled. The plan still records every partner integration and its decision.
+- Next: 4g profile-specific sandbox behavior and original-only visible selection,
+  then 4h provider/controller interface. Stage B and financial gates stay closed.
 
 ## Action plan and task 4e: interoperable empty-file patches - 2026-10-21
 
