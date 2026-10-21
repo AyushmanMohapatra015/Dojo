@@ -1,5 +1,16 @@
 # Learning log
 
+## Candidate-error attribution and goals - implementation observation
+
+A collection error is not enough evidence to blame a candidate: the environment
+could be broken too. A fresh original baseline that reproduces the known
+fail-before pattern gives useful operational evidence while preserving uncertainty
+when it fails. Late output needs OS descriptor isolation for the whole process,
+including atexit callbacks; pytest capture alone only covers testing. A focused
+goal with an observable finish line keeps this work bounded and leaves paid
+provider decisions under the existing separate gates. The owner's own reflection
+and hand-written restoration exercise remain pending.
+
 ## Independent principal review - reproduced observations
 
 An external review is useful evidence to investigate, not code to merge on

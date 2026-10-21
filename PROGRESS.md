@@ -1,6 +1,46 @@
 # Progress
 
-Updated: 2026-10-21 (principal engineering review deeply assessed and reproduced)
+Updated: 2026-10-21 (candidate policy and receipt isolation goal verified)
+
+## Candidate policy and lifetime stream isolation goal - 2026-10-21
+
+- Owner explicitly requested project goals and continuation. Set a focused active
+  Codex goal for this offline milestone with verification/private-push conditions;
+  no token budget was requested. Checked official goal instructions and local
+  Codex CLI 0.160.0: goals stable/enabled, no setup changes required.
+  docs/project-goals.md records usage steps and six ordered project milestones.
+- Added candidate_outcomes.py and a separate docker_scoring_v2.py. The original
+  strict judge, v1 runner, frozen construction artifacts and saved evidence stay
+  intact. All synthetic-ID/profile/image/selector/finite-timeout/duplicate-key/
+  cleanup gates are retained. No benchmark or provider path is unlocked.
+- Completed pass/fail outcomes remain solved/unsolved. Recognized installation,
+  collection and setup diagnostics first require an operational fresh original
+  baseline reproducing exact fail-before sets; only then is a candidate_error
+  recorded as unsolved. Invalid receipts stay undetermined; unhealthy/uncertain
+  baseline, transport, timeout and cleanup errors stop. This is a proposed
+  operational attribution policy, not proof of causality or registered metrics.
+- Lifetime OS descriptor isolation now covers installation, test execution and
+  interpreter shutdown. Receipts use a separate non-inheritable descriptor and
+  handle partial writes. Late atexit output no longer corrupts receipt parsing.
+  Candidate and optional baseline executions share one finite time allowance.
+- Real synthetic Docker evidence: twelve candidate cases per collector profile
+  (24 total), healthy baseline probes for six candidate errors, plus unhealthy-
+  baseline and timeout stop checks. Full matrix used 36 fresh containers; all
+  cleaned up. Evidence under data/development/candidate-scoring/phase-stream-
+  smoke-v1.json; its canonical digest and final source hashes match.
+- Verification: 572 offline tests pass (92 new outcome/runner/evidence checks),
+  Ruff, unchanged 88-package lock and whitespace checks pass. Credential scan
+  of 289 files found no matches. Repo remains private; no tools/images installed,
+  account changes, model/provider calls or spend. Provider spending is $0.
+- External reviewer remains useful for focused critique/statistics/design/demo
+  checks; suggested code must be reproduced and reviewed here. No further
+  external review was sent. Owner-written scoring learning work and deliberate
+  same-interpreter evasion protection remain open; FD isolation is reliability
+  hardening rather than an authentication guarantee.
+- Next goal: interoperable empty-file diff support across solver export and
+  scoring with synthetic real application checks, then a complete scripted
+  solver-to-scorer trace. Stage B, owner learning, credit-expiry confirmation and
+  live-inference gates remain pending.
 
 ## Principal engineering review assessment - 2026-10-21
 
