@@ -1,5 +1,16 @@
 # Learning log
 
+## Independent principal review - reproduced observations
+
+An external review is useful evidence to investigate, not code to merge on
+authority. Pytest already captures direct descriptor and subprocess output
+during tests, so one proposed reproduction passed; output after pytest finishes
+was the actual problem. A patch that silences assertions can still fool an
+in-process collector, which an AST scan cannot reliably prevent. The proposed
+replacement also dropped existing gates. Reproduction narrowed the fix plan
+and exposed regressions before integration. The owner's own reflection remains
+pending.
+
 ## Contract-based Docker scoring - implementation observation
 
 Different repositories need different execution setup even with the same pytest

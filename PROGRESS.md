@@ -1,6 +1,48 @@
 # Progress
 
-Updated: 2026-10-21 (contract Docker scorer and web-agent review packet verified)
+Updated: 2026-10-21 (principal engineering review deeply assessed and reproduced)
+
+## Principal engineering review assessment - 2026-10-21
+
+- Read all 13 pages of the owner's Principal Engineering Review.pdf, verified
+  PDF hash and visually checked proposed-code pages where code is clipped.
+  Detailed assessment: docs/reviews/principal-review-assessment-v1.md.
+- Ran 17 real isolated synthetic Docker reproductions; all cleaned up. Saved
+  canonical-hashed evidence under data/development/principal-review/. No actual
+  benchmark source, solver/model outcome or provider request was executed.
+- Confirmed the outcome-policy gap for collection/setup errors, empty-file
+  exporter restrictions and legacy teardown-skip duplication. Ordinary FD1 and
+  subprocess output during tests passed; the review's broad capture claim does
+  not reproduce. An atexit FD1 write after testing does corrupt the receipt.
+  sys.exit inside a tested function produces a normal failed receipt, not the
+  claimed general container crash. Shutdown children did not survive PID1 exit.
+- Reproduced the documented interpreter-level evasion: broken synthetic Click
+  code that swallows pytest assertion failures receives a false passing receipt.
+  This is a scoring-integrity limitation, not evidence of host escape or account
+  exposure. Reject the review's claim that an AST scan supplies a reliable fix.
+- Rejected the proposed v2 patch as supplied: it removes existing Stage B/profile/
+  timeout/image/selector gates and duplicate-key parsing; its candidate-error
+  fallback accepts malformed evidence as ordinary failures. Three pure malformed
+  receipt examples reproduce that regression. PDF code/tests are also clipped.
+- Git rejected the review's header-only empty-file patch; normal Git empty-file
+  metadata parsed. The proposal also leaves the solver's original exporter
+  unchanged, so its suggested scorer-only fix is incomplete end to end.
+- Read-only policy audit covered 63 records / 131 non-test file-change
+  occurrences: 71 allowed, one blocked Python docs/conf.py, 59 blocked other
+  paths including seven stub changes. All changed Python paths within the
+  intended library prefixes are allowed; src/click/testing.py is editable.
+  No reference-path-derived permissions or task labels changed.
+- Verification: 119 relevant existing contract/runner tests passed; Ruff,
+  unchanged 88-package lock and whitespace checks passed. Saved evidence digest
+  verified; credential scan of 282 file/text inputs found no matches. Previous
+  full-suite baseline remains 480 passed; the full suite was not rerun for this
+  analysis-only checkpoint. Cached PDF readers were reused offline; no packages,
+  images or host dependencies installed. Provider spending remains $0.
+- Next: implement a reviewed candidate-outcome policy and lifetime stream
+  isolation while retaining all current gates; add interoperable empty-file
+  support across solver and scorer. Continue the synthetic end-to-end trace
+  afterward. Real benchmark scoring, owner learning work, Stage B registration
+  and financial/live-inference gates remain pending.
 
 ## Contract Docker scoring and external review packet - 2026-10-21
 

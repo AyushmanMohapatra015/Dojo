@@ -1,0 +1,631 @@
+{
+  "protocol": "principal-review-reproductions-v1",
+  "synthetic": true,
+  "evaluator_only": true,
+  "counts_toward_frozen_benchmark": false,
+  "held_out_eligible": false,
+  "provider_calls": 0,
+  "model_calls": 0,
+  "pdf_sha256": "81d193f8a498f926d6fc686da1d568eb534aa2c3c37a1bd6f4438f6db3e4bd69",
+  "docker_cases": {
+    "legacy-v1": {
+      "fd1_during_test": {
+        "status": "passed",
+        "reason": "all_required_tests_pass",
+        "report": {
+          "exit_code": 0,
+          "collected": 3,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": []
+        },
+        "seconds": 1.422
+      },
+      "subprocess_during_test": {
+        "status": "passed",
+        "reason": "all_required_tests_pass",
+        "report": {
+          "exit_code": 0,
+          "collected": 3,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": []
+        },
+        "seconds": 1.078
+      },
+      "atexit_fd1": {
+        "status": "runner_error",
+        "message": "Missing, noisy or ambiguous scoring receipt",
+        "seconds": 1.031
+      },
+      "syntax_error": {
+        "status": "invalid_evidence",
+        "reason": "runner_exit_or_collection",
+        "report": {
+          "exit_code": 2,
+          "collected": 0,
+          "passed": [],
+          "failed": [],
+          "skipped": [],
+          "errors": [
+            "tests/test_scoring_fixture.py"
+          ]
+        },
+        "seconds": 1.141
+      },
+      "system_exit_in_test": {
+        "status": "failed",
+        "reason": "required_test_failed",
+        "report": {
+          "exit_code": 1,
+          "collected": 3,
+          "passed": [],
+          "failed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": []
+        },
+        "seconds": 1.015
+      },
+      "atexit_child": {
+        "status": "passed",
+        "reason": "all_required_tests_pass",
+        "report": {
+          "exit_code": 0,
+          "collected": 3,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": []
+        },
+        "seconds": 1.047
+      },
+      "teardown_skip": {
+        "status": "invalid_evidence",
+        "reason": "collection_identity",
+        "report": {
+          "exit_code": 0,
+          "collected": 3,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "errors": []
+        },
+        "seconds": 1.078
+      },
+      "setup_error": {
+        "status": "invalid_evidence",
+        "reason": "collection_identity",
+        "report": {
+          "exit_code": 1,
+          "collected": 3,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [
+            "tests/test_scoring_fixture.py::test_fix"
+          ]
+        },
+        "seconds": 1.11
+      }
+    },
+    "method-subtests-v2": {
+      "fd1_during_test": {
+        "status": "passed",
+        "reason": "all_required_tests_pass",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 0,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_nested",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 2,
+              "failed": 0,
+              "skipped": 0
+            }
+          }
+        },
+        "seconds": 0.75
+      },
+      "subprocess_during_test": {
+        "status": "passed",
+        "reason": "all_required_tests_pass",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 0,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_nested",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 2,
+              "failed": 0,
+              "skipped": 0
+            }
+          }
+        },
+        "seconds": 0.781
+      },
+      "atexit_fd1": {
+        "status": "runner_error",
+        "message": "Missing, noisy or ambiguous scoring receipt",
+        "seconds": 0.687
+      },
+      "syntax_error": {
+        "status": "invalid_evidence",
+        "reason": "runner_exit_or_collection",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 2,
+          "collected": 0,
+          "passed": [],
+          "failed": [],
+          "skipped": [],
+          "errors": [
+            "tests/test_scoring_fixture.py"
+          ],
+          "subtests": {}
+        },
+        "seconds": 0.766
+      },
+      "system_exit_in_test": {
+        "status": "failed",
+        "reason": "required_test_failed",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 1,
+          "collected": 4,
+          "passed": [],
+          "failed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_nested",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 0,
+              "failed": 2,
+              "skipped": 0
+            }
+          }
+        },
+        "seconds": 0.75
+      },
+      "atexit_child": {
+        "status": "passed",
+        "reason": "all_required_tests_pass",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 0,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_nested",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 2,
+              "failed": 0,
+              "skipped": 0
+            }
+          }
+        },
+        "seconds": 0.672
+      },
+      "teardown_skip": {
+        "status": "failed",
+        "reason": "required_test_skipped",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 0,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_fix",
+            "tests/test_scoring_fixture.py::test_nested"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "errors": [],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 2,
+              "failed": 0,
+              "skipped": 0
+            }
+          }
+        },
+        "seconds": 0.687
+      },
+      "setup_error": {
+        "status": "invalid_evidence",
+        "reason": "collection_identity",
+        "report": {
+          "collector_protocol": "method-subtests-v2",
+          "exit_code": 1,
+          "collected": 4,
+          "passed": [
+            "tests/test_scoring_fixture.py::test_nested",
+            "tests/test_scoring_fixture.py::test_original"
+          ],
+          "failed": [],
+          "skipped": [
+            "tests/test_scoring_fixture.py::test_optional"
+          ],
+          "errors": [
+            "tests/test_scoring_fixture.py::test_fix"
+          ],
+          "subtests": {
+            "tests/test_scoring_fixture.py::test_nested": {
+              "passed": 2,
+              "failed": 0,
+              "skipped": 0
+            }
+          }
+        },
+        "seconds": 0.688
+      }
+    }
+  },
+  "known_interpreter_evasion": {
+    "status": "passed",
+    "reason": "all_required_tests_pass",
+    "report": {
+      "exit_code": 0,
+      "collected": 3,
+      "passed": [
+        "tests/test_scoring_fixture.py::test_fix",
+        "tests/test_scoring_fixture.py::test_original"
+      ],
+      "failed": [],
+      "skipped": [
+        "tests/test_scoring_fixture.py::test_optional"
+      ],
+      "errors": []
+    },
+    "seconds": 1.156
+  },
+  "patch_checks": {
+    "empty_creation": {
+      "exception": "ValueError",
+      "is_value_error": true
+    },
+    "empty_deletion": {
+      "exception": "ValueError",
+      "is_value_error": true
+    },
+    "non_utf8": {
+      "exception": "UnicodeDecodeError",
+      "is_value_error": true
+    },
+    "review_header_only": {
+      "returncode": 128,
+      "stdout": "",
+      "stderr": "error: No valid patches in input (allow with \"--allow-empty\")"
+    },
+    "git_empty_file_metadata": {
+      "returncode": 0,
+      "stdout": "0\t0\tnew.py",
+      "stderr": ""
+    }
+  },
+  "source_policy_audit": {
+    "tasks": 63,
+    "non_test_changes": 131,
+    "blocked_python_source": [
+      {
+        "task_id": "click_3a3e0350b6a2",
+        "path": "docs/conf.py"
+      }
+    ],
+    "blocked_other_files": [
+      {
+        "task_id": "click_6de212151893",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_4f9086bf8fd9",
+        "path": ".pre-commit-config.yaml"
+      },
+      {
+        "task_id": "click_4f9086bf8fd9",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_607316f9dea8",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_8762c7752cf1",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_8762c7752cf1",
+        "path": "docs/testing.md"
+      },
+      {
+        "task_id": "click_4e4c7a69b795",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_1241abaed4e4",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_3a3e0350b6a2",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_3a3e0350b6a2",
+        "path": "docs/commands.md"
+      },
+      {
+        "task_id": "click_2468b70997a6",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_19fd4d6e18bc",
+        "path": ".gitignore"
+      },
+      {
+        "task_id": "click_19fd4d6e18bc",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_831c8f0948af",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_fc6c7c47edd6",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_a09c1c655eef",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_0551bf53588a",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_a3321c9ca14d",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_32ae2acd3474",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_becbde5cf416",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_665736bc85a1",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_665736bc85a1",
+        "path": "docs/documentation.md"
+      },
+      {
+        "task_id": "click_399919f740bf",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_051bb0f30b54",
+        "path": "CHANGES.rst"
+      },
+      {
+        "task_id": "click_762c97eef7c1",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_bec59289d8cf",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_93ba0075f488",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_9f9b149ea302",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_9f9b149ea302",
+        "path": "docs/api.md"
+      },
+      {
+        "task_id": "click_07c909f23f0f",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_a2ac5839f29f",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_f316d5cb3aa8",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_1f9cd54f686e",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_f58ca3e81424",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_271effb3d96d",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_f25f697a439a",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_f25f697a439a",
+        "path": "docs/arguments.md"
+      },
+      {
+        "task_id": "click_f25f697a439a",
+        "path": "docs/documentation.md"
+      },
+      {
+        "task_id": "click_05f6fd0df4ec",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "click_f67c2bb6c2f0",
+        "path": "CHANGES.md"
+      },
+      {
+        "task_id": "more_itertools_f91c7339f163",
+        "path": "docs/api.rst"
+      },
+      {
+        "task_id": "more_itertools_f91c7339f163",
+        "path": "more_itertools/more.pyi"
+      },
+      {
+        "task_id": "more_itertools_db4f41b28050",
+        "path": "more_itertools/recipes.pyi"
+      },
+      {
+        "task_id": "more_itertools_d63a26e56eac",
+        "path": "more_itertools/recipes.pyi"
+      },
+      {
+        "task_id": "more_itertools_93c1cf8484f0",
+        "path": "more_itertools/recipes.pyi"
+      },
+      {
+        "task_id": "more_itertools_52cfcfedc310",
+        "path": "README.rst"
+      },
+      {
+        "task_id": "more_itertools_52cfcfedc310",
+        "path": "docs/api.rst"
+      },
+      {
+        "task_id": "more_itertools_52cfcfedc310",
+        "path": "more_itertools/recipes.pyi"
+      },
+      {
+        "task_id": "more_itertools_ba7ef9425f69",
+        "path": "more_itertools/more.pyi"
+      },
+      {
+        "task_id": "more_itertools_842a2b17a8e3",
+        "path": "README.rst"
+      },
+      {
+        "task_id": "more_itertools_842a2b17a8e3",
+        "path": "docs/api.rst"
+      },
+      {
+        "task_id": "more_itertools_842a2b17a8e3",
+        "path": "more_itertools/more.pyi"
+      },
+      {
+        "task_id": "more_itertools_43decdd76072",
+        "path": "docs/versions.rst"
+      },
+      {
+        "task_id": "more_itertools_ce676d24136e",
+        "path": "docs/versions.rst"
+      },
+      {
+        "task_id": "more_itertools_1fd388bc2379",
+        "path": "docs/versions.rst"
+      },
+      {
+        "task_id": "more_itertools_752799b5c88e",
+        "path": "docs/versions.rst"
+      },
+      {
+        "task_id": "more_itertools_def2dabea858",
+        "path": "docs/versions.rst"
+      },
+      {
+        "task_id": "more_itertools_670b715b307a",
+        "path": "docs/versions.rst"
+      },
+      {
+        "task_id": "more_itertools_f89d7a3331ba",
+        "path": "docs/versions.rst"
+      }
+    ],
+    "click_testing_module_editable": true,
+    "purpose": "audit proposed policy only; never derive edit permissions from gold changes"
+  },
+  "cleanup_complete": true,
+  "source_sha256": {
+    "dojo/eval/principal_review_development.py": "9056092d0bcaabdf7bf89cb31950746cd39ea4942dadba4562f1a37a618cd28d",
+    "dojo/eval/docker_scoring.py": "e3e4625f129fc14ef5ec6a78a15232cad820d198e9bcda52f3bac0ae3c022c76",
+    "dojo/eval/scoring_contract.py": "f9170391dacfd443ef3e5ada9b5507c9e38cd0f5ad19b4ad2e855b50b0681e7e",
+    "dojo/solve/docker_sandbox.py": "bbdeda8baa864b3a8b484310b7d7c79c0d149016ebc45efe2df4314d424e070a"
+  },
+  "record_sha256": "b76c674365f516a528ece6c5964cce69503297ec9d45c1662664b4b82f5cb239"
+}
