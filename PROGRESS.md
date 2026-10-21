@@ -1,6 +1,38 @@
 # Progress
 
-Updated: 2026-10-21 (synthetic hidden-test restoration and scoring verified)
+Updated: 2026-10-21 (trusted real-task scoring contracts verified)
+
+## Trusted real-task scoring contracts - 2026-10-21
+
+- Added an evaluator-only, task-ID-based contract loader using runtime input
+  guard v2 and the approved manifest/record hashes. Original base, fixed
+  snapshot and restored test-overlay archive must match their pinned hashes.
+  Git replacement/graft checks surround the additional reference snapshot read.
+  Reference source is never copied into the restored scoring archive.
+- Contracts bind exact fail-to-pass, pass-to-pass and stable-skip method IDs,
+  explicit selectors, original collector protocol and immutable image identity.
+  Both legacy Click and method-subtests-v2 receipts are checked, including v2
+  nested failure consistency. New required-test skips fail; frozen skip drift,
+  missing/extra/duplicate methods and inconsistent evidence reject.
+- Added a development source-transfer/restoration reference with checked
+  workspace/diff agreement. Repository-level Python package prefixes permit
+  source addition/deletion independently of gold changes. Test hooks, tests,
+  packaging/configuration edits and outside-package paths are restored/discarded.
+  This proposed execution policy still requires Stage B review.
+- Read-only contract check passed for all 63 tasks: 34 legacy Click, 29 v2
+  more-itertools, nine tasks with stable skips. No task code, Docker benchmark
+  runs or models executed; these checks produce no model performance results.
+- Verification: all 438 offline tests pass, including 77 new contract/receipt/
+  identity/restoration regressions; Ruff, unchanged 88-package lock and
+  whitespace checks pass. Credential scan of 270 files found no matches.
+  Existing repository remains private. No tools installed; provider spend $0.
+- No frozen construction sources, task records, issue content or manifests
+  changed. Owner-written restoration/scoring exercise and reflection remain
+  pending; AI-written reference helpers do not satisfy that learning milestone.
+- Next: bounded fresh-container runner consuming these contracts, verified on
+  synthetic fixtures for both collectors, including Click's offline project
+  installation and stable skips. Provider integration, Stage B registration,
+  credit-expiry confirmation and live inference gates remain pending.
 
 ## Submission requirements reminder - 2026-10-21
 

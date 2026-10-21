@@ -1,5 +1,15 @@
 # Learning log
 
+## Real-task scoring contracts - implementation observation
+
+A skipped test is not automatically a new failure: some tasks had the same
+optional tests skipped in every construction run. The scorer must preserve that
+exact set while rejecting a newly skipped required test as success. We also
+cannot choose editable source files from the reference fix, since that leaks
+answer information into the execution policy. Repository package boundaries
+give an explicit alternative, with packaging edits intentionally restricted.
+The owner's hand-written restoration work and personal reflection are pending.
+
 ## Hidden-test scoring - development reference
 
 Passing the agent's visible tests can still mean the actual bug is unfixed. A
