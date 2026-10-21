@@ -1,6 +1,35 @@
 # Progress
 
-Updated: 2026-10-19 (offline fake-model solver controller implemented)
+Updated: 2026-10-21 (isolated Docker solver development adapter verified)
+
+## Docker solver development adapter - 2026-10-21
+
+- Added a fresh-container-per-command adapter using the existing immutable
+  pytest-only image, explicit local Docker endpoint, no network/pulls/mounts,
+  non-root execution, read-only root, dropped capabilities, bounded PID/CPU/memory
+  and a 64 MiB tmpfs. No packages or images were installed by this step.
+- File snapshots carry edits between commands; processes, shell state, caches
+  and Git metadata do not persist. Bounded host pipe readers and validated file
+  receipts prevent unbounded command output and reject unsupported exports.
+  Text diffs are computed against the host-retained original baseline.
+- Only the reserved dojo-visible-tests command supplies trusted-collector visible
+  feedback. Empty, inconsistent or falsely successful test receipts reject.
+  Edits invalidate old test status. Hidden-test scoring is not implemented here.
+- Real calculator development demo passed: four scripted-model turns, three real
+  Docker commands, exported diff and passing original visible test feedback.
+  The result is explicitly simulation_only/not_scored, not model performance.
+- Real smoke checks passed for UID 65534, loopback-only networking, read-only
+  root, no host Docker socket/provider keys, bounded output, no background-process
+  carryover, rejected timeout, rejected symlink export and complete cleanup.
+  Evidence saved under data/development/solver-docker/adapter-smoke-v1.json.
+- Verification: all 330 offline tests pass, including 23 new adapter/evidence
+  regressions. Ruff, the unchanged 88-package dependency lock and whitespace
+  checks pass. No solver containers remain.
+- Frozen construction, issue content, manifest and task labels remain unchanged.
+  No benchmark tasks or provider/model calls ran; provider spending remains zero.
+- Next: hidden-test restoration and patch scoring on synthetic fixtures, then
+  mini-swe-agent/provider integration with separately registered evaluation.
+  Stage B and live inference gates remain pending.
 
 ## Offline solver controller - 2026-10-19
 

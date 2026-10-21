@@ -117,6 +117,9 @@ class SimulationResult:
     simulation_only: bool = True
     provider_calls: int = 0
     cost_usd: str = "0.00"
+    execution_backend: str = "scripted"
+    sandbox_image_id: str | None = None
+    sandbox_harness_sha256: str | None = None
 
 
 def run_simulation(view: SolverInput, model: ScriptedModel, sandbox: FakeSandbox,
@@ -124,12 +127,26 @@ def run_simulation(view: SolverInput, model: ScriptedModel, sandbox: FakeSandbox
     """Exact fake adapter types only; this is not a live model execution path."""
     if type(model) is not ScriptedModel or type(sandbox) is not FakeSandbox:
         raise TypeError("This controller accepts only offline fake adapters")
+    return _run_loop(view, model, sandbox, limits, clock=clock)
+
+
+def run_docker_development(view: SolverInput, model: ScriptedModel,
+                           limits: Limits | None = None):
+    """Real isolated commands with a scripted model, not benchmark evaluation."""
+    from dojo.solve.docker_sandbox import DockerSandbox
+
+    if type(model) is not ScriptedModel:
+        raise TypeError("Docker development accepts only a scripted model")
+    return _run_loop(view, model, DockerSandbox(), limits)
+
+
+def _run_loop(view, model, sandbox, limits=None, *, clock=time.monotonic):
     limits = Limits() if limits is None else limits
     if model.seen:
         raise ValueError("Use a fresh scripted model for each simulation")
+    deadline = clock() + limits.wall_seconds
     sandbox.start(view.source_archive)
     messages = [Message("system", SYSTEM), Message("user", "ISSUE DATA:\n" + view.issue_text)]
-    deadline = clock() + limits.wall_seconds
     turns = commands = invalid = timeouts = prompt_used = completion_used = 0
     done = False
     reason = "step_cap"
@@ -172,7 +189,12 @@ def run_simulation(view: SolverInput, model: ScriptedModel, sandbox: FakeSandbox
             break
         try:
             feedback = sandbox.execute(command, timeout=min(limits.command_timeout_seconds, remaining))
-        except RuntimeError:
+        except TimeoutError:
+            commands += 1
+            timeouts += 1
+            reason = "command_timeout"
+            break
+        except (RuntimeError, ValueError, OSError):
             reason = "sandbox_error"
             break
         commands += 1
@@ -186,4 +208,7 @@ def run_simulation(view: SolverInput, model: ScriptedModel, sandbox: FakeSandbox
     signals = ObservableSignals(bool(sandbox.patch.strip()), sandbox.visible_tests_pass,
                                 reason == "step_cap", invalid / max(1, commands + invalid), done)
     return SimulationResult(reason, turns, commands, invalid, timeouts, prompt_used,
-                            completion_used, sandbox.patch, signals)
+                            completion_used, sandbox.patch, signals,
+                            execution_backend=getattr(sandbox, "backend", "scripted"),
+                            sandbox_image_id=getattr(sandbox, "image_id", None),
+                            sandbox_harness_sha256=getattr(sandbox, "harness_sha256", None))

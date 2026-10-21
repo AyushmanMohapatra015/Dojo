@@ -1,0 +1,49 @@
+{
+  "protocol": "solver-docker-development-v1",
+  "synthetic": true,
+  "held_out_eligible": false,
+  "counts_toward_frozen_benchmark": false,
+  "model_calls": 0,
+  "provider_calls": 0,
+  "demo": {
+    "stop_reason": "self_reported_done",
+    "turns": 4,
+    "commands": 3,
+    "invalid_turns": 0,
+    "command_timeouts": 0,
+    "synthetic_prompt_tokens": 614,
+    "synthetic_completion_tokens": 52,
+    "signals": {
+      "has_patch": true,
+      "visible_tests_pass": true,
+      "hit_step_cap": false,
+      "no_command_rate": 0.0,
+      "agent_self_reports_done": true
+    },
+    "scoring_status": "not_scored",
+    "simulation_only": true,
+    "provider_calls": 0,
+    "cost_usd": "0.00",
+    "execution_backend": "local_docker",
+    "sandbox_image_id": "sha256:c9ac6be2684605935c862c7b43f31d23cb1c5943cde42421b1a7f579905c24ad",
+    "sandbox_harness_sha256": "6f26fcc022968c14d956fb61db4f6927c3c31f11464968e7aa21e80cc8c2d2b7"
+  },
+  "checks": {
+    "non_root": true,
+    "network_loopback_only": true,
+    "read_only_root": true,
+    "no_host_socket": true,
+    "no_provider_keys": true,
+    "output_bounded": true,
+    "no_background_survival": true,
+    "timeout_rejected": true,
+    "symlink_rejected": true,
+    "cleanup_complete": true
+  },
+  "source_sha256": {
+    "dojo/solve/agent.py": "ad11c6eeffaa56c9d6ebd247ec441de6f91b58112eb1639ab3967d253e7c0efd",
+    "dojo/solve/docker_sandbox.py": "bbdeda8baa864b3a8b484310b7d7c79c0d149016ebc45efe2df4314d424e070a",
+    "dojo/solve/docker_development.py": "3b31b655438948e5d52085da5c057a75eb8776e6b96726e008e9b545be5a87e2"
+  },
+  "record_sha256": "4d74119d3578aaff5208ef91526e0185b597b81d907581933722d563a1159aae"
+}

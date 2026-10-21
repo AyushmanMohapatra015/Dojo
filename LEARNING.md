@@ -1,5 +1,14 @@
 # Learning log
 
+## Docker solver commands - implementation observation
+
+An agent needs file edits to persist, but keeping its old processes alive across
+steps creates unnecessary state and cleanup problems. The development adapter
+uses fresh containers and carries only checked regular files. Visible tests are
+still agent-visible feedback, so they cannot establish hidden correctness. A
+timeout discards the incomplete workspace instead of guessing which edits are
+safe to retain. The owner's own milestone reflection is pending.
+
 ## Offline solver controller - implementation observation
 
 A model saying "done" is not a test result, and a shell command exiting with
