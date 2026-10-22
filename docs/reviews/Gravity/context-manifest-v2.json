@@ -1,0 +1,106 @@
+{
+  "base_commit": "dd78beb337a6a7d0ad4c13cdc7b9835414e32ff6",
+  "snapshot_date": "2026-10-22",
+  "purpose": "13l5/13l6 read-only scorer design",
+  "files": [
+    {
+      "source": "dojo/eval/docker_scoring_v2.py",
+      "snapshot": "context-v2/dojo/eval/docker_scoring_v2.py",
+      "bytes": 7100,
+      "sha256": "593fbfd204f27b3d2825481246981e66c6f917dd96240c4d403d6e428249b363"
+    },
+    {
+      "source": "dojo/eval/candidate_outcomes.py",
+      "snapshot": "context-v2/dojo/eval/candidate_outcomes.py",
+      "bytes": 5513,
+      "sha256": "0edbd048a0890756447d53fdb3f0b098bc42dd8d80d89c901c387346c535eac3"
+    },
+    {
+      "source": "dojo/eval/scoring_contract.py",
+      "snapshot": "context-v2/dojo/eval/scoring_contract.py",
+      "bytes": 10548,
+      "sha256": "2a3033fda3f283d23bd311c30d32f274d2befaad7037d3dfd4287b675a70b0ed"
+    },
+    {
+      "source": "dojo/solve/docker_sandbox.py",
+      "snapshot": "context-v2/dojo/solve/docker_sandbox.py",
+      "bytes": 14915,
+      "sha256": "cabc7e221015592d7624d5f6d1508cc39442e136fc947a83eecdc4f0b17f7be3"
+    },
+    {
+      "source": "dojo/solve/input_guard_v2.py",
+      "snapshot": "context-v2/dojo/solve/input_guard_v2.py",
+      "bytes": 9183,
+      "sha256": "c1df7aced4e89c7e6851ccde142b322e73e0081140b652cc2ec7add9b8ba6185"
+    },
+    {
+      "source": "dojo/solve/patches.py",
+      "snapshot": "context-v2/dojo/solve/patches.py",
+      "bytes": 2785,
+      "sha256": "284b1a656a455ecbf98cd3fdf69fd16b34a1d04cec503847b8df531d8b12d258"
+    },
+    {
+      "source": "dojo/backends/receipt_v2.py",
+      "snapshot": "context-v2/dojo/backends/receipt_v2.py",
+      "bytes": 3350,
+      "sha256": "94d95287d5499b02c6e248fc7fa37e42b3cba6cd2a7a0cd7893e2349696473e4"
+    },
+    {
+      "source": "dojo/backends/profiles.py",
+      "snapshot": "context-v2/dojo/backends/profiles.py",
+      "bytes": 990,
+      "sha256": "538a44ee4b2a08e90d536441b54fbf65e9d1af07e01b1a9ec6f4102aa653d022"
+    },
+    {
+      "source": "docs/candidate-outcome-policy.md",
+      "snapshot": "context-v2/docs/candidate-outcome-policy.md",
+      "bytes": 5408,
+      "sha256": "166da9bb9f72ecd640c9f4fc695e039468e8b61604de28b02ac01dc9087f4167"
+    },
+    {
+      "source": "docs/contract-docker-scoring.md",
+      "snapshot": "context-v2/docs/contract-docker-scoring.md",
+      "bytes": 3399,
+      "sha256": "b0e62332a39abb7732bc84af77a5089c41fd72389e00b58565466008784137a4"
+    },
+    {
+      "source": "docs/development-scoring.md",
+      "snapshot": "context-v2/docs/development-scoring.md",
+      "bytes": 3728,
+      "sha256": "49a4b70f1046919c8ec97b0315c315bb57b0f57bc1f41519bd77284f349d02ec"
+    },
+    {
+      "source": "docs/model-controller-boundary.md",
+      "snapshot": "context-v2/docs/model-controller-boundary.md",
+      "bytes": 5165,
+      "sha256": "e2b8c9bd754d5ad856c2ea1634f4075db09817c7cf07253b56e9de9d072b2928"
+    },
+    {
+      "source": "docs/patch-export.md",
+      "snapshot": "context-v2/docs/patch-export.md",
+      "bytes": 3473,
+      "sha256": "2c461b93ad94bf7371e15efc0bce6d468f01e555851c5a27d208a16f84f08bad"
+    },
+    {
+      "source": "docs/profiled-sandbox.md",
+      "snapshot": "context-v2/docs/profiled-sandbox.md",
+      "bytes": 2278,
+      "sha256": "1df39f7311e320a81c9a5155d46460661e481b59ee93a7eb213309716c72e7af"
+    },
+    {
+      "source": "docs/reviews/gravity-primary-assessment-v1.md",
+      "snapshot": "context-v2/docs/reviews/gravity-primary-assessment-v1.md",
+      "bytes": 6775,
+      "sha256": "8e9ed4e1bd88fb773ced960001f87d1a32f0e4da5f0a72491cf8d33f3d74cedf"
+    },
+    {
+      "source": "docs/reviews/principal-review-assessment-v1.md",
+      "snapshot": "context-v2/docs/reviews/principal-review-assessment-v1.md",
+      "bytes": 16622,
+      "sha256": "dafe81407f6b26558a7c68c30e92529c452d047b99bec021064b1cac1c815b16"
+    }
+  ],
+  "provider_calls": 0,
+  "execution_authorized": false,
+  "snapshot_id": "b42ef7d2c7aef3484365ca1c8f98969b0b87ebe545ba7806b40293c76c80192b"
+}

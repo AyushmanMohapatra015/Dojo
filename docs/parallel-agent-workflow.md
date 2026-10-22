@@ -1,11 +1,20 @@
 # Speeding up Dojo with another AI agent
 
+## Current queue — 2026-10-22
+
+Use [the current owner handoff guide](agent-work-queue-v1.md) for the next steps.
+Primary owns 9g4e then 5e; Argon owns frontend refinement 10a4 through
+`docs/reviews/argon/frontend-refinement-packet-v1.md`; Agent 2 waits for the
+revised delivery before independent acceptance review 10a6. Gravity's next
+read-only tasks are 13l5/13l6 in `docs/reviews/Gravity/ASSIGNMENT-2.md`.
+Everything below records earlier handoffs; do not resend them as current work.
+
 Keep this workspace as the integration authority and ACTION_PLAN.md as the task
 tracker. Useful parallel work has a separate output: one reviewer designs the
 next workstream while the primary agent implements the current one. Giving two
 agents the same mutable task usually creates duplicate work and stale patches.
 
-## Current independent assignment (2026-10-22)
+## Historical independent assignments (2026-10-22)
 
 Cache proposal v2 has been reviewed; see cache-review-assessment-v2.md. The
 primary workspace completed 5c and next owns 5d usage/result accounting. Agent 1

@@ -1,5 +1,28 @@
 # Progress
 
+## Parallel next-work handoffs (10a7/13l7) - 2026-10-22
+
+- Primary remains owner of 9g4e cascade/report/CLI correction/integration, then
+  trusted runner 5e and registration/publication 5f/7. No application code changed
+  in this planning step; 1,014-test checkpoint remains the last application run.
+- Created self-contained Argon frontend-refinement-packet-v1.md: all 14 Agent 2
+  files plus original contract, primary F1-F8 assessment and quality guide (17
+  hashed references). Exactly two refinement groups, existing code/public
+  schema/gates retained. Return frontend-refinement-feedback-v1.txt in Argon
+  folder. Prepared, not sent; owner starts 10a4 in a fresh web chat.
+- Agent 2 should wait, then independently review Argon's actual revised frontend
+  at 10a6 with a fresh source packet. No concurrent code edits or filler tasks.
+- Gravity context-v2 contains 16 exact source/doc files (101,232 bytes), new
+  manifest and ASSIGNMENT-2 for 13l5/13l6. Requests concrete scorer threat-model
+  design and behavioral falsification matrix for open 4j; no hostile payloads,
+  Docker, packages, network, Git or provider execution. New AGENTS/FOLLOWUP-README
+  select this bounded assignment; old context and reports remain unchanged.
+- Both handoffs record base commit dd78beb337a6a7d0ad4c13cdc7b9835414e32ff6;
+  byte manifests identify their exact supplied snapshots. New owner flow is
+  docs/agent-work-queue-v1.md; outdated workflow sections explicitly historical.
+- No messages to external agents, account changes, installs, deployments, provider
+  calls or Git writes. Owner performs sharing and scoped Git checkpoint.
+
 ## Frontend intake and partner onboarding guidance (10a5/12i1/12k1) - 2026-10-22
 
 - Found Frontend_Agent2 folder: ZIP contains exactly 14 allowlisted files; all
