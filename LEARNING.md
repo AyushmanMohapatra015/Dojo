@@ -1,5 +1,15 @@
 # Learning log
 
+## Task 5c - implementation observation
+
+Owning a task locally does not prove a remote call was never sent. Expiring a
+lease must fence an old worker without silently replaying uncertain work. A
+durable intent before reserving money also protects the gap between two DBs;
+it does not make their commits atomic. Separate processes and abrupt exits test
+more than a thread race alone. Old-schema rejection and exact artifact/identity
+checks let us reuse the external design while retaining stronger invariants.
+Actual ledger binding and real usage validation remain separate pending work.
+
 ## External cache review and tasks 5a/5b - implementation observation
 
 An executable proposal can save substantial work while still missing cases its

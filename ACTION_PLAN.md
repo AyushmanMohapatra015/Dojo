@@ -2,7 +2,7 @@
 
 Updated: 2026-10-22. BUILD_SPEC.md defines the product; this file is the live
 execution checklist; PROGRESS.md holds checkpoint history/evidence. Baseline:
-774 offline tests after tasks 5a/5b and external review, 63 construction tasks (37 train / 26 held-out), no provider
+814 offline tests after task 5c, 63 construction tasks (37 train / 26 held-out), no provider
 calls/spend. Scaffolds and synthetic checks are not completed benchmark results.
 
 ## Tracking rules
@@ -101,10 +101,10 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 
 | ID | Status | Task / acceptance evidence |
 |---|---|---|
-| 5a | DONE | Seven-table private SQLite schema, explicit new-file initialization, rollback/read-only exact schema validation; separate execution/candidate/evidence states and patch/namespace constraints. Forty-six real temporary-SQLite tests; docs/run-store-schema.md. No claims/publication API implied. |
+| 5a | DONE | Initial seven-table v1 foundation retained in schema_v1.py; 5c explicitly versions v2 with three recovery tables and immutable events. New-file initialization, rollback/read-only exact schema validation and execution/evidence/patch constraints retained; old v1 DBs refused without migration. docs/run-store-schema.md. |
 | 5b | DONE | Adapted external solver/scoring identities in dojo/store/identity.py with corrected deterministic numeric/strict parsing validation; 61 identity tests. Runner metadata construction/replay wiring remains 5c/5e; identities alone are not execution/provenance approval. |
-| 5c | NEXT | Port/simplify reviewed external transaction/ownership/intent state machine onto retained schema; exact schema checks, bounded concurrency/resume, interrupted/unknown states and strict read validation. No implicit refunds, unverified ledger/status assumptions or automatic billable takeover. See review R3/R4/R7 and assessment. |
-| 5d | PLANNED | Actual tokens/cost/steps/time, final diff and truncated private trajectory; verify cost from usage/pricing snapshot and metric consistency (review R5/R8), retain history and current transport bounds; evaluator evidence stays separate. |
+| 5c | DONE | AttemptStore on explicit v2 schema: short atomic claims, token/generation fencing, no automatic expired/ambiguous replay, durable serial accounting intent, checked synthetic artifacts/reuse, immutable events. Forty new tests including independent processes/abrupt exits and rollback/corruption checks; full suite 814. No live dispatch, ledger binding or publication API; real accounting remains 5d/6. |
+| 5d | NEXT | Actual tokens/cost/steps/time, final diff and truncated private trajectory; verify cost from usage/pricing snapshot and metric consistency (review R5/R8), retain history and current transport bounds; evaluator evidence stays separate. |
 | 5e | PLANNED | Working bench/cost/report CLI plus clear unsupported/pending/error states and example commands. |
 | 5f | PLANNED | Registered denominator/error policy: justified candidate errors unsolved; invalid/infrastructure evidence blocks publication. Verify actual registration/provenance and evaluator identity; do not adopt proposal's metadata-only publishable predicate or latest-score selection (review R6/R7). |
 
@@ -254,8 +254,10 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 16d | GATED | If L3 proceeds, owner-written gate decisions and rejection reasons. |
 | 16e | PARTIAL | Owner milestone reflections/video explanation; distinguish from AI-written implementation notes. |
 
-Completed this checkpoint: **5a/5b and 13f2**, with reviewed external code reuse.
-Next implementation checkpoint: **5c**. Scoring threat-model decision **4j**
+Completed this checkpoint: **5c**, adapting reviewed transaction/recovery ideas.
+Next implementation checkpoint: **5d**. External agent owns **9g2** work packages;
+do not duplicate its analysis implementation while the response is pending.
+Scoring threat-model decision **4j**
 remains open and must be resolved before registered model evaluation.
 Eligible urgent account/rules/context work may proceed alongside offline tasks;
 this never authorizes gated paid work or unrelated stretch implementation.

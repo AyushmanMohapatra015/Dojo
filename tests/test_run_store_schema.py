@@ -89,8 +89,9 @@ def test_new_schema_reopens_without_side_effects(store):
     info = RunStore(store.path).schema_info()
     assert info['schema_version'] == SCHEMA_VERSION
     assert set(info['tables']) == {'store_meta', 'tasks', 'runs', 'observations',
-                                  'artifacts', 'usage', 'evaluations'}
-    assert info['scope'] == 'schema_only_no_run_or_publication_api'
+                                  'artifacts', 'usage', 'evaluations', 'solver_identities',
+                                  'run_context', 'run_events'}
+    assert info['scope'] == 'schema_validation_only_not_execution_or_publication'
     assert store.path.read_bytes() == before
 
 
@@ -159,7 +160,7 @@ def test_exclusive_writer_blocks_inspection_without_repair(store, db):
     with pytest.raises(StoreError):
         store.schema_info()
     db.rollback()
-    assert store.schema_info()['schema_version'] == 1
+    assert store.schema_info()['schema_version'] == SCHEMA_VERSION
 
 
 def test_visible_pass_and_finish_do_not_create_hidden_correctness(db):

@@ -1,6 +1,7 @@
-"""Explicit new-file initialization and read-only schema validation for task 5a."""
+"""Explicit initialization and short versioned transactions for a private run store."""
 
 import sqlite3
+from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 
@@ -37,6 +38,8 @@ class RunStore:
         try:
             db.execute('PRAGMA foreign_keys=ON')
             db.execute('PRAGMA trusted_schema=OFF')
+            if not readonly:
+                db.execute('PRAGMA synchronous=FULL')
         except sqlite3.Error:
             db.close()
             raise
@@ -87,9 +90,29 @@ class RunStore:
             return {'protocol': PROTOCOL, 'schema_version': SCHEMA_VERSION,
                     'ddl_sha256': DDL_SHA256, 'tables': [row[1] for row in _objects(db)
                                                        if row[0] == 'table'],
-                    'scope': 'schema_only_no_run_or_publication_api'}
+                    'scope': 'schema_validation_only_not_execution_or_publication'}
         except (OSError, sqlite3.Error):
             raise StoreError('Store missing, busy or invalid; inspection stopped') from None
         finally:
             if db is not None:
+                db.close()
+
+    @contextmanager
+    def transaction(self, *, write=False):
+        """No external work in this context. Missing/busy stores fail immediately."""
+        if type(write) is not bool:
+            raise TypeError('write must be boolean')
+        db = None
+        try:
+            db = self._connect(readonly=not write)
+            db.execute('BEGIN IMMEDIATE' if write else 'BEGIN')
+            self._validate(db)
+            yield db
+            db.commit()
+        except (OSError, sqlite3.Error):
+            raise StoreError('Store transaction stopped: missing, busy or invalid state') from None
+        finally:
+            if db is not None:
+                if db.in_transaction:
+                    db.rollback()
                 db.close()

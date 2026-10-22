@@ -1,5 +1,32 @@
 # Progress
 
+## Task 5c: transaction, ownership and recovery foundation - 2026-10-22
+
+- Reused the reviewed external proposal's claim/intent/fence/clean-abort design
+  on our retained exact-schema validator rather than replacing it wholesale.
+  Added AttemptStore and short BEGIN IMMEDIATE/read-only transactions with
+  immediate busy failure and rollback on SQL/non-SQL interruption.
+- Preserved exact v1 DDL in schema_v1.py; new schema v2 adds canonical identities,
+  recovery contexts and immutable operation events. Existing v1 databases are
+  refused without silent migration or reset. No persistent project DB created.
+- Only one worker gets ownership; duplicates do not receive tokens. Expiry does
+  not authorize replay; explicit fences rotate generation/token and uncertainty
+  blocks retries. Only untouched pre-dispatch/no-intent work may be cleanly aborted.
+- Serial durable reservation-intent markers block other new/prepared development
+  attempts after unresolved accounting/uncertainty. No ledger binding, fabricated
+  reservation acceptance, provider dispatch or publication API was introduced.
+- Added atomic synthetic completion and checked artifact reuse: exact identity,
+  task/source binding, patch/trajectory digests and synthetic usage validated.
+  Real completion/actual metrics/pricing remain 5d/6. Defaults allow a 600-second
+  lease versus the controller's 300-second cap; no automatic renewal/retry.
+- Forty new tests cover independent spawned processes racing, abrupt worker
+  termination before/after commit, mid-completion rollback, ownership/expiry,
+  backwards clocks, uncertain prepared claims, old schema/busy/corrupt stores,
+  artifact bounds and immutable audit events. Full suite: 814 passed in 49.72s;
+  Ruff/lock checks passed. No provider calls/spend or Git staging/commit/push.
+- Next: 5d. External agent exclusively owns the ten statistics work packages at
+  9g2 (mapped to 9a-9d/9f/9h); those implementations remain pending review.
+
 ## Task 9g2: expanded independent statistics package - 2026-10-22
 
 - Owner requested a longer multi-task external assignment. V2 specifies ten
