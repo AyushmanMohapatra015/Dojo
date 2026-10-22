@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "source": "docs/reviews/argon/Batch B Delivery Manifest & WP6\u2013WP1_NOTCOMPLETE.txt",
+  "source_sha256": "2616b91c299abf0f523ed1a025c14a16f5573d4a64c54e132ddaed1a97a4c6e0",
+  "source_bytes": 86704,
+  "files": [
+    {
+      "original_path": "dojo/cascade/policies.py",
+      "saved_path": "dojo/cascade/policies.py",
+      "start_line": 1,
+      "sha256": "e8af84e47304144e362225af22d116b983bfa1bee449b897dde61e94eb3d742e",
+      "syntax_error": null,
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "dojo.bench.records",
+        "dojo.bench.stats",
+        "dojo.solve.signals",
+        "fractions",
+        "math",
+        "typing"
+      ],
+      "accepted": false
+    },
+    {
+      "original_path": "dojo/cascade/simulate.py",
+      "saved_path": "dojo/cascade/simulate.py",
+      "start_line": 867,
+      "sha256": "ce7c95afdda4bdafaf1e0f24925a8790d35013bbe0d18e5a56762d681a12a9d0",
+      "syntax_error": null,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "dojo.bench.records",
+        "dojo.bench.stats",
+        "dojo.cascade.policies",
+        "fractions",
+        "typing"
+      ],
+      "accepted": false
+    },
+    {
+      "original_path": "dojo/bench/report.py",
+      "saved_path": "dojo/bench/report.py",
+      "start_line": 1483,
+      "sha256": "17984d816b2ae59b9c01e9b44c06701dc090a295f527a7e379e11f5cde3b5cf5",
+      "syntax_error": null,
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "dojo.bench.frontier",
+        "dojo.bench.records",
+        "dojo.bench.stats",
+        "dojo.cascade.policies",
+        "dojo.cascade.simulate",
+        "fractions",
+        "json",
+        "typing"
+      ],
+      "accepted": false
+    },
+    {
+      "original_path": "dojo/bench/analyze.py",
+      "saved_path": "dojo/bench/analyze.py.partial.txt",
+      "start_line": 1933,
+      "sha256": "1efecc6c528849180bd2abe3355d619841e7a4bb0517c8e6dd4a4da824971c05",
+      "syntax_error": {
+        "line": 148,
+        "reason": "'(' was never closed"
+      },
+      "imports": [],
+      "accepted": false
+    }
+  ],
+  "execution_performed": false,
+  "installed_to_application": false,
+  "missing_deliverables": [
+    "tests/test_cascade.py",
+    "tests/test_analysis_report.py",
+    "tests/test_analysis_cli.py",
+    "docs/analysis-methods.md",
+    "docs/analysis-integration.md"
+  ]
+}

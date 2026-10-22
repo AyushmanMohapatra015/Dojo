@@ -1,5 +1,32 @@
 # Progress
 
+## Argon intake / interrupted B continuation (9g4a/9g4c) - 2026-10-22
+
+- Extracted ten Batch A source/test/fixture/doc files into proposals/batch-a-v1;
+  originals and extracted byte/line/import hashes preserved. Read runtime code,
+  tests and methods/API; loaded only archived math into a review child process.
+  No application module replaced and no provider/Docker/real-task work executed.
+- Supplied tests: 21 pass, 1 fails due to an incorrect family CI expectation.
+  Actual declared interpolation gives 322.5/1177.5, not extrema 300/1200.
+  Independent tests: ten defects reproduced plus one quantile check, 11 passing
+  checks against the UNMODIFIED proposal. These are bug reproductions, not
+  acceptance or additions to the application's 911-test checkpoint.
+- Findings R1-R10: stale audit/hash trust, duplicate/bool seeds, inconsistent
+  metrics, unbounded declared cell expansion (sentinel prevents allocation),
+  valid Unicode rejected, family/pair work underestimated, unchecked series,
+  incompatible registration metadata and silently ignored seed positions.
+  Assessment: docs/reviews/argon/statistics-review-assessment-v1.md.
+- Owner clarified interruption and supplied genuine B partial (86,704 bytes).
+  Recovered policies/simulate/report parse; analyze.py stops at recovered line148.
+  No three promised tests/two docs delivered. These B modules are unaccepted,
+  syntax-checked reference only. Earlier B-named escaped A copy removed by owner;
+  do not restore/stage its deletion as part of this task.
+- New one-file continuation packet contains all reference code/API, fixtures,
+  known defects and exactly two missing-delivery groups: finish WP9 CLI, supply
+  WP10 tests/docs. Argon preserves useful existing B work; primary next 9g4b
+  repairs Batch A behind stable signatures, then 5e integration. No repeated
+  ten-task assignment and no premature green-suite/real-result claim.
+
 ## Gravity setup / collaboration ownership (13l1) - 2026-10-22
 
 - Created docs/reviews/Gravity with a current allowlisted source-only snapshot,

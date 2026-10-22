@@ -1,5 +1,17 @@
 # Platform feedback
 
+## 2026-10-22 - Builder Program documentation inconsistency
+
+- Source checked: https://dev.nebius.com/builders . The membership cards list
+  $100 Toloka credit, while the FAQ lists $50 Toloka plus $50 Tandem. The
+  owner's received email matches the latter split. This is a confirmed public
+  documentation inconsistency, not proof that any individual redemption failed.
+- Impact: builders cannot determine the exact product-specific entitlement from
+  that page alone. Use the actual redemption offer/partner account confirmation;
+  do not combine both descriptions into additional credit or assume balances.
+- Report readiness: cite the membership-card and FAQ sections with the check
+  date. No credentials/account identifiers are needed. No issue/contact sent.
+
 ## 2026-10-21 - local tool/environment observation, upstream cause unconfirmed
 
 - A sandboxed read-only exec could not start: CreateProcess was rejected with

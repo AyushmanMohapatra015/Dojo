@@ -170,7 +170,10 @@ live-credit expiry is a blocking dependency, not resolved by more parallel work.
 | 9g1 | DONE | docs/reviews/statistics-cascade-packet-v1.md: eight source/context files, exact synthetic panel/answers, paired bootstrap/unequal seeds, both frontier axes, leakage/error/undefined-result tests and complete module/test deliverables. Primary owns 5c; math implementation reserved for web agent while response is pending. Owner-written 16c remains gated. |
 | 9g2 | DONE | statistics-cascade-packet-v2.md expands to ten coordinated work packages and 17 minimum delivered source/test/fixture/doc files across 9a-9d/9f/9h. Includes complete normalized I/O boundary, dependency/ownership map, deterministic bounded offline command, exact math, three verified synthetic fixtures and acceptance commands. V1 preserved; share v2; primary owns 5c. |
 | 9g3 | DONE | Owner reports Agent 1 cannot handle ten WPs together: active handoff is now statistics-batch-a-packet-v1.md, exactly original WPs 1-5 with full context/fixtures/source and complete API deliverables. V1/v2 preserved as historical snapshots. Review Batch A before preparing Batch B (6-10) with its actual reviewed code/API. Math implementation remains pending; Agent 2 assignments unchanged. |
-| 9g4 | PARTIAL | Agent 1 is Argon: dedicated folder, verified assignment copies and Batch B scope. Final inventory found statistics-batch-a.txt and statistics-batch-b-response.md; both await full source/API/test review. Do not assume Batch B was grounded in reviewed Batch A interfaces or integrate either automatically. Scope document alone was not a ready implementation packet. |
+| 9g4 | PARTIAL | Argon intake at 9g4a: Batch A useful but has reproduced defects; prior B file was escaped A copy. Owner replaced it with interrupted genuine B partial: three syntactically complete B modules, incomplete CLI, no promised tests/docs. No application math adopted yet; continuation at 9g4c, primary corrections at 9g4b. |
+| 9g4a | DONE | Isolated ten Batch A files and genuine B partial with byte/line/import manifests. Reviewed A sources/API/tests/docs; supplied tests 21 pass/1 incorrect CI assertion fails. Ten independent defect reproductions + one quantile check pass against UNMODIFIED proposal (not acceptance). statistics-review-assessment-v1.md records evidence/dispositions; B modules recovered/syntax checked only, not accepted. |
+| 9g4b | NEXT | Correct/adapt Batch A R1-R10 with acceptance regressions, retaining useful formulas and stable public signatures for the B continuation. Preserve owner-written 16c and actual-evaluation gates; do not import unreviewed proposal wholesale. |
+| 9g4c | DONE | Prepared statistics-b-continuation-packet-v1.md: exactly two missing-delivery groups (WP9 complete CLI; WP10 three tests/two docs) with full A API/source, recovered WP6-WP8, CLI fragment, fixtures and known review defects. Reference code explicitly unaccepted; primary owns A repairs, Argon avoids repeated A/rewrite of completed B blocks. Await response/review before B integration. |
 | 9h | PLANNED | Results export with provenance/config/split hashes; no synthetic-as-real metrics. |
 
 ## 10. Explorer/product experience
@@ -278,7 +281,8 @@ live-credit expiry is a blocking dependency, not resolved by more parallel work.
 | 16e | PARTIAL | Owner milestone reflections/video explanation; distinguish from AI-written implementation notes. |
 
 Completed this checkpoint: **5d2**, immutable result/valuation persistence.
-Next implementation checkpoint: **5e**. Argon owns statistics Batch A (**9g3/9g4**);
+Next implementation checkpoint: **9g4b** targeted statistics repairs, then **5e**.
+Argon owns the missing B continuation (**9g4c**);
 Agent 2 owns frontend proposals (**10a2/10a3**). Do not duplicate those modules.
 Scoring threat-model decision **4j**
 remains open and must be resolved before registered model evaluation.

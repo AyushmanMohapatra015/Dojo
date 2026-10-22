@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-22",
+  "recorded_from": "Completed primary-workspace tool results, not externally asserted test logs",
+  "application_files_replaced": false,
+  "application_test_checkpoint_unchanged": 911,
+  "provider_calls": 0,
+  "supplied_tests": {
+    "command": ".venv\\Scripts\\python.exe docs/reviews/argon/proposals/batch-a-v1/run_isolated.py",
+    "passed": 21,
+    "failed": 1,
+    "elapsed_seconds": 0.21,
+    "failed_test": "test_wp4_family_cluster_bootstrap_unbalanced_clusters_preserve_original_n_cost",
+    "reason": "Test asserts extrema 300/1200; implemented documented type-7 95-percent interpolation yields 322.5/1177.5"
+  },
+  "independent_checks": {
+    "command": ".venv\\Scripts\\python.exe docs/reviews/argon/proposals/batch-a-v1/run_isolated.py regressions",
+    "passed": 11,
+    "failed": 0,
+    "elapsed_seconds": 0.08,
+    "defect_reproductions": 10,
+    "positive_quantile_check": 1,
+    "interpretation": "Passing defect reproductions prove defects observed in the UNMODIFIED proposal; not acceptance tests"
+  },
+  "partial_batch_b": {
+    "source": "docs/reviews/argon/Batch B Delivery Manifest & WP6–WP1_NOTCOMPLETE.txt",
+    "syntactically_complete_runtime_blocks": 3,
+    "incomplete_cli_block": 1,
+    "delivered_test_files": 0,
+    "delivered_method_integration_docs": 0,
+    "runtime_tests_executed": false,
+    "accepted": false
+  }
+}

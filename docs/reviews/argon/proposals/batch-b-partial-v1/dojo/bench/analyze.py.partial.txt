@@ -1,0 +1,148 @@
+"""WP9: Standalone offline JSON-file analysis command (`python -m dojo.bench.analyze`)."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from collections.abc import Sequence
+from fractions import Fraction
+from pathlib import Path
+
+from dojo.bench.records import (
+    MAX_INPUT_BYTES,
+    AnalysisInputError,
+    parse_analysis_json,
+)
+from dojo.bench.report import (
+    build_analysis_report,
+    serialize_report_json,
+)
+from dojo.bench.stats import DEFAULT_BOOTSTRAP_REPLICATES
+from dojo.cascade.policies import (
+    FrozenPolicySelection,
+    ObservablePolicy,
+    parse_candidate_policy_list,
+    parse_frozen_policy_selection,
+    parse_policy_json,
+)
+
+EXIT_OK: int = 0
+EXIT_ERROR: int = 1
+EXIT_BLOCKED: int = 2
+
+__all__ = [
+    "EXIT_BLOCKED",
+    "EXIT_ERROR",
+    "EXIT_OK",
+    "build_arg_parser",
+    "main",
+]
+
+
+class _SafeArgumentParser(argparse.ArgumentParser):
+    def error(self, message: str) -> None:
+        raise AnalysisInputError(f"CLI argument error: {message}")
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = _SafeArgumentParser(
+        prog="python -m dojo.bench.analyze",
+        description="Standalone offline Dojo benchmark and cold-restart cascade analyzer.",
+    )
+    parser.add_argument(
+        "--input",
+        required=True,
+        help="Path to normalized input panel JSON file (<= 1 MiB).",
+    )
+    parser.add_argument(
+        "--output",
+        required=True,
+        help="Path to output JSON report file (must not already exist).",
+    )
+    parser.add_argument(
+        "--bootstrap-replicates",
+        type=int,
+        default=DEFAULT_BOOTSTRAP_REPLICATES,
+        help="Number of paired task bootstrap replicates (1..100000, default: 10000).",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=17,
+        help="Local RNG seed for bootstrap resampling (default: 17).",
+    )
+    parser.add_argument(
+        "--confidence-level",
+        type=str,
+        default="0.95",
+        help="Bootstrap confidence level in (0, 1) (default: 0.95).",
+    )
+    parser.add_argument(
+        "--policy-file",
+        default=None,
+        help="Optional path to a single observable policy JSON document.",
+    )
+    parser.add_argument(
+        "--candidate-policies-file",
+        default=None,
+        help="Optional path to candidate policies JSON file for train-only selection.",
+    )
+    parser.add_argument(
+        "--min-success-floor",
+        default=None,
+        help="Required minimum pass@1 floor (e.g., '3/4' or '0.75') when selecting on train.",
+    )
+    parser.add_argument(
+        "--frozen-policy-file",
+        default=None,
+        help="Optional path to a saved FrozenPolicySelection JSON file for held-out evaluation.",
+    )
+    parser.add_argument(
+        "--base-config",
+        default="A",
+        help="Base configuration ID for cascade routing (default: A).",
+    )
+    parser.add_argument(
+        "--escalate-config",
+        default="B",
+        help="Escalation configuration ID for cascade routing (default: B).",
+    )
+    parser.add_argument(
+        "--no-family-sensitivity",
+        action="store_true",
+        help="Disable optional family-cluster bootstrap sensitivity.",
+    )
+    parser.add_argument(
+        "--no-seed-sensitivity",
+        action="store_true",
+        help="Disable optional seed-position/subset sensitivity.",
+    )
+    parser.add_argument(
+        "--allow-success-only",
+        action="store_true",
+        help="Allow success-only summary when cost_nano_usd is missing (never emits cost frontiers).",
+    )
+    parser.add_argument(
+        "--write-blocked-report",
+        action="store_true",
+        help="Write a structured blocked audit report when panel audit is blocked (still exits nonzero).",
+    )
+    return parser
+
+
+def _read_bounded_file(path_str: str, label: str) -> bytes:
+    path = Path(path_str)
+    try:
+        st = path.stat()
+    except OSError as exc:
+        raise AnalysisInputError(f"Cannot access {label} file") from exc
+    if not path.is_file():
+        raise AnalysisInputError(f"{label} path is not a regular file")
+    if st.st_size > MAX_INPUT_BYTES:
+        raise AnalysisInputError(
+            f"{label} file size ({st.st_size} bytes) exceeds maximum of {MAX_INPUT_BYTES} bytes"
+        )
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        raise AnalysisInputError(f

@@ -25,11 +25,22 @@ each numbered part. Do not replace code with a PDF or screenshot.
 - `statistics-batch-b-assignment-v1.md`: remaining five tasks and preparation
   conditions. **Not yet a self-contained implementation packet.**
 
-After Batch A is saved, the primary reads/extracts and reviews it, runs appropriate
-checks, and fixes accepted defects before integration. Then it generates
-`statistics-batch-b-packet-v1.md` here with that actual reviewed code/API, complete
-fixtures and final instructions. Share that future packet with Argon for Batch B;
-do not send the scope document alone and make it guess missing interfaces.
+Batch A was reviewed in statistics-review-assessment-v1.md: useful code, supplied
+tests 21 pass/1 wrong CI expectation fails, ten independent defects reproduced.
+The primary owns repairs and has not installed the proposal into the application.
+
+The owner saved a genuine interrupted B response as
+`Batch B Delivery Manifest & WP6–WP1_NOTCOMPLETE.txt`. Recovered WP6/WP7/WP8
+sources are syntactically complete; CLI is cut off and tests/docs are missing.
+All are still proposals. The earlier escaped-A file named B was removed by the
+owner; historical extraction metadata is retained without restoring that file.
+
+Share only **statistics-b-continuation-packet-v1.md** now. It includes the actual
+reference code/API plus review caveats and requests TWO remaining groups:
+complete CLI (WP9) and missing tests/docs (WP10). Do not ask for Batch A again,
+rebuild WP6-WP8 by default or treat the reference foundation as already passing.
+Save the complete new response as `statistics-b-continuation-feedback-v1.txt`.
+The primary reviews and joins both streams before any accepted integration.
 
 Original assignments stay at their existing paths so previous links and shared
 snapshots remain valid. No files are moved or overwritten. Agent 2's originals

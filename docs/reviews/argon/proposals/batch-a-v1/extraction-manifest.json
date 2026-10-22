@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "path": "docs/reviews/argon/statistics-batch-a.txt",
+      "bytes": 170310,
+      "sha256": "41e96e93a39bd48c87610a97f8f008a8492a348c8f52352eabd9ed8f6d896614"
+    },
+    {
+      "path": "docs/reviews/argon/statistics-batch-b-response.md",
+      "bytes": 202431,
+      "sha256": "6b042df2bd22e42d6cbbdcea9f461c17cf615b7ac594a48afa88fbb99368d2c7"
+    }
+  ],
+  "batch_a_files": [
+    {
+      "path": "dojo/bench/records.py",
+      "heading_line": 81,
+      "bytes": 44428,
+      "sha256": "fee05908ec3a76fe05ce48cde7c85ec5a548522027eb8055fc78b30912a9edfb",
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "dojo.solve.signals",
+        "fractions",
+        "hashlib",
+        "json",
+        "math",
+        "re",
+        "typing"
+      ]
+    },
+    {
+      "path": "dojo/bench/stats.py",
+      "heading_line": 1273,
+      "bytes": 52217,
+      "sha256": "1b50f535072280c7688768a5b2c0f3891f70dda5b2d198527eeb98b537eda645",
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "dojo.bench.records",
+        "fractions",
+        "math",
+        "random",
+        "typing"
+      ]
+    },
+    {
+      "path": "dojo/bench/frontier.py",
+      "heading_line": 2645,
+      "bytes": 9482,
+      "sha256": "9a1c6f1ce684b4e75d9f3f20ee768ac0362f8d224b639d3b61c5077743c827d4",
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "dojo.bench.records",
+        "dojo.bench.stats",
+        "fractions",
+        "typing"
+      ]
+    },
+    {
+      "path": "tests/fixtures/analysis/valid_panel.json",
+      "heading_line": 2917,
+      "bytes": 5689,
+      "sha256": "1976193a4977645cac3aeb8b76e6e22adb32b41e47d4af6ccb0512b9a694b7f2",
+      "imports": []
+    },
+    {
+      "path": "tests/fixtures/analysis/unequal_seed_panel.json",
+      "heading_line": 3132,
+      "bytes": 2287,
+      "sha256": "fd4ec30e56e4dc3b945134d513e2206b8495723a41bdea8a6e51cf7605ebe3f0",
+      "imports": []
+    },
+    {
+      "path": "tests/fixtures/analysis/invalid_panel.json",
+      "heading_line": 3230,
+      "bytes": 5686,
+      "sha256": "28b38b7c8b2a9f9d3f7df839e7f5e197bc4ab862225fb95b3cc8cf29d7e48ff2",
+      "imports": []
+    },
+    {
+      "path": "tests/test_analysis_records.py",
+      "heading_line": 3445,
+      "bytes": 8224,
+      "sha256": "d850f29e31c3e2a6aff1da751f8c569adbda056ce33f5d36344058f8f88b7787",
+      "imports": [
+        "__future__",
+        "copy",
+        "dojo.bench.records",
+        "fractions",
+        "json",
+        "pathlib",
+        "pytest"
+      ]
+    },
+    {
+      "path": "tests/test_statistics.py",
+      "heading_line": 3666,
+      "bytes": 12890,
+      "sha256": "41d0a83eb1cb9570f9688fe83c181a362843e99312d61497968a5ded0756f04b",
+      "imports": [
+        "__future__",
+        "copy",
+        "dojo.bench.frontier",
+        "dojo.bench.records",
+        "dojo.bench.stats",
+        "fractions",
+        "json",
+        "pathlib",
+        "pytest",
+        "random"
+      ]
+    },
+    {
+      "path": "docs/analysis-foundation-methods.md",
+      "heading_line": 3969,
+      "bytes": 9971,
+      "sha256": "f9f23952fbf3beef633d4a1faf2dcf1cea2fee1ee9ab192197af5bdb13f76875",
+      "imports": []
+    },
+    {
+      "path": "docs/analysis-foundation-api.md",
+      "heading_line": 4087,
+      "bytes": 7644,
+      "sha256": "b1544e2d48c01700cd3298c9c2d81afc8a606d4ef0214a87834f9e2b7ee77c33",
+      "imports": []
+    }
+  ],
+  "batch_b_decoded_heading_paths": [
+    "dojo/bench/records.py",
+    "dojo/bench/stats.py",
+    "dojo/bench/frontier.py",
+    "tests/fixtures/analysis/valid_panel.json",
+    "tests/fixtures/analysis/unequal_seed_panel.json",
+    "tests/fixtures/analysis/invalid_panel.json",
+    "tests/test_analysis_records.py",
+    "tests/test_statistics.py",
+    "docs/analysis-foundation-methods.md",
+    "docs/analysis-foundation-api.md"
+  ],
+  "batch_b_ends_in_batch_a_marker": true,
+  "installed_to_application": false,
+  "execution_performed": false
+}

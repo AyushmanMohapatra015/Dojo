@@ -17,9 +17,13 @@ V1/v2 remain preserved historical snapshots; do not request all ten together.
 Agent 1 is named Argon. Return Batch A as
 docs/reviews/argon/statistics-batch-a-feedback-v1.txt. Existing assignment paths
 remain valid; verified copies and instructions are under docs/reviews/argon/.
-After primary review, build Batch B (original WPs 6-10) with the actual reviewed
-Batch A source/API attached. Do not send Batch B early or guess its imports.
-This retains every original task while limiting active implementation to five.
+Intake review found Batch A defects (primary now owns 9g4b fixes). The owner
+supplied a genuine interrupted Batch B with three source modules, cut-off CLI
+and no tests/docs. Active handoff is now
+docs/reviews/argon/statistics-b-continuation-packet-v1.md: only complete CLI and
+missing tests/docs, with actual reference sources and explicit known defects.
+Return statistics-b-continuation-feedback-v1.txt in Argon's folder. Preserve
+public signatures; don't ask Argon to duplicate Batch A or rewrite B by default.
 Do not ask both agents to implement the same mutable modules in parallel.
 
 ## Agent 2: two independent document tasks (13j, 14k, 14l)
@@ -78,11 +82,11 @@ Agent 2's actual reviewed source; don't send both agents concurrent UI edits.
 
 Paste with the new attachment:
 
-> Replace the earlier ten-task request with this Batch A packet. Read through
-> END OF REVIEW PACKET and complete ONLY WP1-WP5 with every named source, test,
-> fixture and API/method document. Preserve useful existing work; do not implement
-> policies/cascades/report/CLI yet. Use the supplied boundaries and exact math,
-> mark unexecuted checks honestly and finish with END OF BATCH A DELIVERY.
+> Continue from the attached B continuation packet. Finish only Task 1 (complete
+> CLI) and Task 2 (three tests and two docs). Reuse the recovered WP6-WP8 code;
+> do not repeat Batch A. Respect known foundation defects and distinguish delivery
+> from acceptance. Return complete files in manageable parts and finish with
+> END OF B CONTINUATION DELIVERY.
 
 ## Previous cache assignment (historical instructions)
 
