@@ -1,5 +1,16 @@
 # Learning log
 
+## External cache review and tasks 5a/5b - implementation observation
+
+An executable proposal can save substantial work while still missing cases its
+own tests do not cover. Decimal.normalize uses mutable context precision, which
+can unexpectedly change cache keys. A schema check must verify indexes and DDL,
+not just table names. A cost object needs a binding to actual usage/prices; a
+nonempty registration string cannot establish preregistration. We reused the
+identity implementation after reproducing and fixing defects, rather than
+accepting or discarding the proposal as a whole. These implementation notes
+do not replace the owner's required written exercises.
+
 ## Tasks 4h/4i - implementation observation
 
 A model adapter needs a contract for requests, usage and failures, not just a

@@ -1,0 +1,53 @@
+{
+  "proposal_source": "cache-accounting-feedback-v2.txt",
+  "application_modules_replaced": false,
+  "provider_calls": 0,
+  "exit_code": 0,
+  "reports": [
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/regressions.py::test_reproduces_identity_changes_with_decimal_context",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/regressions.py::test_reproduces_newline_accepted_in_digest",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/regressions.py::test_reproduces_schema_index_drift_not_detected",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/regressions.py::test_reproduces_partial_initialization_on_sql_failure",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/regressions.py::test_reproduces_understated_cost_accepted",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/regressions.py::test_reproduces_fake_registration_and_ledger_marked_publishable",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/regressions.py::test_reproduces_corrupt_failed_outcome_exported_as_solved",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/regressions.py::test_reproduces_impossible_runtime_counts_accepted",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/regressions.py::test_reproduces_strict_parser_accepts_overflow_and_escaped_surrogate",
+      "phase": "call",
+      "outcome": "passed"
+    }
+  ]
+}

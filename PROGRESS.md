@@ -1,5 +1,35 @@
 # Progress
 
+Updated: 2026-10-22 (external cache proposal reviewed; 5a/5b verified)
+
+## Tasks 13f2 / 5a / 5b: reviewed external reuse - 2026-10-22
+
+- Read complete cache-accounting-feedback-v2.txt: narrative plus 1,133/1,438/994
+  lines of supplied schema/DB/test code, usage and integration checklist. Preserved
+  raw response/source hashes, extracted proposal and prior primary schema work.
+- Statically reviewed and ran supplied code only in a separate process with
+  temporary synthetic databases. Original tests: 39 passed, one undefined
+  validate_nanos test import failed. Nine independent defect reproductions;
+  these confirm defects and are explicitly not acceptance tests.
+- Assessment records Decimal-context-dependent keys, loose hash regex, strict
+  JSON gaps, unverified schema indexes, non-atomic initialization, unbound cost
+  valuation, weak publishability evidence, corrupt outcome export and inconsistent
+  metrics. These are proposal-code findings, not established service defects.
+- Reused identity types/helpers and relevant supplied tests in separate identity.py;
+  corrected deterministic serialization, full hash matching, JSON finite/Unicode/
+  nesting checks, numeric overflow and registration-digest validation. Added
+  independent regressions: 61 identity tests. No money/provider/publication API
+  adopted from the proposal. Full record: docs/reviews/cache-review-assessment-v2.md.
+- Retained primary 7-table schema/init safeguards, validated with 46 real temporary
+  SQLite tests. No persistent project run/spend database was created. Immutable
+  prior review packets, construction sources and datasets are preserved.
+- Application full suite: 774 passed in 38.12 seconds; Ruff, lock and diff checks
+  passed. No model/provider calls, no spending, no staging/commit/push.
+- Next 5c: reuse reviewed claim/transaction/intent ideas with fixes on retained
+  schema, then 5d/5f verified artifacts/costs/registration. Live financial gates,
+  Stage B, threat-model sign-off and owner learning remain pending. This does
+  not mark the entire external cache/coordinator or all 5a-5f work complete.
+
 ## Task 13h2: implementation-ready external context - 2026-10-21
 
 - Owner requested complete upfront context rather than relying on web-agent

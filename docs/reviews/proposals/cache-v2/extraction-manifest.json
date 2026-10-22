@@ -1,0 +1,65 @@
+{
+  "source": "docs\\reviews\\cache-accounting-feedback-v2.txt",
+  "source_sha256": "d40e3a0a800fe1facc894064723aad4fdeb3d2244d3831c16c04794f66a47106",
+  "files": {
+    "dojo/store/schemas.py": {
+      "extracted": "docs\\reviews\\proposals\\cache-v2\\schemas.py",
+      "sha256": "cb38684e84ac2b2c5bba78e0eeba16f48f09a170a7f29cfc25db788dd15d9d1b",
+      "lines": 1133,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "datetime",
+        "decimal",
+        "hashlib",
+        "json",
+        "math",
+        "re",
+        "typing"
+      ]
+    },
+    "dojo/store/db.py": {
+      "extracted": "docs\\reviews\\proposals\\cache-v2\\db.py",
+      "sha256": "74ad2847dbc5c49e19ee6f6e3c496144f3cb06ca2fb0a43bafa884c2a64671d3",
+      "lines": 1438,
+      "imports": [
+        "__future__",
+        "contextlib",
+        "dataclasses",
+        "datetime",
+        "dojo.store.schemas",
+        "pathlib",
+        "sqlite3",
+        "typing",
+        "uuid"
+      ]
+    },
+    "tests/test_run_cache.py": {
+      "extracted": "docs/reviews/proposals/cache-v2/supplied_tests.py",
+      "sha256": "2cb74581de39427d2bace30bf149990efdbdd214ccb37122e23f0b68db157334",
+      "lines": 994,
+      "imports": [
+        "__future__",
+        "concurrent.futures",
+        "dataclasses",
+        "datetime",
+        "decimal",
+        "dojo.store.credits",
+        "dojo.store.db",
+        "dojo.store.schemas",
+        "hashlib",
+        "json",
+        "pathlib",
+        "pytest",
+        "sqlite3",
+        "threading"
+      ]
+    }
+  },
+  "execution_status": "not executed; AST parsed only",
+  "review_execution_evidence": [
+    "raw-tests.json",
+    "review-regressions.json"
+  ],
+  "archive_note": "Archived test files use non-discovery names; execute only with run_isolated.py"
+}

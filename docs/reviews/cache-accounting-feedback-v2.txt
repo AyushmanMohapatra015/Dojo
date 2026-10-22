@@ -1,0 +1,3843 @@
+1. Architecture, Key Decisions, and Scope Mapping
+This implementation delivers the complete standard-library SQLite cache and identity foundation in dojo/store/schemas.py and dojo/store/db.py, paired with a comprehensive offline test suite in tests/test_run_cache.py. All code below is UNEXECUTED in this review workspace and designed for direct drop-in verification in the primary environment.
+Scope Mapping (ACTION_PLAN.md 5a–5f & 6b–6d)
+
+Task ID
+Scope Delivered in Code (schemas.py, db.py, test_run_cache.py)
+Remaining Integration Scope (Design Provided Below)
+5a
+SQLite schema v1 (cache_meta, solver_identities, solver_runs, score_identities, score_runs, cost_valuations) with orthogonal state columns (execution_state, candidate_outcome, evidence_validity) and append-only attempt history (attempt_id).
+Wiring CLI/explorer readers to query RunCache.
+5b
+Strict domain-separated canonical JSON hashing (dojo-solver-identity-v1 and dojo-scoring-identity-v1) covering task, source/issue/protocol hashes, model ID + approved endpoint, sampling, thinking, limits, context, prompts/policies, explicit disabled docsearch, explicit empty bundle hash, visible selectors, and image/harness digests.
+Populating SolverIdentity from RunSettings + prepare_task_environment in the runner.
+5c
+Atomic cross-connection/process claims (BEGIN IMMEDIATE), UUID ownership token fencing, deterministic duplicate resolution, pre-dispatch vs. post-dispatch crash rules, never-automatic replay after dispatch/lease expiry, and whitelist-only summary export.
+Live coordinator loop calling the cache/ledger handshake.
+5d
+Bounded SQLite-contained artifact storage (patch bytes + SHA-256, truncated private trajectory JSON, observable signals, separate synthetic vs. provider token counters, 1e-9 integer USD nanos, immutable historical cost valuation records, and separate evaluator score table).
+Passing SimulationResult and CandidateScore from bench into RunCache.
+5e
+Explicit error hierarchy (CacheError, CacheBusyError, CacheSchemaError, CacheOwnershipError, CacheStateError, CacheCorruptionError, CacheBlockedError) ready for CLI exit-code mapping.
+CLI dojo bench, dojo cost, and dojo report commands in dojo/cli.py.
+5f
+Denominator and outcome enforcement: visible pass or finish never sets solved; only valid evaluator passed sets solved; failed and baseline-verified candidate_error set unsolved; invalid_evidence and scorer_exception stay undetermined and block publishable aggregation; synthetic namespace is permanently blocked from registered export.
+Stage B registration manifest binding (registration_id).
+6b–6d
+Durable pre-reserve pending_reservation_intent marker and reservation_id association on solver_runs; detection of unlinked/unfinished CreditLedger reservations blocking new live claims; immutable revaluation history (cost_valuations).
+Host coordinator calling CreditLedger.reserve_run, check_run, and finish_run around transport.
+
+Key Technical Decisions
+Solver vs. Scoring Key Separation & Deliberate Inclusions/Exclusions:
+SolverIdentity (dojo-solver-identity-v1) includes every parameter that can influence agent behavior or runtime termination: namespace (synthetic vs. live), task_id, source_archive_sha256, issue_sha256, input_protocol_sha256, model_id, api_base, sampling (temperature, top_p, seed), thinking (enabled, budget, force_nonempty_content), limits (max_steps, observation_chars, command_timeout_seconds, wall_seconds, token_ceiling, reply_tokens), context_tokens, scaffold_sha256, system_prompt_sha256, action_policy_sha256, tool_policy_sha256, docsearch (enabled, policy_sha256), bundle_sha256, visible_selectors_sha256, solver_image_id, and solver_harness_sha256.
+Deliberate Exclusions from SolverIdentity: Provider alias (nano, super), Git commit SHA alone, evaluator metadata, and token pricing (input_usd_per_million, output_usd_per_million) are excluded. Alias is a local config shorthand; pricing changes affect accounting valuation (CostValuation), not the generated patch.
+ScoringIdentity (dojo-scoring-identity-v1) binds solver_key + candidate_patch_sha256 (exact bytes digest) to evaluator provenance (evaluator_version, evaluator_source_sha256, contract_sha256, restoration_policy_sha256, collector_protocol, collector_sha256, scoring_image_id, scoring_harness_sha256, expectation_sha256, baseline_policy_sha256, and registration_id). Changing evaluator policy invalidates scoring_key while keeping completed solver artifacts reusable for offline rescoring.
+Strict Type & Float Canonicalization (Zero Collision / No Silent Coercion):
+Rejects bool where int or float is expected (type(v) is int), rejects NaN/Infinity, forbids missing or unknown dictionary keys on both input and stored JSON deserialization, and normalizes finite floats in SamplingSpec and LimitsSpec via Decimal(str(float(v))).normalize() formatted as a canonical fixed/scientific string (_canonical_number_str) so 1 and 1.0 serialize identically without float/Decimal/string collisions.
+Archive and patch identities are SHA-256 digests of raw bytes—never line-ending normalized as text.
+Retained History & Orthogonal State Dimensions:
+Every claim creates a new row in solver_runs (attempt_id), preserving all failed, aborted, or interrupted attempts. At most one attempt per (namespace, solver_key) may be in an active (claimed, dispatched) or reusable (completed) terminal state unless explicitly superseded only from a pre-dispatch aborted_pre_dispatch state.
+Outcomes are tracked across three separate dimensions:
+execution_state: claimed, dispatched, completed, aborted_pre_dispatch, blocked_uncertain.
+candidate_outcome (derived strictly from valid scoring, never from solver self-report): not_scored, solved, unsolved, undetermined.
+evidence_validity: pending, valid, invalid_evidence, infrastructure_error.
+SQLite Concurrency, Locking & Fixed Bounds:
+Uses sqlite3.connect("...?mode=rw", uri=True, timeout=0) with BEGIN IMMEDIATE transactions, PRAGMA foreign_keys=ON, and PRAGMA synchronous=FULL (using default rollback journal mode DELETE for deterministic single-file semantics on local Windows filesystems without multi-file WAL checkpoint ambiguity).
+Fixed bounds: MAX_PATCH_BYTES = 262_144 (256 KiB), MAX_TRAJECTORY_BYTES = 524_288 (512 KiB), MAX_JSON_BYTES = 65_536 (64 KiB), MAX_STRING_CHARS = 4_096, MAX_ID_CHARS = 256, MAX_REASON_CHARS = 512, MAX_MONEY_NANOS = 2**63 - 1.
+2. State-Transition / Ownership Table and Cache / Ledger Crash Matrix
+Solver Run State-Transition & Ownership Table
+
+Current execution_state
+Operation
+Required Guards (Enforced in SQL Transaction)
+Next execution_state
+Replay / Rerun Eligibility
+(no active/completed/blocked row)
+claim_solver_run
+No row for (namespace, solver_key) in ('claimed', 'dispatched', 'completed', 'blocked_uncertain'); for namespace='live', no row globally has reservation_state='intent_pending' or unfinished ledger state.
+claimed
+Owning caller holds owner_token and active lease.
+claimed (or dispatched / completed / blocked_uncertain)
+claim_solver_run (duplicate)
+Existing row found for (namespace, solver_key).
+(unchanged)
+Returns ClaimOutcome(status='reused_completed' | 'already_claimed' | 'blocked_uncertain', acquired=False, owner_token=None). Loser never gets owner_token. Even if lease_expires_at <= now, claim_solver_run never auto-takes over.
+claimed
+begin_reservation_intent (live only)
+Matching attempt_id, owner_token, lease_expires_at > now, dispatched=0, reservation_state='none'.
+claimed (reservation_state='intent_pending')
+If crash occurs before bind_reservation, next live run is blocked until operator reconciles.
+claimed (intent_pending)
+bind_reservation (live only)
+Matching attempt_id, owner_token, lease_expires_at > now, reservation_state='intent_pending'.
+claimed (reservation_state='reserved', reservation_id set)
+Ready for mark_dispatched.
+claimed
+abort_before_dispatch
+Matching attempt_id, owner_token, dispatched=0, reservation_state='none'.
+aborted_pre_dispatch
+Eligible for a future claim_solver_run because no reservation or network request occurred.
+claimed
+mark_dispatched
+Matching attempt_id, owner_token, lease_expires_at > now, dispatched=0, and (namespace='synthetic' or reservation_state='reserved').
+dispatched (dispatched=1)
+Irreversible. Once dispatched=1, abort_before_dispatch is forbidden; lease expiry never authorizes automatic rerun.
+claimed (synthetic) or dispatched
+complete_solver_run
+Matching attempt_id, owner_token, lease_expires_at > now, validated artifact & usage.
+completed
+Artifact is durable and reusable (reused_completed); candidate_outcome remains not_scored until scored.
+claimed or dispatched
+fail_or_block_solver_run
+Matching attempt_id, owner_token (or explicit fence_expired_claim when lease_expires_at <= now).
+blocked_uncertain (evidence_validity='infrastructure_error')
+Blocked. Prevents automatic live replay and blocks publishable aggregation.
+
+Ordered Cache / CreditLedger Handshake & Crash-Point Matrix (ACTION_PLAN 5c / 6b–6d)
+Because CreditLedger.reserve_run(amount_usd) generates its own uuid4().hex internally, allows at most one state != 'completed' reservation globally, and cannot atomically commit across two SQLite files, the coordinator must execute this exact 6-step handshake:
+Step 1 (Pre-flight Ledger Check): Call ledger.status(now=now) and verify can_reserve is True and unfinished_runs == 0.
+Step 2 (Cache Claim + Intent Marker): Call cache.claim_solver_run(...) followed by cache.begin_reservation_intent(attempt_id, owner_token, planned_usd=..., now=now).
+Step 3 (Ledger Reservation): Call res_id = ledger.reserve_run(planned_usd, now=now).
+Step 4 (Cache Bind Reservation + Dispatch Marker): Call cache.bind_reservation(attempt_id, owner_token, reservation_id=res_id, now=now) and cache.mark_dispatched(attempt_id, owner_token, now=now) immediately before the first network request.
+Step 5 (Per-Request Check + Model Execution + Cache Artifact Commit): Before each request call ledger.check_run(res_id, now=now); on completion call cache.complete_solver_run(...) (or cache.fail_or_block_solver_run(...) on error/unknown usage).
+Step 6 (Ledger Finalization): Call ledger.finish_run(res_id, actual_cost_usd_or_none) and then cache.mark_reservation_finalized(attempt_id, owner_token, ledger_state=..., now=now).
+
+Crash Point
+Cache State on Disk
+CreditLedger State on Disk
+Behavior on Reopen / Next Run
+Financial & Replay Safety
+C1: Before Step 2 commits
+No row
+unfinished_runs = 0
+Clean state; can claim normally.
+$0 reserved, 0 calls sent.
+C2: After Step 2 (intent_pending), before Step 3 (reserve_run) commits
+execution_state='claimed', reservation_state='intent_pending', reservation_id=NULL, dispatched=0
+unfinished_runs = 0
+cache.check_live_handshake_ready(ledger_status) sees intent_pending with no active ledger reservation and blocks until explicit pre-dispatch abort/reconciliation.
+$0 reserved, 0 calls sent; no silent duplicate claim.
+C3: After Step 3 (reserve_run committed), before Step 4 (bind_reservation) commits
+execution_state='claimed', reservation_state='intent_pending', reservation_id=NULL, dispatched=0
+1 'pending' reservation (id=R), can_reserve=False
+Both ledger.reserve_run (CreditError: unfinished) and cache.check_live_handshake_ready (CacheBlockedError: orphan reservation) refuse any new run.
+Reservation R is preserved (never refunded); 0 calls sent; all future live runs blocked.
+C4: After Step 4 (mark_dispatched committed), during/after network call before Step 5
+execution_state='dispatched', reservation_state='reserved', reservation_id=R, dispatched=1
+1 'pending' reservation (id=R), can_reserve=False
+Lease expiry does not allow replay; fence_expired_claim transitions run to blocked_uncertain; ledger remains 'pending' (can_reserve=False).
+Remote call may have occurred; automatic rerun and refund are strictly blocked.
+C5: After Step 5 (complete_solver_run committed), before Step 6 (ledger.finish_run)
+execution_state='completed', reservation_state='reserved', reservation_id=R, actual_cost_nanos recorded
+1 'pending' reservation (id=R), can_reserve=False
+Artifact is durably cached for offline reading/scoring, while live calls stay blocked because reservation_state != 'finalized' and ledger has 'pending' row R.
+Artifact preserved; no second reservation possible.
+C6: After Step 6 (ledger.finish_run with unknown/excess usage)
+execution_state='blocked_uncertain', reservation_state='finalized_uncertain'
+reservations.state='uncertain', policy.blocked=1
+Permanently blocked in both cache and ledger.
+Full stop on unknown/excess spend.
+
+3. Complete Replacement Source Files (UNEXECUTED)
+dojo/store/schemas.py
+
+
+
+Python
+"""Strict versioned cache schemas, canonical hashing, and bounded evidence records.
+
+UNEXECUTED proposal for review/testing in primary workspace.
+Uses only Python's standard library. No scorer, Docker, CLI, provider, YAML, or
+CreditLedger side effects.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import re
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from decimal import ROUND_CEILING, Decimal, InvalidOperation
+from typing import Any
+
+SCHEMA_VERSION = 1
+SOLVER_IDENTITY_DOMAIN = "dojo-solver-identity-v1"
+SCORING_IDENTITY_DOMAIN = "dojo-scoring-identity-v1"
+VALUATION_IDENTITY_DOMAIN = "dojo-cost-valuation-v1"
+
+APPROVED_API_BASES = frozenset({
+    "https://api.tokenfactory.nebius.com/v1/",
+    "https://api.tokenfactory.us-central1.nebius.com/v1/",
+})
+
+VALID_NAMESPACES = frozenset({"synthetic", "live"})
+VALID_ACCOUNTING_MODES = frozenset({"synthetic", "provider", "unknown"})
+VALID_EXECUTION_STATES = frozenset({
+    "claimed",
+    "dispatched",
+    "completed",
+    "aborted_pre_dispatch",
+    "blocked_uncertain",
+})
+VALID_CANDIDATE_OUTCOMES = frozenset({
+    "not_scored",
+    "solved",
+    "unsolved",
+    "undetermined",
+})
+VALID_EVIDENCE_VALIDITIES = frozenset({
+    "pending",
+    "valid",
+    "invalid_evidence",
+    "infrastructure_error",
+})
+VALID_RESERVATION_STATES = frozenset({
+    "none",
+    "intent_pending",
+    "reserved",
+    "finalized_completed",
+    "finalized_uncertain",
+})
+VALID_SCORER_STATUSES = frozenset({
+    "passed",
+    "failed",
+    "candidate_error",
+    "invalid_evidence",
+    "scorer_exception",
+})
+VALID_COLLECTOR_PROTOCOLS = frozenset({"legacy-v1", "method-subtests-v2"})
+
+# Fixed storage bounds to prevent unbounded writes or memory exhaustion
+MAX_ID_CHARS = 256
+MAX_REASON_CHARS = 512
+MAX_STRING_CHARS = 4_096
+MAX_JSON_BYTES = 65_536
+MAX_PATCH_BYTES = 262_144
+MAX_TRAJECTORY_BYTES = 524_288
+MAX_TRAJECTORY_EVENTS = 200
+MAX_MONEY_NANOS = 2**63 - 1
+USD_NANO_SCALE = Decimal(1_000_000_000)
+
+_HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
+_IMAGE_ID_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+
+
+class CacheError(ValueError):
+    """Base error for cache validation, schema, state, or storage failures."""
+
+
+class CacheValidationError(CacheError):
+    """Raised when identity, usage, money, or artifact fields fail validation."""
+
+
+def ensure_utc_timestamp(value: datetime | str) -> str:
+    """Validate an explicit-timezone datetime or ISO-8601 string and normalize to UTC ISO."""
+    if isinstance(value, str):
+        if not value or len(value) > 64:
+            raise CacheValidationError("Invalid timestamp string length")
+        try:
+            parsed = datetime.fromisoformat(value)
+        except ValueError as exc:
+            raise CacheValidationError("Malformed ISO-8601 timestamp") from exc
+    elif isinstance(value, datetime):
+        parsed = value
+    else:
+        raise CacheValidationError("Timestamp must be a datetime or ISO-8601 string")
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise CacheValidationError("Timestamp must include an explicit timezone")
+    return parsed.astimezone(UTC).isoformat()
+
+
+def parse_utc_timestamp(value: str) -> datetime:
+    """Parse a stored UTC ISO-8601 string back into an aware datetime."""
+    if not isinstance(value, str):
+        raise CacheValidationError("Stored timestamp must be a string")
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise CacheValidationError("Stored timestamp is malformed") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise CacheValidationError("Stored timestamp lacks timezone")
+    return parsed.astimezone(UTC)
+
+
+def usd_to_nanos(
+    value: object,
+    *,
+    allow_zero: bool = False,
+    rounding: str = ROUND_CEILING,
+) -> int:
+    """Convert a finite USD value to integer 1e-9 USD units with strict overflow checks."""
+    if isinstance(value, (bool, float)):
+        raise CacheValidationError("Monetary USD amounts must be Decimal, int, or exact string")
+    if not isinstance(value, (Decimal, int, str)):
+        raise CacheValidationError("Unsupported monetary USD type")
+    try:
+        amount = Decimal(str(value))
+        if not amount.is_finite() or amount < 0 or (amount == 0 and not allow_zero):
+            raise CacheValidationError("Invalid monetary amount")
+        nanos = int((amount * USD_NANO_SCALE).to_integral_value(rounding=rounding))
+        if nanos > MAX_MONEY_NANOS or (nanos == 0 and not allow_zero):
+            raise CacheValidationError("Monetary amount out of bounds")
+        return nanos
+    except (InvalidOperation, OverflowError, TypeError, ValueError) as exc:
+        if isinstance(exc, CacheValidationError):
+            raise
+        raise CacheValidationError("Invalid monetary amount") from exc
+
+
+def validate_nanos(value: object, *, allow_zero: bool = True, allow_none: bool = True) -> int | None:
+    """Validate an already-scaled integer 1e-9 USD nano amount."""
+    if value is None:
+        if allow_none:
+            return None
+        raise CacheValidationError("Monetary nanos cannot be None")
+    if type(value) is not int:
+        raise CacheValidationError("Monetary nanos must be an exact int")
+    if value < 0 or (value == 0 and not allow_zero) or value > MAX_MONEY_NANOS:
+        raise CacheValidationError("Monetary nanos out of range")
+    return value
+
+
+def nanos_to_usd_str(nanos: int | None) -> str | None:
+    """Format integer 1e-9 USD units as a canonical decimal string without float loss."""
+    if nanos is None:
+        return None
+    validate_nanos(nanos, allow_zero=True, allow_none=False)
+    text = format(Decimal(nanos) / USD_NANO_SCALE, "f")
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text or "0"
+
+
+def sha256_bytes(data: bytes) -> str:
+    """Hash raw bytes without text encoding or newline normalization."""
+    if type(data) is not bytes:
+        raise CacheValidationError("Expected exact bytes for binary digest")
+    return hashlib.sha256(data).hexdigest()
+
+
+def _require_exact_keys(mapping: Any, required: set[str], context: str) -> dict[str, Any]:
+    if type(mapping) is not dict:
+        raise CacheValidationError(f"{context} must be a dict")
+    actual = set(mapping.keys())
+    if actual != required:
+        missing = sorted(required - actual)
+        extra = sorted(actual - required)
+        raise CacheValidationError(
+            f"{context} key mismatch (missing={missing}, extra={extra})"
+        )
+    return mapping
+
+
+def _require_nonempty_str(value: Any, name: str, *, max_len: int = MAX_ID_CHARS) -> str:
+    if type(value) is not str or not value or not value.strip():
+        raise CacheValidationError(f"{name} must be a non-empty string")
+    if len(value) > max_len or "\x00" in value:
+        raise CacheValidationError(f"{name} exceeds bounds or contains NUL")
+    try:
+        value.encode("utf-8", errors="strict")
+    except UnicodeEncodeError as exc:
+        raise CacheValidationError(f"{name} contains invalid Unicode surrogates") from exc
+    return value
+
+
+def _require_hex64(value: Any, name: str) -> str:
+    if type(value) is not str or not _HEX64_RE.match(value):
+        raise CacheValidationError(f"{name} must be a 64-char lowercase hex SHA-256")
+    return value
+
+
+def _require_image_id(value: Any, name: str) -> str:
+    if type(value) is not str or not _IMAGE_ID_RE.match(value):
+        raise CacheValidationError(f"{name} must be 'sha256:<64 lowercase hex>'")
+    return value
+
+
+def _require_int(value: Any, name: str, *, minimum: int, maximum: int) -> int:
+    if type(value) is not int or not (minimum <= value <= maximum):
+        raise CacheValidationError(f"{name} must be an int in [{minimum}, {maximum}]")
+    return value
+
+
+def _require_bool(value: Any, name: str) -> bool:
+    if type(value) is not bool:
+        raise CacheValidationError(f"{name} must be a bool")
+    return value
+
+
+def _require_finite_number(
+    value: Any,
+    name: str,
+    *,
+    minimum: float,
+    maximum: float,
+    strictly_positive: bool = False,
+) -> float:
+    if type(value) not in (int, float) or not math.isfinite(value):
+        raise CacheValidationError(f"{name} must be a finite int or float")
+    fval = float(value)
+    if fval < minimum or fval > maximum or (strictly_positive and fval <= 0.0):
+        raise CacheValidationError(f"{name} is out of allowed bounds")
+    return fval
+
+
+def _canonical_number_str(value: float) -> str:
+    """Convert a validated finite float to an unambiguous canonical decimal string."""
+    if type(value) is not float or not math.isfinite(value):
+        raise CacheValidationError("Expected validated finite float")
+    dec = Decimal(str(value)).normalize()
+    if dec == 0:
+        return "0"
+    text = format(dec, "f")
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text
+
+
+def _unique_json_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, val in pairs:
+        if type(key) is not str or "\x00" in key:
+            raise CacheValidationError("Invalid JSON key")
+        if key in result:
+            raise CacheValidationError(f"Duplicate JSON key: {key}")
+        result[key] = val
+    return result
+
+
+def strict_json_loads(raw: str | bytes, *, max_bytes: int = MAX_JSON_BYTES) -> Any:
+    """Parse JSON rejecting duplicate keys, NaN/Infinity, surrogates, and oversized payloads."""
+    if isinstance(raw, str):
+        try:
+            encoded = raw.encode("utf-8", errors="strict")
+        except UnicodeEncodeError as exc:
+            raise CacheValidationError("Invalid UTF-8 in JSON text") from exc
+    elif isinstance(raw, bytes):
+        encoded = raw
+    else:
+        raise CacheValidationError("JSON input must be str or bytes")
+    if len(encoded) > max_bytes:
+        raise CacheValidationError("JSON payload exceeds size bound")
+    try:
+        text = encoded.decode("utf-8", errors="strict")
+        return json.loads(
+            text,
+            object_pairs_hook=_unique_json_pairs,
+            parse_constant=lambda c: (_ for _ in ()).throw(
+                CacheValidationError(f"Forbidden JSON constant: {c}")
+            ),
+        )
+    except (ValueError, TypeError, RecursionError) as exc:
+        if isinstance(exc, CacheValidationError):
+            raise
+        raise CacheValidationError("Malformed JSON payload") from exc
+
+
+def canonical_json_bytes(payload: Any, *, max_bytes: int = MAX_JSON_BYTES) -> bytes:
+    """Serialize validated primitives into deterministic ASCII-safe canonical JSON bytes."""
+    def _check(node: Any) -> None:
+        if node is None or type(node) in (bool, int):
+            return
+        if type(node) is str:
+            if "\x00" in node:
+                raise CacheValidationError("NUL byte forbidden in canonical JSON string")
+            try:
+                node.encode("utf-8", errors="strict")
+            except UnicodeEncodeError as exc:
+                raise CacheValidationError("Surrogates forbidden in canonical JSON") from exc
+            return
+        if type(node) is list:
+            for item in node:
+                _check(item)
+            return
+        if type(node) is dict:
+            for k, v in node.items():
+                if type(k) is not str or "\x00" in k:
+                    raise CacheValidationError("Canonical JSON dict keys must be non-NUL strings")
+                _check(v)
+            return
+        # Raw floats/Decimals are forbidden in canonical identity trees; use _canonical_number_str
+        raise CacheValidationError(
+            f"Unsupported type in canonical JSON tree: {type(node).__name__}"
+        )
+
+    _check(payload)
+    raw = json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("ascii")
+    if len(raw) > max_bytes:
+        raise CacheValidationError("Canonical JSON exceeds maximum size bound")
+    return raw
+
+
+def domain_hash(domain: str, payload: dict[str, Any]) -> str:
+    """Compute a domain-separated SHA-256 hex digest over canonical JSON."""
+    envelope = {"domain": domain, "schema_version": SCHEMA_VERSION, "payload": payload}
+    return hashlib.sha256(canonical_json_bytes(envelope)).hexdigest()
+
+
+@dataclass(frozen=True)
+class SamplingSpec:
+    temperature: float
+    top_p: float
+    seed: int
+
+    def __post_init__(self) -> None:
+        temp = _require_finite_number(
+            self.temperature, "sampling.temperature", minimum=0.0, maximum=2.0
+        )
+        top_p = _require_finite_number(
+            self.top_p, "sampling.top_p", minimum=0.0, maximum=1.0, strictly_positive=True
+        )
+        _require_int(self.seed, "sampling.seed", minimum=0, maximum=2_147_483_647)
+        object.__setattr__(self, "temperature", temp)
+        object.__setattr__(self, "top_p", top_p)
+
+    @classmethod
+    def from_dict(cls, data: Any) -> SamplingSpec:
+        d = _require_exact_keys(data, {"temperature", "top_p", "seed"}, "sampling")
+        return cls(
+            temperature=d["temperature"],
+            top_p=d["top_p"],
+            seed=d["seed"],
+        )
+
+    def to_canonical_dict(self) -> dict[str, Any]:
+        return {
+            "seed": self.seed,
+            "temperature": _canonical_number_str(self.temperature),
+            "top_p": _canonical_number_str(self.top_p),
+        }
+
+    @classmethod
+    def from_canonical_dict(cls, data: Any) -> SamplingSpec:
+        d = _require_exact_keys(data, {"temperature", "top_p", "seed"}, "sampling")
+        if type(d["temperature"]) is not str or type(d["top_p"]) is not str:
+            raise CacheValidationError("Stored canonical sampling numbers must be strings")
+        try:
+            temp = float(Decimal(d["temperature"]))
+            top_p = float(Decimal(d["top_p"]))
+        except (InvalidOperation, ValueError) as exc:
+            raise CacheValidationError("Invalid stored sampling number") from exc
+        return cls(temperature=temp, top_p=top_p, seed=d["seed"])
+
+
+@dataclass(frozen=True)
+class ThinkingSpec:
+    enabled: bool
+    budget: int | None
+    force_nonempty_content: bool
+
+    def __post_init__(self) -> None:
+        _require_bool(self.enabled, "thinking.enabled")
+        _require_bool(self.force_nonempty_content, "thinking.force_nonempty_content")
+        if self.force_nonempty_content is not True:
+            raise CacheValidationError("thinking.force_nonempty_content must be True in v1")
+        if self.budget is not None:
+            if not self.enabled:
+                raise CacheValidationError("thinking.budget requires thinking.enabled=True")
+            _require_int(self.budget, "thinking.budget", minimum=1, maximum=2047)
+
+    @classmethod
+    def from_dict(cls, data: Any) -> ThinkingSpec:
+        d = _require_exact_keys(
+            data, {"enabled", "budget", "force_nonempty_content"}, "thinking"
+        )
+        return cls(
+            enabled=d["enabled"],
+            budget=d["budget"],
+            force_nonempty_content=d["force_nonempty_content"],
+        )
+
+    def to_canonical_dict(self) -> dict[str, Any]:
+        return {
+            "budget": self.budget,
+            "enabled": self.enabled,
+            "force_nonempty_content": self.force_nonempty_content,
+        }
+
+
+@dataclass(frozen=True)
+class LimitsSpec:
+    max_steps: int
+    observation_chars: int
+    command_timeout_seconds: float
+    wall_seconds: float
+    token_ceiling: int
+    reply_tokens: int
+
+    def __post_init__(self) -> None:
+        _require_int(self.max_steps, "limits.max_steps", minimum=1, maximum=40)
+        _require_int(self.observation_chars, "limits.observation_chars", minimum=1, maximum=3000)
+        _require_int(self.token_ceiling, "limits.token_ceiling", minimum=1, maximum=500_000)
+        _require_int(self.reply_tokens, "limits.reply_tokens", minimum=1, maximum=2048)
+        cmd_to = _require_finite_number(
+            self.command_timeout_seconds,
+            "limits.command_timeout_seconds",
+            minimum=0.0,
+            maximum=60.0,
+            strictly_positive=True,
+        )
+        wall_to = _require_finite_number(
+            self.wall_seconds,
+            "limits.wall_seconds",
+            minimum=0.0,
+            maximum=300.0,
+            strictly_positive=True,
+        )
+        object.__setattr__(self, "command_timeout_seconds", cmd_to)
+        object.__setattr__(self, "wall_seconds", wall_to)
+
+    @classmethod
+    def from_dict(cls, data: Any) -> LimitsSpec:
+        d = _require_exact_keys(
+            data,
+            {
+                "max_steps",
+                "observation_chars",
+                "command_timeout_seconds",
+                "wall_seconds",
+                "token_ceiling",
+                "reply_tokens",
+            },
+            "limits",
+        )
+        return cls(
+            max_steps=d["max_steps"],
+            observation_chars=d["observation_chars"],
+            command_timeout_seconds=d["command_timeout_seconds"],
+            wall_seconds=d["wall_seconds"],
+            token_ceiling=d["token_ceiling"],
+            reply_tokens=d["reply_tokens"],
+        )
+
+    def to_canonical_dict(self) -> dict[str, Any]:
+        return {
+            "command_timeout_seconds": _canonical_number_str(self.command_timeout_seconds),
+            "max_steps": self.max_steps,
+            "observation_chars": self.observation_chars,
+            "reply_tokens": self.reply_tokens,
+            "token_ceiling": self.token_ceiling,
+            "wall_seconds": _canonical_number_str(self.wall_seconds),
+        }
+
+    @classmethod
+    def from_canonical_dict(cls, data: Any) -> LimitsSpec:
+        d = _require_exact_keys(
+            data,
+            {
+                "max_steps",
+                "observation_chars",
+                "command_timeout_seconds",
+                "wall_seconds",
+                "token_ceiling",
+                "reply_tokens",
+            },
+            "limits",
+        )
+        if (
+            type(d["command_timeout_seconds"]) is not str
+            or type(d["wall_seconds"]) is not str
+        ):
+            raise CacheValidationError("Stored canonical time limits must be strings")
+        try:
+            cmd_to = float(Decimal(d["command_timeout_seconds"]))
+            wall_to = float(Decimal(d["wall_seconds"]))
+        except (InvalidOperation, ValueError) as exc:
+            raise CacheValidationError("Invalid stored time limit") from exc
+        return cls(
+            max_steps=d["max_steps"],
+            observation_chars=d["observation_chars"],
+            command_timeout_seconds=cmd_to,
+            wall_seconds=wall_to,
+            token_ceiling=d["token_ceiling"],
+            reply_tokens=d["reply_tokens"],
+        )
+
+
+@dataclass(frozen=True)
+class DocsearchSpec:
+    enabled: bool
+    policy_sha256: str
+
+    def __post_init__(self) -> None:
+        _require_bool(self.enabled, "docsearch.enabled")
+        _require_hex64(self.policy_sha256, "docsearch.policy_sha256")
+        if self.enabled is not False:
+            raise CacheValidationError("docsearch.enabled must be False until task 11 gates pass")
+
+    @classmethod
+    def from_dict(cls, data: Any) -> DocsearchSpec:
+        d = _require_exact_keys(data, {"enabled", "policy_sha256"}, "docsearch")
+        return cls(enabled=d["enabled"], policy_sha256=d["policy_sha256"])
+
+    def to_canonical_dict(self) -> dict[str, Any]:
+        return {
+            "enabled": self.enabled,
+            "policy_sha256": self.policy_sha256,
+        }
+
+
+SOLVER_IDENTITY_KEYS = frozenset({
+    "task_id",
+    "source_archive_sha256",
+    "issue_sha256",
+    "input_protocol_sha256",
+    "model_id",
+    "api_base",
+    "sampling",
+    "thinking",
+    "limits",
+    "context_tokens",
+    "scaffold_sha256",
+    "system_prompt_sha256",
+    "action_policy_sha256",
+    "tool_policy_sha256",
+    "docsearch",
+    "bundle_sha256",
+    "visible_selectors_sha256",
+    "solver_image_id",
+    "solver_harness_sha256",
+    "namespace",
+})
+
+
+@dataclass(frozen=True)
+class SolverIdentity:
+    """Complete behavior-affecting solver configuration and input provenance."""
+
+    task_id: str
+    source_archive_sha256: str
+    issue_sha256: str
+    input_protocol_sha256: str
+    model_id: str
+    api_base: str
+    sampling: SamplingSpec
+    thinking: ThinkingSpec
+    limits: LimitsSpec
+    context_tokens: int
+    scaffold_sha256: str
+    system_prompt_sha256: str
+    action_policy_sha256: str
+    tool_policy_sha256: str
+    docsearch: DocsearchSpec
+    bundle_sha256: str
+    visible_selectors_sha256: str
+    solver_image_id: str
+    solver_harness_sha256: str
+    namespace: str
+
+    def __post_init__(self) -> None:
+        _require_nonempty_str(self.task_id, "task_id")
+        _require_hex64(self.source_archive_sha256, "source_archive_sha256")
+        _require_hex64(self.issue_sha256, "issue_sha256")
+        _require_hex64(self.input_protocol_sha256, "input_protocol_sha256")
+        _require_nonempty_str(self.model_id, "model_id")
+        if not self.model_id.startswith("nvidia/"):
+            raise CacheValidationError("model_id must start with 'nvidia/'")
+        if type(self.api_base) is not str or self.api_base not in APPROVED_API_BASES:
+            raise CacheValidationError("Unapproved api_base endpoint")
+        if type(self.sampling) is not SamplingSpec:
+            raise CacheValidationError("sampling must be a SamplingSpec")
+        if type(self.thinking) is not ThinkingSpec:
+            raise CacheValidationError("thinking must be a ThinkingSpec")
+        if type(self.limits) is not LimitsSpec:
+            raise CacheValidationError("limits must be a LimitsSpec")
+        _require_int(self.context_tokens, "context_tokens", minimum=1, maximum=1_048_576)
+        if self.context_tokens <= self.limits.reply_tokens:
+            raise CacheValidationError("context_tokens must exceed limits.reply_tokens")
+        if (
+            self.thinking.budget is not None
+            and self.thinking.budget >= self.limits.reply_tokens
+        ):
+            raise CacheValidationError("thinking.budget must be less than limits.reply_tokens")
+        _require_hex64(self.scaffold_sha256, "scaffold_sha256")
+        _require_hex64(self.system_prompt_sha256, "system_prompt_sha256")
+        _require_hex64(self.action_policy_sha256, "action_policy_sha256")
+        _require_hex64(self.tool_policy_sha256, "tool_policy_sha256")
+        if type(self.docsearch) is not DocsearchSpec:
+            raise CacheValidationError("docsearch must be a DocsearchSpec")
+        _require_hex64(self.bundle_sha256, "bundle_sha256")
+        _require_hex64(self.visible_selectors_sha256, "visible_selectors_sha256")
+        _require_image_id(self.solver_image_id, "solver_image_id")
+        _require_hex64(self.solver_harness_sha256, "solver_harness_sha256")
+        if type(self.namespace) is not str or self.namespace not in VALID_NAMESPACES:
+            raise CacheValidationError("namespace must be 'synthetic' or 'live'")
+
+    @classmethod
+    def from_dict(cls, data: Any) -> SolverIdentity:
+        d = _require_exact_keys(data, set(SOLVER_IDENTITY_KEYS), "SolverIdentity")
+        return cls(
+            task_id=d["task_id"],
+            source_archive_sha256=d["source_archive_sha256"],
+            issue_sha256=d["issue_sha256"],
+            input_protocol_sha256=d["input_protocol_sha256"],
+            model_id=d["model_id"],
+            api_base=d["api_base"],
+            sampling=(
+                d["sampling"]
+                if type(d["sampling"]) is SamplingSpec
+                else SamplingSpec.from_dict(d["sampling"])
+            ),
+            thinking=(
+                d["thinking"]
+                if type(d["thinking"]) is ThinkingSpec
+                else ThinkingSpec.from_dict(d["thinking"])
+            ),
+            limits=(
+                d["limits"]
+                if type(d["limits"]) is LimitsSpec
+                else LimitsSpec.from_dict(d["limits"])
+            ),
+            context_tokens=d["context_tokens"],
+            scaffold_sha256=d["scaffold_sha256"],
+            system_prompt_sha256=d["system_prompt_sha256"],
+            action_policy_sha256=d["action_policy_sha256"],
+            tool_policy_sha256=d["tool_policy_sha256"],
+            docsearch=(
+                d["docsearch"]
+                if type(d["docsearch"]) is DocsearchSpec
+                else DocsearchSpec.from_dict(d["docsearch"])
+            ),
+            bundle_sha256=d["bundle_sha256"],
+            visible_selectors_sha256=d["visible_selectors_sha256"],
+            solver_image_id=d["solver_image_id"],
+            solver_harness_sha256=d["solver_harness_sha256"],
+            namespace=d["namespace"],
+        )
+
+    def to_canonical_dict(self) -> dict[str, Any]:
+        return {
+            "action_policy_sha256": self.action_policy_sha256,
+            "api_base": self.api_base,
+            "bundle_sha256": self.bundle_sha256,
+            "context_tokens": self.context_tokens,
+            "docsearch": self.docsearch.to_canonical_dict(),
+            "input_protocol_sha256": self.input_protocol_sha256,
+            "issue_sha256": self.issue_sha256,
+            "limits": self.limits.to_canonical_dict(),
+            "model_id": self.model_id,
+            "namespace": self.namespace,
+            "sampling": self.sampling.to_canonical_dict(),
+            "scaffold_sha256": self.scaffold_sha256,
+            "solver_harness_sha256": self.solver_harness_sha256,
+            "solver_image_id": self.solver_image_id,
+            "source_archive_sha256": self.source_archive_sha256,
+            "system_prompt_sha256": self.system_prompt_sha256,
+            "task_id": self.task_id,
+            "thinking": self.thinking.to_canonical_dict(),
+            "tool_policy_sha256": self.tool_policy_sha256,
+            "visible_selectors_sha256": self.visible_selectors_sha256,
+        }
+
+    @classmethod
+    def from_canonical_json(cls, raw: str | bytes) -> SolverIdentity:
+        parsed = strict_json_loads(raw)
+        d = _require_exact_keys(parsed, set(SOLVER_IDENTITY_KEYS), "StoredSolverIdentity")
+        return cls(
+            task_id=d["task_id"],
+            source_archive_sha256=d["source_archive_sha256"],
+            issue_sha256=d["issue_sha256"],
+            input_protocol_sha256=d["input_protocol_sha256"],
+            model_id=d["model_id"],
+            api_base=d["api_base"],
+            sampling=SamplingSpec.from_canonical_dict(d["sampling"]),
+            thinking=ThinkingSpec.from_dict(d["thinking"]),
+            limits=LimitsSpec.from_canonical_dict(d["limits"]),
+            context_tokens=d["context_tokens"],
+            scaffold_sha256=d["scaffold_sha256"],
+            system_prompt_sha256=d["system_prompt_sha256"],
+            action_policy_sha256=d["action_policy_sha256"],
+            tool_policy_sha256=d["tool_policy_sha256"],
+            docsearch=DocsearchSpec.from_dict(d["docsearch"]),
+            bundle_sha256=d["bundle_sha256"],
+            visible_selectors_sha256=d["visible_selectors_sha256"],
+            solver_image_id=d["solver_image_id"],
+            solver_harness_sha256=d["solver_harness_sha256"],
+            namespace=d["namespace"],
+        )
+
+    def solver_key(self) -> str:
+        """Compute deterministic SHA-256 solver identity key."""
+        return domain_hash(SOLVER_IDENTITY_DOMAIN, self.to_canonical_dict())
+
+
+SCORING_IDENTITY_KEYS = frozenset({
+    "solver_key",
+    "candidate_patch_sha256",
+    "evaluator_version",
+    "evaluator_source_sha256",
+    "contract_sha256",
+    "restoration_policy_sha256",
+    "collector_protocol",
+    "collector_sha256",
+    "scoring_image_id",
+    "scoring_harness_sha256",
+    "expectation_sha256",
+    "baseline_policy_sha256",
+    "registration_id",
+})
+
+
+@dataclass(frozen=True)
+class ScoringIdentity:
+    """Separate scoring identity binding solver_key + exact patch bytes to evaluator policy."""
+
+    solver_key: str
+    candidate_patch_sha256: str
+    evaluator_version: str
+    evaluator_source_sha256: str
+    contract_sha256: str
+    restoration_policy_sha256: str
+    collector_protocol: str
+    collector_sha256: str
+    scoring_image_id: str
+    scoring_harness_sha256: str
+    expectation_sha256: str
+    baseline_policy_sha256: str
+    registration_id: str | None = None
+
+    def __post_init__(self) -> None:
+        _require_hex64(self.solver_key, "solver_key")
+        _require_hex64(self.candidate_patch_sha256, "candidate_patch_sha256")
+        _require_nonempty_str(self.evaluator_version, "evaluator_version")
+        _require_hex64(self.evaluator_source_sha256, "evaluator_source_sha256")
+        _require_hex64(self.contract_sha256, "contract_sha256")
+        _require_hex64(self.restoration_policy_sha256, "restoration_policy_sha256")
+        if (
+            type(self.collector_protocol) is not str
+            or self.collector_protocol not in VALID_COLLECTOR_PROTOCOLS
+        ):
+            raise CacheValidationError("Invalid collector_protocol")
+        _require_hex64(self.collector_sha256, "collector_sha256")
+        _require_image_id(self.scoring_image_id, "scoring_image_id")
+        _require_hex64(self.scoring_harness_sha256, "scoring_harness_sha256")
+        _require_hex64(self.expectation_sha256, "expectation_sha256")
+        _require_hex64(self.baseline_policy_sha256, "baseline_policy_sha256")
+        if self.registration_id is not None:
+            _require_nonempty_str(self.registration_id, "registration_id")
+
+    @classmethod
+    def from_dict(cls, data: Any) -> ScoringIdentity:
+        d = _require_exact_keys(data, set(SCORING_IDENTITY_KEYS), "ScoringIdentity")
+        return cls(**d)
+
+    def to_canonical_dict(self) -> dict[str, Any]:
+        return {
+            "baseline_policy_sha256": self.baseline_policy_sha256,
+            "candidate_patch_sha256": self.candidate_patch_sha256,
+            "collector_protocol": self.collector_protocol,
+            "collector_sha256": self.collector_sha256,
+            "contract_sha256": self.contract_sha256,
+            "evaluator_source_sha256": self.evaluator_source_sha256,
+            "evaluator_version": self.evaluator_version,
+            "expectation_sha256": self.expectation_sha256,
+            "registration_id": self.registration_id,
+            "restoration_policy_sha256": self.restoration_policy_sha256,
+            "scoring_harness_sha256": self.scoring_harness_sha256,
+            "scoring_image_id": self.scoring_image_id,
+            "solver_key": self.solver_key,
+        }
+
+    @classmethod
+    def from_canonical_json(cls, raw: str | bytes) -> ScoringIdentity:
+        parsed = strict_json_loads(raw)
+        return cls.from_dict(parsed)
+
+    def scoring_key(self) -> str:
+        """Compute deterministic SHA-256 scoring key."""
+        return domain_hash(SCORING_IDENTITY_DOMAIN, self.to_canonical_dict())
+
+
+@dataclass(frozen=True)
+class UsageEvidence:
+    """Separates synthetic token estimates from actual provider token/cost evidence."""
+
+    accounting_mode: str
+    synthetic_prompt_tokens: int
+    synthetic_completion_tokens: int
+    provider_calls: int
+    actual_prompt_tokens: int | None = None
+    actual_completion_tokens: int | None = None
+    actual_total_tokens: int | None = None
+    actual_reasoning_tokens: int | None = None
+    actual_cached_tokens: int | None = None
+    explicit_zero_usage: bool = False
+
+    def __post_init__(self) -> None:
+        if (
+            type(self.accounting_mode) is not str
+            or self.accounting_mode not in VALID_ACCOUNTING_MODES
+        ):
+            raise CacheValidationError("Invalid accounting_mode")
+        _require_int(
+            self.synthetic_prompt_tokens,
+            "synthetic_prompt_tokens",
+            minimum=0,
+            maximum=10_000_000,
+        )
+        _require_int(
+            self.synthetic_completion_tokens,
+            "synthetic_completion_tokens",
+            minimum=0,
+            maximum=10_000_000,
+        )
+        _require_int(self.provider_calls, "provider_calls", minimum=0, maximum=1_000)
+        _require_bool(self.explicit_zero_usage, "explicit_zero_usage")
+
+        actual_fields = (
+            self.actual_prompt_tokens,
+            self.actual_completion_tokens,
+            self.actual_total_tokens,
+            self.actual_reasoning_tokens,
+            self.actual_cached_tokens,
+        )
+        if self.accounting_mode == "synthetic":
+            if self.provider_calls != 0 or any(v is not None for v in actual_fields):
+                raise CacheValidationError(
+                    "Synthetic usage cannot record provider calls or actual provider tokens"
+                )
+        elif self.accounting_mode == "unknown":
+            if any(v is not None for v in actual_fields):
+                raise CacheValidationError("Unknown accounting_mode must leave actual tokens None")
+        elif self.accounting_mode == "provider":
+            if (
+                self.actual_prompt_tokens is None
+                or self.actual_completion_tokens is None
+                or self.actual_total_tokens is None
+            ):
+                raise CacheValidationError(
+                    "Provider accounting requires actual_prompt/completion/total_tokens"
+                )
+            p = _require_int(
+                self.actual_prompt_tokens, "actual_prompt_tokens", minimum=0, maximum=100_000_000
+            )
+            c = _require_int(
+                self.actual_completion_tokens,
+                "actual_completion_tokens",
+                minimum=0,
+                maximum=100_000_000,
+            )
+            t = _require_int(
+                self.actual_total_tokens, "actual_total_tokens", minimum=0, maximum=200_000_000
+            )
+            if t != p + c:
+                raise CacheValidationError("actual_total_tokens must equal prompt + completion")
+            if t == 0 and not self.explicit_zero_usage:
+                raise CacheValidationError(
+                    "Completed zero provider token usage requires explicit_zero_usage=True"
+                )
+            if t > 0 and self.provider_calls < 1:
+                raise CacheValidationError("Positive provider tokens require provider_calls >= 1")
+            if self.actual_reasoning_tokens is not None:
+                r = _require_int(
+                    self.actual_reasoning_tokens,
+                    "actual_reasoning_tokens",
+                    minimum=0,
+                    maximum=100_000_000,
+                )
+                if r > c:
+                    raise CacheValidationError("actual_reasoning_tokens exceeds completion_tokens")
+            if self.actual_cached_tokens is not None:
+                ca = _require_int(
+                    self.actual_cached_tokens,
+                    "actual_cached_tokens",
+                    minimum=0,
+                    maximum=100_000_000,
+                )
+                if ca > p:
+                    raise CacheValidationError("actual_cached_tokens exceeds prompt_tokens")
+
+
+@dataclass(frozen=True)
+class CostValuation:
+    """Pricing snapshot and integer 1e-9 USD cost valuation bound to actual provider tokens."""
+
+    pricing_version: str
+    input_usd_per_million: str
+    output_usd_per_million: str
+    cost_nanos: int
+    explicit_zero_cost: bool = False
+
+    def __post_init__(self) -> None:
+        _require_nonempty_str(self.pricing_version, "pricing_version")
+        _require_bool(self.explicit_zero_cost, "explicit_zero_cost")
+        for label, price_str in (
+            ("input_usd_per_million", self.input_usd_per_million),
+            ("output_usd_per_million", self.output_usd_per_million),
+        ):
+            if type(price_str) is not str:
+                raise CacheValidationError(f"{label} must be a decimal string")
+            try:
+                dec = Decimal(price_str)
+            except InvalidOperation as exc:
+                raise CacheValidationError(f"{label} is not a valid Decimal") from exc
+            if not dec.is_finite() or dec <= 0:
+                raise CacheValidationError(f"{label} must be finite and positive")
+        validate_nanos(
+            self.cost_nanos,
+            allow_zero=self.explicit_zero_cost,
+            allow_none=False,
+        )
+
+    @classmethod
+    def from_token_usage(
+        cls,
+        *,
+        pricing_version: str,
+        input_usd_per_million: str | Decimal,
+        output_usd_per_million: str | Decimal,
+        prompt_tokens: int,
+        completion_tokens: int,
+        explicit_zero_cost: bool = False,
+    ) -> CostValuation:
+        """Compute exact integer 1e-9 USD cost from provider token counts and price snapshot."""
+        _require_int(prompt_tokens, "prompt_tokens", minimum=0, maximum=100_000_000)
+        _require_int(completion_tokens, "completion_tokens", minimum=0, maximum=100_000_000)
+        in_str = str(input_usd_per_million)
+        out_str = str(output_usd_per_million)
+        try:
+            in_dec = Decimal(in_str)
+            out_dec = Decimal(out_str)
+        except InvalidOperation as exc:
+            raise CacheValidationError("Invalid token price") from exc
+        if not in_dec.is_finite() or in_dec <= 0 or not out_dec.is_finite() or out_dec <= 0:
+            raise CacheValidationError("Token prices must be finite and positive")
+        usd_amount = (
+            Decimal(prompt_tokens) * in_dec + Decimal(completion_tokens) * out_dec
+        ) / Decimal(1_000_000)
+        nanos = usd_to_nanos(
+            usd_amount,
+            allow_zero=explicit_zero_cost,
+            rounding=ROUND_CEILING,
+        )
+        return cls(
+            pricing_version=pricing_version,
+            input_usd_per_million=in_str,
+            output_usd_per_million=out_str,
+            cost_nanos=nanos,
+            explicit_zero_cost=explicit_zero_cost,
+        )
+
+
+@dataclass(frozen=True)
+class SolverArtifact:
+    """Bounded solver output artifact stored on completion."""
+
+    stop_reason: str
+    turns: int
+    commands: int
+    invalid_turns: int
+    command_timeouts: int
+    wall_elapsed_seconds: float
+    patch_bytes: bytes
+    trajectory_events: tuple[dict[str, Any], ...]
+    has_patch: bool
+    visible_tests_pass: bool | None
+    hit_step_cap: bool
+    no_command_rate: float
+    agent_self_reports_done: bool
+    execution_backend: str
+
+    def __post_init__(self) -> None:
+        _require_nonempty_str(self.stop_reason, "stop_reason", max_len=MAX_REASON_CHARS)
+        _require_int(self.turns, "turns", minimum=0, maximum=40)
+        _require_int(self.commands, "commands", minimum=0, maximum=40)
+        _require_int(self.invalid_turns, "invalid_turns", minimum=0, maximum=40)
+        _require_int(self.command_timeouts, "command_timeouts", minimum=0, maximum=40)
+        elapsed = _require_finite_number(
+            self.wall_elapsed_seconds,
+            "wall_elapsed_seconds",
+            minimum=0.0,
+            maximum=3600.0,
+        )
+        object.__setattr__(self, "wall_elapsed_seconds", elapsed)
+        if type(self.patch_bytes) is not bytes:
+            raise CacheValidationError("patch_bytes must be exact bytes")
+        if len(self.patch_bytes) > MAX_PATCH_BYTES:
+            raise CacheValidationError("patch_bytes exceeds MAX_PATCH_BYTES")
+        if b"\x00" in self.patch_bytes:
+            raise CacheValidationError("Binary NUL byte forbidden in patch_bytes")
+        if type(self.trajectory_events) is not tuple:
+            raise CacheValidationError("trajectory_events must be a tuple of dicts")
+        if len(self.trajectory_events) > MAX_TRAJECTORY_EVENTS:
+            raise CacheValidationError("trajectory_events exceeds MAX_TRAJECTORY_EVENTS")
+        # Validate trajectory serializes within MAX_TRAJECTORY_BYTES
+        canonical_json_bytes(
+            list(self.trajectory_events), max_bytes=MAX_TRAJECTORY_BYTES
+        )
+        _require_bool(self.has_patch, "has_patch")
+        if self.visible_tests_pass is not None:
+            _require_bool(self.visible_tests_pass, "visible_tests_pass")
+        _require_bool(self.hit_step_cap, "hit_step_cap")
+        rate = _require_finite_number(
+            self.no_command_rate, "no_command_rate", minimum=0.0, maximum=1.0
+        )
+        object.__setattr__(self, "no_command_rate", rate)
+        _require_bool(self.agent_self_reports_done, "agent_self_reports_done")
+        _require_nonempty_str(self.execution_backend, "execution_backend")
+        if self.has_patch != bool(self.patch_bytes.strip()):
+            raise CacheValidationError("has_patch contradicts patch_bytes content")
+
+    @property
+    def patch_sha256(self) -> str:
+        return sha256_bytes(self.patch_bytes)
+
+
+@dataclass(frozen=True)
+class ScoreArtifact:
+    """Evaluator score record mapping status to candidate_outcome and evidence_validity."""
+
+    scorer_status: str
+    reason: str
+    phase: str
+    baseline_verified: bool
+    prepared_archive_sha256: str
+    private_envelope_sha256: str | None = None
+
+    def __post_init__(self) -> None:
+        if (
+            type(self.scorer_status) is not str
+            or self.scorer_status not in VALID_SCORER_STATUSES
+        ):
+            raise CacheValidationError("Invalid scorer_status")
+        _require_nonempty_str(self.reason, "reason", max_len=MAX_REASON_CHARS)
+        _require_nonempty_str(self.phase, "phase", max_len=MAX_ID_CHARS)
+        _require_bool(self.baseline_verified, "baseline_verified")
+        _require_hex64(self.prepared_archive_sha256, "prepared_archive_sha256")
+        if self.private_envelope_sha256 is not None:
+            _require_hex64(self.private_envelope_sha256, "private_envelope_sha256")
+        if self.scorer_status == "candidate_error" and not self.baseline_verified:
+            raise CacheValidationError(
+                "candidate_error requires baseline_verified=True to classify as unsolved"
+            )
+
+    @property
+    def candidate_outcome(self) -> str:
+        if self.scorer_status == "passed":
+            return "solved"
+        if self.scorer_status in {"failed", "candidate_error"}:
+            return "unsolved"
+        return "undetermined"
+
+    @property
+    def evidence_validity(self) -> str:
+        if self.scorer_status in {"passed", "failed", "candidate_error"}:
+            return "valid"
+        if self.scorer_status == "invalid_evidence":
+            return "invalid_evidence"
+        return "infrastructure_error"
+
+
+# Explicit whitelist of fields allowed in shareable summary exports (Task 5c/5d/7)
+SUMMARY_EXPORT_WHITELIST = (
+    "schema_version",
+    "namespace",
+    "task_id",
+    "solver_key",
+    "scoring_key",
+    "registration_id",
+    "model_id",
+    "api_base",
+    "seed",
+    "execution_state",
+    "candidate_outcome",
+    "evidence_validity",
+    "stop_reason",
+    "turns",
+    "commands",
+    "invalid_turns",
+    "command_timeouts",
+    "wall_elapsed_seconds",
+    "has_patch",
+    "candidate_patch_sha256",
+    "visible_tests_pass",
+    "hit_step_cap",
+    "no_command_rate",
+    "agent_self_reports_done",
+    "accounting_mode",
+    "provider_calls",
+    "synthetic_prompt_tokens",
+    "synthetic_completion_tokens",
+    "actual_prompt_tokens",
+    "actual_completion_tokens",
+    "actual_total_tokens",
+    "actual_reasoning_tokens",
+    "actual_cached_tokens",
+    "original_cost_usd",
+    "original_pricing_version",
+    "latest_cost_usd",
+    "latest_pricing_version",
+    "publishable",
+)
+
+
+dojo/store/db.py
+
+
+
+Python
+"""Crash-safe SQLite run/score cache and financial reservation handshake store.
+
+UNEXECUTED proposal for review/testing in primary workspace.
+Uses only Python's standard library and dojo.store.schemas.
+"""
+
+from __future__ import annotations
+
+import sqlite3
+from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
+from uuid import uuid4
+
+from dojo.store.schemas import (
+    MAX_ID_CHARS,
+    MAX_PATCH_BYTES,
+    MAX_REASON_CHARS,
+    MAX_TRAJECTORY_BYTES,
+    SCHEMA_VERSION,
+    SUMMARY_EXPORT_WHITELIST,
+    VALID_CANDIDATE_OUTCOMES,
+    VALID_EVIDENCE_VALIDITIES,
+    VALID_EXECUTION_STATES,
+    VALID_NAMESPACES,
+    VALID_RESERVATION_STATES,
+    CacheError,
+    CacheValidationError,
+    CostValuation,
+    ScoreArtifact,
+    ScoringIdentity,
+    SolverArtifact,
+    SolverIdentity,
+    UsageEvidence,
+    _require_hex64,
+    _require_nonempty_str,
+    canonical_json_bytes,
+    ensure_utc_timestamp,
+    nanos_to_usd_str,
+    parse_utc_timestamp,
+    sha256_bytes,
+    strict_json_loads,
+    usd_to_nanos,
+    validate_nanos,
+)
+
+DEFAULT_CACHE_DB = Path("data/cache.sqlite3")
+DEFAULT_LEASE_SECONDS = 300
+
+
+class CacheBusyError(CacheError):
+    """Database is locked or busy; fail immediately without waiting or retrying."""
+
+
+class CacheMissingError(CacheError):
+    """Database file does not exist; read/claim operations never silently create one."""
+
+
+class CacheSchemaError(CacheError):
+    """Database schema version or table structure is unrecognized or mismatched."""
+
+
+class CacheCorruptionError(CacheError):
+    """Stored row violates integrity invariants or hash bindings."""
+
+
+class CacheOwnershipError(CacheError):
+    """Caller does not hold the active owner token or lease for the run."""
+
+
+class CacheStateError(CacheError):
+    """Requested state transition violates the run/score state machine."""
+
+
+class CacheBlockedError(CacheError):
+    """Operation blocked by an uncertain/orphan reservation or invalid aggregate state."""
+
+
+@dataclass(frozen=True)
+class ClaimOutcome:
+    status: str  # 'acquired' | 'reused_completed' | 'already_claimed' | 'blocked_uncertain'
+    acquired: bool
+    solver_key: str
+    attempt_id: str
+    owner_token: str | None
+    execution_state: str
+    dispatched: bool
+
+
+_EXPECTED_TABLES = frozenset({
+    "cache_meta",
+    "solver_identities",
+    "solver_runs",
+    "cost_valuations",
+    "score_identities",
+    "score_runs",
+})
+
+_DDL = """
+CREATE TABLE cache_meta (
+    id INTEGER PRIMARY KEY CHECK(id = 1),
+    schema_version INTEGER NOT NULL,
+    application TEXT NOT NULL CHECK(application = 'dojo-run-cache'),
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE solver_identities (
+    solver_key TEXT PRIMARY KEY,
+    namespace TEXT NOT NULL CHECK(namespace IN ('synthetic', 'live')),
+    task_id TEXT NOT NULL,
+    model_id TEXT NOT NULL,
+    api_base TEXT NOT NULL,
+    identity_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE solver_runs (
+    attempt_id TEXT PRIMARY KEY,
+    solver_key TEXT NOT NULL REFERENCES solver_identities(solver_key),
+    namespace TEXT NOT NULL CHECK(namespace IN ('synthetic', 'live')),
+    task_id TEXT NOT NULL,
+    owner_token TEXT NOT NULL,
+    claimed_at TEXT NOT NULL,
+    lease_expires_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    execution_state TEXT NOT NULL CHECK(
+        execution_state IN (
+            'claimed',
+            'dispatched',
+            'completed',
+            'aborted_pre_dispatch',
+            'blocked_uncertain'
+        )
+    ),
+    candidate_outcome TEXT NOT NULL CHECK(
+        candidate_outcome IN ('not_scored', 'solved', 'unsolved', 'undetermined')
+    ),
+    evidence_validity TEXT NOT NULL CHECK(
+        evidence_validity IN ('pending', 'valid', 'invalid_evidence', 'infrastructure_error')
+    ),
+    dispatched INTEGER NOT NULL CHECK(dispatched IN (0, 1)),
+    dispatched_at TEXT,
+    reservation_state TEXT NOT NULL CHECK(
+        reservation_state IN (
+            'none',
+            'intent_pending',
+            'reserved',
+            'finalized_completed',
+            'finalized_uncertain'
+        )
+    ),
+    planned_reservation_nanos INTEGER CHECK(
+        planned_reservation_nanos IS NULL OR planned_reservation_nanos > 0
+    ),
+    reservation_id TEXT,
+    stop_reason TEXT,
+    turns INTEGER CHECK(turns IS NULL OR (turns >= 0 AND turns <= 40)),
+    commands INTEGER CHECK(commands IS NULL OR (commands >= 0 AND commands <= 40)),
+    invalid_turns INTEGER CHECK(
+        invalid_turns IS NULL OR (invalid_turns >= 0 AND invalid_turns <= 40)
+    ),
+    command_timeouts INTEGER CHECK(
+        command_timeouts IS NULL OR (command_timeouts >= 0 AND command_timeouts <= 40)
+    ),
+    wall_elapsed_seconds TEXT,
+    patch_bytes BLOB,
+    patch_sha256 TEXT,
+    trajectory_json TEXT,
+    has_patch INTEGER CHECK(has_patch IS NULL OR has_patch IN (0, 1)),
+    visible_tests_pass INTEGER CHECK(
+        visible_tests_pass IS NULL OR visible_tests_pass IN (0, 1)
+    ),
+    hit_step_cap INTEGER CHECK(hit_step_cap IS NULL OR hit_step_cap IN (0, 1)),
+    no_command_rate TEXT,
+    agent_self_reports_done INTEGER CHECK(
+        agent_self_reports_done IS NULL OR agent_self_reports_done IN (0, 1)
+    ),
+    execution_backend TEXT,
+    accounting_mode TEXT CHECK(
+        accounting_mode IS NULL OR accounting_mode IN ('synthetic', 'provider', 'unknown')
+    ),
+    provider_calls INTEGER CHECK(provider_calls IS NULL OR provider_calls >= 0),
+    synthetic_prompt_tokens INTEGER CHECK(
+        synthetic_prompt_tokens IS NULL OR synthetic_prompt_tokens >= 0
+    ),
+    synthetic_completion_tokens INTEGER CHECK(
+        synthetic_completion_tokens IS NULL OR synthetic_completion_tokens >= 0
+    ),
+    actual_prompt_tokens INTEGER CHECK(
+        actual_prompt_tokens IS NULL OR actual_prompt_tokens >= 0
+    ),
+    actual_completion_tokens INTEGER CHECK(
+        actual_completion_tokens IS NULL OR actual_completion_tokens >= 0
+    ),
+    actual_total_tokens INTEGER CHECK(
+        actual_total_tokens IS NULL OR actual_total_tokens >= 0
+    ),
+    actual_reasoning_tokens INTEGER CHECK(
+        actual_reasoning_tokens IS NULL OR actual_reasoning_tokens >= 0
+    ),
+    actual_cached_tokens INTEGER CHECK(
+        actual_cached_tokens IS NULL OR actual_cached_tokens >= 0
+    ),
+    explicit_zero_usage INTEGER NOT NULL DEFAULT 0 CHECK(explicit_zero_usage IN (0, 1)),
+    original_cost_nanos INTEGER CHECK(
+        original_cost_nanos IS NULL OR original_cost_nanos >= 0
+    ),
+    original_pricing_version TEXT,
+    original_input_price_usd_per_m TEXT,
+    original_output_price_usd_per_m TEXT,
+    failure_reason TEXT
+);
+
+CREATE UNIQUE INDEX idx_solver_runs_one_active_or_terminal
+ON solver_runs(namespace, solver_key)
+WHERE execution_state IN ('claimed', 'dispatched', 'completed', 'blocked_uncertain');
+
+CREATE UNIQUE INDEX idx_solver_runs_unique_reservation_id
+ON solver_runs(reservation_id)
+WHERE reservation_id IS NOT NULL;
+
+CREATE TABLE cost_valuations (
+    valuation_id TEXT PRIMARY KEY,
+    attempt_id TEXT NOT NULL REFERENCES solver_runs(attempt_id),
+    is_original INTEGER NOT NULL CHECK(is_original IN (0, 1)),
+    pricing_version TEXT NOT NULL,
+    input_price_usd_per_m TEXT NOT NULL,
+    output_price_usd_per_m TEXT NOT NULL,
+    cost_nanos INTEGER NOT NULL CHECK(cost_nanos >= 0),
+    explicit_zero_cost INTEGER NOT NULL CHECK(explicit_zero_cost IN (0, 1)),
+    recorded_at TEXT NOT NULL
+);
+
+CREATE TABLE score_identities (
+    scoring_key TEXT PRIMARY KEY,
+    solver_key TEXT NOT NULL REFERENCES solver_identities(solver_key),
+    candidate_patch_sha256 TEXT NOT NULL,
+    registration_id TEXT,
+    identity_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE score_runs (
+    score_attempt_id TEXT PRIMARY KEY,
+    scoring_key TEXT NOT NULL REFERENCES score_identities(scoring_key),
+    solver_attempt_id TEXT NOT NULL REFERENCES solver_runs(attempt_id),
+    namespace TEXT NOT NULL CHECK(namespace IN ('synthetic', 'live')),
+    registration_id TEXT,
+    owner_token TEXT NOT NULL,
+    claimed_at TEXT NOT NULL,
+    lease_expires_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    execution_state TEXT NOT NULL CHECK(
+        execution_state IN (
+            'claimed',
+            'completed',
+            'aborted_pre_dispatch',
+            'blocked_uncertain'
+        )
+    ),
+    scorer_status TEXT CHECK(
+        scorer_status IS NULL OR scorer_status IN (
+            'passed',
+            'failed',
+            'candidate_error',
+            'invalid_evidence',
+            'scorer_exception'
+        )
+    ),
+    candidate_outcome TEXT NOT NULL CHECK(
+        candidate_outcome IN ('not_scored', 'solved', 'unsolved', 'undetermined')
+    ),
+    evidence_validity TEXT NOT NULL CHECK(
+        evidence_validity IN ('pending', 'valid', 'invalid_evidence', 'infrastructure_error')
+    ),
+    reason TEXT,
+    phase TEXT,
+    baseline_verified INTEGER CHECK(
+        baseline_verified IS NULL OR baseline_verified IN (0, 1)
+    ),
+    prepared_archive_sha256 TEXT,
+    private_envelope_sha256 TEXT
+);
+
+CREATE UNIQUE INDEX idx_score_runs_one_active_or_terminal
+ON score_runs(namespace, scoring_key)
+WHERE execution_state IN ('claimed', 'completed', 'blocked_uncertain');
+"""
+
+
+def _now_iso(now: datetime | None) -> str:
+    return ensure_utc_timestamp(now if now is not None else datetime.now(UTC))
+
+
+class RunCache:
+    """Crash-safe SQLite store for solver runs, evaluator scores, and ledger handshakes."""
+
+    def __init__(self, path: Path = DEFAULT_CACHE_DB) -> None:
+        if not isinstance(path, Path):
+            raise CacheValidationError("Database path must be a pathlib.Path")
+        if "\x00" in str(path):
+            raise CacheValidationError("Invalid NUL character in database path")
+        self.path = path
+
+    def initialize(self, *, now: datetime | None = None) -> None:
+        """Create a new cache database once; never overwrite an existing file."""
+        created_iso = _now_iso(now)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        # Exclusive creation ('xb') guarantees we never truncate or overwrite existing DB
+        with self.path.open("xb"):
+            pass
+        db = None
+        try:
+            uri = self.path.resolve().as_uri() + "?mode=rw"
+            db = sqlite3.connect(uri, uri=True, timeout=0, isolation_level=None)
+            db.row_factory = sqlite3.Row
+            db.execute("PRAGMA foreign_keys = ON")
+            db.execute("PRAGMA journal_mode = DELETE")
+            db.execute("PRAGMA synchronous = FULL")
+            db.execute("BEGIN IMMEDIATE")
+            db.executescript(_DDL)
+            db.execute(
+                "INSERT INTO cache_meta (id, schema_version, application, created_at) "
+                "VALUES (1, ?, 'dojo-run-cache', ?)",
+                (SCHEMA_VERSION, created_iso),
+            )
+            db.commit()
+        except sqlite3.Error as exc:
+            if db is not None:
+                try:
+                    db.rollback()
+                except sqlite3.Error:
+                    pass
+            raise CacheError("Failed to initialize cache database") from exc
+        finally:
+            if db is not None:
+                db.close()
+
+    @contextmanager
+    def _transaction(self):
+        """Open a short immediate transaction on an existing, schema-verified DB."""
+        if not self.path.exists():
+            raise CacheMissingError("Cache database does not exist; initialize explicitly")
+        db = None
+        try:
+            uri = self.path.resolve().as_uri() + "?mode=rw"
+            db = sqlite3.connect(uri, uri=True, timeout=0, isolation_level=None)
+            db.row_factory = sqlite3.Row
+            db.execute("PRAGMA foreign_keys = ON")
+            db.execute("PRAGMA synchronous = FULL")
+            db.execute("BEGIN IMMEDIATE")
+            self._verify_schema(db)
+            yield db
+            db.commit()
+        except sqlite3.OperationalError as exc:
+            if db is not None:
+                try:
+                    db.rollback()
+                except sqlite3.Error:
+                    pass
+            msg = str(exc).lower()
+            if "locked" in msg or "busy" in msg:
+                raise CacheBusyError("Cache database is busy or locked; stop") from None
+            if "unable to open" in msg:
+                raise CacheMissingError("Cache database cannot be opened") from None
+            raise CacheSchemaError("Cache database operational/schema failure") from None
+        except sqlite3.DatabaseError as exc:
+            if db is not None:
+                try:
+                    db.rollback()
+                except sqlite3.Error:
+                    pass
+            raise CacheSchemaError("Cache database is corrupt or invalid") from exc
+        except BaseException:
+            if db is not None:
+                try:
+                    db.rollback()
+                except sqlite3.Error:
+                    pass
+            raise
+        finally:
+            if db is not None:
+                db.close()
+
+    def _verify_schema(self, db: sqlite3.Connection) -> None:
+        tables = {
+            row["name"]
+            for row in db.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        if tables != _EXPECTED_TABLES:
+            raise CacheSchemaError("Unrecognized database table set")
+        meta = db.execute("SELECT * FROM cache_meta WHERE id = 1").fetchone()
+        if (
+            meta is None
+            or type(meta["schema_version"]) is not int
+            or meta["schema_version"] != SCHEMA_VERSION
+            or meta["application"] != "dojo-run-cache"
+        ):
+            raise CacheSchemaError("Unsupported or mismatched cache schema version")
+
+    def _verify_solver_row_integrity(self, row: sqlite3.Row) -> None:
+        """Verify stored solver run invariants so corrupted rows fail closed."""
+        if row["namespace"] not in VALID_NAMESPACES:
+            raise CacheCorruptionError("Invalid stored namespace")
+        if row["execution_state"] not in VALID_EXECUTION_STATES:
+            raise CacheCorruptionError("Invalid stored execution_state")
+        if row["candidate_outcome"] not in VALID_CANDIDATE_OUTCOMES:
+            raise CacheCorruptionError("Invalid stored candidate_outcome")
+        if row["evidence_validity"] not in VALID_EVIDENCE_VALIDITIES:
+            raise CacheCorruptionError("Invalid stored evidence_validity")
+        if row["reservation_state"] not in VALID_RESERVATION_STATES:
+            raise CacheCorruptionError("Invalid stored reservation_state")
+        if row["execution_state"] == "completed":
+            if (
+                row["stop_reason"] is None
+                or row["turns"] is None
+                or row["commands"] is None
+                or row["patch_bytes"] is None
+                or row["patch_sha256"] is None
+                or row["trajectory_json"] is None
+                or row["accounting_mode"] is None
+            ):
+                raise CacheCorruptionError("Completed solver run is missing required artifacts")
+            if type(row["patch_bytes"]) is not bytes or len(row["patch_bytes"]) > MAX_PATCH_BYTES:
+                raise CacheCorruptionError("Corrupt stored patch_bytes")
+            if sha256_bytes(row["patch_bytes"]) != row["patch_sha256"]:
+                raise CacheCorruptionError("Stored patch_bytes does not match patch_sha256")
+            traj = strict_json_loads(
+                row["trajectory_json"], max_bytes=MAX_TRAJECTORY_BYTES
+            )
+            if type(traj) is not list:
+                raise CacheCorruptionError("Stored trajectory_json must be a list")
+            if row["namespace"] == "synthetic" and row["accounting_mode"] != "synthetic":
+                raise CacheCorruptionError("Synthetic namespace run has non-synthetic accounting")
+            if row["namespace"] == "live" and row["accounting_mode"] != "provider":
+                raise CacheCorruptionError("Completed live run must have provider accounting")
+
+    def register_solver_identity(
+        self,
+        identity: SolverIdentity,
+        *,
+        now: datetime | None = None,
+    ) -> str:
+        """Validate and idempotently store a SolverIdentity, returning solver_key."""
+        if type(identity) is not SolverIdentity:
+            raise CacheValidationError("Expected a SolverIdentity instance")
+        now_iso = _now_iso(now)
+        key = identity.solver_key()
+        canon_json = canonical_json_bytes(identity.to_canonical_dict()).decode("ascii")
+        with self._transaction() as db:
+            existing = db.execute(
+                "SELECT * FROM solver_identities WHERE solver_key = ?", (key,)
+            ).fetchone()
+            if existing is not None:
+                stored_id = SolverIdentity.from_canonical_json(existing["identity_json"])
+                if (
+                    stored_id.solver_key() != key
+                    or existing["identity_json"] != canon_json
+                    or existing["namespace"] != identity.namespace
+                ):
+                    raise CacheCorruptionError("Stored solver identity collision or corruption")
+                return key
+            db.execute(
+                "INSERT INTO solver_identities "
+                "(solver_key, namespace, task_id, model_id, api_base, identity_json, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    key,
+                    identity.namespace,
+                    identity.task_id,
+                    identity.model_id,
+                    identity.api_base,
+                    canon_json,
+                    now_iso,
+                ),
+            )
+        return key
+
+    def check_live_handshake_ready(self, ledger_status: dict[str, Any] | None = None) -> None:
+        """Verify neither the cache nor CreditLedger has an unfinished/orphan live run."""
+        with self._transaction() as db:
+            unfinished = db.execute(
+                "SELECT attempt_id, execution_state, reservation_state, reservation_id "
+                "FROM solver_runs "
+                "WHERE namespace = 'live' AND ("
+                "  execution_state IN ('claimed', 'dispatched', 'blocked_uncertain') "
+                "  OR reservation_state IN ('intent_pending', 'reserved', 'finalized_uncertain')"
+                ")"
+            ).fetchone()
+            if unfinished is not None:
+                raise CacheBlockedError(
+                    f"Live runs are blocked by unfinished or uncertain cache run "
+                    f"(attempt_id={unfinished['attempt_id']}, "
+                    f"execution_state={unfinished['execution_state']}, "
+                    f"reservation_state={unfinished['reservation_state']})"
+                )
+            if ledger_status is not None:
+                if type(ledger_status) is not dict:
+                    raise CacheValidationError("ledger_status must be a dict")
+                if (
+                    ledger_status.get("unfinished_runs", 1) != 0
+                    or ledger_status.get("can_reserve") is not True
+                ):
+                    raise CacheBlockedError(
+                        "Live runs are blocked by an unfinished or unlinked CreditLedger reservation"
+                    )
+
+    def claim_solver_run(
+        self,
+        identity: SolverIdentity,
+        *,
+        lease_seconds: int = DEFAULT_LEASE_SECONDS,
+        now: datetime | None = None,
+        ledger_status: dict[str, Any] | None = None,
+    ) -> ClaimOutcome:
+        """Atomically claim a solver run or return deterministic existing status."""
+        if type(identity) is not SolverIdentity:
+            raise CacheValidationError("Expected a SolverIdentity instance")
+        if type(lease_seconds) is not int or not (1 <= lease_seconds <= 86_400):
+            raise CacheValidationError("lease_seconds must be an int in [1, 86400]")
+        now_dt = parse_utc_timestamp(_now_iso(now))
+        now_iso = now_dt.isoformat()
+        expires_iso = (now_dt + timedelta(seconds=lease_seconds)).isoformat()
+        key = identity.solver_key()
+        canon_json = canonical_json_bytes(identity.to_canonical_dict()).decode("ascii")
+
+        with self._transaction() as db:
+            existing_id = db.execute(
+                "SELECT * FROM solver_identities WHERE solver_key = ?", (key,)
+            ).fetchone()
+            if existing_id is None:
+                db.execute(
+                    "INSERT INTO solver_identities "
+                    "(solver_key, namespace, task_id, model_id, api_base, identity_json, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        key,
+                        identity.namespace,
+                        identity.task_id,
+                        identity.model_id,
+                        identity.api_base,
+                        canon_json,
+                        now_iso,
+                    ),
+                )
+            else:
+                stored_id = SolverIdentity.from_canonical_json(existing_id["identity_json"])
+                if stored_id.solver_key() != key or existing_id["identity_json"] != canon_json:
+                    raise CacheCorruptionError("Stored solver identity corruption detected")
+
+            row = db.execute(
+                "SELECT * FROM solver_runs "
+                "WHERE namespace = ? AND solver_key = ? "
+                "AND execution_state IN ('claimed', 'dispatched', 'completed', 'blocked_uncertain')",
+                (identity.namespace, key),
+            ).fetchone()
+
+            if row is not None:
+                self._verify_solver_row_integrity(row)
+                state = row["execution_state"]
+                if state == "completed":
+                    status = "reused_completed"
+                elif state == "blocked_uncertain":
+                    status = "blocked_uncertain"
+                else:
+                    status = "already_claimed"
+                return ClaimOutcome(
+                    status=status,
+                    acquired=False,
+                    solver_key=key,
+                    attempt_id=row["attempt_id"],
+                    owner_token=None,
+                    execution_state=state,
+                    dispatched=bool(row["dispatched"]),
+                )
+
+            if identity.namespace == "live":
+                unfinished = db.execute(
+                    "SELECT attempt_id FROM solver_runs "
+                    "WHERE namespace = 'live' AND ("
+                    "  execution_state IN ('claimed', 'dispatched', 'blocked_uncertain') "
+                    "  OR reservation_state IN ('intent_pending', 'reserved', 'finalized_uncertain')"
+                    ")"
+                ).fetchone()
+                if unfinished is not None:
+                    raise CacheBlockedError(
+                        "Cannot claim a new live run while an earlier live run is unfinished or uncertain"
+                    )
+                if ledger_status is not None:
+                    if (
+                        type(ledger_status) is not dict
+                        or ledger_status.get("unfinished_runs", 1) != 0
+                        or ledger_status.get("can_reserve") is not True
+                    ):
+                        raise CacheBlockedError(
+                            "CreditLedger has unfinished or blocked reservation; refusing live claim"
+                        )
+
+            attempt_id = uuid4().hex
+            owner_token = uuid4().hex
+            db.execute(
+                "INSERT INTO solver_runs ("
+                "  attempt_id, solver_key, namespace, task_id, owner_token, "
+                "  claimed_at, lease_expires_at, updated_at, execution_state, "
+                "  candidate_outcome, evidence_validity, dispatched, reservation_state"
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'claimed', 'not_scored', 'pending', 0, 'none')",
+                (
+                    attempt_id,
+                    key,
+                    identity.namespace,
+                    identity.task_id,
+                    owner_token,
+                    now_iso,
+                    expires_iso,
+                    now_iso,
+                ),
+            )
+            return ClaimOutcome(
+                status="acquired",
+                acquired=True,
+                solver_key=key,
+                attempt_id=attempt_id,
+                owner_token=owner_token,
+                execution_state="claimed",
+                dispatched=False,
+            )
+
+    def _require_owned_solver_run(
+        self,
+        db: sqlite3.Connection,
+        attempt_id: str,
+        owner_token: str,
+        now_dt: datetime,
+        *,
+        check_lease: bool = True,
+    ) -> sqlite3.Row:
+        _require_nonempty_str(attempt_id, "attempt_id")
+        _require_nonempty_str(owner_token, "owner_token")
+        row = db.execute(
+            "SELECT * FROM solver_runs WHERE attempt_id = ?", (attempt_id,)
+        ).fetchone()
+        if row is None:
+            raise CacheOwnershipError("Unknown solver attempt_id")
+        self._verify_solver_row_integrity(row)
+        if row["owner_token"] != owner_token:
+            raise CacheOwnershipError("Invalid or stale owner_token for solver run")
+        if check_lease:
+            lease_exp = parse_utc_timestamp(row["lease_expires_at"])
+            if now_dt >= lease_exp:
+                raise CacheOwnershipError("Solver run lease has expired; owner is fenced")
+        return row
+
+    def begin_reservation_intent(
+        self,
+        attempt_id: str,
+        owner_token: str,
+        *,
+        planned_usd: object,
+        now: datetime | None = None,
+    ) -> int:
+        """Record durable pre-reserve intent before calling CreditLedger.reserve_run."""
+        now_dt = parse_utc_timestamp(_now_iso(now))
+        nanos = usd_to_nanos(planned_usd, allow_zero=False)
+        with self._transaction() as db:
+            row = self._require_owned_solver_run(db, attempt_id, owner_token, now_dt)
+            if row["namespace"] != "live":
+                raise CacheStateError("Monetary reservations apply only to 'live' namespace")
+            if (
+                row["execution_state"] != "claimed"
+                or row["dispatched"] != 0
+                or row["reservation_state"] != "none"
+            ):
+                raise CacheStateError("Run is not eligible for begin_reservation_intent")
+            cur = db.execute(
+                "UPDATE solver_runs "
+                "SET reservation_state = 'intent_pending', "
+                "    planned_reservation_nanos = ?, "
+                "    updated_at = ? "
+                "WHERE attempt_id = ? AND owner_token = ? "
+                "  AND execution_state = 'claimed' AND dispatched = 0 AND reservation_state = 'none'",
+                (nanos, now_dt.isoformat(), attempt_id, owner_token),
+            )
+            if cur.rowcount != 1:
+                raise CacheStateError("Failed to record reservation intent")
+        return nanos
+
+    def bind_reservation(
+        self,
+        attempt_id: str,
+        owner_token: str,
+        *,
+        reservation_id: str,
+        now: datetime | None = None,
+    ) -> None:
+        """Durably associate CreditLedger's returned reservation_id with the claimed run."""
+        _require_nonempty_str(reservation_id, "reservation_id")
+        now_dt = parse_utc_timestamp(_now_iso(now))
+        with self._transaction() as db:
+            row = self._require_owned_solver_run(db, attempt_id, owner_token, now_dt)
+            if (
+                row["namespace"] != "live"
+                or row["execution_state"] != "claimed"
+                or row["dispatched"] != 0
+                or row["reservation_state"] != "intent_pending"
+            ):
+                raise CacheStateError("Run must be in 'intent_pending' before bind_reservation")
+            cur = db.execute(
+                "UPDATE solver_runs "
+                "SET reservation_state = 'reserved', "
+                "    reservation_id = ?, "
+                "    updated_at = ? "
+                "WHERE attempt_id = ? AND owner_token = ? "
+                "  AND execution_state = 'claimed' AND reservation_state = 'intent_pending'",
+                (reservation_id, now_dt.isoformat(), attempt_id, owner_token),
+            )
+            if cur.rowcount != 1:
+                raise CacheStateError("Failed to bind reservation_id")
+
+    def abort_before_dispatch(
+        self,
+        attempt_id: str,
+        owner_token: str,
+        *,
+        reason: str,
+        now: datetime | None = None,
+    ) -> None:
+        """Safely release a claim ONLY when neither reservation nor dispatch has occurred."""
+        _require_nonempty_str(reason, "reason", max_len=MAX_REASON_CHARS)
+        now_dt = parse_utc_timestamp(_now_iso(now))
+        with self._transaction() as db:
+            row = self._require_owned_solver_run(
+                db, attempt_id, owner_token, now_dt, check_lease=False
+            )
+            if (
+                row["execution_state"] != "claimed"
+                or row["dispatched"] != 0
+                or row["reservation_state"] != "none"
+            ):
+                raise CacheStateError(
+                    "Cannot abort_before_dispatch after reservation intent or dispatch"
+                )
+            cur = db.execute(
+                "UPDATE solver_runs "
+                "SET execution_state = 'aborted_pre_dispatch', "
+                "    evidence_validity = 'infrastructure_error', "
+                "    failure_reason = ?, "
+                "    updated_at = ? "
+                "WHERE attempt_id = ? AND owner_token = ? "
+                "  AND execution_state = 'claimed' AND dispatched = 0 AND reservation_state = 'none'",
+                (reason, now_dt.isoformat(), attempt_id, owner_token),
+            )
+            if cur.rowcount != 1:
+                raise CacheStateError("Failed to abort pre-dispatch run")
+
+    def mark_dispatched(
+        self,
+        attempt_id: str,
+        owner_token: str,
+        *,
+        now: datetime | None = None,
+    ) -> None:
+        """Record that a request is about to be sent; permanently forbids silent rerun."""
+        now_dt = parse_utc_timestamp(_now_iso(now))
+        with self._transaction() as db:
+            row = self._require_owned_solver_run(db, attempt_id, owner_token, now_dt)
+            if row["execution_state"] != "claimed" or row["dispatched"] != 0:
+                raise CacheStateError("Run must be in 'claimed' state with dispatched=0")
+            if row["namespace"] == "live" and (
+                row["reservation_state"] != "reserved" or not row["reservation_id"]
+            ):
+                raise CacheStateError(
+                    "Live run cannot mark_dispatched without a bound CreditLedger reservation"
+                )
+            cur = db.execute(
+                "UPDATE solver_runs "
+                "SET execution_state = 'dispatched', "
+                "    dispatched = 1, "
+                "    dispatched_at = ?, "
+                "    updated_at = ? "
+                "WHERE attempt_id = ? AND owner_token = ? "
+                "  AND execution_state = 'claimed' AND dispatched = 0",
+                (now_dt.isoformat(), now_dt.isoformat(), attempt_id, owner_token),
+            )
+            if cur.rowcount != 1:
+                raise CacheStateError("Failed to mark solver run as dispatched")
+
+    def complete_solver_run(
+        self,
+        attempt_id: str,
+        owner_token: str,
+        *,
+        artifact: SolverArtifact,
+        usage: UsageEvidence,
+        valuation: CostValuation | None = None,
+        now: datetime | None = None,
+    ) -> None:
+        """Atomically persist validated solver artifacts and usage before marking reusable."""
+        if type(artifact) is not SolverArtifact:
+            raise CacheValidationError("Expected a SolverArtifact instance")
+        if type(usage) is not UsageEvidence:
+            raise CacheValidationError("Expected a UsageEvidence instance")
+        if valuation is not None and type(valuation) is not CostValuation:
+            raise CacheValidationError("valuation must be a CostValuation or None")
+        now_dt = parse_utc_timestamp(_now_iso(now))
+        now_iso = now_dt.isoformat()
+
+        with self._transaction() as db:
+            row = self._require_owned_solver_run(db, attempt_id, owner_token, now_dt)
+            namespace = row["namespace"]
+            if namespace == "synthetic":
+                if row["execution_state"] not in {"claimed", "dispatched"}:
+                    raise CacheStateError("Synthetic run must be claimed or dispatched")
+                if usage.accounting_mode != "synthetic":
+                    raise CacheValidationError(
+                        "Synthetic namespace requires synthetic accounting_mode"
+                    )
+                if valuation is not None:
+                    raise CacheValidationError(
+                        "Synthetic runs must not record monetary provider CostValuation"
+                    )
+            else:
+                if row["execution_state"] != "dispatched" or row["dispatched"] != 1:
+                    raise CacheStateError("Live run must be marked dispatched before completion")
+                if row["reservation_state"] != "reserved" or not row["reservation_id"]:
+                    raise CacheStateError("Live run lacks active reservation binding")
+                if usage.accounting_mode != "provider":
+                    raise CacheValidationError(
+                        "Completed live run requires 'provider' accounting_mode; "
+                        "use fail_or_block_solver_run for unknown usage"
+                    )
+                if valuation is None:
+                    raise CacheValidationError("Completed live run requires CostValuation")
+                if (
+                    row["planned_reservation_nanos"] is not None
+                    and valuation.cost_nanos > row["planned_reservation_nanos"]
+                ):
+                    raise CacheStateError(
+                        "Actual cost exceeds planned reservation; use fail_or_block_solver_run"
+                    )
+
+            traj_json = canonical_json_bytes(
+                list(artifact.trajectory_events), max_bytes=MAX_TRAJECTORY_BYTES
+            ).decode("ascii")
+            patch_digest = artifact.patch_sha256
+
+            cur = db.execute(
+                "UPDATE solver_runs SET "
+                "  execution_state = 'completed', "
+                "  candidate_outcome = 'not_scored', "
+                "  evidence_validity = 'valid', "
+                "  updated_at = ?, "
+                "  stop_reason = ?, "
+                "  turns = ?, "
+                "  commands = ?, "
+                "  invalid_turns = ?, "
+                "  command_timeouts = ?, "
+                "  wall_elapsed_seconds = ?, "
+                "  patch_bytes = ?, "
+                "  patch_sha256 = ?, "
+                "  trajectory_json = ?, "
+                "  has_patch = ?, "
+                "  visible_tests_pass = ?, "
+                "  hit_step_cap = ?, "
+                "  no_command_rate = ?, "
+                "  agent_self_reports_done = ?, "
+                "  execution_backend = ?, "
+                "  accounting_mode = ?, "
+                "  provider_calls = ?, "
+                "  synthetic_prompt_tokens = ?, "
+                "  synthetic_completion_tokens = ?, "
+                "  actual_prompt_tokens = ?, "
+                "  actual_completion_tokens = ?, "
+                "  actual_total_tokens = ?, "
+                "  actual_reasoning_tokens = ?, "
+                "  actual_cached_tokens = ?, "
+                "  explicit_zero_usage = ?, "
+                "  original_cost_nanos = ?, "
+                "  original_pricing_version = ?, "
+                "  original_input_price_usd_per_m = ?, "
+                "  original_output_price_usd_per_m = ? "
+                "WHERE attempt_id = ? AND owner_token = ? "
+                "  AND execution_state IN ('claimed', 'dispatched')",
+                (
+                    now_iso,
+                    artifact.stop_reason,
+                    artifact.turns,
+                    artifact.commands,
+                    artifact.invalid_turns,
+                    artifact.command_timeouts,
+                    str(artifact.wall_elapsed_seconds),
+                    artifact.patch_bytes,
+                    patch_digest,
+                    traj_json,
+                    int(artifact.has_patch),
+                    None
+                    if artifact.visible_tests_pass is None
+                    else int(artifact.visible_tests_pass),
+                    int(artifact.hit_step_cap),
+                    str(artifact.no_command_rate),
+                    int(artifact.agent_self_reports_done),
+                    artifact.execution_backend,
+                    usage.accounting_mode,
+                    usage.provider_calls,
+                    usage.synthetic_prompt_tokens,
+                    usage.synthetic_completion_tokens,
+                    usage.actual_prompt_tokens,
+                    usage.actual_completion_tokens,
+                    usage.actual_total_tokens,
+                    usage.actual_reasoning_tokens,
+                    usage.actual_cached_tokens,
+                    int(usage.explicit_zero_usage),
+                    None if valuation is None else valuation.cost_nanos,
+                    None if valuation is None else valuation.pricing_version,
+                    None if valuation is None else valuation.input_usd_per_million,
+                    None if valuation is None else valuation.output_usd_per_million,
+                    attempt_id,
+                    owner_token,
+                ),
+            )
+            if cur.rowcount != 1:
+                raise CacheStateError("Failed to complete solver run")
+
+            if valuation is not None:
+                db.execute(
+                    "INSERT INTO cost_valuations ("
+                    "  valuation_id, attempt_id, is_original, pricing_version, "
+                    "  input_price_usd_per_m, output_price_usd_per_m, cost_nanos, "
+                    "  explicit_zero_cost, recorded_at"
+                    ") VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?)",
+                    (
+                        uuid4().hex,
+                        attempt_id,
+                        valuation.pricing_version,
+                        valuation.input_usd_per_million,
+                        valuation.output_usd_per_million,
+                        valuation.cost_nanos,
+                        int(valuation.explicit_zero_cost),
+                        now_iso,
+                    ),
+                )
+
+    def fail_or_block_solver_run(
+        self,
+        attempt_id: str,
+        owner_token: str,
+        *,
+        reason: str,
+        usage: UsageEvidence | None = None,
+        now: datetime | None = None,
+    ) -> None:
+        """Transition an interrupted, unknown-usage, or failed run to blocked_uncertain."""
+        _require_nonempty_str(reason, "reason", max_len=MAX_REASON_CHARS)
+        if usage is not None and type(usage) is not UsageEvidence:
+            raise CacheValidationError("usage must be UsageEvidence or None")
+        now_dt = parse_utc_timestamp(_now_iso(now))
+        with self._transaction() as db:
+            row = self._require_owned_solver_run(
+                db, attempt_id, owner_token, now_dt, check_lease=False
+            )
+            if row["execution_state"] not in {"claimed", "dispatched"}:
+                raise CacheStateError("Only claimed or dispatched runs can be failed/blocked")
+            acc_mode = "unknown" if usage is None else usage.accounting_mode
+            cur = db.execute(
+                "UPDATE solver_runs SET "
+                "  execution_state = 'blocked_uncertain', "
+                "  candidate_outcome = 'undetermined', "
+                "  evidence_validity = 'infrastructure_error', "
+                "  accounting_mode = ?, "
+                "  provider_calls = ?, "
+                "  synthetic_prompt_tokens = ?, "
+                "  synthetic_completion_tokens = ?, "
+                "  actual_prompt_tokens = ?, "
+                "  actual_completion_tokens = ?, "
+                "  actual_total_tokens = ?, "
+                "  actual_reasoning_tokens = ?, "
+                "  actual_cached_tokens = ?, "
+                "  failure_reason = ?, "
+                "  updated_at = ? "
+                "WHERE attempt_id = ? AND owner_token = ? "
+                "  AND execution_state IN ('claimed', 'dispatched')",
+                (
+                    acc_mode,
+                    None if usage is None else usage.provider_calls,
+                    None if usage is None else usage.synthetic_prompt_tokens,
+                    None if usage is None else usage.synthetic_completion_tokens,
+                    None if usage is None else usage.actual_prompt_tokens,
+                    None if usage is None else usage.actual_completion_tokens,
+                    None if usage is None else usage.actual_total_tokens,
+                    None if usage is None else usage.actual_reasoning_tokens,
+                    None if usage is None else usage.actual_cached_tokens,
+                    reason,
+                    now_dt.isoformat(),
+                    attempt_id,
+                    owner_token,
+                ),
+            )
+            if cur.rowcount != 1:
+                raise CacheStateError("Failed to block solver run")
+
+    def fence_expired_claim(
+        self,
+        attempt_id: str,
+        *,
+        reason: str = "lease_expired_fenced",
+        now: datetime | None = None,
+    ) -> str:
+        """Fence an expired claim. Never auto-replays; transitions to blocked_uncertain."""
+        _require_nonempty_str(attempt_id, "attempt_id")
+        _require_nonempty_str(reason, "reason", max_len=MAX_REASON_CHARS)
+        now_dt = parse_utc_timestamp(_now_iso(now))
+        with self._transaction() as db:
+            row = db.execute(
+                "SELECT * FROM solver_runs WHERE attempt_id = ?", (attempt_id,)
+            ).fetchone()
+            if row is None:
+                raise CacheOwnershipError("Unknown solver attempt_id")
+            self._verify_solver_row_integrity(row)
+            if row["execution_state"] not in {"claimed", "dispatched"}:
+                raise CacheStateError("Run is not in an active claimed/dispatched state")
+            lease_exp = parse_utc_timestamp(row["lease_expires_at"])
+            if now_dt < lease_exp:
+                raise CacheStateError("Cannot fence an active lease before lease_expires_at")
+            # Rotate owner_token to fence the stale worker and block automatic rerun
+            fenced_token = "fenced-" + uuid4().hex
+            db.execute(
+                "UPDATE solver_runs SET "
+                "  owner_token = ?, "
+                "  execution_state = 'blocked_uncertain', "
+                "  candidate_outcome = 'undetermined', "
+                "  evidence_validity = 'infrastructure_error', "
+                "  failure_reason = ?, "
+                "  updated_at = ? "
+                "WHERE attempt_id = ? AND execution_state IN ('claimed', 'dispatched')",
+                (fenced_token, reason, now_dt.isoformat(), attempt_id),
+            )
+            return "blocked_uncertain"
+
+    def mark_reservation_finalized(
+        self,
+        attempt_id: str,
+        owner_token: str,
+        *,
+        ledger_state: str,
+        now: datetime | None = None,
+    ) -> None:
+        """Record that CreditLedger.finish_run has completed for this run's reservation."""
+        if ledger_state not in {"completed", "uncertain"}:
+            raise CacheValidationError("ledger_state must be 'completed' or 'uncertain'")
+        now_dt = parse_utc_timestamp(_now_iso(now))
+        target_res_state = (
+            "finalized_completed" if ledger_state == "completed" else "finalized_uncertain"
+        )
+        with self._transaction() as db:
+            row = self._require_owned_solver_run(
+                db, attempt_id, owner_token, now_dt, check_lease=False
+            )
+            if row["namespace"] != "live" or row["reservation_state"] != "reserved":
+                raise CacheStateError("Run does not have an active 'reserved' reservation")
+            if ledger_state == "completed" and row["execution_state"] != "completed":
+                raise CacheStateError(
+                    "Cannot mark reservation finalized_completed on an incomplete solver run"
+                )
+            cur = db.execute(
+                "UPDATE solver_runs SET reservation_state = ?, updated_at = ? "
+                "WHERE attempt_id = ? AND owner_token = ? AND reservation_state = 'reserved'",
+                (target_res_state, now_dt.isoformat(), attempt_id, owner_token),
+            )
+            if cur.rowcount != 1:
+                raise CacheStateError("Failed to finalize reservation state")
+
+    def revalue_solver_run(
+        self,
+        attempt_id: str,
+        *,
+        pricing_version: str,
+        input_usd_per_million: str,
+        output_usd_per_million: str,
+        now: datetime | None = None,
+    ) -> CostValuation:
+        """Append a new price valuation without altering solver_key or original recorded cost."""
+        _require_nonempty_str(attempt_id, "attempt_id")
+        now_iso = _now_iso(now)
+        with self._transaction() as db:
+            row = db.execute(
+                "SELECT * FROM solver_runs WHERE attempt_id = ?", (attempt_id,)
+            ).fetchone()
+            if row is None:
+                raise CacheValidationError("Unknown solver attempt_id")
+            self._verify_solver_row_integrity(row)
+            if (
+                row["execution_state"] != "completed"
+                or row["accounting_mode"] != "provider"
+                or row["actual_prompt_tokens"] is None
+                or row["actual_completion_tokens"] is None
+            ):
+                raise CacheStateError(
+                    "Price revaluation requires a completed run with actual provider token counts"
+                )
+            valuation = CostValuation.from_token_usage(
+                pricing_version=pricing_version,
+                input_usd_per_million=input_usd_per_million,
+                output_usd_per_million=output_usd_per_million,
+                prompt_tokens=row["actual_prompt_tokens"],
+                completion_tokens=row["actual_completion_tokens"],
+                explicit_zero_cost=bool(row["explicit_zero_usage"]),
+            )
+            db.execute(
+                "INSERT INTO cost_valuations ("
+                "  valuation_id, attempt_id, is_original, pricing_version, "
+                "  input_price_usd_per_m, output_price_usd_per_m, cost_nanos, "
+                "  explicit_zero_cost, recorded_at"
+                ") VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?)",
+                (
+                    uuid4().hex,
+                    attempt_id,
+                    valuation.pricing_version,
+                    valuation.input_usd_per_million,
+                    valuation.output_usd_per_million,
+                    valuation.cost_nanos,
+                    int(valuation.explicit_zero_cost),
+                    now_iso,
+                ),
+            )
+            return valuation
+
+    def record_score(
+        self,
+        scoring_identity: ScoringIdentity,
+        *,
+        solver_attempt_id: str,
+        score_artifact: ScoreArtifact,
+        now: datetime | None = None,
+    ) -> str:
+        """Record an evaluator result bound to solver_key and exact candidate patch SHA-256."""
+        if type(scoring_identity) is not ScoringIdentity:
+            raise CacheValidationError("Expected a ScoringIdentity instance")
+        if type(score_artifact) is not ScoreArtifact:
+            raise CacheValidationError("Expected a ScoreArtifact instance")
+        _require_nonempty_str(solver_attempt_id, "solver_attempt_id")
+        now_iso = _now_iso(now)
+        s_key = scoring_identity.scoring_key()
+        s_json = canonical_json_bytes(scoring_identity.to_canonical_dict()).decode("ascii")
+
+        with self._transaction() as db:
+            solver_row = db.execute(
+                "SELECT * FROM solver_runs WHERE attempt_id = ?", (solver_attempt_id,)
+            ).fetchone()
+            if solver_row is None:
+                raise CacheValidationError("Unknown solver_attempt_id")
+            self._verify_solver_row_integrity(solver_row)
+            if solver_row["execution_state"] != "completed":
+                raise CacheStateError("Cannot score an incomplete solver run")
+            if solver_row["solver_key"] != scoring_identity.solver_key:
+                raise CacheValidationError(
+                    "ScoringIdentity.solver_key does not match solver run's solver_key"
+                )
+            if solver_row["patch_sha256"] != scoring_identity.candidate_patch_sha256:
+                raise CacheValidationError(
+                    "ScoringIdentity.candidate_patch_sha256 does not match stored patch_sha256"
+                )
+            namespace = solver_row["namespace"]
+            if namespace == "synthetic" and scoring_identity.registration_id is not None:
+                raise CacheValidationError(
+                    "Synthetic namespace runs cannot be bound to a Stage B registration_id"
+                )
+
+            existing_sid = db.execute(
+                "SELECT * FROM score_identities WHERE scoring_key = ?", (s_key,)
+            ).fetchone()
+            if existing_sid is None:
+                db.execute(
+                    "INSERT INTO score_identities ("
+                    "  scoring_key, solver_key, candidate_patch_sha256, "
+                    "  registration_id, identity_json, created_at"
+                    ") VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        s_key,
+                        scoring_identity.solver_key,
+                        scoring_identity.candidate_patch_sha256,
+                        scoring_identity.registration_id,
+                        s_json,
+                        now_iso,
+                    ),
+                )
+            else:
+                parsed_sid = ScoringIdentity.from_canonical_json(existing_sid["identity_json"])
+                if parsed_sid.scoring_key() != s_key or existing_sid["identity_json"] != s_json:
+                    raise CacheCorruptionError("Stored score_identity collision or corruption")
+
+            existing_score = db.execute(
+                "SELECT * FROM score_runs "
+                "WHERE namespace = ? AND scoring_key = ? "
+                "AND execution_state IN ('claimed', 'completed', 'blocked_uncertain')",
+                (namespace, s_key),
+            ).fetchone()
+            if existing_score is not None:
+                raise CacheStateError(
+                    "A completed or blocked score already exists for this scoring_key"
+                )
+
+            score_attempt_id = uuid4().hex
+            exec_state = (
+                "completed"
+                if score_artifact.evidence_validity == "valid"
+                else "blocked_uncertain"
+            )
+            db.execute(
+                "INSERT INTO score_runs ("
+                "  score_attempt_id, scoring_key, solver_attempt_id, namespace, "
+                "  registration_id, owner_token, claimed_at, lease_expires_at, updated_at, "
+                "  execution_state, scorer_status, candidate_outcome, evidence_validity, "
+                "  reason, phase, baseline_verified, prepared_archive_sha256, "
+                "  private_envelope_sha256"
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    score_attempt_id,
+                    s_key,
+                    solver_attempt_id,
+                    namespace,
+                    scoring_identity.registration_id,
+                    uuid4().hex,
+                    now_iso,
+                    now_iso,
+                    now_iso,
+                    exec_state,
+                    score_artifact.scorer_status,
+                    score_artifact.candidate_outcome,
+                    score_artifact.evidence_validity,
+                    score_artifact.reason,
+                    score_artifact.phase,
+                    int(score_artifact.baseline_verified),
+                    score_artifact.prepared_archive_sha256,
+                    score_artifact.private_envelope_sha256,
+                ),
+            )
+            db.execute(
+                "UPDATE solver_runs SET "
+                "  candidate_outcome = ?, "
+                "  evidence_validity = ?, "
+                "  updated_at = ? "
+                "WHERE attempt_id = ?",
+                (
+                    score_artifact.candidate_outcome,
+                    score_artifact.evidence_validity,
+                    now_iso,
+                    solver_attempt_id,
+                ),
+            )
+            return score_attempt_id
+
+    def get_solver_run(self, attempt_id: str) -> dict[str, Any]:
+        """Read full private solver run record including patch bytes and cost valuations."""
+        _require_nonempty_str(attempt_id, "attempt_id")
+        with self._transaction() as db:
+            row = db.execute(
+                "SELECT * FROM solver_runs WHERE attempt_id = ?", (attempt_id,)
+            ).fetchone()
+            if row is None:
+                raise CacheValidationError("Unknown solver attempt_id")
+            self._verify_solver_row_integrity(row)
+            valuations = db.execute(
+                "SELECT * FROM cost_valuations WHERE attempt_id = ? ORDER BY rowid ASC",
+                (attempt_id,),
+            ).fetchall()
+            scores = db.execute(
+                "SELECT * FROM score_runs WHERE solver_attempt_id = ? ORDER BY rowid ASC",
+                (attempt_id,),
+            ).fetchall()
+            result = dict(row)
+            result["valuations"] = [dict(v) for v in valuations]
+            result["scores"] = [dict(s) for s in scores]
+            return result
+
+    def list_attempts_for_key(self, namespace: str, solver_key: str) -> list[dict[str, Any]]:
+        """Return all historical attempts (including failed/aborted) for a solver_key."""
+        if namespace not in VALID_NAMESPACES:
+            raise CacheValidationError("Invalid namespace")
+        _require_hex64(solver_key, "solver_key")
+        with self._transaction() as db:
+            rows = db.execute(
+                "SELECT * FROM solver_runs "
+                "WHERE namespace = ? AND solver_key = ? ORDER BY rowid ASC",
+                (namespace, solver_key),
+            ).fetchall()
+            for r in rows:
+                self._verify_solver_row_integrity(r)
+            return [dict(r) for r in rows]
+
+    def export_summary(
+        self,
+        attempt_id: str,
+        *,
+        scoring_key: str | None = None,
+        require_publishable: bool = False,
+    ) -> dict[str, Any]:
+        """Export strictly whitelisted summary fields without raw patch, trajectory, or receipts."""
+        _require_nonempty_str(attempt_id, "attempt_id")
+        if scoring_key is not None:
+            _require_hex64(scoring_key, "scoring_key")
+        with self._transaction() as db:
+            row = db.execute(
+                "SELECT r.*, i.model_id, i.api_base, i.identity_json "
+                "FROM solver_runs r "
+                "JOIN solver_identities i ON r.solver_key = i.solver_key "
+                "WHERE r.attempt_id = ?",
+                (attempt_id,),
+            ).fetchone()
+            if row is None:
+                raise CacheValidationError("Unknown solver attempt_id")
+            self._verify_solver_row_integrity(row)
+            identity = SolverIdentity.from_canonical_json(row["identity_json"])
+
+            if scoring_key is not None:
+                score_row = db.execute(
+                    "SELECT * FROM score_runs "
+                    "WHERE solver_attempt_id = ? AND scoring_key = ? "
+                    "ORDER BY rowid DESC LIMIT 1",
+                    (attempt_id, scoring_key),
+                ).fetchone()
+                if score_row is None:
+                    raise CacheValidationError("Requested scoring_key not found for attempt_id")
+            else:
+                score_row = db.execute(
+                    "SELECT * FROM score_runs "
+                    "WHERE solver_attempt_id = ? ORDER BY rowid DESC LIMIT 1",
+                    (attempt_id,),
+                ).fetchone()
+
+            latest_val = db.execute(
+                "SELECT * FROM cost_valuations "
+                "WHERE attempt_id = ? ORDER BY rowid DESC LIMIT 1",
+                (attempt_id,),
+            ).fetchone()
+
+            reg_id = None if score_row is None else score_row["registration_id"]
+            cand_outcome = (
+                row["candidate_outcome"]
+                if score_row is None
+                else score_row["candidate_outcome"]
+            )
+            ev_validity = (
+                row["evidence_validity"]
+                if score_row is None
+                else score_row["evidence_validity"]
+            )
+
+            is_publishable = bool(
+                row["namespace"] == "live"
+                and row["execution_state"] == "completed"
+                and row["reservation_state"] == "finalized_completed"
+                and row["accounting_mode"] == "provider"
+                and score_row is not None
+                and score_row["execution_state"] == "completed"
+                and ev_validity == "valid"
+                and cand_outcome in {"solved", "unsolved"}
+                and isinstance(reg_id, str)
+                and bool(reg_id.strip())
+            )
+
+            if require_publishable and not is_publishable:
+                raise CacheBlockedError(
+                    "Run is not eligible for publishable benchmark export "
+                    "(requires live namespace, finalized reservation, valid score, and registration_id)"
+                )
+
+            raw_export = {
+                "schema_version": SCHEMA_VERSION,
+                "namespace": row["namespace"],
+                "task_id": row["task_id"],
+                "solver_key": row["solver_key"],
+                "scoring_key": None if score_row is None else score_row["scoring_key"],
+                "registration_id": reg_id,
+                "model_id": identity.model_id,
+                "api_base": identity.api_base,
+                "seed": identity.sampling.seed,
+                "execution_state": row["execution_state"],
+                "candidate_outcome": cand_outcome,
+                "evidence_validity": ev_validity,
+                "stop_reason": row["stop_reason"],
+                "turns": row["turns"],
+                "commands": row["commands"],
+                "invalid_turns": row["invalid_turns"],
+                "command_timeouts": row["command_timeouts"],
+                "wall_elapsed_seconds": (
+                    None
+                    if row["wall_elapsed_seconds"] is None
+                    else float(row["wall_elapsed_seconds"])
+                ),
+                "has_patch": (
+                    None if row["has_patch"] is None else bool(row["has_patch"])
+                ),
+                "candidate_patch_sha256": row["patch_sha256"],
+                "visible_tests_pass": (
+                    None
+                    if row["visible_tests_pass"] is None
+                    else bool(row["visible_tests_pass"])
+                ),
+                "hit_step_cap": (
+                    None if row["hit_step_cap"] is None else bool(row["hit_step_cap"])
+                ),
+                "no_command_rate": (
+                    None
+                    if row["no_command_rate"] is None
+                    else float(row["no_command_rate"])
+                ),
+                "agent_self_reports_done": (
+                    None
+                    if row["agent_self_reports_done"] is None
+                    else bool(row["agent_self_reports_done"])
+                ),
+                "accounting_mode": row["accounting_mode"],
+                "provider_calls": row["provider_calls"],
+                "synthetic_prompt_tokens": row["synthetic_prompt_tokens"],
+                "synthetic_completion_tokens": row["synthetic_completion_tokens"],
+                "actual_prompt_tokens": row["actual_prompt_tokens"],
+                "actual_completion_tokens": row["actual_completion_tokens"],
+                "actual_total_tokens": row["actual_total_tokens"],
+                "actual_reasoning_tokens": row["actual_reasoning_tokens"],
+                "actual_cached_tokens": row["actual_cached_tokens"],
+                "original_cost_usd": nanos_to_usd_str(row["original_cost_nanos"]),
+                "original_pricing_version": row["original_pricing_version"],
+                "latest_cost_usd": (
+                    None
+                    if latest_val is None
+                    else nanos_to_usd_str(latest_val["cost_nanos"])
+                ),
+                "latest_pricing_version": (
+                    None if latest_val is None else latest_val["pricing_version"]
+                ),
+                "publishable": is_publishable,
+            }
+
+            # Enforce strict whitelist construction
+            return {k: raw_export[k] for k in SUMMARY_EXPORT_WHITELIST}
+
+
+tests/test_run_cache.py
+
+
+
+Python
+"""Comprehensive offline tests for Dojo cache identity, concurrency, and crash safety.
+
+UNEXECUTED proposal for review/testing in primary workspace.
+All metadata, balances, and SQLite databases are synthetic and temporary.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import sqlite3
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
+from pathlib import Path
+
+import pytest
+
+from dojo.store.credits import CreditError, CreditLedger
+from dojo.store.db import (
+    CacheBlockedError,
+    CacheBusyError,
+    CacheCorruptionError,
+    CacheMissingError,
+    CacheOwnershipError,
+    CacheSchemaError,
+    CacheStateError,
+    RunCache,
+)
+from dojo.store.schemas import (
+    MAX_PATCH_BYTES,
+    MAX_REASON_CHARS,
+    MAX_TRAJECTORY_EVENTS,
+    SUMMARY_EXPORT_WHITELIST,
+    CacheValidationError,
+    CostValuation,
+    ScoreArtifact,
+    ScoringIdentity,
+    SolverArtifact,
+    SolverIdentity,
+    UsageEvidence,
+    sha256_bytes,
+    usd_to_nanos,
+)
+
+NOW = datetime(2026, 10, 21, 12, 0, 0, tzinfo=UTC)
+SYNTHETIC_PATCH = b"--- a/add.py\n+++ b/add.py\n@@ -1 +1 @@\n-return a-b\n+return a+b\n"
+ALT_PATCH = b"--- a/add.py\n+++ b/add.py\n@@ -1 +1 @@\n-return a-b\n+return a + b\n"
+
+
+def _h(label: str) -> str:
+    return hashlib.sha256(label.encode("utf-8")).hexdigest()
+
+
+def synthetic_metadata() -> dict:
+    """Exact synthetic metadata builder specified in the review assignment."""
+    return {
+        "task_id": "synthetic_cache_001",
+        "source_archive_sha256": _h("synthetic original archive bytes"),
+        "issue_sha256": _h("Synthetic: addition must preserve correct behavior."),
+        "input_protocol_sha256": _h("synthetic approved input protocol v1"),
+        "model_id": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+        "api_base": "https://api.tokenfactory.nebius.com/v1/",
+        "sampling": {"temperature": 1.0, "top_p": 0.95, "seed": 7},
+        "thinking": {"enabled": False, "budget": None, "force_nonempty_content": True},
+        "limits": {
+            "max_steps": 3,
+            "observation_chars": 100,
+            "command_timeout_seconds": 2,
+            "wall_seconds": 10,
+            "token_ceiling": 10000,
+            "reply_tokens": 128,
+        },
+        "context_tokens": 262144,
+        "scaffold_sha256": _h("synthetic custom controller v1"),
+        "system_prompt_sha256": _h("synthetic system prompt"),
+        "action_policy_sha256": _h("strict JSON bash or finish v1"),
+        "tool_policy_sha256": _h("synthetic visible-tests policy v1"),
+        "docsearch": {"enabled": False, "policy_sha256": _h("docsearch disabled v1")},
+        "bundle_sha256": hashlib.sha256(b"").hexdigest(),
+        "visible_selectors_sha256": _h('["tests/test_synthetic.py"]'),
+        "solver_image_id": "sha256:" + _h("synthetic image not installed"),
+        "solver_harness_sha256": _h("synthetic solver harness"),
+        "namespace": "synthetic",
+    }
+
+
+def synthetic_scoring_metadata(
+    solver_key: str,
+    patch_bytes: bytes = SYNTHETIC_PATCH,
+    *,
+    registration_id: str | None = None,
+) -> dict:
+    """Synthetic evaluator metadata derived from required specification labels."""
+    return {
+        "solver_key": solver_key,
+        "candidate_patch_sha256": sha256_bytes(patch_bytes),
+        "evaluator_version": "evaluator-v1",
+        "evaluator_source_sha256": _h("evaluator source v1"),
+        "contract_sha256": _h("synthetic scoring contract v1"),
+        "restoration_policy_sha256": _h("restoration v1"),
+        "collector_protocol": "method-subtests-v2",
+        "collector_sha256": _h("collector v2"),
+        "scoring_image_id": "sha256:" + _h("synthetic image not installed"),
+        "scoring_harness_sha256": _h("synthetic scoring harness v1"),
+        "expectation_sha256": _h("expectation v1"),
+        "baseline_policy_sha256": _h("baseline policy v1"),
+        "registration_id": registration_id,
+    }
+
+
+def make_solver_artifact(
+    patch_bytes: bytes = SYNTHETIC_PATCH,
+    *,
+    visible_pass: bool | None = True,
+    done: bool = True,
+    stop_reason: str = "self_reported_done",
+) -> SolverArtifact:
+    return SolverArtifact(
+        stop_reason=stop_reason,
+        turns=2,
+        commands=1,
+        invalid_turns=0,
+        command_timeouts=0,
+        wall_elapsed_seconds=1.25,
+        patch_bytes=patch_bytes,
+        trajectory_events=(
+            {"turn": 1, "action": "bash", "command": "pytest -q"},
+            {"turn": 2, "action": "finish"},
+        ),
+        has_patch=bool(patch_bytes.strip()),
+        visible_tests_pass=visible_pass,
+        hit_step_cap=False,
+        no_command_rate=0.0,
+        agent_self_reports_done=done,
+        execution_backend="scripted",
+    )
+
+
+def make_synthetic_usage() -> UsageEvidence:
+    return UsageEvidence(
+        accounting_mode="synthetic",
+        synthetic_prompt_tokens=120,
+        synthetic_completion_tokens=18,
+        provider_calls=0,
+    )
+
+
+def make_provider_usage(prompt: int = 400, completion: int = 50) -> UsageEvidence:
+    return UsageEvidence(
+        accounting_mode="provider",
+        synthetic_prompt_tokens=380,
+        synthetic_completion_tokens=45,
+        provider_calls=2,
+        actual_prompt_tokens=prompt,
+        actual_completion_tokens=completion,
+        actual_total_tokens=prompt + completion,
+        actual_reasoning_tokens=10,
+        actual_cached_tokens=0,
+    )
+
+
+@pytest.fixture
+def cache(tmp_path: Path) -> RunCache:
+    store = RunCache(tmp_path / "cache.sqlite3")
+    store.initialize(now=NOW)
+    return store
+
+
+# ---------------------------------------------------------------------------
+# Case 1: Identity determinism, field sensitivity, and strict type validation
+# ---------------------------------------------------------------------------
+
+
+def test_identity_order_invariance_and_field_mutations_change_key():
+    meta_a = synthetic_metadata()
+    # Reverse outer and nested dictionary insertion orders
+    meta_b = dict(reversed(list(meta_a.items())))
+    meta_b["sampling"] = dict(reversed(list(meta_a["sampling"].items())))
+    meta_b["thinking"] = dict(reversed(list(meta_a["thinking"].items())))
+    meta_b["limits"] = dict(reversed(list(meta_a["limits"].items())))
+    meta_b["docsearch"] = dict(reversed(list(meta_a["docsearch"].items())))
+
+    id_a = SolverIdentity.from_dict(meta_a)
+    id_b = SolverIdentity.from_dict(meta_b)
+    base_key = id_a.solver_key()
+    assert base_key == id_b.solver_key()
+
+    # Int vs float representation of whole numbers in sampling/limits normalizes identically
+    meta_int_temp = synthetic_metadata()
+    meta_int_temp["sampling"]["temperature"] = 1
+    assert SolverIdentity.from_dict(meta_int_temp).solver_key() == base_key
+
+    # Mutating every single behavior-affecting field changes solver_key
+    mutations = [
+        ("task_id", "synthetic_cache_002"),
+        ("source_archive_sha256", _h("other archive")),
+        ("issue_sha256", _h("other issue")),
+        ("input_protocol_sha256", _h("other input protocol")),
+        ("model_id", "nvidia/Nemotron-3_5-Lightning"),
+        ("api_base", "https://api.tokenfactory.us-central1.nebius.com/v1/"),
+        ("sampling", {"temperature": 0.7, "top_p": 0.95, "seed": 7}),
+        ("sampling", {"temperature": 1.0, "top_p": 0.90, "seed": 7}),
+        ("sampling", {"temperature": 1.0, "top_p": 0.95, "seed": 8}),
+        ("thinking", {"enabled": True, "budget": 32, "force_nonempty_content": True}),
+        ("limits", {**meta_a["limits"], "max_steps": 4}),
+        ("limits", {**meta_a["limits"], "observation_chars": 200}),
+        ("limits", {**meta_a["limits"], "command_timeout_seconds": 3}),
+        ("limits", {**meta_a["limits"], "wall_seconds": 15}),
+        ("limits", {**meta_a["limits"], "token_ceiling": 20000}),
+        ("limits", {**meta_a["limits"], "reply_tokens": 256}),
+        ("context_tokens", 131072),
+        ("scaffold_sha256", _h("other scaffold")),
+        ("system_prompt_sha256", _h("other prompt")),
+        ("action_policy_sha256", _h("other action policy")),
+        ("tool_policy_sha256", _h("other tool policy")),
+        ("docsearch", {"enabled": False, "policy_sha256": _h("other docsearch policy")}),
+        ("bundle_sha256", _h("non-empty note bundle")),
+        ("visible_selectors_sha256", _h('["tests/test_other.py"]')),
+        ("solver_image_id", "sha256:" + _h("other solver image")),
+        ("solver_harness_sha256", _h("other solver harness")),
+        ("namespace", "live"),
+    ]
+    for field_name, new_value in mutations:
+        mutated = synthetic_metadata()
+        mutated[field_name] = new_value
+        assert SolverIdentity.from_dict(mutated).solver_key() != base_key, field_name
+
+
+@pytest.mark.parametrize(
+    "mutator",
+    [
+        lambda m: m.pop("bundle_sha256"),
+        lambda m: m.pop("docsearch"),
+        lambda m: m.update(extra_unknown_field="x"),
+        lambda m: m["sampling"].update(seed=True),
+        lambda m: m["sampling"].update(seed=-1),
+        lambda m: m["sampling"].update(temperature=True),
+        lambda m: m["sampling"].update(temperature=float("nan")),
+        lambda m: m["sampling"].update(top_p=float("inf")),
+        lambda m: m["sampling"].update(top_p=0.0),
+        lambda m: m[" sampling" if False else "sampling"].update(temperature="1.0"),
+        lambda m: m["thinking"].update(enabled=1),
+        lambda m: m["thinking"].update(budget=32),  # enabled is False
+        lambda m: m["thinking"].update(force_nonempty_content=False),
+        lambda m: m["docsearch"].update(enabled=True),
+        lambda m: m["limits"].update(max_steps=True),
+        lambda m: m["limits"].update(wall_seconds=float("nan")),
+        lambda m: m.update(api_base="https://evil.example.com/v1/"),
+        lambda m: m.update(model_id="openai/gpt-4"),
+        lambda m: m.update(source_archive_sha256="not-a-hex-digest"),
+        lambda m: m.update(solver_image_id="not-prefixed-with-sha256"),
+    ],
+)
+def test_identity_rejects_missing_extra_bool_nan_and_invalid_fields(mutator):
+    meta = synthetic_metadata()
+    mutator(meta)
+    with pytest.raises(CacheValidationError):
+        SolverIdentity.from_dict(meta)
+
+
+def test_raw_archive_and_patch_bytes_preserve_exact_line_endings():
+    lf_bytes = b"line1\nline2\n"
+    crlf_bytes = b"line1\r\nline2\r\n"
+    assert sha256_bytes(lf_bytes) != sha256_bytes(crlf_bytes)
+    with pytest.raises(CacheValidationError):
+        sha256_bytes("text is not bytes")  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
+# Case 2: Separate scoring key & price-only revaluation preserves history
+# ---------------------------------------------------------------------------
+
+
+def test_evaluator_or_patch_change_updates_scoring_key_while_preserving_solver_key(
+    cache: RunCache,
+):
+    solver_id = SolverIdentity.from_dict({**synthetic_metadata(), "namespace": "live"})
+    solver_key = solver_id.solver_key()
+
+    score_base = ScoringIdentity.from_dict(
+        synthetic_scoring_metadata(solver_key, SYNTHETIC_PATCH)
+    )
+    score_diff_patch = ScoringIdentity.from_dict(
+        synthetic_scoring_metadata(solver_key, ALT_PATCH)
+    )
+    assert score_base.scoring_key() != score_diff_patch.scoring_key()
+    assert score_base.solver_key == score_diff_patch.solver_key == solver_key
+
+    # Mutate each evaluator metadata field and confirm scoring_key changes while solver_key stays constant
+    for eval_field, new_val in [
+        ("evaluator_version", "evaluator-v2"),
+        ("evaluator_source_sha256", _h("evaluator source v2")),
+        ("contract_sha256", _h("contract v2")),
+        ("restoration_policy_sha256", _h("restoration v2")),
+        ("collector_protocol", "legacy-v1"),
+        ("collector_sha256", _h("collector v1")),
+        ("scoring_image_id", "sha256:" + _h("new scoring image")),
+        ("scoring_harness_sha256", _h("new scoring harness")),
+        ("expectation_sha256", _h("expectation v2")),
+        ("baseline_policy_sha256", _h("baseline policy v2")),
+        ("registration_id", "stage-b-reg-001"),
+    ]:
+        meta = synthetic_scoring_metadata(solver_key, SYNTHETIC_PATCH)
+        meta[eval_field] = new_val
+        mutated_score = ScoringIdentity.from_dict(meta)
+        assert mutated_score.solver_key == solver_key
+        assert mutated_score.scoring_key() != score_base.scoring_key(), eval_field
+
+    # Complete a live run and verify offline rescoring under a new evaluator version
+    # and price revaluation without altering solver_key or original recorded cost
+    claim = cache.claim_solver_run(solver_id, now=NOW)
+    cache.begin_reservation_intent(
+        claim.attempt_id, claim.owner_token, planned_usd="0.01", now=NOW
+    )
+    cache.bind_reservation(
+        claim.attempt_id, claim.owner_token, reservation_id="res-001", now=NOW
+    )
+    cache.mark_dispatched(claim.attempt_id, claim.owner_token, now=NOW)
+
+    orig_val = CostValuation.from_token_usage(
+        pricing_version="catalog-2026-10-15",
+        input_usd_per_million="0.06",
+        output_usd_per_million="0.24",
+        prompt_tokens=400,
+        completion_tokens=50,
+    )
+    cache.complete_solver_run(
+        claim.attempt_id,
+        claim.owner_token,
+        artifact=make_solver_artifact(SYNTHETIC_PATCH),
+        usage=make_provider_usage(400, 50),
+        valuation=orig_val,
+        now=NOW,
+    )
+    cache.mark_reservation_finalized(
+        claim.attempt_id, claim.owner_token, ledger_state="completed", now=NOW
+    )
+
+    # First score under v1
+    cache.record_score(
+        score_base,
+        solver_attempt_id=claim.attempt_id,
+        score_artifact=ScoreArtifact(
+            scorer_status="failed",
+            reason="assertion_failed",
+            phase="call",
+            baseline_verified=False,
+            prepared_archive_sha256=_h("prepared v1"),
+        ),
+        now=NOW,
+    )
+
+    # Offline rescore of the SAME completed solver artifact under evaluator-v2
+    score_v2 = ScoringIdentity.from_dict(
+        {
+            **synthetic_scoring_metadata(solver_key, SYNTHETIC_PATCH),
+            "evaluator_version": "evaluator-v2",
+            "registration_id": "stage-b-reg-001",
+        }
+    )
+    cache.record_score(
+        score_v2,
+        solver_attempt_id=claim.attempt_id,
+        score_artifact=ScoreArtifact(
+            scorer_status="passed",
+            reason="all_passed",
+            phase="call",
+            baseline_verified=False,
+            prepared_archive_sha256=_h("prepared v2"),
+        ),
+        now=NOW + timedelta(minutes=1),
+    )
+
+    # Revalue under updated catalog prices
+    new_val = cache.revalue_solver_run(
+        claim.attempt_id,
+        pricing_version="catalog-2026-10-25",
+        input_usd_per_million="0.12",
+        output_usd_per_million="0.48",
+        now=NOW + timedelta(minutes=2),
+    )
+    assert new_val.cost_nanos == orig_val.cost_nanos * 2
+
+    stored = cache.get_solver_run(claim.attempt_id)
+    assert stored["solver_key"] == solver_key
+    assert stored["original_cost_nanos"] == orig_val.cost_nanos
+    assert stored["original_pricing_version"] == "catalog-2026-10-15"
+    assert len(stored["valuations"]) == 2
+    assert stored["valuations"][0]["is_original"] == 1
+    assert stored["valuations"][0]["cost_nanos"] == orig_val.cost_nanos
+    assert stored["valuations"][1]["is_original"] == 0
+    assert stored["valuations"][1]["cost_nanos"] == new_val.cost_nanos
+
+
+# ---------------------------------------------------------------------------
+# Case 3: Concurrent race across independent connections — at most one owner
+# ---------------------------------------------------------------------------
+
+
+def test_concurrent_claims_have_single_owner_without_sleeps(cache: RunCache):
+    solver_id = SolverIdentity.from_dict(synthetic_metadata())
+    barrier = threading.Barrier(2)
+
+    def worker(_: int):
+        local_store = RunCache(cache.path)
+        barrier.wait(timeout=5)
+        try:
+            return local_store.claim_solver_run(solver_id, now=NOW)
+        except CacheBusyError:
+            return None
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(worker, range(2)))
+
+    acquired = [o for o in outcomes if o is not None and o.acquired]
+    losers = [o for o in outcomes if o is None or not o.acquired]
+    assert len(acquired) == 1
+    assert len(losers) == 1
+    winner = acquired[0]
+    assert winner.owner_token is not None
+    if losers[0] is not None:
+        assert losers[0].owner_token is None
+        assert losers[0].status == "already_claimed"
+        assert losers[0].attempt_id == winner.attempt_id
+
+
+# ---------------------------------------------------------------------------
+# Case 4: Wrong/stale owner fencing & lease expiry never auto-replays
+# ---------------------------------------------------------------------------
+
+
+def test_wrong_or_stale_owner_fenced_and_expired_lease_never_replays(cache: RunCache):
+    solver_id = SolverIdentity.from_dict({**synthetic_metadata(), "namespace": "live"})
+    claim = cache.claim_solver_run(solver_id, lease_seconds=30, now=NOW)
+    assert claim.acquired and claim.owner_token is not None
+
+    # Wrong owner token cannot mutate state
+    with pytest.raises(CacheOwnershipError):
+        cache.complete_solver_run(
+            claim.attempt_id,
+            "wrong-owner-token",
+            artifact=make_solver_artifact(),
+            usage=make_provider_usage(),
+            valuation=CostValuation("v1", "0.06", "0.24", 36000),
+            now=NOW,
+        )
+    with pytest.raises(CacheOwnershipError):
+        cache.fail_or_block_solver_run(
+            claim.attempt_id, "wrong-owner-token", reason="bad", now=NOW
+        )
+
+    # Bind reservation and mark dispatched
+    cache.begin_reservation_intent(
+        claim.attempt_id, claim.owner_token, planned_usd="0.01", now=NOW
+    )
+    cache.bind_reservation(
+        claim.attempt_id, claim.owner_token, reservation_id="res-123", now=NOW
+    )
+    cache.mark_dispatched(claim.attempt_id, claim.owner_token, now=NOW)
+
+    # Once dispatched, pre-dispatch abort is strictly forbidden
+    with pytest.raises(CacheStateError):
+        cache.abort_before_dispatch(
+            claim.attempt_id, claim.owner_token, reason="too_late", now=NOW
+        )
+
+    # Advance past lease expiry (NOW + 60s)
+    expired_time = NOW + timedelta(seconds=60)
+
+    # 1. Second claim after lease expiry MUST NOT acquire a new run or auto-replay
+    retry_claim = cache.claim_solver_run(solver_id, now=expired_time)
+    assert not retry_claim.acquired
+    assert retry_claim.owner_token is None
+    assert retry_claim.status == "already_claimed"
+    assert retry_claim.attempt_id == claim.attempt_id
+
+    # 2. Expired original owner cannot complete after lease expiry
+    with pytest.raises(CacheOwnershipError, match="expired"):
+        cache.complete_solver_run(
+            claim.attempt_id,
+            claim.owner_token,
+            artifact=make_solver_artifact(),
+            usage=make_provider_usage(),
+            valuation=CostValuation("v1", "0.06", "0.24", 36000),
+            now=expired_time,
+        )
+
+    # 3. Fencing the expired claim marks it blocked_uncertain and rotates token
+    new_state = cache.fence_expired_claim(claim.attempt_id, now=expired_time)
+    assert new_state == "blocked_uncertain"
+
+    # 4. Subsequent claims see blocked_uncertain and never auto-rerun
+    after_fence = cache.claim_solver_run(solver_id, now=expired_time)
+    assert not after_fence.acquired
+    assert after_fence.status == "blocked_uncertain"
+
+
+# ---------------------------------------------------------------------------
+# Case 5: Crash injection across all handshake stages + reopen verification
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "stage",
+    [
+        "after_claim_pre_dispatch_abort",
+        "after_reservation_intent_before_ledger",
+        "after_ledger_reserve_before_bind",
+        "after_dispatch_before_response",
+        "after_complete_before_ledger_finish",
+    ],
+)
+def test_crash_injection_stages_and_reopen_state(tmp_path: Path, stage: str):
+    cache_path = tmp_path / f"cache_{stage}.sqlite3"
+    ledger_path = tmp_path / f"ledger_{stage}.sqlite3"
+
+    store = RunCache(cache_path)
+    store.initialize(now=NOW)
+    ledger = CreditLedger(ledger_path)
+    ledger.initialize(
+        balance_usd="29.50",
+        reserve_usd="3",
+        allowance_usd="0.10",
+        expires_at=NOW + timedelta(days=60),
+        exclusive_use=True,
+        now=NOW,
+    )
+
+    solver_id = SolverIdentity.from_dict({**synthetic_metadata(), "namespace": "live"})
+    claim = store.claim_solver_run(
+        solver_id, now=NOW, ledger_status=ledger.status(now=NOW)
+    )
+    assert claim.acquired and claim.owner_token is not None
+
+    if stage == "after_claim_pre_dispatch_abort":
+        # Clean pre-dispatch abort before any reservation intent: eligible for replay!
+        store.abort_before_dispatch(
+            claim.attempt_id, claim.owner_token, reason="cancelled_pre_reserve", now=NOW
+        )
+        reopened = RunCache(cache_path)
+        reclaim = reopened.claim_solver_run(
+            solver_id, now=NOW, ledger_status=ledger.status(now=NOW)
+        )
+        assert reclaim.acquired and reclaim.attempt_id != claim.attempt_id
+        # Historical aborted attempt is retained
+        history = reopened.list_attempts_for_key("live", solver_id.solver_key())
+        assert len(history) == 2
+        assert history[0]["execution_state"] == "aborted_pre_dispatch"
+        assert history[1]["execution_state"] == "claimed"
+        return
+
+    store.begin_reservation_intent(
+        claim.attempt_id, claim.owner_token, planned_usd="0.02", now=NOW
+    )
+    if stage == "after_reservation_intent_before_ledger":
+        # Crash before ledger.reserve_run: reopened cache blocks new live claims
+        reopened = RunCache(cache_path)
+        with pytest.raises(CacheBlockedError):
+            reopened.check_live_handshake_ready(ledger.status(now=NOW))
+        return
+
+    res_id = ledger.reserve_run("0.02", now=NOW)
+    if stage == "after_ledger_reserve_before_bind":
+        # Crash after ledger.reserve_run committed, before cache.bind_reservation!
+        reopened_cache = RunCache(cache_path)
+        reopened_ledger = CreditLedger(ledger_path)
+        assert Decimal(reopened_ledger.status(now=NOW)["reserved_usd"]) == Decimal("0.02")
+        with pytest.raises(CreditError, match="unfinished"):
+            reopened_ledger.reserve_run("0.01", now=NOW)
+        with pytest.raises(CacheBlockedError):
+            reopened_cache.check_live_handshake_ready(reopened_ledger.status(now=NOW))
+        return
+
+    store.bind_reservation(
+        claim.attempt_id, claim.owner_token, reservation_id=res_id, now=NOW
+    )
+    store.mark_dispatched(claim.attempt_id, claim.owner_token, now=NOW)
+    if stage == "after_dispatch_before_response":
+        # Crash while request is in flight: no silent refund, no replay even after lease expiry
+        reopened_cache = RunCache(cache_path)
+        reopened_ledger = CreditLedger(ledger_path)
+        later = NOW + timedelta(minutes=10)
+        dup = reopened_cache.claim_solver_run(solver_id, now=later)
+        assert not dup.acquired and dup.status == "already_claimed"
+        assert Decimal(reopened_ledger.status(now=NOW)["reserved_usd"]) == Decimal("0.02")
+        return
+
+    if stage == "after_complete_before_ledger_finish":
+        val = CostValuation.from_token_usage(
+            pricing_version="v1",
+            input_usd_per_million="0.06",
+            output_usd_per_million="0.24",
+            prompt_tokens=400,
+            completion_tokens=50,
+        )
+        store.complete_solver_run(
+            claim.attempt_id,
+            claim.owner_token,
+            artifact=make_solver_artifact(),
+            usage=make_provider_usage(400, 50),
+            valuation=val,
+            now=NOW,
+        )
+        reopened_cache = RunCache(cache_path)
+        reopened_ledger = CreditLedger(ledger_path)
+        # Artifact is reusable offline, but live handshake is blocked until ledger finishes
+        reuse = reopened_cache.claim_solver_run(solver_id, now=NOW)
+        assert not reuse.acquired and reuse.status == "reused_completed"
+        with pytest.raises(CacheBlockedError):
+            reopened_cache.check_live_handshake_ready(reopened_ledger.status(now=NOW))
+
+
+# ---------------------------------------------------------------------------
+# Case 6: Transaction rollback, busy DB, missing DB, and corrupt rows
+# ---------------------------------------------------------------------------
+
+
+def test_non_sql_exception_rolls_back_and_corrupt_or_missing_db_fails_safely(
+    tmp_path: Path,
+):
+    missing_path = tmp_path / "does_not_exist.sqlite3"
+    missing_cache = RunCache(missing_path)
+    solver_id = SolverIdentity.from_dict(synthetic_metadata())
+
+    # Read/claim on missing DB must raise CacheMissingError without creating a file
+    with pytest.raises(CacheMissingError):
+        missing_cache.claim_solver_run(solver_id, now=NOW)
+    assert not missing_path.exists()
+
+    # Initialize cannot overwrite an existing file
+    db_path = tmp_path / "valid.sqlite3"
+    cache = RunCache(db_path)
+    cache.initialize(now=NOW)
+    original_bytes = db_path.read_bytes()
+    with pytest.raises(FileExistsError):
+        cache.initialize(now=NOW)
+    assert db_path.read_bytes() == original_bytes
+
+    # Non-SQL exception inside _transaction rolls back partial writes
+    claim = cache.claim_solver_run(solver_id, now=NOW)
+    with pytest.raises(RuntimeError, match="injected crash"):
+        with cache._transaction() as db:
+            db.execute(
+                "UPDATE solver_runs SET execution_state = 'completed' WHERE attempt_id = ?",
+                (claim.attempt_id,),
+            )
+            raise RuntimeError("injected crash")
+    row = cache.get_solver_run(claim.attempt_id)
+    assert row["execution_state"] == "claimed"
+
+    # Busy database fails immediately with CacheBusyError
+    with sqlite3.connect(db_path) as ext_conn:
+        ext_conn.execute("BEGIN IMMEDIATE")
+        with pytest.raises(CacheBusyError):
+            cache.get_solver_run(claim.attempt_id)
+
+    # Corrupt patch hash in DB is caught on read/claim
+    cache.complete_solver_run(
+        claim.attempt_id,
+        claim.owner_token,
+        artifact=make_solver_artifact(),
+        usage=make_synthetic_usage(),
+        now=NOW,
+    )
+    with sqlite3.connect(db_path) as ext_conn:
+        ext_conn.execute(
+            "UPDATE solver_runs SET patch_sha256 = ? WHERE attempt_id = ?",
+            ("0" * 64, claim.attempt_id),
+        )
+        ext_conn.commit()
+    with pytest.raises(CacheCorruptionError):
+        cache.get_solver_run(claim.attempt_id)
+
+    # Schema version mismatch is rejected without altering the file
+    with sqlite3.connect(db_path) as ext_conn:
+        ext_conn.execute("UPDATE cache_meta SET schema_version = 999 WHERE id = 1")
+        ext_conn.commit()
+    snap = db_path.read_bytes()
+    with pytest.raises(CacheSchemaError):
+        cache.list_attempts_for_key("synthetic", solver_id.solver_key())
+    assert db_path.read_bytes() == snap
+
+
+# ---------------------------------------------------------------------------
+# Case 7: Outcome separation (visible pass != solved, synthetic != publishable)
+# ---------------------------------------------------------------------------
+
+
+def test_outcome_separation_and_synthetic_never_publishable(cache: RunCache):
+    solver_id = SolverIdentity.from_dict(synthetic_metadata())
+    claim = cache.claim_solver_run(solver_id, now=NOW)
+    # Visible tests pass and agent self-reports finish, but not yet scored
+    cache.complete_solver_run(
+        claim.attempt_id,
+        claim.owner_token,
+        artifact=make_solver_artifact(visible_pass=True, done=True),
+        usage=make_synthetic_usage(),
+        now=NOW,
+    )
+    unscored_summary = cache.export_summary(claim.attempt_id)
+    assert unscored_summary["visible_tests_pass"] is True
+    assert unscored_summary["agent_self_reports_done"] is True
+    assert unscored_summary["candidate_outcome"] == "not_scored"
+    assert unscored_summary["publishable"] is False
+
+    # Synthetic run cannot bind a registration_id
+    with pytest.raises(CacheValidationError):
+        cache.record_score(
+            ScoringIdentity.from_dict(
+                synthetic_scoring_metadata(
+                    solver_id.solver_key(), registration_id="fake-reg"
+                )
+            ),
+            solver_attempt_id=claim.attempt_id,
+            score_artifact=ScoreArtifact(
+                scorer_status="passed",
+                reason="ok",
+                phase="call",
+                baseline_verified=False,
+                prepared_archive_sha256=_h("prep"),
+            ),
+            now=NOW,
+        )
+
+    # Empty string registration_id is rejected by ScoringIdentity validation
+    with pytest.raises(CacheValidationError):
+        ScoringIdentity.from_dict(
+            synthetic_scoring_metadata(solver_id.solver_key(), registration_id="   ")
+        )
+
+    # Score synthetic run as passed: candidate_outcome becomes 'solved', but publishable is False!
+    cache.record_score(
+        ScoringIdentity.from_dict(synthetic_scoring_metadata(solver_id.solver_key())),
+        solver_attempt_id=claim.attempt_id,
+        score_artifact=ScoreArtifact(
+            scorer_status="passed",
+            reason="ok",
+            phase="call",
+            baseline_verified=False,
+            prepared_archive_sha256=_h("prep"),
+        ),
+        now=NOW,
+    )
+    scored_synth = cache.export_summary(claim.attempt_id)
+    assert scored_synth["candidate_outcome"] == "solved"
+    assert scored_synth["publishable"] is False
+    with pytest.raises(CacheBlockedError):
+        cache.export_summary(claim.attempt_id, require_publishable=True)
+
+
+@pytest.mark.parametrize(
+    ("scorer_status", "baseline_verified", "expected_outcome", "expected_validity", "publishable"),
+    [
+        ("passed", False, "solved", "valid", True),
+        ("failed", False, "unsolved", "valid", True),
+        ("candidate_error", True, "unsolved", "valid", True),
+        ("invalid_evidence", False, "undetermined", "invalid_evidence", False),
+        ("scorer_exception", False, "undetermined", "infrastructure_error", False),
+    ],
+)
+def test_live_scoring_outcomes_and_denominator_rules(
+    tmp_path: Path,
+    scorer_status: str,
+    baseline_verified: bool,
+    expected_outcome: str,
+    expected_validity: str,
+    publishable: bool,
+):
+    store = RunCache(tmp_path / f"score_{scorer_status}.sqlite3")
+    store.initialize(now=NOW)
+    solver_id = SolverIdentity.from_dict({**synthetic_metadata(), "namespace": "live"})
+    claim = store.claim_solver_run(solver_id, now=NOW)
+    store.begin_reservation_intent(
+        claim.attempt_id, claim.owner_token, planned_usd="0.01", now=NOW
+    )
+    store.bind_reservation(
+        claim.attempt_id, claim.owner_token, reservation_id="res-live", now=NOW
+    )
+    store.mark_dispatched(claim.attempt_id, claim.owner_token, now=NOW)
+    store.complete_solver_run(
+        claim.attempt_id,
+        claim.owner_token,
+        artifact=make_solver_artifact(),
+        usage=make_provider_usage(),
+        valuation=CostValuation("v1", "0.06", "0.24", 36000),
+        now=NOW,
+    )
+    store.mark_reservation_finalized(
+        claim.attempt_id, claim.owner_token, ledger_state="completed", now=NOW
+    )
+
+    score_id = ScoringIdentity.from_dict(
+        synthetic_scoring_metadata(
+            solver_id.solver_key(), registration_id="stage-b-synthetic-check"
+        )
+    )
+    store.record_score(
+        score_id,
+        solver_attempt_id=claim.attempt_id,
+        score_artifact=ScoreArtifact(
+            scorer_status=scorer_status,
+            reason="test_reason",
+            phase="call",
+            baseline_verified=baseline_verified,
+            prepared_archive_sha256=_h("prep"),
+        ),
+        now=NOW,
+    )
+    summary = store.export_summary(claim.attempt_id)
+    assert summary["candidate_outcome"] == expected_outcome
+    assert summary["evidence_validity"] == expected_validity
+    assert summary["publishable"] is publishable
+    if not publishable:
+        with pytest.raises(CacheBlockedError):
+            store.export_summary(claim.attempt_id, require_publishable=True)
+
+
+# ---------------------------------------------------------------------------
+# Case 8: Usage & monetary bounds (missing != 0, explicit zero, overflow)
+# ---------------------------------------------------------------------------
+
+
+def test_usage_and_monetary_safeguards():
+    # Zero provider tokens without explicit_zero_usage=True is rejected
+    with pytest.raises(CacheValidationError, match="explicit_zero_usage"):
+        UsageEvidence(
+            accounting_mode="provider",
+            synthetic_prompt_tokens=10,
+            synthetic_completion_tokens=0,
+            provider_calls=1,
+            actual_prompt_tokens=0,
+            actual_completion_tokens=0,
+            actual_total_tokens=0,
+            explicit_zero_usage=False,
+        )
+
+    # With explicit_zero_usage=True, zero provider tokens are accepted
+    zero_usage = UsageEvidence(
+        accounting_mode="provider",
+        synthetic_prompt_tokens=10,
+        synthetic_completion_tokens=0,
+        provider_calls=0,
+        actual_prompt_tokens=0,
+        actual_completion_tokens=0,
+        actual_total_tokens=0,
+        explicit_zero_usage=True,
+    )
+    assert zero_usage.actual_total_tokens == 0
+
+    # Synthetic counts cannot masquerade as provider tokens
+    with pytest.raises(CacheValidationError):
+        UsageEvidence(
+            accounting_mode="synthetic",
+            synthetic_prompt_tokens=10,
+            synthetic_completion_tokens=5,
+            provider_calls=1,
+            actual_prompt_tokens=10,
+            actual_completion_tokens=5,
+            actual_total_tokens=15,
+        )
+
+    # Unknown usage must keep actual token fields None
+    unk = UsageEvidence(
+        accounting_mode="unknown",
+        synthetic_prompt_tokens=10,
+        synthetic_completion_tokens=0,
+        provider_calls=1,
+    )
+    assert unk.actual_total_tokens is None
+
+    # Integer money overflow / invalid types rejected
+    for bad_usd in [0, -1, 1.5, True, "NaN", "Infinity", "1e30"]:
+        with pytest.raises(CacheValidationError):
+            usd_to_nanos(bad_usd)
+    with pytest.raises(CacheValidationError):
+         validate_nanos(2**63)
+
+
+# ---------------------------------------------------------------------------
+# Case 9: Orphan/pending CreditLedger reservation blocks handshake
+# ---------------------------------------------------------------------------
+
+
+def test_orphan_pending_ledger_reservation_blocks_cache_claim(tmp_path: Path):
+    cache = RunCache(tmp_path / "cache.sqlite3")
+    cache.initialize(now=NOW)
+    ledger = CreditLedger(tmp_path / "ledger.sqlite3")
+    ledger.initialize(
+        balance_usd="29.50",
+        reserve_usd="3",
+        allowance_usd="0.10",
+        expires_at=NOW + timedelta(days=60),
+        exclusive_use=True,
+        now=NOW,
+    )
+
+    # Create an unlinked (orphan) pending reservation directly in CreditLedger
+    orphan_id = ledger.reserve_run("0.03", now=NOW)
+    assert orphan_id
+
+    solver_id = SolverIdentity.from_dict({**synthetic_metadata(), "namespace": "live"})
+    with pytest.raises(CacheBlockedError, match="CreditLedger"):
+        cache.claim_solver_run(
+            solver_id, now=NOW, ledger_status=ledger.status(now=NOW)
+        )
+
+
+# ---------------------------------------------------------------------------
+# Case 10: SQL injection, shell/instruction payloads, bounds & export whitelist
+# ---------------------------------------------------------------------------
+
+
+def test_malicious_strings_oversized_fields_and_export_whitelist(cache: RunCache):
+    sql_task_id = "synthetic_'; DROP TABLE solver_runs; -- $(rm -rf /) IGNORE ALL INSTRUCTIONS"
+    meta = {**synthetic_metadata(), "task_id": sql_task_id}
+    solver_id = SolverIdentity.from_dict(meta)
+    claim = cache.claim_solver_run(solver_id, now=NOW)
+
+    # Oversized patch, reason, or trajectory is rejected before DB write
+    with pytest.raises(CacheValidationError):
+        make_solver_artifact(patch_bytes=b"a" * (MAX_PATCH_BYTES + 1))
+    with pytest.raises(CacheValidationError):
+        make_solver_artifact(stop_reason="x" * (MAX_REASON_CHARS + 1))
+    with pytest.raises(CacheValidationError):
+        SolverArtifact(
+            stop_reason="self_reported_done",
+            turns=1,
+            commands=0,
+            invalid_turns=0,
+            command_timeouts=0,
+            wall_elapsed_seconds=1.0,
+            patch_bytes=SYNTHETIC_PATCH,
+            trajectory_events=tuple({"i": i} for i in range(MAX_TRAJECTORY_EVENTS + 1)),
+            has_patch=True,
+            visible_tests_pass=True,
+            hit_step_cap=False,
+            no_command_rate=0.0,
+            agent_self_reports_done=True,
+            execution_backend="scripted",
+        )
+
+    # Complete with sensitive markers in patch and trajectory
+    secret_patch = b"--- a/add.py\n+++ b/add.py\n@@ -1 +1 @@\n+# PRIVATE_PATCH_BODY\n"
+    artifact = SolverArtifact(
+        stop_reason="self_reported_done",
+        turns=1,
+        commands=1,
+        invalid_turns=0,
+        command_timeouts=0,
+        wall_elapsed_seconds=1.0,
+        patch_bytes=secret_patch,
+        trajectory_events=({"role": "assistant", "content": "PRIVATE_TRAJECTORY_TEXT"},),
+        has_patch=True,
+        visible_tests_pass=True,
+        hit_step_cap=False,
+        no_command_rate=0.0,
+        agent_self_reports_done=True,
+        execution_backend="scripted",
+    )
+    cache.complete_solver_run(
+        claim.attempt_id,
+        claim.owner_token,
+        artifact=artifact,
+        usage=make_synthetic_usage(),
+        now=NOW,
+    )
+    cache.record_score(
+        ScoringIdentity.from_dict(
+            synthetic_scoring_metadata(solver_id.solver_key(), secret_patch)
+        ),
+        solver_attempt_id=claim.attempt_id,
+        score_artifact=ScoreArtifact(
+            scorer_status="passed",
+            reason="ok",
+            phase="call",
+            baseline_verified=False,
+            prepared_archive_sha256=_h("prep"),
+            private_envelope_sha256=_h("PRIVATE_ENVELOPE_RECEIPT"),
+        ),
+        now=NOW,
+    )
+
+    summary = cache.export_summary(claim.attempt_id)
+    assert tuple(summary.keys()) == SUMMARY_EXPORT_WHITELIST
+    assert summary["task_id"] == sql_task_id
+    serialized = json.dumps(summary)
+    assert "PRIVATE_PATCH_BODY" not in serialized
+    assert "PRIVATE_TRAJECTORY_TEXT" not in serialized
+    assert "private_envelope_sha256" not in summary
+    assert "patch_bytes" not in summary
+    assert "trajectory_json" not in summary
+
+
+4. Synthetic Usage Example (UNEXECUTED)
+This standalone usage example uses the exact public API defined in dojo/store/schemas.py and dojo/store/db.py:
+
+
+
+Python
+# UNEXECUTED synthetic usage example
+from datetime import UTC, datetime
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from dojo.store.db import RunCache
+from dojo.store.schemas import (
+    ScoreArtifact,
+    ScoringIdentity,
+    SolverArtifact,
+    SolverIdentity,
+    UsageEvidence,
+    sha256_bytes,
+)
+from tests.test_run_cache import SYNTHETIC_PATCH, synthetic_metadata, synthetic_scoring_metadata
+
+now = datetime(2026, 10, 21, 12, 0, 0, tzinfo=UTC)
+
+with TemporaryDirectory() as tmp:
+    cache = RunCache(Path(tmp) / "demo_cache.sqlite3")
+    cache.initialize(now=now)
+
+    # 1. Build validated SolverIdentity and compute deterministic solver_key
+    solver_id = SolverIdentity.from_dict(synthetic_metadata())
+    solver_key = solver_id.solver_key()
+
+    # 2. Claim run, complete with synthetic usage and patch bytes
+    claim = cache.claim_solver_run(solver_id, now=now)
+    cache.complete_solver_run(
+        claim.attempt_id,
+        claim.owner_token,
+        artifact=SolverArtifact(
+            stop_reason="self_reported_done",
+            turns=2,
+            commands=1,
+            invalid_turns=0,
+            command_timeouts=0,
+            wall_elapsed_seconds=1.5,
+            patch_bytes=SYNTHETIC_PATCH,
+            trajectory_events=({"turn": 1, "action": "finish"},),
+            has_patch=True,
+            visible_tests_pass=True,
+            hit_step_cap=False,
+            no_command_rate=0.0,
+            agent_self_reports_done=True,
+            execution_backend="scripted",
+        ),
+        usage=UsageEvidence(
+            accounting_mode="synthetic",
+            synthetic_prompt_tokens=120,
+            synthetic_completion_tokens=18,
+            provider_calls=0,
+        ),
+        now=now,
+    )
+
+    # 3. Record separate evaluator score bound to solver_key + patch SHA-256
+    scoring_id = ScoringIdentity.from_dict(
+        synthetic_scoring_metadata(solver_key, SYNTHETIC_PATCH)
+    )
+    cache.record_score(
+        scoring_id,
+        solver_attempt_id=claim.attempt_id,
+        score_artifact=ScoreArtifact(
+            scorer_status="passed",
+            reason="all_passed",
+            phase="call",
+            baseline_verified=False,
+            prepared_archive_sha256=sha256_bytes(b"synthetic prepared archive"),
+        ),
+        now=now,
+    )
+
+    # 4. Export whitelisted summary (no raw patch, trajectory, or receipt envelope)
+    summary = cache.export_summary(claim.attempt_id)
+    print("solver_key:", summary["solver_key"])
+    print("scoring_key:", summary["scoring_key"])
+    print("candidate_outcome:", summary["candidate_outcome"])
+    print("publishable:", summary["publishable"])
+
+
+Expected Output (UNEXECUTED — derived deterministically from SHA-256 over the canonical JSON domain envelopes):
+summary["candidate_outcome"]  "solved"
+summary["publishable"]  False (blocked because namespace == "synthetic" and registration_id is None)
+summary["solver_key"] and summary["scoring_key"]  64-character lowercase hex SHA-256 digests.
+5. Acceptance Commands and Execution Status
+Execution Status: UNEXECUTED (no code, pytest, ruff, Docker, or model/provider calls were executed in this review session).
+Run these exact acceptance commands in the primary Windows PowerShell workspace after placing dojo/store/schemas.py, dojo/store/db.py, and tests/test_run_cache.py:
+
+
+
+PowerShell
+.venv\Scripts\python.exe -m pytest tests/test_run_cache.py tests/test_credits.py tests/test_configured_solver.py -q --tb=short
+.venv\Scripts\ruff.exe check dojo tests
+.venv\Scripts\python.exe -m pytest -q --tb=short
+
+
+6. Integration Checklist, Remaining Gates, and Prioritized Findings
+Short Integration Checklist (Remaining 5c–5f & 6b–6d)
+Task 5a/5b (Immediate): Drop in dojo/store/schemas.py, dojo/store/db.py, and tests/test_run_cache.py; run the three PowerShell acceptance commands above.
+Task 5c/5d (Offline Runner Bridge): Add a host-side helper in dojo/solve/ that constructs SolverIdentity from RunSettings + prepare_task_environment hashes and records SimulationResult + CandidateScore into RunCache (while keeping SolverInput restricted to issue_text and source_archive only).
+Task 5e (CLI): Wire dojo bench, dojo cost, and dojo report in dojo/cli.py to query RunCache.export_summary and translate CacheError subclasses into clean exit code 2 / 1 messages without raw tracebacks.
+Task 5f/7a (Stage B Registration): Define the immutable Stage B registration manifest and pass its digest as registration_id to ScoringIdentity only after owner learning (16a–16c), threat model sign-off (4j), and credit verification (6a) are complete.
+Remaining Gates & Limitations
+Live Inference Remains Locked: LIVE_INFERENCE_ENABLED = False in dojo/verify.py and LockedProviderTransport in dojo/solve/contracts.py remain strictly locked pending 6a (confirmed promotional credit balance, earliest expiry, and exclusive account usage).
+Single-Machine SQLite Scope: RunCache protects against concurrent processes/connections on one local machine via BEGIN IMMEDIATE and ownership tokens, not against disk hardware failure, OS kernel panics, or a local user manually editing the SQLite file.
+Prioritized Evidence-Backed Observations in Supplied Code
+CreditLedger Orphan Window Across Two SQLite Files (dojo/store/credits.py:124-137): Because CreditLedger.reserve_run generates ident = uuid4().hex internally and commits immediately inside spend.sqlite3, a process crash before the caller records ident leaves a 'pending' reservation in spend.sqlite3. Our RunCache.begin_reservation_intent + check_live_handshake_ready design detects both sides of this window and fails closed without ever issuing a second reservation. If a future reviewed task (6b/6d) extends CreditLedger, adding an optional client_intent_id column to reservations would allow direct deterministic cross-DB reconciliation.
+Float Representation in RunSettings.plan() (dojo/solve/run_settings.py:48-59): RunSettings.plan() outputs raw Python float values for temperature, top_p, command_timeout_seconds, and wall_seconds. In Python, json.dumps(1.0) is "1.0" while json.dumps(1) is "1". SolverIdentity in dojo/store/schemas.py solves this by normalizing all finite sampling and timeout numbers through Decimal(str(float(v))).normalize() into canonical strings before hashing.
+END OF IMPLEMENTATION

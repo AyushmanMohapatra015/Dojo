@@ -1,8 +1,8 @@
 # Dojo action plan
 
-Updated: 2026-10-21. BUILD_SPEC.md defines the product; this file is the live
+Updated: 2026-10-22. BUILD_SPEC.md defines the product; this file is the live
 execution checklist; PROGRESS.md holds checkpoint history/evidence. Baseline:
-667 offline tests after tasks 4h/4i, 63 construction tasks (37 train / 26 held-out), no provider
+774 offline tests after tasks 5a/5b and external review, 63 construction tasks (37 train / 26 held-out), no provider
 calls/spend. Scaffolds and synthetic checks are not completed benchmark results.
 
 ## Tracking rules
@@ -101,12 +101,12 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 
 | ID | Status | Task / acceptance evidence |
 |---|---|---|
-| 5a | NEXT | SQLite task/run/result/signal schemas with separate candidate/evidence/execution states. External packet 13h requests design review; independently verify proposals. |
-| 5b | NEXT | Cache keys cover task/input/scaffold/config/model/endpoint/params/bundle/seed; no stale replay. |
-| 5c | PLANNED | Atomic writes, concurrency/resume, interrupted/unknown runs and checked exports; no implicit refunds. |
-| 5d | PLANNED | Actual tokens/cost/steps/time, final diff and truncated private trajectory; evaluator evidence stays separate. |
+| 5a | DONE | Seven-table private SQLite schema, explicit new-file initialization, rollback/read-only exact schema validation; separate execution/candidate/evidence states and patch/namespace constraints. Forty-six real temporary-SQLite tests; docs/run-store-schema.md. No claims/publication API implied. |
+| 5b | DONE | Adapted external solver/scoring identities in dojo/store/identity.py with corrected deterministic numeric/strict parsing validation; 61 identity tests. Runner metadata construction/replay wiring remains 5c/5e; identities alone are not execution/provenance approval. |
+| 5c | NEXT | Port/simplify reviewed external transaction/ownership/intent state machine onto retained schema; exact schema checks, bounded concurrency/resume, interrupted/unknown states and strict read validation. No implicit refunds, unverified ledger/status assumptions or automatic billable takeover. See review R3/R4/R7 and assessment. |
+| 5d | PLANNED | Actual tokens/cost/steps/time, final diff and truncated private trajectory; verify cost from usage/pricing snapshot and metric consistency (review R5/R8), retain history and current transport bounds; evaluator evidence stays separate. |
 | 5e | PLANNED | Working bench/cost/report CLI plus clear unsupported/pending/error states and example commands. |
-| 5f | PLANNED | Registered denominator/error policy: justified candidate errors unsolved; invalid/infrastructure evidence blocks publication. |
+| 5f | PLANNED | Registered denominator/error policy: justified candidate errors unsolved; invalid/infrastructure evidence blocks publication. Verify actual registration/provenance and evaluator identity; do not adopt proposal's metadata-only publishable predicate or latest-score selection (review R6/R7). |
 
 ## 6. Financial/live verification gates
 
@@ -209,7 +209,8 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 13c | DONE | Richer handoff checklist in docs/web-agent-review-guide.md: current commit/hashes, dependencies, callers/tests/config/images, synthetic examples, limits and exact acceptance commands. |
 | 13d | DONE | Primary integration here; evidence labels, minimal reproductions and complete Markdown/source; no automatic merge/credentials/account access. |
 | 13e | PARTIAL | Cache/accounting v2 includes complete relevant sources, exact scorer/input excerpts, hashes/versions, synthetic fixtures and conservative defaults; scope excludes calls into omitted internals. Continue the same sufficiency audit for later assignments. |
-| 13f | PLANNED | Reproduce returned findings; record accepted/rejected/deferred/limitation outcomes; assign implementation IDs before edits. |
+| 13f | PARTIAL | Cache v2 response assessed with reproduced evidence/dispositions at 13f2; continue the same review process for future responses. |
+| 13f2 | DONE | Full supplied narrative/three source files reviewed; original tests 39 pass/1 missing-import failure, nine independent defect reproductions. Corrected identity code/tests adopted at 5b; retained stronger schema at 5a; remaining reuse/fixes mapped to 5c/5d/5f/6. docs/reviews/cache-review-assessment-v2.md; no live activation. |
 | 13g | PLANNED | Consult at 7g/9g/final UX/submission; flag meaningful blockers promptly and request focused help when useful. |
 | 13h | DONE | docs/reviews/cache-accounting-packet-v1.md and docs/parallel-agent-workflow.md; one allowlisted packet for tasks 5a-5f design review with source hashes, limits and no held-out/account data. Await owner sharing/response at 13f. |
 | 13h2 | DONE | Audited v1 gaps; immutable cache-accounting-packet-v2.md includes concrete integration/scope contract, exact scorer/input excerpts, decision defaults, synthetic fixtures and complete db.py/schemas.py/test deliverables. V1 preserved; owner shares v2. |
@@ -251,8 +252,8 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 16d | GATED | If L3 proceeds, owner-written gate decisions and rejection reasons. |
 | 16e | PARTIAL | Owner milestone reflections/video explanation; distinguish from AI-written implementation notes. |
 
-Completed this checkpoint: **4h and 4i**, with requested web-agent handoff **13h**.
-Next implementation checkpoint: **5a/5b**. Scoring threat-model decision **4j**
+Completed this checkpoint: **5a/5b and 13f2**, with reviewed external code reuse.
+Next implementation checkpoint: **5c**. Scoring threat-model decision **4j**
 remains open and must be resolved before registered model evaluation.
 Eligible urgent account/rules/context work may proceed alongside offline tasks;
 this never authorizes gated paid work or unrelated stretch implementation.

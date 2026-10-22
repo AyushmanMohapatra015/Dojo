@@ -1,0 +1,208 @@
+{
+  "proposal_source": "cache-accounting-feedback-v2.txt",
+  "application_modules_replaced": false,
+  "provider_calls": 0,
+  "exit_code": 1,
+  "reports": [
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_order_invariance_and_field_mutations_change_key",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>0]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>1]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>2]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>3]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>4]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>5]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>6]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>7]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>8]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>9]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>10]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>11]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>12]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>13]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>14]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>15]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>16]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>17]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>18]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_identity_rejects_missing_extra_bool_nan_and_invalid_fields[<lambda>19]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_raw_archive_and_patch_bytes_preserve_exact_line_endings",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_evaluator_or_patch_change_updates_scoring_key_while_preserving_solver_key",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_concurrent_claims_have_single_owner_without_sleeps",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_wrong_or_stale_owner_fenced_and_expired_lease_never_replays",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_crash_injection_stages_and_reopen_state[after_claim_pre_dispatch_abort]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_crash_injection_stages_and_reopen_state[after_reservation_intent_before_ledger]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_crash_injection_stages_and_reopen_state[after_ledger_reserve_before_bind]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_crash_injection_stages_and_reopen_state[after_dispatch_before_response]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_crash_injection_stages_and_reopen_state[after_complete_before_ledger_finish]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_non_sql_exception_rolls_back_and_corrupt_or_missing_db_fails_safely",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_outcome_separation_and_synthetic_never_publishable",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_live_scoring_outcomes_and_denominator_rules[passed-False-solved-valid-True]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_live_scoring_outcomes_and_denominator_rules[failed-False-unsolved-valid-True]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_live_scoring_outcomes_and_denominator_rules[candidate_error-True-unsolved-valid-True]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_live_scoring_outcomes_and_denominator_rules[invalid_evidence-False-undetermined-invalid_evidence-False]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_live_scoring_outcomes_and_denominator_rules[scorer_exception-False-undetermined-infrastructure_error-False]",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_usage_and_monetary_safeguards",
+      "phase": "call",
+      "outcome": "failed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_orphan_pending_ledger_reservation_blocks_cache_claim",
+      "phase": "call",
+      "outcome": "passed"
+    },
+    {
+      "nodeid": "docs/reviews/proposals/cache-v2/supplied_tests.py::test_malicious_strings_oversized_fields_and_export_whitelist",
+      "phase": "call",
+      "outcome": "passed"
+    }
+  ]
+}
