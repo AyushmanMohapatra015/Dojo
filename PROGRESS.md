@@ -1,5 +1,32 @@
 # Progress
 
+## Frontend intake and partner onboarding guidance (10a5/12i1/12k1) - 2026-10-22
+
+- Found Frontend_Agent2 folder: ZIP contains exactly 14 allowlisted files; all
+  four loose copies match, fixture equals assignment. Archived separately under
+  agent2/proposals/explorer-v1 with byte hashes; dashboard remains unchanged.
+- Read complete parser and key UI/config/test/ledger paths. Eight independent
+  Node v24.12.0 checks: valid/private/real controls behaved as expected; three
+  inconsistent outcome/evidence combinations, duplicate keys and lossy money
+  tokens accepted. These are reproductions, not acceptance or new app tests.
+  Primary assessment records F1-F8 (including static null-sort/filter issues),
+  unresolved comparison eligibility and real
+  build/RTL/Recharts checks still needed. Author's custom-runner/stubbed-chart
+  evidence is partial, not independently verified. No npm install/server/browser.
+- Frontend delivery is reusable proposed code; 10a2/10a3 now PARTIAL. Recommend
+  9g4e as primary next, then 5e/5f/7; Argon 10a4 can refine reviewed frontend in
+  parallel with an updated packet, preserving code and synthetic-only boundary.
+  No packet sent or external agent contacted; avoid all UI work on the final day.
+- LangSmith official docs checked: personal Developer supports 5k monthly traces
+  without card; adding card enables excess charges. Provided owner-only card path,
+  credit coverage/expiry questions and approximate trace-limit caveats. Credits
+  reported received by owner, actual scope unverified; no billing/tracing enabled.
+- Toloka/Tandem form: closest category agent/agentic app; suggested truthful
+  reliability/evaluation bottleneck text without an unmeasured 80% claim. Official
+  Nebius cookbook names Tendem by Toloka; owner offer URL remains unverified.
+- Application checkpoint remains 1,014 tests, no source implementation change.
+  No paid/provider calls, installs, account actions, Git writes or deployment.
+
 ## Statistics foundation repairs/adoption (9g4b) - 2026-10-22
 
 - Adapted reviewed Argon A records/stats/frontier into the application, preserving

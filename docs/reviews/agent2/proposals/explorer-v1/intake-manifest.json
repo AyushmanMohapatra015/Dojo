@@ -1,0 +1,82 @@
+{
+  "task_id": "10a5",
+  "source": "docs/reviews/agent2/Frontend_Agent2/agent2-explorer-delivery.zip",
+  "source_sha256": "be6de0ece091de54d76636558a71dddd4a239a58d296b89d0493da60f4a7c8e5",
+  "source_bytes": 39489,
+  "files": [
+    {
+      "path": "dashboard/README.md",
+      "bytes": 3862,
+      "sha256": "d30401d1e133042bdfd2d5bacb06fc281122c31a681787ffdad9a82e461bae05"
+    },
+    {
+      "path": "dashboard/index.html",
+      "bytes": 535,
+      "sha256": "8b68b7559eac38197e34e166693319aafa325957b82d540d692ddc03de8a5fd0"
+    },
+    {
+      "path": "dashboard/package.json",
+      "bytes": 911,
+      "sha256": "21530a28dfd16cac245c9c5c88aaba1b1b8b24f8b4bbbb2e64079482af9fad80"
+    },
+    {
+      "path": "dashboard/src/App.jsx",
+      "bytes": 32434,
+      "sha256": "c8754630d3d09b2631b094649f9d9856827763a26a583ed66caaaffcf2f7b4fc"
+    },
+    {
+      "path": "dashboard/src/App.test.jsx",
+      "bytes": 18594,
+      "sha256": "258f2dcaba8a02ef9ed23e538aa14aa8bfa99657cdf5835b46ccd815ed2b19b6"
+    },
+    {
+      "path": "dashboard/src/data.js",
+      "bytes": 20077,
+      "sha256": "074ec0986979daaeaa9b9eb9a7f660f094bcf699db9b94f6951c398b5b4ba0d4"
+    },
+    {
+      "path": "dashboard/src/data.test.js",
+      "bytes": 18567,
+      "sha256": "0a5f87535e1396195957fe74f3910e69a49c92116117b5858f7119cf1ae3256e"
+    },
+    {
+      "path": "dashboard/src/fixtures/synthetic.json",
+      "bytes": 3558,
+      "sha256": "1dea71231a4e61f5e1775b32428d4fcfdc9a52fb6f28f59e73dddf290918c8c1"
+    },
+    {
+      "path": "dashboard/src/hygiene.test.js",
+      "bytes": 2105,
+      "sha256": "d5657511be293c3a0b022639560a496eb3a29646a394990759882573a425d137"
+    },
+    {
+      "path": "dashboard/src/main.jsx",
+      "bytes": 235,
+      "sha256": "83aeeea6ff5cc0f3a1cec8cf09da3c191c6461585579c64f7e642609f9fe7b32"
+    },
+    {
+      "path": "dashboard/src/styles.css",
+      "bytes": 7200,
+      "sha256": "ebe646a7d01fba5818a653f0eb12fb61596a733d4d29c378c43e5baa3f948e8e"
+    },
+    {
+      "path": "dashboard/src/test-setup.js",
+      "bytes": 400,
+      "sha256": "26fb03a29ceebebc339457d0e7b234d171f19ddd0863020677113af36f173378"
+    },
+    {
+      "path": "dashboard/vite.config.js",
+      "bytes": 1167,
+      "sha256": "eb769464daea90799266144b1c7e3df7b173c901b5c8c0db6a3cc4da7bb07ece"
+    },
+    {
+      "path": "docs/explorer-integration.md",
+      "bytes": 16633,
+      "sha256": "893759e4d8ceb19daac2e09f5462343ce26d3bf980cbfebce047197055fdb4f5"
+    }
+  ],
+  "loose_copies_match": true,
+  "assignment_fixture_matches": true,
+  "installed_to_dashboard": false,
+  "code_execution_performed": false
+}

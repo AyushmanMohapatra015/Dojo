@@ -28,3 +28,48 @@ Primary sources checked 2026-10-21:
 No account was created, key requested, tracing enabled, package installed,
 credit redeemed or partner API invoked by this checkpoint. Record any future
 activation/decision under its numbered action-plan task first.
+
+## Owner onboarding questions — 2026-10-22 (12i1/12k1)
+
+Owner reports LangSmith credits received; amount applied to the selected org,
+expiry and eligible fees have not been independently checked. Basic personal
+Developer tracing supports 5,000 traces/month without a payment method. The
+official card path is Settings -> Billing and Usage -> Plans and Billing ->
+Add card to remove trace limit. This permits billable excess usage; upgrading
+to Plus is a separate subscription choice, not a necessary step for our basic
+tracing use. Prefer the no-card personal path while sufficient. Source:
+https://docs.langchain.com/langsmith/billing .
+
+If the owner's specific promotion requires a card, first confirm its coverage,
+expiry and any subscription fees with LangSmith. Enter details only in the
+service's billing form, never this repository/chat. Configure trace limits under
+Usage limits and retain base retention for our planned small trace sample.
+The usage documentation says limits are approximate and changes can take a
+minute or two; this is not an absolute zero-charge guarantee. Trace limits also
+do not establish coverage of unrelated paid products. Source:
+https://docs.langchain.com/langsmith/usage-and-billing .
+
+For the Toloka/Tandem offer form, the closest project category is “an agent or
+agentic app.” If free text is available, explain that Dojo is an evaluation and
+routing toolkit for coding agents, using repository-derived test-backed tasks
+and designed for NVIDIA Nemotron on Nebius Token Factory. It is not currently a
+fine-tuning or RAG project. A data pipeline is a component, not the main product.
+
+Suggested bottleneck wording:
+
+> Our biggest bottleneck is reliably detecting and explaining silent failures
+> in coding-agent workflows. Visible tests or an agent's completion claim do
+> not establish correctness. We need reproducible task-level evaluations,
+> trustworthy cost accounting and clear separation of model errors from
+> infrastructure failures, so uncertain cases can be flagged for escalation or
+> optional expert review. We are developing and validating this workflow.
+
+Do not claim an observed 80% agent success rate; no live model result exists yet.
+Human review is a possible bounded use, not an enabled service or authorization
+to share private evaluator data.
+
+Official Nebius cookbook material names **Tendem by Toloka**; the Builder FAQ
+still spells its offer “Tandem.” This supports the likely product connection but
+does not verify the owner's actual redemption destination or usable entitlement.
+Sources: https://dev.nebius.com/builders ;
+https://dev.nebius.com/cookbook/invoice-vision-human-validation .

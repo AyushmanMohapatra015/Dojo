@@ -184,9 +184,10 @@ live-credit expiry is a blocking dependency, not resolved by more parallel work.
 |---|---|---|
 | 10a | PLANNED | Results schema, static app and labeled development fixtures. |
 | 10a1 | DONE | docs/reviews/agent2/agent2-explorer-packet-v1.md: two-task frontend implementation handoff, current empty scaffold, reviewed feedback and complete synthetic UI fixture/temporary view-model boundary independent of Argon's APIs. Builder lint/fixture/provenance checked; no frontend implementation claimed. |
-| 10a2 | PLANNED | Agent 2 static React/Vite/Recharts explorer prototype supporting 10a/10b/10d/10f: complete source, synthetic-only labels, strict display adapter/input and accessible comparison/grid/method/error states; review before adoption. |
-| 10a3 | PLANNED | Agent 2 prototype parser/component tests, browser/accessibility checklist and exact build/integration docs; primary executes appropriate checks and accepts corrected code. Real data adapter, privacy approval and hosting remain separate. |
+| 10a2 | PARTIAL | Agent 2 delivered 14-file static React/Vite/Recharts proposal in Frontend_Agent2; intake at 10a5 verifies fixture/copies and reproduces parser defects. Not installed in dashboard. Repairs, real dependency/build/browser checks and primary acceptance pending. |
+| 10a3 | PARTIAL | 91 written tests and partial author stand-in/stubbed-browser results delivered; real Vitest/RTL/Recharts/build not independently run. Eight primary Node parser checks at 10a5 are separate; verification/adoption, real adapter, privacy and hosting remain pending. |
 | 10a4 | PLANNED | Later Argon frontend review/refinement using the actual Agent 2 source, primary intake findings and hashed UI snapshot. Improve working code rather than default rewrite; no overlapping dashboard edits, lost fixture/privacy labels or unsupported claims. Only after Agent 2 delivery and math review capacity. |
+| 10a5 | DONE | Allowlisted 14-file archive; four loose copies match ZIP, fixture equals assignment, byte manifest preserved. Eight Node parser probes reproduce three controls and five problematic behaviors. explorer-primary-assessment-v1.md maps F1-F8 including static descending-null sort/filter-sentinel issues and distinguishes partial author evidence from real tests. No install/dashboard adoption; 9g4e remains primary next, Argon 10a4 refinement can proceed separately. |
 | 10b | PLANNED | Header/counts/measured cost/time, coherent navigation and accessible responsive design. |
 | 10c | PLANNED | Frontier chart and per-config comparisons with uncertainty. |
 | 10d | PLANNED | Task/config grid, sanitized run status/signals/details, no private/evaluator leakage. |
@@ -217,8 +218,10 @@ live-credit expiry is a blocking dependency, not resolved by more parallel work.
 | 12g | GATED | Rule receipt UI and AGENTS.md/JSON exports; claims follow measured results. |
 | 12h | OPTIONAL | Hermes accepted-rule skill export. |
 | 12i | OPTIONAL | LangSmith only with explicit data-sharing/cost choice and sanitized traces. |
+| 12i1 | DONE | Current official LangSmith docs checked: personal Developer no-card 5k monthly trace allowance, card/overage path, distinct Plus subscription and approximate trace-limit caveats. Owner-only steps in partner-resources.md; promo scope/expiry remains account-specific unknown. No billing/tracing activation. |
 | 12j | OPTIONAL | Toloka only with relevant authorized affordable human-rating task. |
 | 12k | OPTIONAL | Identify Tandem and concrete benefit before onboarding/integration. |
+| 12k1 | DONE | Recommend agent/agentic-app category and truthful evaluation/reliability bottleneck wording without an unmeasured 80% claim. Official Nebius material names Tendem by Toloka while FAQ says Tandem; actual offer destination/entitlement still unverified. No job, external sharing or signup performed. |
 | 12l | OPTIONAL | Nebius Jobs/Endpoints only with verified credits/need; preserve local path and follow named skills if invoked. |
 | 12m | OPTIONAL | Existing-benchmark fallback, backup project tracks and language/RL future work remain recorded alternatives, not claimed deliverables; explicit decision to reopen. |
 
