@@ -2,7 +2,7 @@
 
 Updated: 2026-10-22. BUILD_SPEC.md defines the product; this file is the live
 execution checklist; PROGRESS.md holds checkpoint history/evidence. Baseline:
-911 offline tests after task 5d2, 63 construction tasks (37 train / 26 held-out), no provider
+1,014 offline tests after task 9g4b, 63 construction tasks (37 train / 26 held-out), no provider
 calls/spend. Scaffolds and synthetic checks are not completed benchmark results.
 
 ## Tracking rules
@@ -160,22 +160,22 @@ live-credit expiry is a blocking dependency, not resolved by more parallel work.
 
 | ID | Status | Task / acceptance evidence |
 |---|---|---|
-| 9a | PLANNED | Pass@1, cost/run/solved task, tokens/steps/stalls/time and explicit zero-solve behavior. |
+| 9a | PARTIAL | Pure metrics/secondary unknowns/zero-solve behavior implemented and checked on fictional inputs at 9g4b. Trusted actual-run normalization and measured outcomes remain 5e/5f/8/9g4e. |
 | 9b | PLANNED | Owner-written paired task bootstrap and cold-restart cascade composition; known-answer/edge checks (16c). |
-| 9c | PLANNED | Frontier table/plot, confidence intervals and raw task/config outcomes. |
+| 9c | PARTIAL | Exact frontier tables, paired bootstrap intervals and undefined/tie behavior checked at 9g4b. Plot/UI, trusted actual task grid/export and measured results remain pending. |
 | 9d | PLANNED | Train-only observable escalation: cost(A all)+cost(B escalated), restart semantics, no hidden oracle routing. |
 | 9e | GATED | Frozen held-out cascade, trigger precision/recall, savings/success tradeoffs. |
-| 9f | PLANNED | Family/duplicate/seed sensitivity, contamination/small-n caveats, invalid-result audit and honest claims. |
-| 9g | PARTIAL | Independent statistics implementation packet prepared at 9g1; await response, then reproduce formulas/code/examples locally. |
+| 9f | PARTIAL | Family/seed sensitivity, complete-panel invalid-result audit and bounded work checked at 9g4b; actual-run sensitivity, report caveats/export and measured claims remain pending. |
+| 9g | PARTIAL | External A/B proposals reviewed; corrected A foundation integrated at 9g4b with independent acceptance checks. B corrections/adoption remain 9g4e. Owner-written 16c is separate. |
 | 9g1 | DONE | docs/reviews/statistics-cascade-packet-v1.md: eight source/context files, exact synthetic panel/answers, paired bootstrap/unequal seeds, both frontier axes, leakage/error/undefined-result tests and complete module/test deliverables. Primary owns 5c; math implementation reserved for web agent while response is pending. Owner-written 16c remains gated. |
 | 9g2 | DONE | statistics-cascade-packet-v2.md expands to ten coordinated work packages and 17 minimum delivered source/test/fixture/doc files across 9a-9d/9f/9h. Includes complete normalized I/O boundary, dependency/ownership map, deterministic bounded offline command, exact math, three verified synthetic fixtures and acceptance commands. V1 preserved; share v2; primary owns 5c. |
 | 9g3 | DONE | Owner reports Agent 1 cannot handle ten WPs together: active handoff is now statistics-batch-a-packet-v1.md, exactly original WPs 1-5 with full context/fixtures/source and complete API deliverables. V1/v2 preserved as historical snapshots. Review Batch A before preparing Batch B (6-10) with its actual reviewed code/API. Math implementation remains pending; Agent 2 assignments unchanged. |
-| 9g4 | PARTIAL | A and completed B continuation reviewed in separate immutable archives. B bounded tests: 23 pass/2 known-A failures/1 incorrect expensive test excluded; three independent continuation checks reproduce test-oracle/parser/selection defects. No application math adopted; repairs remain 9g4b/9g4e. |
+| 9g4 | PARTIAL | Corrected A foundation adopted at 9g4b; all proposal originals remain unchanged. B continuation was reviewed against original A (historical 23 pass/2 known-A failures/1 excluded); B repairs/adoption remain 9g4e. |
 | 9g4a | DONE | Isolated ten Batch A files and genuine B partial with byte/line/import manifests. Reviewed A sources/API/tests/docs; supplied tests 21 pass/1 incorrect CI assertion fails. Ten independent defect reproductions + one quantile check pass against UNMODIFIED proposal (not acceptance). statistics-review-assessment-v1.md records evidence/dispositions; B modules recovered/syntax checked only, not accepted. |
-| 9g4b | NEXT | Correct/adapt Batch A R1-R10 with acceptance regressions, retaining useful formulas and stable public signatures for the B continuation. Preserve owner-written 16c and actual-evaluation gates; do not import unreviewed proposal wholesale. |
+| 9g4b | DONE | Adapted reviewed records/stats/frontier into dojo/bench; R1-R10 repaired with 81 independent acceptance cases plus 22 adapted known-answer/parser tests. Full application 1,014 passed in 43.02s; Ruff clean. Constructor/public binding validation, Unicode, exact seed/series inputs, family/pair/output/memory preflight and corrected HF7 quantile assertion documented in docs/statistics-foundation.md. Archived originals/signatures/frozen files preserved; 16c and actual-evaluation gates remain open. |
 | 9g4c | DONE | Prepared statistics-b-continuation-packet-v1.md: exactly two missing-delivery groups (WP9 complete CLI; WP10 three tests/two docs) with full A API/source, recovered WP6-WP8, CLI fragment, fixtures and known review defects. Reference code explicitly unaccepted; primary owns A repairs, Argon avoids repeated A/rewrite of completed B blocks. Await response/review before B integration. |
 | 9g4d | DONE | Archived eight completed B files, six Python files parse; inspected source before isolated tests using original A fixtures. 23 passed/2 known-A failures/1 incorrect workload test deselected; three independent checks reproduced B1-B3. continuation-review-assessment-v1.md maps B1-B6, narrow-delta and API evidence. No runtime adoption. |
-| 9g4e | PLANNED | After 9g4b, repair/adapt B1-B6: tiny-cap preflight oracle/sentinels, bound numeric exponents before construction, validate saved selection consistency, preserve minimal public-interface changes, complete workload accounting and explicit export schema. Run complete meaningful acceptance suite before adopting A/B math; retain 16c and registration gates. |
+| 9g4e | NEXT | Repair/adapt B1-B6 against accepted A: tiny-cap preflight oracle/sentinels, bound numeric exponents before construction, validate saved selection consistency, preserve minimal public-interface changes, complete workload accounting and explicit export schema. Adapt stale-envelope test to constructor refusal; run complete meaningful acceptance suite before adopting B cascade/report/CLI. Retain 16c and registration gates. |
 | 9h | PLANNED | Results export with provenance/config/split hashes; no synthetic-as-real metrics. |
 
 ## 10. Explorer/product experience
@@ -284,10 +284,8 @@ live-credit expiry is a blocking dependency, not resolved by more parallel work.
 | 16d | GATED | If L3 proceeds, owner-written gate decisions and rejection reasons. |
 | 16e | PARTIAL | Owner milestone reflections/video explanation; distinguish from AI-written implementation notes. |
 
-Completed review checkpoint: **9g4d/13l4/13m**; last application implementation
-checkpoint remains **5d2**, immutable result/valuation persistence.
-Next implementation checkpoint: **9g4b** targeted statistics repairs, then
-**9g4e** B acceptance/integration, then **5e**.
+Completed implementation checkpoint: **9g4b**, repaired offline statistics foundation.
+Next implementation checkpoint: **9g4e** B acceptance/integration, then **5e**.
 Argon's B continuation is received/reviewed (**9g4d**); no rewrite requested.
 Agent 2 owns frontend proposals (**10a2/10a3**). Do not duplicate those modules.
 Scoring threat-model decision **4j**

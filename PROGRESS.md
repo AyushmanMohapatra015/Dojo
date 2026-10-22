@@ -1,5 +1,34 @@
 # Progress
 
+## Statistics foundation repairs/adoption (9g4b) - 2026-10-22
+
+- Adapted reviewed Argon A records/stats/frontier into the application, preserving
+  all original proposals and public signatures. Existing stats/frontier stubs
+  replaced; no cascade/report/analysis CLI adopted in this slice.
+- R1-R10 repaired: fresh constructor/public audit and canonical hash binding;
+  exact unique declared seeds; consistent optional commands/turns; panel-product
+  bound before expansion; valid escaped Unicode pairs; worst-case family/pair
+  workload preflight; validated public metric DTOs; consistent registration IDs;
+  exact bounded seed positions and explicit asymmetric-slice notes; pair/output
+  bounds before draws. Stored-point and sensitivity/frontier guards added.
+- Preserved exact expected-one-attempt versus actual-all-repeat spending, paired
+  RNG isolation, family original-n scaling, undefined-cost/zero-solve intervals
+  and both frontier axes. Corrected the adopted supplied HF7 interval assertion
+  and named the method accurately; archived incorrect original unchanged.
+- Added 22 adapted known-answer/parser tests and 81 independent acceptance cases
+  with tiny fictional panels/allocation and sampling sentinels. Full application
+  suite: 1,014 passed in 43.02s; Ruff dojo/tests clean. This is the new application
+  checkpoint, separate from previous external-proposal test counts.
+- AST comparison against the archived reference confirms no changed public
+  function signatures or missing exports; final git diff --check passes.
+- docs/statistics-foundation.md records API/error semantics, math, bounds and
+  reuse provenance; README/action plan updated. Structural stale bindings raise
+  AnalysisInputError at construction; 9g4e must adapt its B test accordingly.
+- No paid/model/provider/Docker calls, actual benchmark outcomes, account changes,
+  deployments or Git writes. Frozen CLI/packaging/input sources and original
+  review archives unchanged. Owner-written exercise 16c remains pending.
+- Next task 9g4e: B1-B6 cascade/report/CLI corrections against accepted A, then 5e.
+
 ## Argon continuation / Gravity intake / handoff quality (9g4d/13l4/13m) - 2026-10-22
 
 - Saved B continuation received: 124,541 bytes, eight complete files; six Python

@@ -8,9 +8,12 @@ cost/success comparisons and offline model escalation are planned outputs.
 **Checkpoint, 2026-10-22:** construction, scripted solver/Docker development
 execution and scoring, private attempt ownership, and offline result-validation
 components have test evidence. Immutable result/valuation history is stored
-and checked offline. The full offline suite passed **911 tests**.
+and checked offline. The full offline suite passed **1,014 tests**.
 No real model requests have run; no model success rates or savings are measured.
-The analysis, end-to-end benchmark workflow and results explorer remain pending.
+The [offline statistics foundation](docs/statistics-foundation.md) now validates
+panels and computes exact metrics, bootstrap intervals and frontier tables on
+fictional inputs. Cascade/report/CLI integration, the end-to-end benchmark workflow
+and results explorer remain pending.
 Optional repository-guidance verification (L3) remains gated stretch work.
 [BUILD_SPEC.md](BUILD_SPEC.md) defines the design;
 [ACTION_PLAN.md](ACTION_PLAN.md) and [PROGRESS.md](PROGRESS.md) track delivery.

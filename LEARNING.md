@@ -1,5 +1,17 @@
 # Learning log
 
+## Task 9g4b - implementation observation
+
+A validated container must bind its verdict to its actual contents. Replacing
+records requires a new audit and hash; a previously valid flag is not enough.
+Repeated seed IDs change weights, and bool is an integer subtype in Python,
+so both need explicit rejection. A resource estimate must follow actual work:
+family draws can expand beyond the original task count, while comparison pairs
+add separate work. Check limits before drawing or allocating, then use tiny-cap
+sentinels to demonstrate early refusal. Correctly escaped Unicode pairs should
+normalize to the same input as UTF-8, while lone surrogates should fail.
+These observations do not complete the owner's written math exercise 16c.
+
 ## Tasks 9g4d / 13l4 / 13m - review observation
 
 A passing test can check the wrong promise: finding a constraint string does
