@@ -1,5 +1,31 @@
 # Progress
 
+## Gravity setup / collaboration ownership (13l1) - 2026-10-22
+
+- Created docs/reviews/Gravity with a current allowlisted source-only snapshot,
+  SHA-256 manifest, exact two-task assignment, local project/settings guidance
+  and output paths. Gravity owns proposed boundary audit (13l2) and registration/
+  publication contract review (13l3), supporting 4j/5f/7. No app implementation
+  or actual benchmark run is assigned; review results remain pending.
+- Existing D:/Dojo-Antigravity HEAD 12201d0 was behind primary 44c0653 and
+  contained an earlier untracked PDF. Inspected status only; no reset, pull,
+  checkout update, deletion or overwritten files. Gravity uses the new snapshot.
+- Snapshot excludes .git, environment/credential directories, DBs, datasets,
+  hidden task archives and external-agent raw responses. Copied code/docs/tests
+  are static reference, not a runnable installation. Review reads context only,
+  writes outputs only; terminal execution and outside-folder access restricted
+  in the owner setup guidance. These are controls, not absolute safety claims.
+- User wants Argon to refine Agent 2's frontend later (10a4): use actual code
+  and primary intake findings, avoid concurrent edits/default rewrite. Argon
+  statistics review remains primary next; Agent 2 still owns initial UI.
+- Rough core-deliverable estimate 55-60%, judgment only; 911 offline tests and
+  63 constructed tasks do not count as real model results. Deadline reconfirmed
+  Oct 30, 22:30 IST; internal Oct 29 target remains conditional on real-credit
+  confirmation, trusted live integration, registered results, UI and submission.
+  Parallel help is useful but does not clear dependencies or guarantee timing.
+- No provider calls/spend, installs, account changes or Git writes. This turn
+  prepares review work; it does not claim the assigned reviews or UI complete.
+
 ## Task 5d2 and Agent 2 frontend packet (10a1) - 2026-10-22
 
 - Added ResultStore with atomic synthetic result completion and immutable

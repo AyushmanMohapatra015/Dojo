@@ -45,6 +45,13 @@ These are working targets, not a completion guarantee. Report missed targets,
 remaining critical path and options immediately. Retain mandatory acceptance
 conditions; record optional go/no-go decisions under BUILD_SPEC and owner direction.
 
+Planning estimate on Oct 22: roughly 55-60% of the intended core deliverable,
+not a measured completion metric or count of green tests/checklist rows. Real
+provider/accounting integration, registered results, frontend and submission
+still dominate the critical path. External responses do not count as delivered
+features until reviewed/integrated. Oct 29 remains the target; the unconfirmed
+live-credit expiry is a blocking dependency, not resolved by more parallel work.
+
 ## 1. Foundation
 
 | ID | Status | Task / acceptance evidence |
@@ -174,6 +181,7 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 10a1 | DONE | docs/reviews/agent2/agent2-explorer-packet-v1.md: two-task frontend implementation handoff, current empty scaffold, reviewed feedback and complete synthetic UI fixture/temporary view-model boundary independent of Argon's APIs. Builder lint/fixture/provenance checked; no frontend implementation claimed. |
 | 10a2 | PLANNED | Agent 2 static React/Vite/Recharts explorer prototype supporting 10a/10b/10d/10f: complete source, synthetic-only labels, strict display adapter/input and accessible comparison/grid/method/error states; review before adoption. |
 | 10a3 | PLANNED | Agent 2 prototype parser/component tests, browser/accessibility checklist and exact build/integration docs; primary executes appropriate checks and accepts corrected code. Real data adapter, privacy approval and hosting remain separate. |
+| 10a4 | PLANNED | Later Argon frontend review/refinement using the actual Agent 2 source, primary intake findings and hashed UI snapshot. Improve working code rather than default rewrite; no overlapping dashboard edits, lost fixture/privacy labels or unsupported claims. Only after Agent 2 delivery and math review capacity. |
 | 10b | PLANNED | Header/counts/measured cost/time, coherent navigation and accessible responsive design. |
 | 10c | PLANNED | Frontier chart and per-config comparisons with uncertainty. |
 | 10d | PLANNED | Task/config grid, sanitized run status/signals/details, no private/evaluator leakage. |
@@ -226,6 +234,9 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 13i | PARTIAL | Service/tool defect log under 1f: sanitized observations, reproduction/confidence and upstream report readiness; notify owner, no automatic issue filing. |
 | 13j | DONE | Agent 2's allowlisted agent2-submission-demo-packet-v1.md supplies source hashes, current evidence ledger and two bounded deliverables (14k/14l). Two offline rehearsal commands verified, zero provider calls. Agent 1 retains statistics 9g2; primary retains 5d; Agent 3 (Antigravity) remains unassigned. |
 | 13k | DONE | All three Agent 2 originals reviewed/preserved with manifest; agent2-review-assessment-v1.md maps accepted/corrected/deferred findings. Official rules rechecked Oct 22; resolved existing gate/CLI IDs, met G1 and implemented offline ledger. Corrected visible-test and held-out-selection narration; README fixes at 14a1. |
+| 13l1 | DONE | Gravity (Agent 3/Antigravity) folder with allowlisted current source snapshot/manifest, two-task assignment, local/review permissions and output paths. Older D:/Dojo-Antigravity checkout inspected read-only and left intact; source snapshot is current and no .git/runtime data/credentials copied. Static review only; activation remains owner opening folder and pasting prompt. |
+| 13l2 | PLANNED | Gravity read-only data-transfer/evaluator boundary audit supporting 4j/7e/8g: trace actual input/message/patch/receipt/result flows, confirm existing defenses, propose minimal fictional reproductions for new findings. Primary verifies before any source changes. |
+| 13l3 | PLANNED | Gravity registration/publication acceptance design supporting 5f/7a/7g: exact trusted binding and denominator/error rules, no metadata-only approval, no latest-score shortcut; synthetic acceptance matrix and proposed tests, no benchmark outcomes or protocol activation. |
 
 ## 14. Submission/publication
 

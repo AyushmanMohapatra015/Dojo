@@ -1,0 +1,15 @@
+# Rules
+- BUILD_SPEC.md is the plan. Do only the step I ask for, then stop and summarize.
+- ACTION_PLAN.md is the live numbered execution checklist derived from BUILD_SPEC.md. Add every new task/review follow-up before implementation, keep stable IDs/status/dependencies/evidence current, and reference active IDs in checkpoints. Preserve canonical/frozen artifacts; record scope/schedule changes rather than silently omitting work.
+- Never print or log secrets. Read keys from the environment only.
+- Never run paid model jobs without a spend cap. Ask me before any run that could cost over $1.
+- The owner now permits carefully monitored promotional-credit usage and plans card removal after project completion. No out-of-pocket/card-funded spending is authorized. Support confirms there is no provider hard cap; never promise that local controls guarantee zero charges.
+- Keep live Nebius calls locked until usable credit balance/expiry are confirmed and cumulative spending reservations across runs, a safety reserve and per-request limits are implemented and tested. A key, a promo code or a per-run cap alone is insufficient. Stop on unknown usage/accounting; never run unattended.
+- Keep PROGRESS.md updated: done, next, blockers, measured numbers.
+- Write tests for logic that scores results.
+- If something in the spec is marked VERIFY, check it and record the answer. Don't assume.
+- Work in small steps: explain what each step does before acting, then recap what we learned.
+- Help the owner learn alongside implementation; preserve the owner-written learning work in BUILD_SPEC.md.
+- The owner now performs Git add, commit and push manually. Finish implementation/checks, review changed files for credentials/private data, then provide exact scoped commands. Do not stage, commit or push unless the owner explicitly asks again. Preserve the private remote; no force-push or unrelated account changes.
+- Notify the owner of service/tool defects encountered. Distinguish a suspected environment failure from a reproduced upstream defect; record minimal sanitized evidence and report readiness in FEEDBACK.md. Do not file issues or contact maintainers without authorization.
+- At project completion, remind the owner and review PROJECT_CLEANUP.md before final handoff; keep its tool inventory current.

@@ -66,9 +66,15 @@ code/tests/docs as docs/reviews/agent2/agent2-explorer-feedback-v1.txt; primary
 reviews before frontend acceptance. The supplied manifest distinguishes this
 assignment from the earlier documentation-only task.
 
-Agent 3 is Antigravity and remains unassigned until we choose a separate task
-and inspect its checkout/context. Do not grant it broad permissions just to
-prepare this web-agent assignment. Primary integration remains here.
+Agent 3 is Antigravity, named Gravity. Open only docs/reviews/Gravity for its
+static source review (13l2/13l3), following README/AGENTS/ASSIGNMENT there. A
+current source-only context snapshot/manifest avoids the older stale checkout.
+It audits solver/evaluator transfers and registration/publication acceptance,
+with proposed tests only. No source edits, Git, terminal code execution, Docker,
+accounts or paid work. Return reports under Gravity/outputs for primary review.
+Settings guidance and exact prompt are in that folder; main application remains
+the integration authority. Later Argon frontend refinement (10a4) waits for
+Agent 2's actual reviewed source; don't send both agents concurrent UI edits.
 
 Paste with the new attachment:
 

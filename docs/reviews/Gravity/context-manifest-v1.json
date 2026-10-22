@@ -1,0 +1,674 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-10-22",
+  "base_commit": "44c0653024ad099f4b6539355c9b6bc358c9e06d",
+  "working_snapshot_possible": true,
+  "purpose": "Gravity static boundary and registration review only",
+  "code_policy": "All regular dojo/**/*.py sources; exact selected docs/tests",
+  "execution_authorized": false,
+  "provider_calls": 0,
+  "runtime_data_included": false,
+  "files": [
+    {
+      "source": "dojo/__init__.py",
+      "snapshot": "context/dojo/__init__.py",
+      "bytes": 78,
+      "sha256": "1202b51d77652ea7fa0ce9896296275f428835dea04b1611cd04be66aae0f8aa"
+    },
+    {
+      "source": "dojo/__main__.py",
+      "snapshot": "context/dojo/__main__.py",
+      "bytes": 32,
+      "sha256": "be101d2ccacf0026fa4cca122bb02e73532841dd6099f5391e3db4c816462e20"
+    },
+    {
+      "source": "dojo/backends/__init__.py",
+      "snapshot": "context/dojo/backends/__init__.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/backends/local_docker.py",
+      "snapshot": "context/dojo/backends/local_docker.py",
+      "bytes": 6791,
+      "sha256": "11b66cc507762aa04204a377afd766b316c7789f63da5422d7789c80c187ee71"
+    },
+    {
+      "source": "dojo/backends/local_docker_v2.py",
+      "snapshot": "context/dojo/backends/local_docker_v2.py",
+      "bytes": 4409,
+      "sha256": "fb4e4dbda53ececf5ebeb81475828286d59eeac28f2ed0e14d66f4d5115e3ac2"
+    },
+    {
+      "source": "dojo/backends/nebius_jobs.py",
+      "snapshot": "context/dojo/backends/nebius_jobs.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/backends/profiles.py",
+      "snapshot": "context/dojo/backends/profiles.py",
+      "bytes": 990,
+      "sha256": "538a44ee4b2a08e90d536441b54fbf65e9d1af07e01b1a9ec6f4102aa653d022"
+    },
+    {
+      "source": "dojo/backends/receipt_v2.py",
+      "snapshot": "context/dojo/backends/receipt_v2.py",
+      "bytes": 3350,
+      "sha256": "94d95287d5499b02c6e248fc7fa37e42b3cba6cd2a7a0cd7893e2349696473e4"
+    },
+    {
+      "source": "dojo/bench/__init__.py",
+      "snapshot": "context/dojo/bench/__init__.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/bench/frontier.py",
+      "snapshot": "context/dojo/bench/frontier.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/bench/grid.py",
+      "snapshot": "context/dojo/bench/grid.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/bench/stats.py",
+      "snapshot": "context/dojo/bench/stats.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/cascade/__init__.py",
+      "snapshot": "context/dojo/cascade/__init__.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/cascade/policies.py",
+      "snapshot": "context/dojo/cascade/policies.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/cascade/simulate.py",
+      "snapshot": "context/dojo/cascade/simulate.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/cli.py",
+      "snapshot": "context/dojo/cli.py",
+      "bytes": 11424,
+      "sha256": "100f6b5108af150ecfd611ac239cfc202c2a90ddb8ab38f7e151a5714472692c"
+    },
+    {
+      "source": "dojo/eval/__init__.py",
+      "snapshot": "context/dojo/eval/__init__.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/eval/candidate_development.py",
+      "snapshot": "context/dojo/eval/candidate_development.py",
+      "bytes": 6285,
+      "sha256": "4eb30e1bb937bd2f077b0a5661c911bf0b05269ff07bea8eee94c0ba89ecd93f"
+    },
+    {
+      "source": "dojo/eval/candidate_outcomes.py",
+      "snapshot": "context/dojo/eval/candidate_outcomes.py",
+      "bytes": 5513,
+      "sha256": "0edbd048a0890756447d53fdb3f0b098bc42dd8d80d89c901c387346c535eac3"
+    },
+    {
+      "source": "dojo/eval/conditions.py",
+      "snapshot": "context/dojo/eval/conditions.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/eval/contract_development.py",
+      "snapshot": "context/dojo/eval/contract_development.py",
+      "bytes": 7847,
+      "sha256": "45576e3fa4779e02dc6ca6417c497878d5d5279bda7185a878eb1dbe65393d08"
+    },
+    {
+      "source": "dojo/eval/development_scoring.py",
+      "snapshot": "context/dojo/eval/development_scoring.py",
+      "bytes": 6064,
+      "sha256": "414d1a6232fc2ce37e9f81c7bce73bffd736c0eb4870dd14b00bde356f128d02"
+    },
+    {
+      "source": "dojo/eval/docker_scoring.py",
+      "snapshot": "context/dojo/eval/docker_scoring.py",
+      "bytes": 6839,
+      "sha256": "e3e4625f129fc14ef5ec6a78a15232cad820d198e9bcda52f3bac0ae3c022c76"
+    },
+    {
+      "source": "dojo/eval/docker_scoring_v2.py",
+      "snapshot": "context/dojo/eval/docker_scoring_v2.py",
+      "bytes": 7100,
+      "sha256": "593fbfd204f27b3d2825481246981e66c6f917dd96240c4d403d6e428249b363"
+    },
+    {
+      "source": "dojo/eval/flow_development.py",
+      "snapshot": "context/dojo/eval/flow_development.py",
+      "bytes": 6817,
+      "sha256": "66a8300f732b27f6aa208f5a0217b09454fc2ed79d6257d5fc6b5b60ee7bfc71"
+    },
+    {
+      "source": "dojo/eval/patch_development.py",
+      "snapshot": "context/dojo/eval/patch_development.py",
+      "bytes": 5230,
+      "sha256": "754b3ece74928048238b99e7301997189cb313ed2f27f2ffe3b2ba0bcdf285e5"
+    },
+    {
+      "source": "dojo/eval/principal_review_development.py",
+      "snapshot": "context/dojo/eval/principal_review_development.py",
+      "bytes": 11753,
+      "sha256": "5c13b5c09c6a0bc3f5ba621a99a877d758e68bd35f306ed35bfd624246d513d5"
+    },
+    {
+      "source": "dojo/eval/profile_development.py",
+      "snapshot": "context/dojo/eval/profile_development.py",
+      "bytes": 4080,
+      "sha256": "5445073f8f653837647699d9bf8dbc992865c79017631d6a1d3cfc461c68cbb5"
+    },
+    {
+      "source": "dojo/eval/run_eval.py",
+      "snapshot": "context/dojo/eval/run_eval.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/eval/scoring_contract.py",
+      "snapshot": "context/dojo/eval/scoring_contract.py",
+      "bytes": 10548,
+      "sha256": "2a3033fda3f283d23bd311c30d32f274d2befaad7037d3dfd4287b675a70b0ed"
+    },
+    {
+      "source": "dojo/eval/scoring_development.py",
+      "snapshot": "context/dojo/eval/scoring_development.py",
+      "bytes": 3702,
+      "sha256": "7829de72100b1e7a8e63454a8796a2e9754d1581ff8d579ddfc10fa768f2f52f"
+    },
+    {
+      "source": "dojo/export/__init__.py",
+      "snapshot": "context/dojo/export/__init__.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/export/agents_md.py",
+      "snapshot": "context/dojo/export/agents_md.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/export/hermes_skill.py",
+      "snapshot": "context/dojo/export/hermes_skill.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/gate/__init__.py",
+      "snapshot": "context/dojo/gate/__init__.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/gate/bundle.py",
+      "snapshot": "context/dojo/gate/bundle.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/gate/stage_a.py",
+      "snapshot": "context/dojo/gate/stage_a.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/gate/stage_b.py",
+      "snapshot": "context/dojo/gate/stage_b.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/mine/__init__.py",
+      "snapshot": "context/dojo/mine/__init__.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/mine/construction_v2.py",
+      "snapshot": "context/dojo/mine/construction_v2.py",
+      "bytes": 15203,
+      "sha256": "4e380270ad5d241da035d0ac9b9ba4159becb6ab951145cc83fe8a0c092511e9"
+    },
+    {
+      "source": "dojo/mine/demo.py",
+      "snapshot": "context/dojo/mine/demo.py",
+      "bytes": 1702,
+      "sha256": "b292a647f782664d0d50da3dd9f78698fa0ba3c1164a6943b906cae44dd25298"
+    },
+    {
+      "source": "dojo/mine/envbuild.py",
+      "snapshot": "context/dojo/mine/envbuild.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/mine/expansion.py",
+      "snapshot": "context/dojo/mine/expansion.py",
+      "bytes": 4325,
+      "sha256": "d6c4f185ab3068144a6ac412e5c9eb5cb2fda17afe31215569b6c77471306245"
+    },
+    {
+      "source": "dojo/mine/expansion_batch.py",
+      "snapshot": "context/dojo/mine/expansion_batch.py",
+      "bytes": 8503,
+      "sha256": "959234acfe025a40049542d0c4b1f51e0de7659a5319ef958c49369fb7592656"
+    },
+    {
+      "source": "dojo/mine/git_mine.py",
+      "snapshot": "context/dojo/mine/git_mine.py",
+      "bytes": 6282,
+      "sha256": "745afd942da45eafb3b8eab3219abb5003bf378b80cf17632834a9f8adc118a7"
+    },
+    {
+      "source": "dojo/mine/history.py",
+      "snapshot": "context/dojo/mine/history.py",
+      "bytes": 5985,
+      "sha256": "e8710f616579ad8d50187bfac5303fb1238f10928fd220132c3dc750689753f7"
+    },
+    {
+      "source": "dojo/mine/pool.py",
+      "snapshot": "context/dojo/mine/pool.py",
+      "bytes": 10917,
+      "sha256": "059ad676029fdb42f3fa1df58476cbf8b9f6e02ec215bbc2d8d4f63db73898b8"
+    },
+    {
+      "source": "dojo/mine/real_task.py",
+      "snapshot": "context/dojo/mine/real_task.py",
+      "bytes": 10118,
+      "sha256": "22628124cc1a65f38cb69e82d3974fb5258a0dc3206b0a9c6755c4378764d73b"
+    },
+    {
+      "source": "dojo/mine/sandbox_v2_smoke.py",
+      "snapshot": "context/dojo/mine/sandbox_v2_smoke.py",
+      "bytes": 4888,
+      "sha256": "d2905663036f186faa802e9e3c19b7d05addc6b18249f0b4f898be7fb0a1e08b"
+    },
+    {
+      "source": "dojo/mine/validate.py",
+      "snapshot": "context/dojo/mine/validate.py",
+      "bytes": 5242,
+      "sha256": "95f781cf0a6ccda1f1159d60cdf57ec3c4bf15db341d880982cae179aee30005"
+    },
+    {
+      "source": "dojo/reflect/__init__.py",
+      "snapshot": "context/dojo/reflect/__init__.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/reflect/dedupe.py",
+      "snapshot": "context/dojo/reflect/dedupe.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/reflect/grounding.py",
+      "snapshot": "context/dojo/reflect/grounding.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/reflect/prompts.py",
+      "snapshot": "context/dojo/reflect/prompts.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/reflect/reflector.py",
+      "snapshot": "context/dojo/reflect/reflector.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/solve/__init__.py",
+      "snapshot": "context/dojo/solve/__init__.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/solve/agent.py",
+      "snapshot": "context/dojo/solve/agent.py",
+      "bytes": 8702,
+      "sha256": "875fa5e42a5e4150068ff8930113a2ed9b9cf017c6b6905bb7afdde08cf307f2"
+    },
+    {
+      "source": "dojo/solve/configured.py",
+      "snapshot": "context/dojo/solve/configured.py",
+      "bytes": 3170,
+      "sha256": "8d66b8155c3f8a234a80aa3dc78b1af75b3a72560315f430032138b1a17fccf0"
+    },
+    {
+      "source": "dojo/solve/contracts.py",
+      "snapshot": "context/dojo/solve/contracts.py",
+      "bytes": 5505,
+      "sha256": "2a503a69d35f9f963e7bace73551c6a40ea42e59bcb130086885afee8b5a9b9a"
+    },
+    {
+      "source": "dojo/solve/docker_development.py",
+      "snapshot": "context/dojo/solve/docker_development.py",
+      "bytes": 6032,
+      "sha256": "3b31b655438948e5d52085da5c057a75eb8776e6b96726e008e9b545be5a87e2"
+    },
+    {
+      "source": "dojo/solve/docker_sandbox.py",
+      "snapshot": "context/dojo/solve/docker_sandbox.py",
+      "bytes": 14915,
+      "sha256": "cabc7e221015592d7624d5f6d1508cc39442e136fc947a83eecdc4f0b17f7be3"
+    },
+    {
+      "source": "dojo/solve/docsearch.py",
+      "snapshot": "context/dojo/solve/docsearch.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/solve/input_guard_v2.py",
+      "snapshot": "context/dojo/solve/input_guard_v2.py",
+      "bytes": 9183,
+      "sha256": "c1df7aced4e89c7e6851ccde142b322e73e0081140b652cc2ec7add9b8ba6185"
+    },
+    {
+      "source": "dojo/solve/issue_review.py",
+      "snapshot": "context/dojo/solve/issue_review.py",
+      "bytes": 3611,
+      "sha256": "34361762c218e6176d7f8887d673db011ea1801f57727b0f5b71754eacfc2ccc"
+    },
+    {
+      "source": "dojo/solve/model.py",
+      "snapshot": "context/dojo/solve/model.py",
+      "bytes": 2281,
+      "sha256": "deacbacb8d7921eaac545e68981010d870e34efa8d84a12e1fbc75667d83d201"
+    },
+    {
+      "source": "dojo/solve/patches.py",
+      "snapshot": "context/dojo/solve/patches.py",
+      "bytes": 2785,
+      "sha256": "284b1a656a455ecbf98cd3fdf69fd16b34a1d04cec503847b8df531d8b12d258"
+    },
+    {
+      "source": "dojo/solve/plan.py",
+      "snapshot": "context/dojo/solve/plan.py",
+      "bytes": 1379,
+      "sha256": "09202b063e9841ae64e37f1d1282ad4ef1ec2dc59cd2a09531e6977a27dca78e"
+    },
+    {
+      "source": "dojo/solve/profiled_sandbox.py",
+      "snapshot": "context/dojo/solve/profiled_sandbox.py",
+      "bytes": 6185,
+      "sha256": "147f5104e7ea812655962148b396aa70a7214906a1c204c718c889f47b6c2f34"
+    },
+    {
+      "source": "dojo/solve/run_settings.py",
+      "snapshot": "context/dojo/solve/run_settings.py",
+      "bytes": 4281,
+      "sha256": "6f3d072a28b1d7091e4a7861d5edd607c23d7aeb4fe2aba5aaf5f4546ea6cf94"
+    },
+    {
+      "source": "dojo/solve/sandbox.py",
+      "snapshot": "context/dojo/solve/sandbox.py",
+      "bytes": 2751,
+      "sha256": "c4f2f59b64b8ba4cfd9bdace4fb972586696c06c1e958bcbd4138292c3f4fbe9"
+    },
+    {
+      "source": "dojo/solve/signals.py",
+      "snapshot": "context/dojo/solve/signals.py",
+      "bytes": 300,
+      "sha256": "34fe81d0b1e38aed16c8a2073f315f6cb77545158a08cae104da51c075faf9c0"
+    },
+    {
+      "source": "dojo/solve/simulation.py",
+      "snapshot": "context/dojo/solve/simulation.py",
+      "bytes": 2107,
+      "sha256": "624b33cf179e011a8a8a2396b949fdce210d9fc02176afebe53952040649cbf1"
+    },
+    {
+      "source": "dojo/solve/task_view.py",
+      "snapshot": "context/dojo/solve/task_view.py",
+      "bytes": 5969,
+      "sha256": "e4957b53c88458718e518a76bb96cf3c2ea4ca6d6c806b61dc7ce219f50be4ce"
+    },
+    {
+      "source": "dojo/store/__init__.py",
+      "snapshot": "context/dojo/store/__init__.py",
+      "bytes": 66,
+      "sha256": "dffa75e4701a106c39abe73e33254e42c50c629a21ea2d0ba4856e6b2da23f5b"
+    },
+    {
+      "source": "dojo/store/attempts.py",
+      "snapshot": "context/dojo/store/attempts.py",
+      "bytes": 17032,
+      "sha256": "f07944b268215842e500ba2f17fdca48dd8ee421fae3db4e4561a74af0c8ba93"
+    },
+    {
+      "source": "dojo/store/credits.py",
+      "snapshot": "context/dojo/store/credits.py",
+      "bytes": 9232,
+      "sha256": "9657c236b294782c7e5b059b9578dae29494973824032b5b9f6018d9d835bdfc"
+    },
+    {
+      "source": "dojo/store/db.py",
+      "snapshot": "context/dojo/store/db.py",
+      "bytes": 4588,
+      "sha256": "ece2155a6ea3060eb53d441680bfd1a85d34697cfa83aec500cc560bf8303d52"
+    },
+    {
+      "source": "dojo/store/identity.py",
+      "snapshot": "context/dojo/store/identity.py",
+      "bytes": 26481,
+      "sha256": "42acc8f7cddad1b81aa4c4d7f8e58d7a27fa914440f41348f6b69329ad4bd9c3"
+    },
+    {
+      "source": "dojo/store/records.py",
+      "snapshot": "context/dojo/store/records.py",
+      "bytes": 13287,
+      "sha256": "1d9e8dcaa67a2c8c6d2e474856e4380403c003e2d8a713313bc1ef939d4dcf15"
+    },
+    {
+      "source": "dojo/store/results.py",
+      "snapshot": "context/dojo/store/results.py",
+      "bytes": 12507,
+      "sha256": "4a8da20bfa6d2ec493fcdc50a4e810f842879bd4728a13aa8716fa0bf818d9f4"
+    },
+    {
+      "source": "dojo/store/schema_v1.py",
+      "snapshot": "context/dojo/store/schema_v1.py",
+      "bytes": 8184,
+      "sha256": "81618419321e36fc97f171dcdb9298c3bfbab3606620d1ed040f9c639b04436a"
+    },
+    {
+      "source": "dojo/store/schema_v2.py",
+      "snapshot": "context/dojo/store/schema_v2.py",
+      "bytes": 2166,
+      "sha256": "b676b74c7de608d519cc38bb357951a0776c0033d35b8fa19e72dc4592e7beb6"
+    },
+    {
+      "source": "dojo/store/schemas.py",
+      "snapshot": "context/dojo/store/schemas.py",
+      "bytes": 2318,
+      "sha256": "d54eb307a4739df8bc942e9f0a2269738a4eeea7c5516ab64790dc50c6fb5027"
+    },
+    {
+      "source": "dojo/verify.py",
+      "snapshot": "context/dojo/verify.py",
+      "bytes": 11014,
+      "sha256": "4b91870f830bc233b9072c32e369ccd27a8d78881ef1bf8d54f43cf2cbec351a"
+    },
+    {
+      "source": "Rules.txt",
+      "snapshot": "context/Rules.txt",
+      "bytes": 2315,
+      "sha256": "098048d76bced56c05a9c9f6adb37b83ef43a9ed2938269d466fece21fbc476e"
+    },
+    {
+      "source": "README.md",
+      "snapshot": "context/README.md",
+      "bytes": 9987,
+      "sha256": "ad5e260a69efbab64382f14a6ccdef472defb179c8cef28a65d57c09f017013c"
+    },
+    {
+      "source": "ACTION_PLAN.md",
+      "snapshot": "context/ACTION_PLAN.md",
+      "bytes": 28903,
+      "sha256": "0b4f2b968f39541bf9bb06042cd0861e6606fc21073be6f4206e71d6cfd7d16e"
+    },
+    {
+      "source": "PREREGISTER.md",
+      "snapshot": "context/PREREGISTER.md",
+      "bytes": 4493,
+      "sha256": "ffb793d41aaa5b6fd244cc8b59c7cf93f019fecbce6c5021eb820542482837bb"
+    },
+    {
+      "source": "docs/runtime-input-v2.md",
+      "snapshot": "context/docs/runtime-input-v2.md",
+      "bytes": 2247,
+      "sha256": "5545f30cdf235b64b1e5121a4f4c9b042c5367839d9c2a16bd6d25612fa417f5"
+    },
+    {
+      "source": "docs/solver-inputs.md",
+      "snapshot": "context/docs/solver-inputs.md",
+      "bytes": 2264,
+      "sha256": "da39eaeef39c58f3136bab6b16dc0d9fd39f27855fede6bb44ea6f033c732ea4"
+    },
+    {
+      "source": "docs/scoring-contract.md",
+      "snapshot": "context/docs/scoring-contract.md",
+      "bytes": 4886,
+      "sha256": "7e6965dc02d08cf0494c85ad77746ed887aa3caa4fc3ccbf7cecc05acaccc41e"
+    },
+    {
+      "source": "docs/candidate-outcome-policy.md",
+      "snapshot": "context/docs/candidate-outcome-policy.md",
+      "bytes": 5408,
+      "sha256": "166da9bb9f72ecd640c9f4fc695e039468e8b61604de28b02ac01dc9087f4167"
+    },
+    {
+      "source": "docs/solver-flow.md",
+      "snapshot": "context/docs/solver-flow.md",
+      "bytes": 1908,
+      "sha256": "01a9cf5d82dd6800d95c53990689cc1a33b7fe9c98f7861d97702156c5845644"
+    },
+    {
+      "source": "docs/run-store-schema.md",
+      "snapshot": "context/docs/run-store-schema.md",
+      "bytes": 9000,
+      "sha256": "4e7ce4d92adb7599d3210f202fd8bab7401c0b05d22d31e6b96bd8a304608d63"
+    },
+    {
+      "source": "docs/execution-records.md",
+      "snapshot": "context/docs/execution-records.md",
+      "bytes": 5934,
+      "sha256": "2fc449b3e59e2cbed86298ec161723641f03c489feb0c70fbf65903e8484b740"
+    },
+    {
+      "source": "docs/development-scoring.md",
+      "snapshot": "context/docs/development-scoring.md",
+      "bytes": 3728,
+      "sha256": "49a4b70f1046919c8ec97b0315c315bb57b0f57bc1f41519bd77284f349d02ec"
+    },
+    {
+      "source": "docs/contract-docker-scoring.md",
+      "snapshot": "context/docs/contract-docker-scoring.md",
+      "bytes": 3399,
+      "sha256": "b0e62332a39abb7732bc84af77a5089c41fd72389e00b58565466008784137a4"
+    },
+    {
+      "source": "docs/antigravity-review-assessment.md",
+      "snapshot": "context/docs/antigravity-review-assessment.md",
+      "bytes": 5808,
+      "sha256": "b79a9d48380d09408550f40cda777f503243c21d9f5ae59abf89e0eab7f54026"
+    },
+    {
+      "source": "docs/reviews/principal-review-assessment-v1.md",
+      "snapshot": "context/docs/reviews/principal-review-assessment-v1.md",
+      "bytes": 16622,
+      "sha256": "dafe81407f6b26558a7c68c30e92529c452d047b99bec021064b1cac1c815b16"
+    },
+    {
+      "source": "docs/reviews/cache-review-assessment-v2.md",
+      "snapshot": "context/docs/reviews/cache-review-assessment-v2.md",
+      "bytes": 11691,
+      "sha256": "c2872a06ca426950d5bcf2dbde91ba802787ae50621166df78be0c73260a24e9"
+    },
+    {
+      "source": "tests/test_candidate_outcomes.py",
+      "snapshot": "context/tests/test_candidate_outcomes.py",
+      "bytes": 5843,
+      "sha256": "1c14ac3fff92bb7f12767f33c1f19d081b40e125cc39f056494b73e53603267d"
+    },
+    {
+      "source": "tests/test_input_guard_v2.py",
+      "snapshot": "context/tests/test_input_guard_v2.py",
+      "bytes": 9894,
+      "sha256": "397a3b8e553f32107d9c967b8a6f648249aad1af91cc9463b17e1a77e9017f64"
+    },
+    {
+      "source": "tests/test_scoring_contract.py",
+      "snapshot": "context/tests/test_scoring_contract.py",
+      "bytes": 9707,
+      "sha256": "f5e5bbf08efd59615e53ef14d34c291f67a87e845dd4bbc1fcd90c2a9cf7716e"
+    },
+    {
+      "source": "tests/test_docker_scoring_v2.py",
+      "snapshot": "context/tests/test_docker_scoring_v2.py",
+      "bytes": 8107,
+      "sha256": "1c2c325d17cf16ce01048e92c9138f78606e30603dc619b27f4bae2ecb68699c"
+    },
+    {
+      "source": "tests/test_solver_flow.py",
+      "snapshot": "context/tests/test_solver_flow.py",
+      "bytes": 2909,
+      "sha256": "f529b17fcfb53fdb16345054433c678398c88f8abaab54706168cd82047d8dc9"
+    },
+    {
+      "source": "tests/test_result_store.py",
+      "snapshot": "context/tests/test_result_store.py",
+      "bytes": 14065,
+      "sha256": "8f11c6c3a8eec88c2d0b002e95fd23de5bbfd440d0e9983247a200ccf78c03a2"
+    },
+    {
+      "source": "tests/test_execution_records.py",
+      "snapshot": "context/tests/test_execution_records.py",
+      "bytes": 11170,
+      "sha256": "fff8ef4ee35a1fc83584d72de7c833a544554818518423cb45e4f3fd1694c645"
+    },
+    {
+      "source": "tests/test_cache_identity.py",
+      "snapshot": "context/tests/test_cache_identity.py",
+      "bytes": 12669,
+      "sha256": "38cf77bccdf0193efb831be4da4e71b8df0144ff4977a2f7efb51a3eb86976f3"
+    },
+    {
+      "source": "tests/test_attempt_store.py",
+      "snapshot": "context/tests/test_attempt_store.py",
+      "bytes": 14175,
+      "sha256": "848c47d76ac3746c751d626f5749007bc5d2c2a45b179d41fc3060ffa22dba0e"
+    },
+    {
+      "source": "tests/test_run_store_schema.py",
+      "snapshot": "context/tests/test_run_store_schema.py",
+      "bytes": 12203,
+      "sha256": "65cc4e0297ea0bc2d820d09362bc725fa1344be7e8c4424cde6fa52f8f45021c"
+    }
+  ],
+  "snapshot_id": "fd1a37e52353248661f72cd65d55d81d467f075deae5afb2f39fafe69be84568"
+}
