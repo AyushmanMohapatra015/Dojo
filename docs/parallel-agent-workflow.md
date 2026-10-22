@@ -8,14 +8,47 @@ agents the same mutable task usually creates duplicate work and stale patches.
 ## Current independent assignment (2026-10-22)
 
 Cache proposal v2 has been reviewed; see cache-review-assessment-v2.md. The
-primary workspace owns 5c transaction/ownership/recovery implementation. The
-next web-agent assignment is 9g1 statistics/bootstrap/cascade reference code.
+primary workspace completed 5c and next owns 5d usage/result accounting. Agent 1
+owns 9g2 statistics/bootstrap/cascade reference code.
 Share ONLY docs/reviews/statistics-cascade-packet-v2.md for that assignment.
 It contains ten work packages, complete source/context and math, three synthetic
 fixtures/answers, explicit I/O and at least 17 source/test/fixture/doc deliveries.
 V1 remains a historical narrower snapshot; v2 supersedes it for the assignment.
 Return its response as docs/reviews/statistics-cascade-feedback-v2.txt.
 Do not ask both agents to implement the same mutable modules in parallel.
+
+## Agent 2: two independent document tasks (13j, 14k, 14l)
+
+Share only docs/reviews/agent2-submission-demo-packet-v1.md in a fresh chat.
+This is a separate assignment, not a replacement for Agent 1's statistics packet.
+It supplies the actual README, source hashes, current implementation ledger,
+rules/checklist and selected code plus two checked offline rehearsal commands.
+
+1. Review the packet before sharing private project material with that service.
+   Attach the actual Markdown file; a local path alone cannot be read by a web
+   assistant. No repository/account access or keys are required.
+2. Ask for exactly two documents: an evidence/README/submission audit (14k),
+   and a timed demo storyboard/recording checklist (14l). Both are proposals;
+   real model/runtime evidence remains gated and must not be fabricated.
+3. Save the entire response as
+   docs/reviews/agent2-submission-demo-feedback-v1.txt (plain UTF-8 text is fine).
+   Preserve both complete documents and the integration ledger in that file.
+4. Tell this workspace when it is saved. We verify claims against current files,
+   add accepted follow-ups to the action plan and integrate reviewed documents.
+   Do not overwrite Agent 1's response or statistics source files.
+
+Paste with the packet:
+
+> Read through END OF REVIEW PACKET. Complete exactly tasks 14k and 14l with
+> both named Markdown documents and the integration ledger. Follow the current
+> evidence ledger when older source wording conflicts. Ground commands and
+> claims in supplied sources; mark future scenes and missing runtime evidence
+> explicitly. Do not write statistics/application code or claim unexecuted
+> checks. Finish with END OF AGENT 2 DELIVERY.
+
+Agent 3 is Antigravity and remains unassigned until we choose a separate task
+and inspect its checkout/context. Do not grant it broad permissions just to
+prepare this web-agent assignment. Primary integration remains here.
 
 Paste with the new attachment:
 

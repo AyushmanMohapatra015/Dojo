@@ -217,6 +217,7 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 13h | DONE | docs/reviews/cache-accounting-packet-v1.md and docs/parallel-agent-workflow.md; one allowlisted packet for tasks 5a-5f design review with source hashes, limits and no held-out/account data. Await owner sharing/response at 13f. |
 | 13h2 | DONE | Audited v1 gaps; immutable cache-accounting-packet-v2.md includes concrete integration/scope contract, exact scorer/input excerpts, decision defaults, synthetic fixtures and complete db.py/schemas.py/test deliverables. V1 preserved; owner shares v2. |
 | 13i | PARTIAL | Service/tool defect log under 1f: sanitized observations, reproduction/confidence and upstream report readiness; notify owner, no automatic issue filing. |
+| 13j | DONE | Agent 2's allowlisted agent2-submission-demo-packet-v1.md supplies source hashes, current evidence ledger and two bounded deliverables (14k/14l). Two offline rehearsal commands verified, zero provider calls. Agent 1 retains statistics 9g2; primary retains 5d; Agent 3 (Antigravity) remains unassigned. |
 
 ## 14. Submission/publication
 
@@ -232,6 +233,8 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 14h | PLANNED | Feature freeze, fresh reproduction, browser/demo, result/claim and all-links review. |
 | 14i | GATED | Authorized submission by Oct 29; verify receipt/status; no post-deadline edits. |
 | 14j | PLANNED | Handoff inventory and judge-access maintenance without continuing paid inference. |
+| 14k | PLANNED | Agent 2: evidence/claim and submission-readiness audit supporting 14a/14b/14g/14h. Produce proposed corrections, ranked blockers and acceptance checks; primary validates before integration. No publication or runtime claims from synthetic evidence. |
+| 14l | PLANNED | Agent 2: timed <=180-second demo storyboard, recording checklist and honest fallback supporting 14d/14e. Separate recordable offline scenes from gated real NVIDIA/Nebius evidence and future explorer screens. No upload/deployment authorization. |
 
 ## 15. Post-project account/tool cleanup
 

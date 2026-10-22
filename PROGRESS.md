@@ -1,5 +1,21 @@
 # Progress
 
+## Agent 2 context packet (13j, assignments 14k/14l) - 2026-10-22
+
+- Prepared one versioned, allowlisted Markdown packet: complete selected sources,
+  explicit plan excerpts, full-source SHA-256 hashes/base commit, current evidence
+  ledger and exactly two proposed-document assignments. No private tasks,
+  credentials, account IDs, databases or real trajectories included.
+- Agent 2: submission/readiness/README claim audit (14k) and <=180-second demo
+  storyboard/recording checklist (14l). These support 14a/14b/14d/14e/14g/14h;
+  assignment delivery and integration remain pending. No app code assigned.
+- Agent 1 retains statistics 9g2; primary next remains 5d; Antigravity Agent 3
+  is deferred. None of these external responses count as completed features.
+- Verified scripted simulation and bounded model-plan rehearsal commands: both
+  exit 0, zero provider calls, plan live_enabled=false. No paid use, publication,
+  uploads or Git staging/commit/push. Packet distinguishes offline footage from
+  the still-required real NVIDIA/Nebius runtime evidence.
+
 ## Task 5c: transaction, ownership and recovery foundation - 2026-10-22
 
 - Reused the reviewed external proposal's claim/intent/fence/clean-abort design
