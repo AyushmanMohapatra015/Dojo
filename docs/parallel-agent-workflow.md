@@ -5,7 +5,29 @@ tracker. Useful parallel work has a separate output: one reviewer designs the
 next workstream while the primary agent implements the current one. Giving two
 agents the same mutable task usually creates duplicate work and stale patches.
 
-## Ready-to-use assignment
+## Current independent assignment (2026-10-22)
+
+Cache proposal v2 has been reviewed; see cache-review-assessment-v2.md. The
+primary workspace owns 5c transaction/ownership/recovery implementation. The
+next web-agent assignment is 9g1 statistics/bootstrap/cascade reference code.
+Share ONLY docs/reviews/statistics-cascade-packet-v2.md for that assignment.
+It contains ten work packages, complete source/context and math, three synthetic
+fixtures/answers, explicit I/O and at least 17 source/test/fixture/doc deliveries.
+V1 remains a historical narrower snapshot; v2 supersedes it for the assignment.
+Return its response as docs/reviews/statistics-cascade-feedback-v2.txt.
+Do not ask both agents to implement the same mutable modules in parallel.
+
+Paste with the new attachment:
+
+> Read the full v2 statistics/cascade packet through END OF REVIEW PACKET. Complete
+> ALL TEN work packages with the complete source/tests/fixtures/docs and shared
+> API required by its delivery manifest. Use supplied boundaries, exact formulas,
+> examples and defaults. Preserve all gates; do not edit cache/storage. Declare
+> execution status truthfully. If output needs multiple parts, give a manifest,
+> number every part and finish with END OF IMPLEMENTATION. Do not replace code
+> with a long design essay or silently omit unfinished work.
+
+## Previous cache assignment (historical instructions)
 
 The difficult assignment now is cache identity, concurrency/crash recovery and
 spending-state reconciliation for tasks 5a-5f. Existing CreditLedger code and

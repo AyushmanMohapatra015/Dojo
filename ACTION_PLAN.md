@@ -157,7 +157,9 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 9d | PLANNED | Train-only observable escalation: cost(A all)+cost(B escalated), restart semantics, no hidden oracle routing. |
 | 9e | GATED | Frozen held-out cascade, trigger precision/recall, savings/success tradeoffs. |
 | 9f | PLANNED | Family/duplicate/seed sensitivity, contamination/small-n caveats, invalid-result audit and honest claims. |
-| 9g | PLANNED | External math/statistics review with formulas/code/examples/protocol; reproduce locally. |
+| 9g | PARTIAL | Independent statistics implementation packet prepared at 9g1; await response, then reproduce formulas/code/examples locally. |
+| 9g1 | DONE | docs/reviews/statistics-cascade-packet-v1.md: eight source/context files, exact synthetic panel/answers, paired bootstrap/unequal seeds, both frontier axes, leakage/error/undefined-result tests and complete module/test deliverables. Primary owns 5c; math implementation reserved for web agent while response is pending. Owner-written 16c remains gated. |
+| 9g2 | DONE | statistics-cascade-packet-v2.md expands to ten coordinated work packages and 17 minimum delivered source/test/fixture/doc files across 9a-9d/9f/9h. Includes complete normalized I/O boundary, dependency/ownership map, deterministic bounded offline command, exact math, three verified synthetic fixtures and acceptance commands. V1 preserved; share v2; primary owns 5c. |
 | 9h | PLANNED | Results export with provenance/config/split hashes; no synthetic-as-real metrics. |
 
 ## 10. Explorer/product experience

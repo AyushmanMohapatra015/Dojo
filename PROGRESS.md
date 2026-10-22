@@ -1,5 +1,41 @@
 # Progress
 
+## Task 9g2: expanded independent statistics package - 2026-10-22
+
+- Owner requested a longer multi-task external assignment. V2 specifies ten
+  substantive work packages: records/validation, exact metrics, paired bootstrap,
+  family/seed sensitivity, both frontier axes, frozen train policy, cold-restart
+  cascade, audit/provenance export, bounded offline command, tests/fixtures/docs.
+- Requests at least 17 complete source/test/fixture/doc files with a coherent
+  API and structured completion/verification ledger; no length-based acceptance.
+  Explicitly owns analysis modules independently of primary 5c storage work.
+- New v2 packet includes ten complete source/context files, exact math excerpt,
+  three fictional panels and checked base/unequal-seed cascade arithmetic.
+  Defines input/output schemas, annotation boundaries, known/unknown metrics,
+  dependency order, safety/workload limits and required acceptance commands.
+- V1 retained; instructions now point to v2 and return filename
+  statistics-cascade-feedback-v2.txt. Owner-written 16c and real registration/
+  held-out results remain gated. Packet generation is not implementation completion.
+- Builder lint and packet consistency checks passed; no application code changed
+  (774-test baseline unchanged), provider call, external upload or Git mutation.
+
+## Task 9g1: independent parallel statistics assignment - 2026-10-22
+
+- Primary next implementation remains 5c storage/ownership/recovery. Assigned a
+  separate difficult workstream to the web agent: paired task bootstrap,
+  exact frontier metrics and observable-only cold-restart cascade analysis.
+  Do not duplicate those math modules here while its response is pending.
+- One packet includes eight complete source/context files, actual empty target
+  modules, strict normalized record/plan contract, unequal-seed estimands,
+  train-only selection/held-out leakage guards and complete source/test delivery.
+  No dependency on unfinished cache APIs or actual held-out records.
+- Verified all packet source hashes/content and known-answer eight-row synthetic
+  panel: cascade 3/4 solved, 26,000,000 nano-USD; both frontier axes explicit.
+  Builder lint passed; application code unchanged, prior 774-test baseline holds.
+- No external upload, provider call, spend or Git staging/commit/push. Owner
+  shares packet and returns statistics-cascade-feedback-v1.txt. Reference code
+  does not complete the owner-written math exercise at 16c.
+
 Updated: 2026-10-22 (external cache proposal reviewed; 5a/5b verified)
 
 ## Tasks 13f2 / 5a / 5b: reviewed external reuse - 2026-10-22
