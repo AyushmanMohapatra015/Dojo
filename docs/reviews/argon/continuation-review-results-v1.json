@@ -1,0 +1,29 @@
+{
+  "review_date": "2026-10-22",
+  "task_ids": ["9g4d", "13l4", "13m"],
+  "source_sha256": "ab46c523b4a958973e43e81b30f592a8625c1e1ba2135cf648e175a049dfbecc",
+  "argon_supplied": {
+    "passed": 23,
+    "failed": 2,
+    "deselected": 1,
+    "seconds": 0.37,
+    "failures": ["known foundation R1 stale audit", "known foundation R8 mixed registration IDs"],
+    "deselection_reason": "Incorrect workload rejection oracle below cap; avoid expensive unnecessary resampling"
+  },
+  "argon_independent_defect_checks": {
+    "passed": 3,
+    "seconds": 0.02,
+    "meaning": "reproduced proposal issues, not acceptance"
+  },
+  "gravity_primary_run": {
+    "passed": 13,
+    "seconds": 0.21,
+    "meaning": "fictional policy inputs and static/signature checks; not registration acceptance"
+  },
+  "application_suite": {"last_passed": 911, "rerun": false},
+  "application_implementation_modified": false,
+  "provider_calls": 0,
+  "docker_calls": 0,
+  "git_writes": 0,
+  "accepted_for_runtime": false
+}

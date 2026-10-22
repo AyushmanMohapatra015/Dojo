@@ -1,0 +1,2952 @@
+## Batch B Continuation Manifest & Status Ledger
+
+
+
+### File Manifest (Complete Delivery in One Response)
+
+
+
+| File Path | Task Group | Status | Description & Justification |
+| --- | --- | --- | --- |
+| `dojo/bench/analyze.py` | **Task 1 (WP9)** | **COMPLETE (UNEXECUTED)** | Standalone offline CLI (`main(argv=None) -> int`) with `stream.read(MAX_INPUT_BYTES + 1)` bounded reads, bounded confidence-string check prior to `Fraction` parsing, mutually exclusive policy modes, train-only selection guard, exclusive `"xb"` file creation, sanitized stderr messages (never echoing user paths, keys, values, or raw exceptions), and exit codes `0` / `2` / `1`.
+
+ |
+| `tests/test_cascade.py` | **Task 2 (WP10)** | **COMPLETE (UNEXECUTED)** | WP6/WP7 tests: observable-only `ObservableSignals` enforcement, `None`/strict `>` vs `>=` threshold semantics, policy depth/node bounds, canonical hash round-trip, train-only selection, tie-breaks, no-feasible-policy, held-out rejection, A/B identity compatibility, cold-restart known answers (`valid_panel.json` & `unequal_seed_panel.json`), harmful escalation, and trigger confusion denominators.
+
+ |
+| `tests/test_analysis_report.py` | **Task 2 (WP10)** | **COMPLETE (UNEXECUTED)** | WP8 tests: valid/blocked/cost-incomplete report modes, row-order hash invariance, `FORBIDDEN_REPORT_KEYS` whitelist enforcement, combined bootstrap/family/pairwise workload preflight, and honest tests exposing foundation defects R1/R6/R8/R10.
+
+ |
+| `tests/test_analysis_cli.py` | **Task 2 (WP10)** | **COMPLETE (UNEXECUTED)** | WP9 CLI integration tests using `tmp_path` without subprocesses: exit codes `0`, `1`, `2`, `--write-blocked-report`, `--allow-success-only`, exclusive output refusal preserving existing bytes, `MAX_INPUT_BYTES + 1` stream read guard, mutually exclusive policy flags, and strict stderr sanitization.
+
+ |
+| `docs/analysis-methods.md` | **Task 2 (WP10)** | **COMPLETE** | End-to-end mathematical reference (WP1–WP10): expected 1-seed cost vs actual all-repeat spend, paired task bootstrap, Hyndman-Fan type 7 quantiles, retained zero-solve draws, family/seed sensitivity, observable-only policies, train selection, cold-restart cross-product composition, and unverified/synthetic limitations.
+
+ |
+| `docs/analysis-integration.md` | **Task 2 (WP10)** | **COMPLETE** | Complete public signatures, CLI contract, JSON report schema, remaining primary-workspace cache/dashboard adapter requirements, and explicit ledger of known Batch A foundation defects (`R1`–`R10`).
+
+ |
+| `dojo/cascade/policies.py` | **Narrow B Fix (WP6)** | **COMPLETE (UNEXECUTED)** | Narrow 1-character fix removing the leading space in `__all__` (`" parse_policy_json"` $\to$ `"parse_policy_json"`).
+
+ |
+| `dojo/bench/report.py` | **Narrow B Fix (WP8)** | **COMPLETE (UNEXECUTED)** | Narrow preflight enhancement in `_check_combined_bootstrap_workload` to account for worst-case family cluster expansion (`n_families * max_family_size`) and pairwise comparison work (`n_pairs`), plus duplicate-pair rejection (addresses R6/R10 at the report boundary).
+
+ |
+
+### Narrow B-Only Change Ledger
+
+
+
+1. **`dojo/cascade/policies.py`**: Fixed the leading space typo in `__all__` (`" parse_policy_json"` $\to$ `"parse_policy_json"`) identified in the continuation packet so `from dojo.cascade.policies import *` and symbol-list inspections succeed cleanly. No other logic or signature changed.
+
+
+2. **`dojo/bench/report.py`**: Updated `_check_combined_bootstrap_workload` to compute worst-case family-cluster task expansion ($M \cdot \max_f \vert{}T_f\vert{}$) and pairwise comparison work ($\binom{S}{2}$) across requested passes before running any bootstrap draws. All public signatures and `AnalysisReport` fields are unchanged.
+
+
+
+---
+
+## FILE: dojo/bench/analyze.py
+
+```python
+"""WP9: Standalone offline JSON-file analysis command (`python -m dojo.bench.analyze`)."""
+
+from __future__ import annotations
+
+import argparse
+import math
+import sys
+from collections.abc import Sequence
+from fractions import Fraction
+from pathlib import Path
+from typing import NoReturn
+
+from dojo.bench.records import (
+    MAX_INPUT_BYTES,
+    AnalysisInputError,
+    parse_analysis_json,
+)
+from dojo.bench.report import (
+    build_analysis_report,
+    serialize_report_json,
+)
+from dojo.bench.stats import (
+    DEFAULT_BOOTSTRAP_REPLICATES,
+    MAX_BOOTSTRAP_REPLICATES,
+)
+from dojo.cascade.policies import (
+    FrozenPolicySelection,
+    ObservablePolicy,
+    parse_candidate_policy_list,
+    parse_frozen_policy_selection,
+    parse_policy_json,
+)
+
+EXIT_OK: int = 0
+EXIT_ERROR: int = 1
+EXIT_BLOCKED: int = 2
+
+MAX_CLI_SCALAR_CHARS: int = 64
+
+__all__ = [
+    "EXIT_BLOCKED",
+    "EXIT_ERROR",
+    "EXIT_OK",
+    "build_arg_parser",
+    "main",
+]
+
+
+class _CLISanitizedError(Exception):
+    """Internal exception carrying a pre-sanitized, path-free, value-free error code."""
+
+    def __init__(self, code: str) -> None:
+        super().__init__(code)
+        self.code = code
+
+
+class _CLIHelpExit(Exception):
+    """Internal signal raised when `-h` or `--help` is requested."""
+
+
+class _SafeArgumentParser(argparse.ArgumentParser):
+    """ArgumentParser that never prints raw user arguments or paths to stderr."""
+
+    def print_help(self, file: object = None) -> None:
+        super().print_help(file=sys.stdout if file is None else file)
+
+    def exit(self, status: int = 0, message: str | None = None) -> NoReturn:
+        if status == 0:
+            raise _CLIHelpExit()
+        raise _CLISanitizedError("invalid_cli_arguments")
+
+    def error(self, message: str) -> NoReturn:
+        raise _CLISanitizedError("invalid_cli_arguments")
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Construct the command-line argument parser for `python -m dojo.bench.analyze`."""
+    parser = _SafeArgumentParser(
+        prog="python -m dojo.bench.analyze",
+        description="Standalone offline Dojo benchmark and cold-restart cascade analyzer.",
+    )
+    parser.add_argument(
+        "--input",
+        required=True,
+        help="Path to normalized input panel JSON file (<= 1 MiB).",
+    )
+    parser.add_argument(
+        "--output",
+        required=True,
+        help="Path to output JSON report file (must not already exist).",
+    )
+    parser.add_argument(
+        "--bootstrap-replicates",
+        type=str,
+        default=str(DEFAULT_BOOTSTRAP_REPLICATES),
+        help="Number of paired task bootstrap replicates (1..100000, default: 10000).",
+    )
+    parser.add_argument(
+        "--seed",
+        type=str,
+        default="17",
+        help="Local RNG seed for bootstrap resampling (default: 17).",
+    )
+    parser.add_argument(
+        "--confidence-level",
+        type=str,
+        default="0.95",
+        help="Bootstrap confidence level in (0, 1) (default: 0.95).",
+    )
+    parser.add_argument(
+        "--policy-file",
+        default=None,
+        help="Optional path to a single observable policy JSON document.",
+    )
+    parser.add_argument(
+        "--candidate-policies-file",
+        default=None,
+        help="Optional path to candidate policies JSON file for train-only selection.",
+    )
+    parser.add_argument(
+        "--min-success-floor",
+        default=None,
+        help="Required minimum pass@1 floor (e.g., '3/4' or '0.75') when selecting on train.",
+    )
+    parser.add_argument(
+        "--frozen-policy-file",
+        default=None,
+        help="Optional path to a saved FrozenPolicySelection JSON file for held-out evaluation.",
+    )
+    parser.add_argument(
+        "--base-config",
+        default="A",
+        help="Base configuration ID for cascade routing (default: A).",
+    )
+    parser.add_argument(
+        "--escalate-config",
+        default="B",
+        help="Escalation configuration ID for cascade routing (default: B).",
+    )
+    parser.add_argument(
+        "--no-family-sensitivity",
+        action="store_true",
+        help="Disable optional family-cluster bootstrap sensitivity.",
+    )
+    parser.add_argument(
+        "--no-seed-sensitivity",
+        action="store_true",
+        help="Disable optional seed-position/subset sensitivity.",
+    )
+    parser.add_argument(
+        "--allow-success-only",
+        action="store_true",
+        help="Allow success-only summary when cost_nano_usd is missing (never emits cost frontiers).",
+    )
+    parser.add_argument(
+        "--write-blocked-report",
+        action="store_true",
+        help="Write a structured blocked audit report when panel audit is blocked (still exits nonzero).",
+    )
+    return parser
+
+
+def _read_bounded_file(path_str: str, role: str) -> bytes:
+    """Read at most `MAX_INPUT_BYTES + 1` bytes from a regular file and reject oversized inputs."""
+    if not isinstance(path_str, str) or not path_str.strip() or "\x00" in path_str:
+        raise _CLISanitizedError(f"invalid_{role}_path")
+    path = Path(path_str)
+    try:
+        st = path.stat()
+    except OSError as exc:
+        raise _CLISanitizedError(f"unreadable_{role}_file") from exc
+    if not path.is_file():
+        raise _CLISanitizedError(f"non_regular_{role}_file")
+    if st.st_size > MAX_INPUT_BYTES:
+        raise _CLISanitizedError(f"oversized_{role}_file")
+    try:
+        with path.open("rb") as stream:
+            data = stream.read(MAX_INPUT_BYTES + 1)
+    except OSError as exc:
+        raise _CLISanitizedError(f"unreadable_{role}_file") from exc
+    if len(data) > MAX_INPUT_BYTES:
+        raise _CLISanitizedError(f"oversized_{role}_file")
+    return data
+
+
+def _check_output_not_existing(path_str: str) -> Path:
+    """Verify output path does not already exist before running analysis."""
+    if not isinstance(path_str, str) or not path_str.strip() or "\x00" in path_str:
+        raise _CLISanitizedError("invalid_output_path")
+    out_path = Path(path_str)
+    try:
+        if out_path.exists() or out_path.is_symlink():
+            raise _CLISanitizedError("output_already_exists")
+    except OSError as exc:
+        raise _CLISanitizedError("invalid_output_path") from exc
+    return out_path
+
+
+def _write_exclusive_output(out_path: Path, content: str) -> None:
+    """Write validated JSON report using exclusive file creation ('xb') to prevent overwrites."""
+    payload = content.encode("utf-8")
+    try:
+        with out_path.open("xb") as f:
+            f.write(payload)
+    except FileExistsError as exc:
+        raise _CLISanitizedError("output_already_exists") from exc
+    except OSError as exc:
+        raise _CLISanitizedError("output_write_failed") from exc
+
+
+def _parse_bounded_int(raw: str, *, field_code: str, min_val: int, max_val: int) -> int:
+    if not isinstance(raw, str) or not raw.strip() or len(raw.strip()) > MAX_CLI_SCALAR_CHARS:
+        raise _CLISanitizedError(field_code)
+    text = raw.strip()
+    if text[0] in "+-":
+        digits = text[1:]
+    else:
+        digits = text
+    if not digits.isdigit():
+        raise _CLISanitizedError(field_code)
+    val = int(text)
+    if val < min_val or val > max_val:
+        raise _CLISanitizedError(field_code)
+    return val
+
+
+def _parse_bounded_fraction(
+    raw: str,
+    *,
+    field_code: str,
+    strict_open_unit: bool,
+) -> Fraction:
+    """Validate string length and exponent hazards before constructing a `Fraction`."""
+    if not isinstance(raw, str) or not raw.strip() or len(raw.strip()) > MAX_CLI_SCALAR_CHARS:
+        raise _CLISanitizedError(field_code)
+    text = raw.strip()
+    if "e" in text.lower():
+        parts = text.lower().split("e", 1)
+        try:
+            exp_val = int(parts[1])
+        except ValueError as exc:
+            raise _CLISanitizedError(field_code) from exc
+        if abs(exp_val) > 30:
+            raise _CLISanitizedError(field_code)
+    try:
+        frac = Fraction(text)
+    except (ValueError, ZeroDivisionError) as exc:
+        raise _CLISanitizedError(field_code) from exc
+    if strict_open_unit:
+        if frac <= 0 or frac >= 1:
+            raise _CLISanitizedError(field_code)
+    else:
+        if frac < 0 or frac > 1:
+            raise _CLISanitizedError(field_code)
+    if not math.isfinite(float(frac)):
+        raise _CLISanitizedError(field_code)
+    return frac
+
+
+def _emit_sanitized_stderr(code: str) -> None:
+    """Write a fixed, generic diagnostic message to stderr without echoing user strings or paths."""
+    sys.stderr.write(f"dojo.bench.analyze error [{code}]: analysis request rejected.\n")
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Execute offline analysis CLI and return exit code (0=valid, 2=blocked, 1=error)."""
+    parser = build_arg_parser()
+    try:
+        args = parser.parse_args(list(argv) if argv is not None else None)
+    except _CLIHelpExit:
+        return EXIT_OK
+    except _CLISanitizedError as exc:
+        _emit_sanitized_stderr(exc.code)
+        return EXIT_ERROR
+
+    try:
+        out_path = _check_output_not_existing(args.output)
+
+        replicates = _parse_bounded_int(
+            args.bootstrap_replicates,
+            field_code="invalid_bootstrap_replicates",
+            min_val=1,
+            max_val=MAX_BOOTSTRAP_REPLICATES,
+        )
+        seed = _parse_bounded_int(
+            args.seed,
+            field_code="invalid_seed",
+            min_val=0,
+            max_val=10**12,
+        )
+        confidence_level = _parse_bounded_fraction(
+            args.confidence_level,
+            field_code="invalid_confidence_level",
+            strict_open_unit=True,
+        )
+
+        # Validate mutually exclusive policy modes
+        policy_modes = sum(
+            1
+            for p in (
+                args.policy_file,
+                args.candidate_policies_file,
+                args.frozen_policy_file,
+            )
+            if p is not None
+        )
+        if policy_modes > 1:
+            raise _CLISanitizedError("mutually_exclusive_policy_modes")
+
+        if args.candidate_policies_file is not None and args.min_success_floor is None:
+            raise _CLISanitizedError("missing_min_success_floor")
+        if args.candidate_policies_file is None and args.min_success_floor is not None:
+            raise _CLISanitizedError("unexpected_min_success_floor")
+
+        min_floor_frac: Fraction | None = None
+        if args.min_success_floor is not None:
+            min_floor_frac = _parse_bounded_fraction(
+                args.min_success_floor,
+                field_code="invalid_min_success_floor",
+                strict_open_unit=False,
+            )
+
+        raw_input = _read_bounded_file(args.input, "input")
+        try:
+            envelope = parse_analysis_json(raw_input)
+        except AnalysisInputError as exc:
+            raise _CLISanitizedError("invalid_input_envelope") from exc
+
+        policy_obj: ObservablePolicy | None = None
+        candidates_obj: tuple[ObservablePolicy, ...] | None = None
+        frozen_obj: FrozenPolicySelection | None = None
+
+        if args.policy_file is not None:
+            raw_pol = _read_bounded_file(args.policy_file, "policy")
+            try:
+                policy_obj = parse_policy_json(raw_pol)
+            except AnalysisInputError as exc:
+                raise _CLISanitizedError("invalid_policy_document") from exc
+        elif args.candidate_policies_file is not None:
+            raw_cands = _read_bounded_file(args.candidate_policies_file, "candidate_policies")
+            try:
+                candidates_obj = parse_candidate_policy_list(raw_cands)
+            except AnalysisInputError as exc:
+                raise _CLISanitizedError("invalid_candidate_policies") from exc
+        elif args.frozen_policy_file is not None:
+            raw_frozen = _read_bounded_file(args.frozen_policy_file, "frozen_policy")
+            try:
+                frozen_obj = parse_frozen_policy_selection(raw_frozen)
+            except AnalysisInputError as exc:
+                raise _CLISanitizedError("invalid_frozen_policy") from exc
+
+        try:
+            report = build_analysis_report(
+                envelope,
+                bootstrap_replicates=replicates,
+                bootstrap_seed=seed,
+                confidence_level=confidence_level,
+                include_family_sensitivity=not args.no_family_sensitivity,
+                include_seed_sensitivity=not args.no_seed_sensitivity,
+                policy=policy_obj,
+                candidate_policies=candidates_obj,
+                min_success_floor=min_floor_frac,
+                frozen_policy_selection=frozen_obj,
+                base_config_id=args.base_config,
+                escalate_config_id=args.escalate_config,
+                allow_success_only_when_cost_missing=args.allow_success_only,
+            )
+            json_text = serialize_report_json(report)
+        except AnalysisInputError as exc:
+            raise _CLISanitizedError("analysis_validation_error") from exc
+
+        if report.summary_mode == "blocked":
+            if args.write_blocked_report:
+                _write_exclusive_output(out_path, json_text)
+            _emit_sanitized_stderr("panel_audit_blocked")
+            return EXIT_BLOCKED
+
+        _write_exclusive_output(out_path, json_text)
+        return EXIT_OK
+
+    except _CLISanitizedError as exc:
+        _emit_sanitized_stderr(exc.code)
+        return EXIT_ERROR
+    except Exception:
+        _emit_sanitized_stderr("unexpected_internal_error")
+        return EXIT_ERROR
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+```
+
+---
+
+## FILE: dojo/cascade/policies.py
+
+```python
+"""WP6: Observable-only routing policies, canonical serialization, and frozen train selection."""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from fractions import Fraction
+from typing import Any
+
+from dojo.bench.records import (
+    FOUNDATION_METHOD_VERSION,
+    AnalysisInputError,
+    NormalizedEnvelope,
+    NormalizedRecord,
+    UndefinedValue,
+    canonical_sha256,
+    format_fraction_Or_undef,
+    loads_bounded_json,
+)
+from dojo.bench.stats import TaskPoint, evaluate_series_point
+from dojo.solve.signals import ObservableSignals
+
+POLICY_SCHEMA_VERSION: int = 1
+MAX_POLICY_DEPTH: int = 8
+MAX_POLICY_NODES: int = 64
+MAX_CANDIDATE_POLICIES: int = 128
+
+PRIMITIVE_KINDS: frozenset[str] = frozenset(
+    {
+        "always_escalate",
+        "never_escalate",
+        "not_has_patch",
+        "has_patch",
+        "visible_tests_not_true",
+        "visible_tests_is_false",
+        "visible_tests_is_none",
+        "visible_tests_is_true",
+        "hit_step_cap",
+        "not_hit_step_cap",
+        "agent_self_reports_done",
+        "not_agent_self_reports_done",
+    }
+)
+THRESHOLD_KINDS: frozenset[str] = frozenset({"no_command_rate_gt", "no_command_rate_gte"})
+COMPOSITE_KINDS: frozenset[str] = frozenset({"and", "or"})
+VALID_POLICY_KINDS: frozenset[str] = PRIMITIVE_KINDS | THRESHOLD_KINDS | COMPOSITE_KINDS
+
+__all__ = [
+    "COMPOSITE_KINDS",
+    "CandidatePolicyEvaluation",
+    "FrozenPolicySelection",
+    "MAX_CANDIDATE_POLICIES",
+    "MAX_POLICY_DEPTH",
+    "MAX_POLICY_NODES",
+    "ObservablePolicy",
+    "POLICY_SCHEMA_VERSION",
+    "PRIMITIVE_KINDS",
+    "THRESHOLD_KINDS",
+    "VALID_POLICY_KINDS",
+    "compute_candidate_list_hash",
+    "compute_policy_hash",
+    "evaluate_policy",
+    "parse_candidate_policy_list",
+    "parse_frozen_policy_selection",
+    "parse_policy_document",
+    "parse_policy_json",
+    "policy_all",
+    "policy_any",
+    "policy_primitive",
+    "policy_threshold",
+    "select_policy_on_train",
+]
+
+
+@dataclass(frozen=True)
+class ObservablePolicy:
+    """Immutable AST node for an observable-only escalation trigger policy."""
+
+    kind: str
+    threshold: Fraction | None = None
+    children: tuple[ObservablePolicy, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.kind not in VALID_POLICY_KINDS:
+            raise AnalysisInputError(f"Unsupported policy kind: {self.kind!r}")
+
+        if self.kind in PRIMITIVE_KINDS:
+            if self.threshold is not None or self.children:
+                raise AnalysisInputError(
+                    f"Primitive policy kind {self.kind!r} must not have threshold or children"
+                )
+        elif self.kind in THRESHOLD_KINDS:
+            if not isinstance(self.threshold, Fraction):
+                raise AnalysisInputError(
+                    f"Threshold policy kind {self.kind!r} requires a Fraction threshold"
+                )
+            if self.threshold < 0 or self.threshold > 1:
+                raise AnalysisInputError(
+                    f"Threshold for {self.kind!r} must be within [0, 1], got {self.threshold}"
+                )
+            if self.children:
+                raise AnalysisInputError(
+                    f"Threshold policy kind {self.kind!r} must not have children"
+                )
+        elif self.kind in COMPOSITE_KINDS:
+            if self.threshold is not None:
+                raise AnalysisInputError(
+                    f"Composite policy kind {self.kind!r} must not have threshold"
+                )
+            if not isinstance(self.children, tuple) or len(self.children) < 2:
+                raise AnalysisInputError(
+                    f"Composite policy kind {self.kind!r} requires at least 2 children"
+                )
+            for child in self.children:
+                if not isinstance(child, ObservablePolicy):
+                    raise AnalysisInputError("Composite policy children must be ObservablePolicy")
+
+        depth = _policy_depth(self)
+        if depth > MAX_POLICY_DEPTH:
+            raise AnalysisInputError(
+                f"Policy nesting depth {depth} exceeds maximum of {MAX_POLICY_DEPTH}"
+            )
+        nodes = _policy_node_count(self)
+        if nodes > MAX_POLICY_NODES:
+            raise AnalysisInputError(
+                f"Policy node count {nodes} exceeds maximum of {MAX_POLICY_NODES}"
+            )
+
+    def evaluate(self, signals: ObservableSignals) -> bool:
+        """Evaluate trigger policy strictly on ObservableSignals."""
+        return evaluate_policy(self, signals)
+
+    def to_canonical_dict(self) -> dict[str, Any]:
+        """Return canonical versioned policy dictionary with commutative children sorted."""
+        return {
+            "schema_version": POLICY_SCHEMA_VERSION,
+            "root": _node_to_canonical_dict(self),
+        }
+
+    @property
+    def policy_hash(self) -> str:
+        return compute_policy_hash(self)
+
+
+@dataclass(frozen=True)
+class CandidatePolicyEvaluation:
+    """Train-panel evaluation summary for a single candidate escalation policy."""
+
+    policy: ObservablePolicy
+    policy_hash: str
+    feasible: bool
+    pass_at_1: Fraction
+    expected_total_cost_nanos: Fraction
+    mean_task_cost_nanos: Fraction
+    expected_cost_per_solved_nanos: Fraction | UndefinedValue
+    task_escalation_rate: Fraction
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "policy": self.policy.to_canonical_dict(),
+            "policy_hash": self.policy_hash,
+            "feasible": self.feasible,
+            "pass_at_1": format_fraction_Or_undef(self.pass_at_1),
+            "expected_total_cost_nanos": format_fraction_Or_undef(self.expected_total_cost_nanos),
+            "mean_task_cost_nanos": format_fraction_Or_undef(self.mean_task_cost_nanos),
+            "expected_cost_per_solved_nanos": format_fraction_Or_undef(
+                self.expected_cost_per_solved_nanos
+            ),
+            "task_escalation_rate": format_fraction_Or_undef(self.task_escalation_rate),
+        }
+
+
+@dataclass(frozen=True)
+class FrozenPolicySelection:
+    """Immutable record of a train-only policy selection, consumed by held-out evaluation."""
+
+    schema_version: int
+    method_version: str
+    train_dataset_id: str
+    train_input_sha256: str
+    train_expected_plan_hash: str
+    base_config_id: str
+    escalate_config_id: str
+    min_success_floor: Fraction
+    objective: str
+    tie_break_rule: str
+    candidate_count: int
+    candidate_list_hash: str
+    selection_status: str  # "selected" | "no_feasible_policy"
+    selected_policy: ObservablePolicy | None
+    selected_policy_hash: str | None
+    selected_train_evaluation: CandidatePolicyEvaluation | None
+    candidate_evaluations: tuple[CandidatePolicyEvaluation, ...]
+
+    def __post_init__(self) -> None:
+        if self.base_config_id == self.escalate_config_id:
+            raise AnalysisInputError("base_config_id and escalate_config_id must be distinct")
+        if self.selection_status not in {"selected", "no_feasible_policy"}:
+            raise AnalysisInputError(f"Invalid selection_status: {self.selection_status!r}")
+        if self.selection_status == "selected":
+            if self.selected_policy is None or self.selected_policy_hash is None:
+                raise AnalysisInputError(
+                    "selection_status='selected' requires selected_policy and selected_policy_hash"
+                )
+            if self.selected_policy.policy_hash != self.selected_policy_hash:
+                raise AnalysisInputError("selected_policy_hash does not match selected_policy")
+        else:
+            if self.selected_policy is not None or self.selected_policy_hash is not None:
+                raise AnalysisInputError(
+                    "selection_status='no_feasible_policy' must have null selected_policy"
+                )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "method_version": self.method_version,
+            "train_dataset_id": self.train_dataset_id,
+            "train_input_sha256": self.train_input_sha256,
+            "train_expected_plan_hash": self.train_expected_plan_hash,
+            "base_config_id": self.base_config_id,
+            "escalate_config_id": self.escalate_config_id,
+            "min_success_floor": format_fraction_Or_undef(self.min_success_floor),
+            "objective": self.objective,
+            "tie_break_rule": self.tie_break_rule,
+            "candidate_count": self.candidate_count,
+            "candidate_list_hash": self.candidate_list_hash,
+            "selection_status": self.selection_status,
+            "selected_policy": (
+                self.selected_policy.to_canonical_dict()
+                if self.selected_policy is not None
+                else None
+            ),
+            "selected_policy_hash": self.selected_policy_hash,
+            "selected_train_evaluation": (
+                self.selected_train_evaluation.to_dict()
+                if self.selected_train_evaluation is not None
+                else None
+            ),
+            "candidate_evaluations": [c.to_dict() for c in self.candidate_evaluations],
+        }
+
+
+def _policy_depth(policy: ObservablePolicy) -> int:
+    if not policy.children:
+        return 1
+    return 1 + max(_policy_depth(child) for child in policy.children)
+
+
+def _policy_node_count(policy: ObservablePolicy) -> int:
+    return 1 + sum(_policy_node_count(child) for child in policy.children)
+
+
+def _node_to_canonical_dict(policy: ObservablePolicy) -> dict[str, Any]:
+    if policy.kind in PRIMITIVE_KINDS:
+        return {"kind": policy.kind}
+    if policy.kind in THRESHOLD_KINDS:
+        assert policy.threshold is not None
+        t_str = (
+            f"{policy.threshold.numerator}/{policy.threshold.denominator}"
+            if policy.threshold.denominator != 1
+            else str(policy.threshold.numerator)
+        )
+        return {
+            "kind": policy.kind,
+            "threshold": t_str,
+        }
+    child_dicts = [_node_to_canonical_dict(c) for c in policy.children]
+    child_dicts.sort(key=canonical_sha256)
+    return {
+        "kind": policy.kind,
+        "children": child_dicts,
+    }
+
+
+def compute_policy_hash(policy: ObservablePolicy) -> str:
+    """Compute deterministic SHA-256 of canonical policy document."""
+    return canonical_sha256(policy.to_canonical_dict())
+
+
+def compute_candidate_list_hash(candidates: Sequence[ObservablePolicy]) -> str:
+    """Compute SHA-256 over the ordered list of candidate canonical policy hashes."""
+    return canonical_sha256([c.policy_hash for c in candidates])
+
+
+def policy_primitive(kind: str) -> ObservablePolicy:
+    """Construct a primitive observable policy node."""
+    if kind not in PRIMITIVE_KINDS:
+        raise AnalysisInputError(f"Unknown primitive policy kind: {kind!r}")
+    return ObservablePolicy(kind=kind)
+
+
+def policy_threshold(kind: str, threshold: int | float | str | Fraction) -> ObservablePolicy:
+    """Construct a threshold observable policy node on `no_command_rate`."""
+    if kind not in THRESHOLD_KINDS:
+        raise AnalysisInputError(f"Unknown threshold policy kind: {kind!r}")
+    frac = _parse_fraction_threshold(threshold)
+    return ObservablePolicy(kind=kind, threshold=frac)
+
+
+def policy_all(*children: ObservablePolicy) -> ObservablePolicy:
+    """Construct a logical AND policy over 2 or more child policies."""
+    return ObservablePolicy(kind="and", children=tuple(children))
+
+
+def policy_any(*children: ObservablePolicy) -> ObservablePolicy:
+    """Construct a logical OR policy over 2 or more child policies."""
+    return ObservablePolicy(kind="or", children=tuple(children))
+
+
+def _parse_fraction_threshold(raw_val: Any) -> Fraction:
+    if isinstance(raw_val, bool):
+        raise AnalysisInputError("Policy threshold must not be a bool")
+    if isinstance(raw_val, Fraction):
+        frac = raw_val
+    elif isinstance(raw_val, int):
+        frac = Fraction(raw_val, 1)
+    elif isinstance(raw_val, float):
+        if not math.isfinite(raw_val):
+            raise AnalysisInputError("Policy threshold must be finite")
+        frac = Fraction(str(raw_val))
+    elif isinstance(raw_val, str):
+        s = raw_val.strip()
+        if not s or len(s) > 64:
+            raise AnalysisInputError("Policy threshold string must be non-empty and <= 64 chars")
+        try:
+            frac = Fraction(s)
+        except (ValueError, ZeroDivisionError) as exc:
+            raise AnalysisInputError(f"Invalid policy threshold string: {raw_val!r}") from exc
+    else:
+        raise AnalysisInputError(
+            f"Policy threshold must be int, float, str, or Fraction; got {type(raw_val).__name__}"
+        )
+    if frac < 0 or frac > 1:
+        raise AnalysisInputError(f"Policy threshold must be in [0, 1], got {frac}")
+    return frac
+
+
+def evaluate_policy(policy: ObservablePolicy, signals: ObservableSignals) -> bool:
+    """Evaluate `policy` strictly on an `ObservableSignals` instance.
+
+    Explicitly rejects `NormalizedRecord`, dicts, or any object other than `ObservableSignals`
+    to guarantee that hidden outcomes, costs, scorer statuses, and splits never enter routing.
+    """
+    if type(signals) is not ObservableSignals:
+        raise TypeError(
+            f"Policy evaluation requires exact ObservableSignals instance, got {type(signals).__name__}"
+        )
+    if not isinstance(policy, ObservablePolicy):
+        raise TypeError(f"Expected ObservablePolicy, got {type(policy).__name__}")
+
+    if (
+        not isinstance(signals.has_patch, bool)
+        or (
+            signals.visible_tests_pass is not None
+            and not isinstance(signals.visible_tests_pass, bool)
+        )
+        or not isinstance(signals.hit_step_cap, bool)
+        or not isinstance(signals.agent_self_reports_done, bool)
+        or isinstance(signals.no_command_rate, bool)
+        or not isinstance(signals.no_command_rate, (int, float))
+        or not math.isfinite(float(signals.no_command_rate))
+        or float(signals.no_command_rate) < 0.0
+        or float(signals.no_command_rate) > 1.0
+    ):
+        raise AnalysisInputError("Malformed ObservableSignals fields")
+
+    return _eval_node(policy, signals)
+
+
+def _eval_node(node: ObservablePolicy, signals: ObservableSignals) -> bool:
+    k = node.kind
+    if k == "always_escalate":
+        return True
+    if k == "never_escalate":
+        return False
+    if k == "not_has_patch":
+        return not signals.has_patch
+    if k == "has_patch":
+        return signals.has_patch
+    if k == "visible_tests_not_true":
+        return signals.visible_tests_pass is not True
+    if k == "visible_tests_is_false":
+        return signals.visible_tests_pass is False
+    if k == "visible_tests_is_none":
+        return signals.visible_tests_pass is None
+    if k == "visible_tests_is_true":
+        return signals.visible_tests_pass is True
+    if k == "hit_step_cap":
+        return signals.hit_step_cap
+    if k == "not_hit_step_cap":
+        return not signals.hit_step_cap
+    if k == "agent_self_reports_done":
+        return signals.agent_self_reports_done
+    if k == "not_agent_self_reports_done":
+        return not signals.agent_self_reports_done
+    if k == "no_command_rate_gt":
+        assert node.threshold is not None
+        return Fraction(str(signals.no_command_rate)) > node.threshold
+    if k == "no_command_rate_gte":
+        assert node.threshold is not None
+        return Fraction(str(signals.no_command_rate)) >= node.threshold
+    if k == "and":
+        return all(_eval_node(child, signals) for child in node.children)
+    if k == "or":
+        return any(_eval_node(child, signals) for child in node.children)
+    raise AnalysisInputError(f"Unhandled policy kind: {k!r}")
+
+
+def _parse_policy_node(raw_node: Any, depth: int = 1) -> ObservablePolicy:
+    if depth > MAX_POLICY_DEPTH:
+        raise AnalysisInputError(
+            f"Policy nesting depth exceeds maximum of {MAX_POLICY_DEPTH}"
+        )
+    if not isinstance(raw_node, Mapping):
+        raise AnalysisInputError("Policy node must be a JSON object")
+    if "kind" not in raw_node:
+        raise AnalysisInputError("Policy node missing required 'kind' field")
+    kind = raw_node["kind"]
+    if not isinstance(kind, str) or kind not in VALID_POLICY_KINDS:
+        raise AnalysisInputError(f"Unsupported policy kind: {kind!r}")
+
+    keys = set(raw_node.keys())
+    if kind in PRIMITIVE_KINDS:
+        if keys != {"kind"}:
+            raise AnalysisInputError(
+                f"Primitive policy node {kind!r} has unexpected keys: {sorted(keys - {'kind'})}"
+            )
+        return ObservablePolicy(kind=kind)
+
+    if kind in THRESHOLD_KINDS:
+        if keys != {"kind", "threshold"}:
+            raise AnalysisInputError(
+                f"Threshold policy node {kind!r} must have exact keys ['kind', 'threshold']"
+            )
+        thresh = _parse_fraction_threshold(raw_node["threshold"])
+        return ObservablePolicy(kind=kind, threshold=thresh)
+
+    if keys != {"kind", "children"}:
+        raise AnalysisInputError(
+            f"Composite policy node {kind!r} must have exact keys ['kind', 'children']"
+        )
+    raw_children = raw_node["children"]
+    if not isinstance(raw_children, list) or len(raw_children) < 2:
+        raise AnalysisInputError(
+            f"Composite policy node {kind!r} requires a 'children' list of length >= 2"
+        )
+    if len(raw_children) > MAX_POLICY_NODES:
+        raise AnalysisInputError("Composite policy children count exceeds MAX_POLICY_NODES")
+    children = tuple(_parse_policy_node(c, depth + 1) for c in raw_children)
+    return ObservablePolicy(kind=kind, children=children)
+
+
+def parse_policy_document(doc: Mapping[str, Any]) -> ObservablePolicy:
+    """Parse either a canonical `{schema_version: 1, root: {...}}` envelope or a direct root node."""
+    if not isinstance(doc, Mapping):
+        raise AnalysisInputError("Policy document must be a mapping")
+    keys = set(doc.keys())
+    if "root" in keys:
+        if keys != {"schema_version", "root"}:
+            raise AnalysisInputError(
+                "Policy document envelope must have exact keys ['schema_version', 'root']"
+            )
+        sv = doc["schema_version"]
+        if type(sv) is not int or sv != POLICY_SCHEMA_VERSION:
+            raise AnalysisInputError(
+                f"Unsupported policy schema_version: {sv!r} (expected {POLICY_SCHEMA_VERSION})"
+            )
+        return _parse_policy_node(doc["root"], depth=1)
+    return _parse_policy_node(doc, depth=1)
+
+
+def parse_policy_json(raw: str | bytes) -> ObservablePolicy:
+    """Parse bounded JSON bytes/str into an `ObservablePolicy`."""
+    parsed = loads_bounded_json(raw)
+    return parse_policy_document(parsed)
+
+
+def parse_candidate_policy_list(raw_data: Any) -> tuple[ObservablePolicy, ...]:
+    """Parse a bounded list of candidate policies (1..128 candidates)."""
+    if isinstance(raw_data, (str, bytes)):
+        parsed = loads_bounded_json(raw_data)
+    elif isinstance(raw_data, Mapping):
+        parsed = dict(raw_data)
+    elif isinstance(raw_data, list):
+        parsed = {"schema_version": POLICY_SCHEMA_VERSION, "candidates": raw_data}
+    else:
+        raise AnalysisInputError("Candidate policy input must be JSON str/bytes, dict, or list")
+
+    keys = set(parsed.keys())
+    if keys != {"schema_version", "candidates"}:
+        raise AnalysisInputError(
+            "Candidate policy envelope must have exact keys ['schema_version', 'candidates']"
+        )
+    sv = parsed["schema_version"]
+    if type(sv) is not int or sv != POLICY_SCHEMA_VERSION:
+        raise AnalysisInputError(f"Unsupported candidate policy schema_version: {sv!r}")
+
+    raw_candidates = parsed["candidates"]
+    if not isinstance(raw_candidates, list) or not raw_candidates:
+        raise AnalysisInputError("candidates must be a non-empty list of policy documents")
+    if len(raw_candidates) > MAX_CANDIDATE_POLICIES:
+        raise AnalysisInputError(
+            f"Candidate policy count {len(raw_candidates)} exceeds maximum of {MAX_CANDIDATE_POLICIES}"
+        )
+
+    return tuple(parse_policy_document(item) for item in raw_candidates)
+
+
+def _evaluate_candidate_on_train_panel(
+    envelope: NormalizedEnvelope,
+    policy: ObservablePolicy,
+    base_config_id: str,
+    escalate_config_id: str,
+    min_floor: Fraction,
+) -> CandidatePolicyEvaluation:
+    seeds_a = envelope.expected_plan.seeds_for_config(base_config_id)
+    seeds_b = envelope.expected_plan.seeds_for_config(escalate_config_id)
+    k_a = len(seeds_a)
+    k_b = len(seeds_b)
+
+    lookup_a: dict[tuple[str, int], NormalizedRecord] = {}
+    lookup_b: dict[tuple[str, int], NormalizedRecord] = {}
+    for rec in envelope.records:
+        if rec.config_id == base_config_id:
+            lookup_a[(rec.task_id, rec.seed)] = rec
+        elif rec.config_id == escalate_config_id:
+            lookup_b[(rec.task_id, rec.seed)] = rec
+
+    task_points: list[TaskPoint] = []
+    task_escalation_rates: list[Fraction] = []
+
+    for task_id in envelope.expected_plan.tasks:
+        runs_a = [lookup_a[(task_id, s)] for s in seeds_a]
+        runs_b = [lookup_b[(task_id, s)] for s in seeds_b]
+
+        b_solved = sum(1 for r in runs_b if r.outcome == "solved")
+        mean_y_b = Fraction(b_solved, k_b)
+        b_cost_sum = sum(r.cost_nano_usd for r in runs_b if r.cost_nano_usd is not None)
+        mean_cost_b = Fraction(b_cost_sum, k_b)
+
+        p_terms: list[Fraction] = []
+        m_terms: list[Fraction] = []
+        esc_count = 0
+
+        for r_a in runs_a:
+            e = evaluate_policy(policy, r_a.signals)
+            y_a = Fraction(1 if r_a.outcome == "solved" else 0, 1)
+            assert r_a.cost_nano_usd is not None
+            c_a = Fraction(r_a.cost_nano_usd, 1)
+            if e:
+                esc_count += 1
+                p_terms.append(mean_y_b)
+                m_terms.append(c_a + mean_cost_b)
+            else:
+                p_terms.append(y_a)
+                m_terms.append(c_a)
+
+        p_task = sum(p_terms, Fraction(0, 1)) / Fraction(k_a, 1)
+        m_task = sum(m_terms, Fraction(0, 1)) / Fraction(k_a, 1)
+        task_escalation_rates.append(Fraction(esc_count, k_a))
+        task_points.append(
+            TaskPoint(
+                task_id=task_id,
+                family_id=runs_a[0].family_id,
+                seed_count=k_a * k_b,
+                pass_rate=p_task,
+                mean_cost_nanos=m_task,
+                actual_all_seeds_cost_nanos=None,
+            )
+        )
+
+    pt = evaluate_series_point(
+        f"cascade:{base_config_id}->{escalate_config_id}",
+        task_points,
+        include_actual_spend=False,
+    )
+    assert isinstance(pt.expected_total_cost_nanos, Fraction)
+    assert isinstance(pt.mean_task_cost_nanos, Fraction)
+    overall_esc_rate = sum(task_escalation_rates, Fraction(0, 1)) / Fraction(len(task_points), 1)
+    feasible = pt.pass_at_1 >= min_floor
+
+    return CandidatePolicyEvaluation(
+        policy=policy,
+        policy_hash=policy.policy_hash,
+        feasible=feasible,
+        pass_at_1=pt.pass_at_1,
+        expected_total_cost_nanos=pt.expected_total_cost_nanos,
+        mean_task_cost_nanos=pt.mean_task_cost_nanos,
+        expected_cost_per_solved_nanos=pt.expected_cost_per_solved_nanos,
+        task_escalation_rate=overall_esc_rate,
+    )
+
+
+def select_policy_on_train(
+    envelope: NormalizedEnvelope,
+    candidates: Sequence[ObservablePolicy],
+    *,
+    base_config_id: str = "A",
+    escalate_config_id: str = "B",
+    min_success_floor: int | float | str | Fraction,
+) -> FrozenPolicySelection:
+    """Select an observable escalation policy using ONLY a complete, valid TRAIN panel."""
+    if not envelope.audit.cost_comparison_allowed or not envelope.audit.headline_Comparison_allowed:
+        raise AnalysisInputError(
+            f"Train policy selection requires a valid complete panel with costs "
+            f"(audit.status={envelope.audit.status!r})"
+        )
+    if any(r.split != "train" for r in envelope.records) or envelope.audit.splits_present != (
+        "train",
+    ):
+        raise AnalysisInputError(
+            f"Policy selection is strictly restricted to split='train'; "
+            f"observed splits={envelope.audit.splits_present}"
+        )
+
+    if base_config_id == escalate_config_id:
+        raise AnalysisInputError("base_config_id and escalate_config_id must be distinct")
+    config_ids = set(envelope.expected_plan.config_ids)
+    if base_config_id not in config_ids or escalate_config_id not in config_ids:
+        raise AnalysisInputError(
+            f"base_config_id={base_config_id!r} and escalate_config_id={escalate_config_id!r} "
+            f"must both be declared in expected_plan ({sorted(config_ids)})"
+        )
+
+    if not candidates:
+        raise AnalysisInputError("Candidate policy list must be non-empty")
+    if len(candidates) > MAX_CANDIDATE_POLICIES:
+        raise AnalysisInputError(
+            f"Candidate policy count {len(candidates)} exceeds maximum of {MAX_CANDIDATE_POLICIES}"
+        )
+    for c in candidates:
+        if not isinstance(c, ObservablePolicy):
+            raise AnalysisInputError("All candidate policies must be ObservablePolicy instances")
+
+    floor_frac = _parse_fraction_threshold(min_success_floor)
+    cand_list_hash = compute_candidate_list_hash(candidates)
+
+    evaluations = tuple(
+        _evaluate_candidate_on_train_panel(
+            envelope, cand, base_config_id, escalate_config_id, floor_frac
+        )
+        for cand in candidates
+    )
+
+    feasible_evals = [ev for ev in evaluations if ev.feasible]
+    objective_desc = (
+        "Minimize expected_total_cost_nanos subject to train pass_at_1 >= min_success_floor"
+    )
+    tie_break_desc = (
+        "1. Lower expected_total_cost_nanos; 2. Higher pass_at_1; "
+        "3. Lexicographically smaller canonical policy_hash"
+    )
+
+    if not feasible_evals:
+        return FrozenPolicySelection(
+            schema_version=POLICY_SCHEMA_VERSION,
+            method_version=FOUNDATION_METHOD_VERSION,
+            train_dataset_id=envelope.dataset_id,
+            train_input_sha256=envelope.input_sha256,
+            train_expected_plan_hash=envelope.expected_plan_hash,
+            base_config_id=base_config_id,
+            escalate_config_id=escalate_config_id,
+            min_success_floor=floor_frac,
+            objective=objective_desc,
+            tie_break_rule=tie_break_desc,
+            candidate_count=len(candidates),
+            candidate_list_hash=cand_list_hash,
+            selection_status="no_feasible_policy",
+            selected_policy=None,
+            selected_policy_hash=None,
+            selected_train_evaluation=None,
+            candidate_evaluations=evaluations,
+        )
+
+    best_eval = min(
+        feasible_evals,
+        key=lambda ev: (ev.expected_total_cost_nanos, -ev.pass_at_1, ev.policy_hash),
+    )
+
+    return FrozenPolicySelection(
+        schema_version=POLICY_SCHEMA_VERSION,
+        method_version=FOUNDATION_METHOD_VERSION,
+        train_dataset_id=envelope.dataset_id,
+        train_input_sha256=envelope.input_sha256,
+        train_expected_plan_hash=envelope.expected_plan_hash,
+        base_config_id=base_config_id,
+        escalate_config_id=escalate_config_id,
+        min_success_floor=floor_frac,
+        objective=objective_desc,
+        tie_break_rule=tie_break_desc,
+        candidate_count=len(candidates),
+        candidate_list_hash=cand_list_hash,
+        selection_status="selected",
+        selected_policy=best_eval.policy,
+        selected_policy_hash=best_eval.policy_hash,
+        selected_train_evaluation=best_eval,
+        candidate_evaluations=evaluations,
+    )
+
+
+def _parse_saved_fraction(obj: Any, field_name: str) -> Fraction:
+    if isinstance(obj, Mapping) and "numerator" in obj and "denominator" in obj:
+        num = obj["numerator"]
+        den = obj["denominator"]
+        if type(num) is int and type(den) is int and den != 0:
+            return Fraction(num, den)
+    raise AnalysisInputError(f"Malformed serialized Fraction in {field_name}")
+
+
+def _parse_saved_fraction_or_undef(obj: Any, field_name: str) -> Fraction | UndefinedValue:
+    if not isinstance(obj, Mapping) or "defined" not in obj:
+        raise AnalysisInputError(f"Malformed serialized value in {field_name}")
+    if obj["defined"] is False:
+        reason = obj.get("reason")
+        if not isinstance(reason, str) or not reason:
+            raise AnalysisInputError(f"Missing reason in undefined {field_name}")
+        return UndefinedValue(
+            reason=reason,
+            numerator=obj.get("numerator"),
+            denominator=obj.get("denominator"),
+        )
+    return _parse_saved_fraction(obj, field_name)
+
+
+def _parse_candidate_evaluation(raw_ev: Any) -> CandidatePolicyEvaluation:
+    if not isinstance(raw_ev, Mapping):
+        raise AnalysisInputError("candidate_evaluation entry must be an object")
+    required = {
+        "policy",
+        "policy_hash",
+        "feasible",
+        "pass_at_1",
+        "expected_total_cost_nanos",
+        "mean_task_cost_nanos",
+        "expected_cost_per_solved_nanos",
+        "task_escalation_rate",
+    }
+    if set(raw_ev.keys()) != required:
+        raise AnalysisInputError("candidate_evaluation entry key mismatch")
+    pol = parse_policy_document(raw_ev["policy"])
+    p_hash = raw_ev["policy_hash"]
+    if not isinstance(p_hash, str) or pol.policy_hash != p_hash:
+        raise AnalysisInputError("candidate_evaluation policy_hash mismatch")
+    feasible = raw_ev["feasible"]
+    if not isinstance(feasible, bool):
+        raise AnalysisInputError("candidate_evaluation.feasible must be a bool")
+
+    return CandidatePolicyEvaluation(
+        policy=pol,
+        policy_hash=p_hash,
+        feasible=feasible,
+        pass_at_1=_parse_saved_fraction(raw_ev["pass_at_1"], "pass_at_1"),
+        expected_total_cost_nanos=_parse_saved_fraction(
+            raw_ev["expected_total_cost_nanos"], "expected_total_cost_nanos"
+        ),
+        mean_task_cost_nanos=_parse_saved_fraction(
+            raw_ev["mean_task_cost_nanos"], "mean_task_cost_nanos"
+        ),
+        expected_cost_per_solved_nanos=_parse_saved_fraction_or_undef(
+            raw_ev["expected_cost_per_solved_nanos"], "expected_cost_per_solved_nanos"
+        ),
+        task_escalation_rate=_parse_saved_fraction(
+            raw_ev["task_escalation_rate"], "task_escalation_rate"
+        ),
+    )
+
+
+def parse_frozen_policy_selection(raw_data: str | bytes | Mapping[str, Any]) -> FrozenPolicySelection:
+    """Parse and verify a serialized `FrozenPolicySelection` artifact."""
+    if isinstance(raw_data, (str, bytes)):
+        data = loads_bounded_json(raw_data)
+    elif isinstance(raw_data, Mapping):
+        data = dict(raw_data)
+    else:
+        raise AnalysisInputError("FrozenPolicySelection input must be str, bytes, or Mapping")
+
+    required_keys = {
+        "schema_version",
+        "method_version",
+        "train_dataset_id",
+        "train_input_sha256",
+        "train_expected_plan_hash",
+        "base_config_id",
+        "escalate_config_id",
+        "min_success_floor",
+        "objective",
+        "tie_break_rule",
+        "candidate_count",
+        "candidate_list_hash",
+        "selection_status",
+        "selected_policy",
+        "selected_policy_hash",
+        "selected_train_evaluation",
+        "candidate_evaluations",
+    }
+    if set(data.keys()) != required_keys:
+        raise AnalysisInputError("FrozenPolicySelection key mismatch")
+
+    sv = data["schema_version"]
+    if type(sv) is not int or sv != POLICY_SCHEMA_VERSION:
+        raise AnalysisInputError(f"Unsupported FrozenPolicySelection schema_version: {sv!r}")
+
+    raw_evals = data["candidate_evaluations"]
+    if not isinstance(raw_evals, list) or not raw_evals or len(raw_evals) > MAX_CANDIDATE_POLICIES:
+        raise AnalysisInputError("Invalid candidate_evaluations list in FrozenPolicySelection")
+    evals = tuple(_parse_candidate_evaluation(e) for e in raw_evals)
+
+    cand_count = data["candidate_count"]
+    if type(cand_count) is not int or cand_count != len(evals):
+        raise AnalysisInputError("candidate_count does not match candidate_evaluations length")
+
+    expected_list_hash = compute_candidate_list_hash([e.policy for e in evals])
+    if data["candidate_list_hash"] != expected_list_hash:
+        raise AnalysisInputError("candidate_list_hash mismatch in FrozenPolicySelection")
+
+    sel_pol = (
+        parse_policy_document(data["selected_policy"])
+        if data["selected_policy"] is not None
+        else None
+    )
+    sel_eval = (
+        _parse_candidate_evaluation(data["selected_train_evaluation"])
+        if data["selected_train_evaluation"] is not None
+        else None
+    )
+
+    return FrozenPolicySelection(
+        schema_version=sv,
+        method_version=str(data["method_version"]),
+        train_dataset_id=str(data["train_dataset_id"]),
+        train_input_sha256=str(data["train_input_sha256"]),
+        train_expected_plan_hash=str(data["train_expected_plan_hash"]),
+        base_config_id=str(data["base_config_id"]),
+        escalate_config_id=str(data["escalate_config_id"]),
+        min_success_floor=_parse_saved_fraction(data["min_success_floor"], "min_success_floor"),
+        objective=str(data["objective"]),
+        tie_break_rule=str(data["tie_break_rule"]),
+        candidate_count=cand_count,
+        candidate_list_hash=expected_list_hash,
+        selection_status=str(data["selection_status"]),
+        selected_policy=sel_pol,
+        selected_policy_hash=data["selected_policy_hash"],
+        selected_train_evaluation=sel_eval,
+        candidate_evaluations=evals,
+    )
+
+```
+
+---
+
+## FILE: dojo/bench/report.py
+
+```python
+"""WP8: Deterministic audit and versioned JSON report export with provenance and field whitelist."""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from fractions import Fraction
+from typing import Any
+
+from dojo.bench.frontier import (
+    FrontierTable,
+    compute_both_frontiers,
+)
+from dojo.bench.records import (
+    FOUNDATION_METHOD_VERSION,
+    SCHEMA_VERSION,
+    AnalysisInputError,
+    EligibilityStatus,
+    NormalizedEnvelope,
+    PanelAudit,
+)
+from dojo.bench.stats import (
+    DEFAULT_BOOTSTRAP_REPLICATES,
+    MAX_BOOTSTRAP_REPLICATES,
+    MAX_BOOTSTRAP_WORKLOAD,
+    QUANTILE_METHOD,
+    ConfigMetrics,
+    FamilyBootstrapResult,
+    PairedBootstrapResult,
+    SeedSensitivityResult,
+    SeriesPoint,
+    TaskSeries,
+    build_config_task_series,
+    compute_all_config_metrics,
+    family_cluster_bootstrap,
+    paired_task_bootstrap,
+    seed_sensitivity_analysis,
+)
+from dojo.cascade.policies import (
+    FrozenPolicySelection,
+    ObservablePolicy,
+    select_policy_on_train,
+)
+from dojo.cascade.simulate import (
+    CascadeSimulationResult,
+    evaluate_frozen_policy,
+    simulate_cascade,
+)
+
+REPORT_METHOD_VERSION: str = FOUNDATION_METHOD_VERSION
+
+FORBIDDEN_REPORT_KEYS: frozenset[str] = frozenset(
+    {
+        "patch",
+        "patches",
+        "diff",
+        "trajectory",
+        "raw_trajectory",
+        "messages",
+        "hidden_test_ids",
+        "fail_to_pass",
+        "pass_to_pass",
+        "stable_skips",
+        "reference_fix",
+        "gold_patch",
+        "receipt_payload",
+        "api_key",
+        "account_id",
+    }
+)
+
+STANDARD_LIMITATIONS: tuple[str, ...] = (
+    "Confidence intervals represent descriptive empirical bootstrap uncertainty across the "
+    "observed task sample, not an automatic hypothesis test or p-value certificate.",
+    "Small sample sizes (n tasks) and potential public-repository pretraining contamination "
+    "limit external generalization.",
+    "Evaluating multiple configurations or candidate escalation policies introduces selection "
+    "multiplicity; train-selected policies must be evaluated once on a locked held-out split "
+    "without retuning.",
+    "This pure mathematical analysis report always emits eligibility_status='UNVERIFIED' "
+    "(publishable=False) and cannot verify Stage B registration or unlock real held-out "
+    "publication.",
+)
+
+__all__ = [
+    "AnalysisReport",
+    "FORBIDDEN_REPORT_KEYS",
+    "REPORT_METHOD_VERSION",
+    "STANDARD_LIMITATIONS",
+    "build_analysis_report",
+    "serialize_report_json",
+    "verify_output_whitelist",
+]
+
+
+@dataclass(frozen=True)
+class AnalysisReport:
+    """Complete deterministic output envelope for Dojo benchmark and cascade analysis."""
+
+    schema_version: int
+    method_version: str
+    input_sha256: str
+    expected_plan_hash: str
+    dataset_id: str
+    evidence_kind: str
+    eligibility_status: EligibilityStatus
+    provenance: Mapping[str, Any]
+    audit: PanelAudit
+    summary_mode: str  # "headline_complete" | "success_only" | "blocked"
+    config_metrics: Mapping[str, ConfigMetrics] | None
+    frontiers: Mapping[str, FrontierTable] | None
+    bootstrap: PairedBootstrapResult | None
+    policy_selection: FrozenPolicySelection | None
+    cascade: CascadeSimulationResult | None
+    sensitivity: Mapping[str, Any] | None
+    limitations: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "schema_version": self.schema_version,
+            "method_version": self.method_version,
+            "input_sha256": self.input_sha256,
+            "expected_plan_hash": self.expected_plan_hash,
+            "dataset_id": self.dataset_id,
+            "evidence_kind": self.evidence_kind,
+            "eligibility_status": self.eligibility_status.to_dict(),
+            "provenance": dict(self.provenance),
+            "audit": self.audit.to_dict(),
+            "summary_mode": self.summary_mode,
+            "config_metrics": (
+                {k: v.to_dict() for k, v in sorted(self.config_metrics.items())}
+                if self.config_metrics is not None
+                else None
+            ),
+            "frontiers": (
+                {k: v.to_dict() for k, v in sorted(self.frontiers.items())}
+                if self.frontiers is not None
+                else None
+            ),
+            "bootstrap": self.bootstrap.to_dict() if self.bootstrap is not None else None,
+            "policy_selection": (
+                self.policy_selection.to_dict()
+                if self.policy_selection is not None
+                else None
+            ),
+            "cascade": self.cascade.to_dict() if self.cascade is not None else None,
+            "sensitivity": dict(self.sensitivity) if self.sensitivity is not None else None,
+            "limitations": list(self.limitations),
+        }
+        verify_output_whitelist(payload)
+        return payload
+
+
+def verify_output_whitelist(obj: Any) -> None:
+    """Recursively ensure no forbidden trajectory, patch, secret, or hidden-test keys appear."""
+    if isinstance(obj, Mapping):
+        for k, v in obj.items():
+            if not isinstance(k, str):
+                raise AnalysisInputError("Output JSON keys must be strings")
+            if k in FORBIDDEN_REPORT_KEYS:
+                raise AnalysisInputError(f"Forbidden sensitive key in report output: {k!r}")
+            verify_output_whitelist(v)
+    elif isinstance(obj, (list, tuple)):
+        for item in obj:
+            verify_output_whitelist(item)
+
+
+def _worst_case_family_expanded_tasks(envelope: NormalizedEnvelope) -> int:
+    """Compute worst-case task count `n_families * max_family_size` for a family-cluster draw."""
+    task_to_family: dict[str, str] = {}
+    for rec in envelope.records:
+        if rec.task_id not in task_to_family:
+            task_to_family[rec.task_id] = rec.family_id
+    family_counts: dict[str, int] = {}
+    for t_id in envelope.expected_plan.tasks:
+        fam = task_to_family.get(t_id, t_id)
+        family_counts[fam] = family_counts.get(fam, 0) + 1
+    if not family_counts:
+        return len(envelope.expected_plan.tasks)
+    return len(family_counts) * max(family_counts.values())
+
+
+def _check_combined_bootstrap_workload(
+    replicates: int,
+    n_tasks: int,
+    n_series: int,
+    *,
+    include_family_sensitivity: bool,
+    worst_case_family_tasks: int | None = None,
+) -> int:
+    """Preflight total primary + family-cluster + pairwise comparison work against MAX_BOOTSTRAP_WORKLOAD."""
+    if isinstance(replicates, bool) or not isinstance(replicates, int):
+        raise AnalysisInputError("bootstrap_replicates must be an integer")
+    if replicates < 1 or replicates > MAX_BOOTSTRAP_REPLICATES:
+        raise AnalysisInputError(
+            f"bootstrap_replicates must be in 1..{MAX_BOOTSTRAP_REPLICATES}, got {replicates}"
+        )
+    eff_series = max(1, n_series)
+    n_pairs = (eff_series * (eff_series - 1)) // 2
+
+    primary_work = replicates * (max(1, n_tasks) * eff_series + n_pairs)
+    if include_family_sensitivity:
+        fam_tasks = max(
+            max(1, n_tasks),
+            worst_case_family_tasks if worst_case_family_tasks is not None else n_tasks,
+        )
+        family_work = replicates * (fam_tasks * eff_series + n_pairs)
+    else:
+        family_work = 0
+
+    estimated_evaluations = primary_work + family_work
+    if estimated_evaluations > MAX_BOOTSTRAP_WORKLOAD:
+        raise AnalysisInputError(
+            f"Combined bootstrap workload ({estimated_evaluations} evaluations across "
+            f"requested passes and {n_pairs} pair(s)) exceeds limit of {MAX_BOOTSTRAP_WORKLOAD}"
+        )
+    return estimated_evaluations
+
+
+def build_analysis_report(
+    envelope: NormalizedEnvelope,
+    *,
+    bootstrap_replicates: int = DEFAULT_BOOTSTRAP_REPLICATES,
+    bootstrap_seed: int = 17,
+    confidence_level: float | Fraction = Fraction(95, 100),
+    include_family_sensitivity: bool = True,
+    include_seed_sensitivity: bool = True,
+    policy: ObservablePolicy | None = None,
+    candidate_policies: Sequence[ObservablePolicy] | None = None,
+    min_success_floor: int | float | str | Fraction | None = None,
+    frozen_policy_selection: FrozenPolicySelection | None = None,
+    base_config_id: str = "A",
+    escalate_config_id: str = "B",
+    allow_success_only_when_cost_missing: bool = False,
+) -> AnalysisReport:
+    """Build a complete deterministic `AnalysisReport` from a validated `NormalizedEnvelope`."""
+    if isinstance(bootstrap_seed, bool) or not isinstance(bootstrap_seed, int):
+        raise AnalysisInputError("bootstrap_seed must be an integer")
+
+    specified_modes = sum(
+        1
+        for x in (policy, candidate_policies, frozen_policy_selection)
+        if x is not None
+    )
+    if specified_modes > 1:
+        raise AnalysisInputError(
+            "Specify at most one of policy, candidate_policies, or frozen_policy_selection"
+        )
+    if candidate_policies is not None and min_success_floor is None:
+        raise AnalysisInputError(
+            "min_success_floor is required when candidate_policies is provided"
+        )
+
+    conf_frac = (
+        confidence_level
+        if isinstance(confidence_level, Fraction)
+        else Fraction(str(confidence_level))
+    )
+    if conf_frac <= 0 or conf_frac >= 1:
+        raise AnalysisInputError("confidence_level must be strictly between 0 and 1")
+
+    n_tasks = len(envelope.expected_plan.tasks)
+    n_configs = len(envelope.expected_plan.config_ids)
+    will_have_cascade = specified_modes == 1
+    estimated_series_count = n_configs + (1 if will_have_cascade else 0)
+    worst_fam_tasks = _worst_case_family_expanded_tasks(envelope)
+
+    # Always validate combined bootstrap workload upfront before drawing any samples
+    estimated_workload = _check_combined_bootstrap_workload(
+        bootstrap_replicates,
+        n_tasks,
+        estimated_series_count,
+        include_family_sensitivity=include_family_sensitivity,
+        worst_case_family_tasks=worst_fam_tasks,
+    )
+
+    provenance: dict[str, Any] = {
+        "schema_version": SCHEMA_VERSION,
+        "method_version": REPORT_METHOD_VERSION,
+        "quantile_method": QUANTILE_METHOD,
+        "bootstrap_replicates": bootstrap_replicates,
+        "bootstrap_seed": bootstrap_seed,
+        "confidence_level": float(conf_frac),
+        "estimated_bootstrap_evaluations": estimated_workload,
+        "expected_plan": {
+            "tasks": list(envelope.expected_plan.tasks),
+            "seeds_by_config": {
+                cfg: list(seeds) for cfg, seeds in envelope.expected_plan.seeds_by_config
+            },
+        },
+    }
+
+    # 1. If panel audit is blocked, never emit partial headline metrics
+    if envelope.audit.status == "blocked":
+        return AnalysisReport(
+            schema_version=SCHEMA_VERSION,
+            method_version=REPORT_METHOD_VERSION,
+            input_sha256=envelope.input_sha256,
+            expected_plan_hash=envelope.expected_plan_hash,
+            dataset_id=envelope.dataset_id,
+            evidence_kind=envelope.evidence_kind,
+            eligibility_status=envelope.eligibility_status,
+            provenance=provenance,
+            audit=envelope.audit,
+            summary_mode="blocked",
+            config_metrics=None,
+            frontiers=None,
+            bootstrap=None,
+            policy_selection=None,
+            cascade=None,
+            sensitivity=None,
+            limitations=STANDARD_LIMITATIONS,
+        )
+
+    # 2. If panel is cost_incomplete, block unless caller explicitly opted into success_only
+    if envelope.audit.status == "cost_incomplete":
+        if specified_modes > 0:
+            raise AnalysisInputError(
+                "Cannot evaluate cost-dependent cascades or policy selection when panel "
+                "has missing cost_nano_usd values"
+            )
+        if not allow_success_only_when_cost_missing:
+            return AnalysisReport(
+                schema_version=SCHEMA_VERSION,
+                method_version=REPORT_METHOD_VERSION,
+                input_sha256=envelope.input_sha256,
+                expected_plan_hash=envelope.expected_plan_hash,
+                dataset_id=envelope.dataset_id,
+                evidence_kind=envelope.evidence_kind,
+                eligibility_status=envelope.eligibility_status,
+                provenance=provenance,
+                audit=envelope.audit,
+                summary_mode="blocked",
+                config_metrics=None,
+                frontiers=None,
+                bootstrap=None,
+                policy_selection=None,
+                cascade=None,
+                sensitivity=None,
+                limitations=STANDARD_LIMITATIONS,
+            )
+
+        # Success-only summary: compute config_metrics (with UndefinedValue for costs) and
+        # paired bootstrap on pass@1, but NEVER produce a claimed cost frontier.
+        config_metrics_map = compute_all_config_metrics(envelope)
+        series_list = [
+            build_config_task_series(envelope, cfg_id)
+            for cfg_id in sorted(envelope.expected_plan.config_ids)
+        ]
+        boot_res = paired_task_bootstrap(
+            series_list,
+            replicates=bootstrap_replicates,
+            seed=bootstrap_seed,
+            confidence_level=conf_frac,
+        )
+        sens_dict: dict[str, Any] = {}
+        if include_family_sensitivity:
+            fam_res: FamilyBootstrapResult = family_cluster_bootstrap(
+                series_list,
+                replicates=bootstrap_replicates,
+                seed=bootstrap_seed,
+                confidence_level=conf_frac,
+            )
+            sens_dict["family_cluster_bootstrap"] = fam_res.to_dict()
+        if include_seed_sensitivity:
+            seed_res: SeedSensitivityResult = seed_sensitivity_analysis(envelope)
+            sens_dict["seed_sensitivity"] = seed_res.to_dict()
+
+        return AnalysisReport(
+            schema_version=SCHEMA_VERSION,
+            method_version=REPORT_METHOD_VERSION,
+            input_sha256=envelope.input_sha256,
+            expected_plan_hash=envelope.expected_plan_hash,
+            dataset_id=envelope.dataset_id,
+            evidence_kind=envelope.evidence_kind,
+            eligibility_status=envelope.eligibility_status,
+            provenance=provenance,
+            audit=envelope.audit,
+            summary_mode="success_only",
+            config_metrics=config_metrics_map,
+            frontiers=None,
+            bootstrap=boot_res,
+            policy_selection=None,
+            cascade=None,
+            sensitivity=sens_dict if sens_dict else None,
+            limitations=STANDARD_LIMITATIONS,
+        )
+
+    # 3. Full valid panel with complete costs
+    config_metrics_map = compute_all_config_metrics(envelope)
+    series_list = [
+        build_config_task_series(envelope, cfg_id)
+        for cfg_id in sorted(envelope.expected_plan.config_ids)
+    ]
+    frontier_items: list[SeriesPoint | ConfigMetrics] = list(config_metrics_map.values())
+
+    pol_selection: FrozenPolicySelection | None = None
+    cascade_res: CascadeSimulationResult | None = None
+
+    if candidate_policies is not None:
+        assert min_success_floor is not None
+        pol_selection = select_policy_on_train(
+            envelope,
+            candidate_policies,
+            base_config_id=base_config_id,
+            escalate_config_id=escalate_config_id,
+            min_success_floor=min_success_floor,
+        )
+        if pol_selection.selection_status == "selected":
+            cascade_res = evaluate_frozen_policy(envelope, pol_selection)
+    elif frozen_policy_selection is not None:
+        pol_selection = frozen_policy_selection
+        cascade_res = evaluate_frozen_policy(envelope, frozen_policy_selection)
+    elif policy is not None:
+        cascade_res = simulate_cascade(
+            envelope,
+            policy,
+            base_config_id=base_config_id,
+            escalate_config_id=escalate_config_id,
+        )
+
+    if cascade_res is not None:
+        series_list.append(cascade_res.task_series)
+        frontier_items.append(cascade_res.primary)
+
+    frontiers_map = compute_both_frontiers(frontier_items)
+    boot_res = paired_task_bootstrap(
+        series_list,
+        replicates=bootstrap_replicates,
+        seed=bootstrap_seed,
+        confidence_level=conf_frac,
+    )
+
+    sens_dict = {}
+    if include_family_sensitivity:
+        fam_res = family_cluster_bootstrap(
+            series_list,
+            replicates=bootstrap_replicates,
+            seed=bootstrap_seed,
+            confidence_level=conf_frac,
+        )
+        sens_dict["family_cluster_bootstrap"] = fam_res.to_dict()
+    if include_seed_sensitivity:
+        seed_res = seed_sensitivity_analysis(envelope)
+        sens_dict["seed_sensitivity"] = seed_res.to_dict()
+
+    return AnalysisReport(
+        schema_version=SCHEMA_VERSION,
+        method_version=REPORT_METHOD_VERSION,
+        input_sha256=envelope.input_sha256,
+        expected_plan_hash=envelope.expected_plan_hash,
+        dataset_id=envelope.dataset_id,
+        evidence_kind=envelope.evidence_kind,
+        eligibility_status=envelope.eligibility_status,
+        provenance=provenance,
+        audit=envelope.audit,
+        summary_mode="headline_complete",
+        config_metrics=config_metrics_map,
+        frontiers=frontiers_map,
+        bootstrap=boot_res,
+        policy_selection=pol_selection,
+        cascade=cascade_res,
+        sensitivity=sens_dict if sens_dict else None,
+        limitations=STANDARD_LIMITATIONS,
+    )
+
+
+def serialize_report_json(report: AnalysisReport, *, indent: int | None = 2) -> str:
+    """Serialize `AnalysisReport` to deterministic, NaN-free, ASCII-safe JSON."""
+    payload = report.to_dict()
+    return (
+        json.dumps(
+            payload,
+            sort_keys=True,
+            indent=indent,
+            ensure_ascii=True,
+            allow_nan=False,
+        )
+        + "\n"
+    )
+
+```
+
+---
+
+## FILE: tests/test_cascade.py
+
+```python
+"""WP6 & WP7 acceptance tests: observable-only policies, train selection, and cold-restart cascades."""
+
+from __future__ import annotations
+
+import copy
+import json
+from fractions import Fraction
+from pathlib import Path
+
+import pytest
+
+from dojo.bench.records import (
+    AnalysisInputError,
+    UndefinedValue,
+    parse_analysis_envelope,
+    parse_analysis_json,
+)
+from dojo.bench.stats import build_config_task_series, paired_task_bootstrap
+from dojo.cascade.policies import (
+    MAX_CANDIDATE_POLICIES,
+    MAX_POLICY_DEPTH,
+    ObservablePolicy,
+     __all__ as policies_all,
+    evaluate_policy,
+    parse_candidate_policy_list,
+    parse_frozen_policy_selection,
+    parse_policy_document,
+    parse_policy_json,
+    policy_all,
+    policy_any,
+    policy_primitive,
+    policy_threshold,
+    select_policy_on_train,
+)
+from dojo.cascade.simulate import (
+    build_cascade_task_series,
+    evaluate_frozen_policy,
+    simulate_cascade,
+)
+from dojo.solve.signals import ObservableSignals
+
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "analysis"
+
+
+def _load_fixture_dict(name: str = "valid_panel.json") -> dict:
+    return json.loads((FIXTURES_DIR / name).read_text(encoding="utf-8"))
+
+
+def test_policies_public_all_has_no_whitespace_typos() -> None:
+    assert "parse_policy_json" in policies_all
+    assert all(name.strip() == name for name in policies_all)
+
+
+def test_observable_only_policy_rejects_full_record_or_dict_inputs() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "valid_panel.json").read_bytes())
+    pol = policy_primitive("visible_tests_not_true")
+
+    # Passing a NormalizedRecord or dict must raise TypeError so hidden outcomes/costs
+    # can never accidentally be passed into policy evaluation.
+    with pytest.raises(TypeError, match="ObservableSignals"):
+        evaluate_policy(pol, env.records[0])  # type: ignore[arg-type]
+
+    with pytest.raises(TypeError, match="ObservableSignals"):
+        evaluate_policy(pol, {"visible_tests_pass": False})  # type: ignore[arg-type]
+
+
+def test_primitives_none_semantics_and_strict_vs_gte_thresholds() -> None:
+    sig_none = ObservableSignals(
+        has_patch=True,
+        visible_tests_pass=None,
+        hit_step_cap=False,
+        no_command_rate=0.25,
+        agent_self_reports_done=True,
+    )
+    sig_false = ObservableSignals(
+        has_patch=False,
+        visible_tests_pass=False,
+        hit_step_cap=True,
+        no_command_rate=0.25,
+        agent_self_reports_done=False,
+    )
+    sig_true = ObservableSignals(
+        has_patch=True,
+        visible_tests_pass=True,
+        hit_step_cap=False,
+        no_command_rate=0.0,
+        agent_self_reports_done=True,
+    )
+
+    p_not_true = policy_primitive("visible_tests_not_true")
+    p_is_false = policy_primitive("visible_tests_is_false")
+    p_is_none = policy_primitive("visible_tests_is_none")
+
+    assert p_not_true.evaluate(sig_none) is True
+    assert p_not_true.evaluate(sig_false) is True
+    assert p_not_true.evaluate(sig_true) is False
+
+    assert p_is_false.evaluate(sig_none) is False
+    assert p_is_false.evaluate(sig_false) is True
+    assert p_is_none.evaluate(sig_none) is True
+    assert p_is_none.evaluate(sig_false) is False
+
+    # Strict > versus >= at exact boundary 1/4 (0.25)
+    p_gt = policy_threshold("no_command_rate_gt", "1/4")
+    p_gte = policy_threshold("no_command_rate_gte", "0.25")
+    assert p_gt.evaluate(sig_none) is False
+    assert p_gte.evaluate(sig_none) is True
+
+    # Composite AND / OR
+    p_and = policy_all(policy_primitive("not_has_patch"), policy_primitive("hit_step_cap"))
+    p_or = policy_any(policy_primitive("not_has_patch"), p_is_none)
+    assert p_and.evaluate(sig_false) is True
+    assert p_and.evaluate(sig_none) is False
+    assert p_or.evaluate(sig_none) is True
+    assert p_or.evaluate(sig_true) is False
+
+
+def test_policy_canonical_hash_commutativity_and_round_trip() -> None:
+    c1 = policy_primitive("not_has_patch")
+    c2 = policy_threshold("no_command_rate_gt", "0.5")
+    c3 = policy_primitive("hit_step_cap")
+
+    p_forward = policy_any(c1, c2, c3)
+    p_reverse = policy_any(c3, c2, c1)
+    assert p_forward.policy_hash == p_reverse.policy_hash
+
+    serialized = json.dumps(p_forward.to_canonical_dict())
+    restored = parse_policy_json(serialized)
+    assert restored.policy_hash == p_forward.policy_hash
+
+
+def test_policy_depth_and_candidate_count_limits() -> None:
+    leaf = policy_primitive("hit_step_cap")
+    node = leaf
+    # Build depth == MAX_POLICY_DEPTH (8) -> allowed
+    for _ in range(MAX_POLICY_DEPTH - 1):
+        node = policy_all(node, leaf)
+    assert node.policy_hash
+
+    # Depth == MAX_POLICY_DEPTH + 1 (9) -> rejected
+    with pytest.raises(AnalysisInputError, match="depth"):
+        policy_all(node, leaf)
+
+    # Candidate count > 128 -> rejected
+    too_many = [{"kind": "always_escalate"} for _ in range(MAX_CANDIDATE_POLICIES + 1)]
+    with pytest.raises(AnalysisInputError, match="exceeds maximum"):
+        parse_candidate_policy_list(too_many)
+
+
+def test_wp7_known_answers_on_valid_panel_fixture() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "valid_panel.json").read_bytes())
+    pol = policy_primitive("visible_tests_not_true")
+
+    sim = simulate_cascade(env, pol, base_config_id="A", escalate_config_id="B")
+
+    # Known fictional answers:
+    # Escalates tasks 2 and 3 only. Outcomes = [True, True, False, True] -> pass@1 = 3/4
+    # Expected total cost = 6,000,000 + 20,000,000 = 26,000,000 nanos
+    # Expected cost/solve = 26,000,000 / 3 nanos
+    # Relative cost savings vs B = (40,000,000 - 26,000,000) / 40,000,000 = 35/100 (35%)
+    assert sim.primary.pass_at_1 == Fraction(3, 4)
+    assert sim.primary.expected_solved_tasks == Fraction(3, 1)
+    assert sim.primary.expected_total_cost_nanos == Fraction(26_000_000, 1)
+    assert sim.primary.expected_cost_per_solved_nanos == Fraction(26_000_000, 3)
+
+    assert sim.comparison_vs_escalate.relative_cost_savings == Fraction(35, 100)
+    assert sim.comparison_vs_escalate.observed_cheaper_at_equal_or_better_success is True
+    assert sim.comparison_vs_base.observed_cheaper_at_equal_or_better_success is False
+
+    # Trigger confusion: TP=2, FP=0, FN=0, TN=2, precision=1, recall=1, escalation_rate=1/2
+    micro = sim.trigger_diagnostics.micro
+    assert micro.tp == 2
+    assert micro.fp == 0
+    assert micro.fn == 0
+    assert micro.tn == 2
+    assert micro.precision == Fraction(1, 1)
+    assert micro.recall == Fraction(1, 1)
+    assert micro.escalation_rate == Fraction(1, 2)
+
+
+def test_wp7_unequal_seed_fixture_known_answers_and_no_or_success() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "unequal_seed_panel.json").read_bytes())
+    pol = policy_primitive("visible_tests_not_true")
+
+    sim = simulate_cascade(env, pol, base_config_id="A", escalate_config_id="B")
+
+    # 1 task: A seed0 (solved, cost 2, e=False), A seed1 (unsolved, cost 4, e=True); B seed0 (unsolved, cost 10)
+    # Expected cascade pass@1 = (1 + 0)/2 = 1/2
+    # Expected cascade cost = ((2) + (4 + 10))/2 = 8 nanos; cost/solve = 8 / (1/2) = 16 nanos
+    assert sim.primary.pass_at_1 == Fraction(1, 2)
+    assert sim.primary.expected_total_cost_nanos == Fraction(8, 1)
+    assert sim.primary.expected_cost_per_solved_nanos == Fraction(16, 1)
+
+
+def test_wp7_harmful_escalation_replaces_a_success_with_b_failure() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "valid_panel.json").read_bytes())
+    # Under always_escalate, task 4 (where A solved=True, B solved=False) escalates to B and fails!
+    # If A and B were erroneously OR'd, pass@1 would be 3/4. Because B replaces A, pass@1 is 1/2 (B's rate).
+    pol_always = policy_primitive("always_escalate")
+    sim = simulate_cascade(env, pol_always, base_config_id="A", escalate_config_id="B")
+
+    assert sim.primary.pass_at_1 == Fraction(1, 2)
+    assert sim.primary.expected_total_cost_nanos == Fraction(46_000_000, 1)
+    assert sim.trigger_diagnostics.harmed_a_runs_count == 1
+    assert sim.trigger_diagnostics.helped_a_runs_count == 1
+    assert sim.trigger_diagnostics.micro.fp == 2
+
+
+def test_wp7_hidden_outcome_invariance_on_routing_decisions() -> None:
+    data1 = _load_fixture_dict("valid_panel.json")
+    data2 = copy.deepcopy(data1)
+    # Flip every hidden outcome and scorer_status in data2 without changing any ObservableSignals
+    for r in data2["records"]:
+        if r["outcome"] == "solved":
+            r["outcome"] = "unsolved"
+            r["scorer_status"] = "failed"
+        else:
+            r["outcome"] = "solved"
+            r["scorer_status"] = "passed"
+
+    env1 = parse_analysis_envelope(data1)
+    env2 = parse_analysis_envelope(data2)
+    pol = policy_primitive("visible_tests_not_true")
+
+    sim1 = simulate_cascade(env1, pol)
+    sim2 = simulate_cascade(env2, pol)
+
+    # Escalation rates per task and overall must be 100% identical because signals did not change
+    assert [tb.escalation_rate for tb in sim1.task_breakdowns] == [
+        tb.escalation_rate for tb in sim2.task_breakdowns
+    ]
+    # Reported success metrics change because hidden outcomes changed
+    assert sim1.primary.pass_at_1 != sim2.primary.pass_at_1
+
+
+def test_wp7_trigger_confusion_zero_denominators() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "valid_panel.json").read_bytes())
+    # never_escalate -> 0 escalations -> precision is UndefinedValue("zero_escalations")
+    sim_never = simulate_cascade(env, policy_primitive("never_escalate"))
+    assert isinstance(sim_never.trigger_diagnostics.micro.precision, UndefinedValue)
+    assert sim_never.trigger_diagnostics.micro.precision.reason == "zero_escalations"
+    assert sim_never.trigger_diagnostics.micro.recall == Fraction(0, 1)
+
+    # All-A-solved panel -> 0 A failures -> recall is UndefinedValue("zero_a_failures")
+    data_all_solved = _load_fixture_dict("valid_panel.json")
+    for r in data_all_solved["records"]:
+        if r["config_id"] == "A":
+            r["outcome"] = "solved"
+            r["scorer_status"] = "passed"
+    env_all_solved = parse_analysis_envelope(data_all_solved)
+    sim_all_solved = simulate_cascade(env_all_solved, policy_primitive("always_escalate"))
+    assert isinstance(sim_all_solved.trigger_diagnostics.micro.recall, UndefinedValue)
+    assert sim_all_solved.trigger_diagnostics.micro.recall.reason == "zero_a_failures"
+
+
+def test_wp6_train_selection_tie_breaks_no_selection_and_held_out_rejection() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "valid_panel.json").read_bytes())
+
+    p_never = policy_primitive("never_escalate")  # pass=1/2, cost=6M
+    p_vtest = policy_primitive("visible_tests_not_true")  # pass=3/4, cost=26M
+    p_always = policy_primitive("always_escalate")  # pass=1/2, cost=46M
+
+    # 1. Floor = 3/4 -> only p_vtest is feasible
+    sel = select_policy_on_train(
+        env, [p_never, p_vtest, p_always], min_success_floor=Fraction(3, 4)
+    )
+    assert sel.selection_status == "selected"
+    assert sel.selected_policy == p_vtest
+    assert sel.selected_policy_hash == p_vtest.policy_hash
+
+    # Round-trip FrozenPolicySelection serialization
+    serialized_sel = json.dumps(sel.to_dict())
+    restored_sel = parse_frozen_policy_selection(serialized_sel)
+    assert restored_sel.selected_policy_hash == sel.selected_policy_hash
+    assert restored_sel.candidate_list_hash == sel.candidate_list_hash
+
+    # 2. Tie-break on identical cost and pass@1 uses canonical policy_hash
+    p_tie_1 = policy_primitive("not_has_patch")  # never fires on valid_panel (all has_patch=True) -> cost=6M, pass=1/2
+    p_tie_2 = policy_primitive("hit_step_cap")  # never fires on valid_panel -> cost=6M, pass=1/2
+    sel_tie = select_policy_on_train(env, [p_tie_1, p_tie_2], min_success_floor=Fraction(1, 2))
+    expected_winner_hash = min(p_tie_1.policy_hash, p_tie_2.policy_hash)
+    assert sel_tie.selected_policy_hash == expected_winner_hash
+
+    # 3. Impossible floor = 1/1 -> explicit no_feasible_policy
+    sel_none = select_policy_on_train(
+        env, [p_never, p_vtest, p_always], min_success_floor=Fraction(1, 1)
+    )
+    assert sel_none.selection_status == "no_feasible_policy"
+    assert sel_none.selected_policy is None
+    with pytest.raises(AnalysisInputError, match="no_feasible_policy"):
+        evaluate_frozen_policy(env, sel_none)
+
+    # 4. Held-out panel MUST be rejected by select_policy_on_train, but accepted by evaluate_frozen_policy
+    held_out_data = _load_fixture_dict("valid_panel.json")
+    for r in held_out_data["records"]:
+        r["split"] = "held_out"
+    held_out_env = parse_analysis_envelope(held_out_data)
+
+    with pytest.raises(AnalysisInputError, match="split='train'"):
+        select_policy_on_train(held_out_env, [p_vtest], min_success_floor=Fraction(1, 2))
+
+    eval_held_out = evaluate_frozen_policy(held_out_env, restored_sel)
+    assert eval_held_out.primary.pass_at_1 == Fraction(3, 4)
+    assert eval_held_out.frozen_selection_provenance is not None
+    assert eval_held_out.frozen_selection_provenance["retuned_on_evaluation_panel"] is False
+
+    # 5. Incompatible A/B config identities rejected by evaluate_frozen_policy
+    renamed_data = _load_fixture_dict("valid_panel.json")
+    renamed_data["expected_plan"]["seeds_by_config"] = {"X": [0], "Y": [0]}
+    for r in renamed_data["records"]:
+        r["config_id"] = "X" if r["config_id"] == "A" else "Y"
+    renamed_env = parse_analysis_envelope(renamed_data)
+    with pytest.raises(AnalysisInputError, match="incompatible"):
+        evaluate_frozen_policy(renamed_env, restored_sel)
+
+
+def test_wp7_cascade_series_integrates_with_paired_task_bootstrap() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "valid_panel.json").read_bytes())
+    pol = policy_primitive("visible_tests_not_true")
+
+    s_a = build_config_task_series(env, "A")
+    s_b = build_config_task_series(env, "B")
+    s_casc = build_cascade_task_series(env, pol)
+
+    boot = paired_task_bootstrap([s_a, s_b, s_casc], replicates=100, seed=17)
+    assert "cascade:A->B" in boot.series_summaries
+    assert boot.series_summaries["cascade:A->B"].pass_at_1.point_estimate == Fraction(3, 4)
+
+```
+
+---
+
+## FILE: tests/test_analysis_report.py
+
+```python
+"""WP8 acceptance tests: deterministic summary report, provenance, whitelist, and foundation gates."""
+
+from __future__ import annotations
+
+import copy
+import json
+from dataclasses import replace
+from fractions import Fraction
+from pathlib import Path
+
+import pytest
+
+from dojo.bench import records, stats
+from dojo.bench.records import (
+    AnalysisInputError,
+    parse_analysis_envelope,
+    parse_analysis_json,
+)
+from dojo.bench.report import (
+    FORBIDDEN_REPORT_KEYS,
+    build_analysis_report,
+    serialize_report_json,
+    verify_output_whitelist,
+)
+from dojo.cascade.policies import policy_primitive
+
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "analysis"
+
+
+def _load_fixture_dict(name: str = "valid_panel.json") -> dict:
+    return json.loads((FIXTURES_DIR / name).read_text(encoding="utf-8"))
+
+
+def test_valid_panel_headline_report_and_row_order_invariance() -> None:
+    data1 = _load_fixture_dict("valid_panel.json")
+    data2 = copy.deepcopy(data1)
+    data2["records"] = list(reversed(data2["records"]))
+
+    env1 = parse_analysis_envelope(data1)
+    env2 = parse_analysis_envelope(data2)
+    pol = policy_primitive("visible_tests_not_true")
+
+    rep1 = build_analysis_report(
+        env1,
+        bootstrap_replicates=50,
+        bootstrap_seed=23,
+        policy=pol,
+    )
+    rep2 = build_analysis_report(
+        env2,
+        bootstrap_replicates=50,
+        bootstrap_seed=23,
+        policy=pol,
+    )
+
+    assert rep1.summary_mode == "headline_complete"
+    assert rep1.eligibility_status.status == "UNVERIFIED"
+    assert rep1.eligibility_status.publishable is False
+    assert rep1.input_sha256 == rep2.input_sha256
+    assert rep1.expected_plan_hash == rep2.expected_plan_hash
+
+    json1 = serialize_report_json(rep1)
+    json2 = serialize_report_json(rep2)
+    assert json1 == json2
+
+    parsed = json.loads(json1)
+    assert parsed["cascade"]["primary"]["pass_at_1"]["exact"] == "3/4"
+    assert parsed["frontiers"]["cost_per_solved"]["frontier_series_ids"] == [
+        "A",
+        "cascade:A->B",
+    ]
+
+
+def test_blocked_panel_emits_no_partial_headline_metrics() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "invalid_panel.json").read_bytes())
+    rep = build_analysis_report(env, bootstrap_replicates=20)
+
+    assert rep.summary_mode == "blocked"
+    assert rep.audit.status == "blocked"
+    assert rep.config_metrics is None
+    assert rep.frontiers is None
+    assert rep.bootstrap is None
+    assert rep.cascade is None
+    assert rep.sensitivity is None
+
+
+def test_missing_cost_blocks_by_default_and_omits_frontiers_when_success_only_enabled() -> None:
+    data = _load_fixture_dict("valid_panel.json")
+    data["records"][0]["cost_nano_usd"] = None
+    env = parse_analysis_envelope(data)
+
+    rep_default = build_analysis_report(
+        env, bootstrap_replicates=20, allow_success_only_when_cost_missing=False
+    )
+    assert rep_default.summary_mode == "blocked"
+    assert rep_default.config_metrics is None
+    assert rep_default.frontiers is None
+
+    rep_success = build_analysis_report(
+        env, bootstrap_replicates=20, allow_success_only_when_cost_missing=True
+    )
+    assert rep_success.summary_mode == "success_only"
+    assert rep_success.config_metrics is not None
+    assert rep_success.frontiers is None
+    assert (
+        rep_success.config_metrics["A"].primary.to_dict()["expected_total_cost_nanos"]["value"]
+        is None
+    )
+
+    # Cascades are always rejected when costs are missing, even if allow_success_only_when_cost_missing=True
+    with pytest.raises(AnalysisInputError, match="missing cost_nano_usd"):
+        build_analysis_report(
+            env,
+            bootstrap_replicates=20,
+            policy=policy_primitive("visible_tests_not_true"),
+            allow_success_only_when_cost_missing=True,
+        )
+
+
+def test_output_whitelist_rejects_every_forbidden_key() -> None:
+    for bad_key in FORBIDDEN_REPORT_KEYS:
+        with pytest.raises(AnalysisInputError, match="Forbidden sensitive key"):
+            verify_output_whitelist({"safe_outer": {bad_key: "secret_value"}})
+
+
+def test_report_combined_workload_preflight_accounts_for_family_expansion_and_pairs() -> None:
+    # Make all 4 tasks share a single family_id ("fam_all") so worst-case family draw expands to
+    # n_families (1) * max_family_size (4) = 4 tasks, and with 3 series (A, B, cascade) + 3 pairs:
+    # Per pass work = replicates * (4 * 3 + 3) = replicates * 15; two passes = replicates * 30.
+    data = _load_fixture_dict("valid_panel.json")
+    for r in data["records"]:
+        r["family_id"] = "fam_all"
+    env = parse_analysis_envelope(data)
+
+    with pytest.raises(AnalysisInputError, match="Combined bootstrap workload"):
+        build_analysis_report(
+            env,
+            bootstrap_replicates=100_000,
+            include_family_sensitivity=True,
+            policy=policy_primitive("visible_tests_not_true"),
+        )
+
+
+def test_hyndman_fan_type_7_quantile_expectation_on_two_family_draws() -> None:
+    """Corrects the Batch A two-draw quantile expectation (645/2 and 2355/2 under HF type 7)."""
+    tasks = (
+        stats.TaskPoint("t1", "fam_small", 1, Fraction(1, 1), Fraction(100, 1), 100),
+        stats.TaskPoint("t2", "fam_large", 1, Fraction(0, 1), Fraction(400, 1), 400),
+        stats.TaskPoint("t3", "fam_large", 1, Fraction(0, 1), Fraction(400, 1), 400),
+    )
+    series = stats.TaskSeries("A", "config", tasks, declared_seed_count=1, has_complete_costs=True)
+    fam_res = stats.family_cluster_bootstrap(
+        [series],
+        sampled_family_indices=[(0, 0), (1, 1)],
+    )
+    s_sum = fam_res.series_summaries["A"]
+    assert s_sum.target_n_expected_total_cost_nanos.lower == Fraction(645, 2)
+    assert s_sum.target_n_expected_total_cost_nanos.upper == Fraction(2355, 2)
+
+
+# ---------------------------------------------------------------------------
+# Expected-behavior tests currently blocked by known Batch A defects (R1, R8)
+# Do NOT weaken assertions or mark xfail; these fail until 9g4b fixes Batch A.
+# ---------------------------------------------------------------------------
+
+
+def test_foundation_r1_mutated_envelope_records_must_be_rejected_by_report() -> None:
+    """Blocked by Batch A defect R1 until 9g4b re-verifies envelope audit/hash at public boundaries."""
+    env = parse_analysis_envelope(_load_fixture_dict("valid_panel.json"))
+    mutated_records = list(env.records)
+    mutated_records[2] = replace(mutated_records[2], outcome="solved")  # scorer_status is still 'failed'
+    tampered_env = replace(env, records=tuple(mutated_records))
+
+    rep = build_analysis_report(tampered_env, bootstrap_replicates=10)
+    assert rep.summary_mode == "blocked"
+
+
+def test_foundation_r8_conflicting_real_registration_ids_must_block_panel() -> None:
+    """Blocked by Batch A defect R8 until 9g4b enforces registration_id consistency across a panel."""
+    data = _load_fixture_dict("valid_panel.json")
+    data["evidence_kind"] = "real"
+    for idx, row in enumerate(data["records"]):
+        row["evidence_kind"] = "real"
+        row["registration_id"] = ("a" if idx == 0 else "b") * 64
+    env = records.parse_analysis_envelope(data)
+    assert env.audit.status == "blocked"
+
+```
+
+---
+
+## FILE: tests/test_analysis_cli.py
+
+```python
+"""WP9 acceptance tests: standalone offline CLI (`dojo.bench.analyze`) without subprocesses."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from dojo.bench.analyze import (
+    EXIT_BLOCKED,
+    EXIT_ERROR,
+    EXIT_OK,
+    main,
+)
+from dojo.bench.records import MAX_INPUT_BYTES
+
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "analysis"
+
+
+def test_cli_valid_panel_with_policy_writes_complete_report(tmp_path: Path) -> None:
+    out_file = tmp_path / "report.json"
+    pol_file = tmp_path / "policy.json"
+    pol_file.write_text(
+        json.dumps({"schema_version": 1, "root": {"kind": "visible_tests_not_true"}}),
+        encoding="utf-8",
+    )
+
+    code = main(
+        [
+            "--input",
+            str(FIXTURES_DIR / "valid_panel.json"),
+            "--output",
+            str(out_file),
+            "--bootstrap-replicates",
+            "50",
+            "--seed",
+            "17",
+            "--policy-file",
+            str(pol_file),
+        ]
+    )
+
+    assert code == EXIT_OK
+    assert out_file.is_file()
+    report = json.loads(out_file.read_text(encoding="utf-8"))
+    assert report["summary_mode"] == "headline_complete"
+    assert report["eligibility_status"]["status"] == "UNVERIFIED"
+    assert report["eligibility_status"]["publishable"] is False
+    assert report["cascade"]["primary"]["pass_at_1"]["exact"] == "3/4"
+
+
+def test_cli_train_candidate_selection_and_held_out_frozen_evaluation(tmp_path: Path) -> None:
+    cands_file = tmp_path / "candidates.json"
+    cands_file.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "candidates": [
+                    {"kind": "never_escalate"},
+                    {"kind": "visible_tests_not_true"},
+                    {"kind": "always_escalate"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    train_out = tmp_path / "train_report.json"
+
+    code_train = main(
+        [
+            "--input",
+            str(FIXTURES_DIR / "valid_panel.json"),
+            "--output",
+            str(train_out),
+            "--bootstrap-replicates",
+            "25",
+            "--candidate-policies-file",
+            str(cands_file),
+            "--min-success-floor",
+            "3/4",
+        ]
+    )
+    assert code_train == EXIT_OK
+    train_report = json.loads(train_out.read_text(encoding="utf-8"))
+    frozen_sel = train_report["policy_selection"]
+    assert frozen_sel["selection_status"] == "selected"
+
+    # Save frozen policy selection and apply to a synthetic held-out panel
+    frozen_file = tmp_path / "frozen_policy.json"
+    frozen_file.write_text(json.dumps(frozen_sel), encoding="utf-8")
+
+    held_out_data = json.loads((FIXTURES_DIR / "valid_panel.json").read_text(encoding="utf-8"))
+    for r in held_out_data["records"]:
+        r["split"] = "held_out"
+    held_out_input = tmp_path / "held_out_panel.json"
+    held_out_input.write_text(json.dumps(held_out_data), encoding="utf-8")
+
+    # Attempting to run --candidate-policies-file on held_out must fail with EXIT_ERROR (1)
+    bad_sel_out = tmp_path / "bad_sel_out.json"
+    code_bad_sel = main(
+        [
+            "--input",
+            str(held_out_input),
+            "--output",
+            str(bad_sel_out),
+            "--bootstrap-replicates",
+            "25",
+            "--candidate-policies-file",
+            str(cands_file),
+            "--min-success-floor",
+            "1/2",
+        ]
+    )
+    assert code_bad_sel == EXIT_ERROR
+    assert not bad_sel_out.exists()
+
+    # Applying --frozen-policy-file on held_out succeeds without retuning
+    held_out_report_path = tmp_path / "held_out_report.json"
+    code_held = main(
+        [
+            "--input",
+            str(held_out_input),
+            "--output",
+            str(held_out_report_path),
+            "--bootstrap-replicates",
+            "25",
+            "--frozen-policy-file",
+            str(frozen_file),
+        ]
+    )
+    assert code_held == EXIT_OK
+    held_report = json.loads(held_out_report_path.read_text(encoding="utf-8"))
+    assert held_report["cascade"]["primary"]["pass_at_1"]["exact"] == "3/4"
+
+
+def test_cli_blocked_panel_returns_exit_2_and_respects_write_blocked_report(
+    tmp_path: Path,
+) -> None:
+    out_no_write = tmp_path / "blocked_no_write.json"
+    code1 = main(
+        [
+            "--input",
+            str(FIXTURES_DIR / "invalid_panel.json"),
+            "--output",
+            str(out_no_write),
+            "--bootstrap-replicates",
+            "20",
+        ]
+    )
+    assert code1 == EXIT_BLOCKED
+    assert not out_no_write.exists()
+
+    out_write = tmp_path / "blocked_write.json"
+    code2 = main(
+        [
+            "--input",
+            str(FIXTURES_DIR / "invalid_panel.json"),
+            "--output",
+            str(out_write),
+            "--bootstrap-replicates",
+            "20",
+            "--write-blocked-report",
+        ]
+    )
+    assert code2 == EXIT_BLOCKED
+    assert out_write.is_file()
+    blocked_rep = json.loads(out_write.read_text(encoding="utf-8"))
+    assert blocked_rep["summary_mode"] == "blocked"
+    assert blocked_rep["config_metrics"] is None
+
+
+def test_cli_refuses_existing_output_and_preserves_existing_bytes(tmp_path: Path) -> None:
+    existing_out = tmp_path / "existing.json"
+    original_bytes = b'{"do_not": "overwrite"}\n'
+    existing_out.write_bytes(original_bytes)
+
+    code = main(
+        [
+            "--input",
+            str(FIXTURES_DIR / "valid_panel.json"),
+            "--output",
+            str(existing_out),
+            "--bootstrap-replicates",
+            "10",
+        ]
+    )
+    assert code == EXIT_ERROR
+    assert existing_out.read_bytes() == original_bytes
+
+
+def test_cli_rejects_oversized_input_and_mutually_exclusive_policy_flags(
+    tmp_path: Path,
+) -> None:
+    oversized_in = tmp_path / "oversized.json"
+    oversized_in.write_bytes(b" " * (MAX_INPUT_BYTES + 1))
+    out_file = tmp_path / "out.json"
+
+    code_big = main(
+        [
+            "--input",
+            str(oversized_in),
+            "--output",
+            str(out_file),
+        ]
+    )
+    assert code_big == EXIT_ERROR
+    assert not out_file.exists()
+
+    pol_file = tmp_path / "pol.json"
+    pol_file.write_text('{"kind": "always_escalate"}', encoding="utf-8")
+    code_mutex = main(
+        [
+            "--input",
+            str(FIXTURES_DIR / "valid_panel.json"),
+            "--output",
+            str(out_file),
+            "--policy-file",
+            str(pol_file),
+            "--frozen-policy-file",
+            str(pol_file),
+        ]
+    )
+    assert code_mutex == EXIT_ERROR
+    assert not out_file.exists()
+
+
+def test_cli_sanitizes_stderr_never_echoing_paths_keys_or_values(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    secret_marker = "SUPER_SECRET_USER_TOKEN_987654"
+    bad_input = tmp_path / f"file_{secret_marker}.json"
+    bad_input.write_text(f'{{"{secret_marker}": 123}}', encoding="utf-8")
+    out_file = tmp_path / f"out_{secret_marker}.json"
+
+    code = main(
+        [
+            "--input",
+            str(bad_input),
+            "--output",
+            str(out_file),
+            "--confidence-level",
+            f"invalid_{secret_marker}",
+        ]
+    )
+    assert code == EXIT_ERROR
+    captured = capsys.readouterr()
+    assert secret_marker not in captured.err
+    assert secret_marker not in captured.out
+
+    # Also test invalid JSON payload with valid flags so parse_analysis_json raises AnalysisInputError
+    code2 = main(
+        [
+            "--input",
+            str(bad_input),
+            "--output",
+            str(out_file),
+        ]
+    )
+    assert code2 == EXIT_ERROR
+    captured2 = capsys.readouterr()
+    assert secret_marker not in captured2.err
+    assert secret_marker not in captured2.out
+
+```
+
+---
+
+## FILE: docs/analysis-methods.md
+
+```markdown
+# Dojo Benchmark Statistics & Cold-Restart Cascade Methods Reference (WP1–WP10)
+
+## 1. Scope, Boundaries, and Non-Claims
+
+This document defines the complete mathematical specification for Dojo's offline benchmark statistics and cold-restart cascade analysis subsystem (`dojo/bench/` and `dojo/cascade/`).
+
+- **Synthetic & Unverified Status:** Every example and fixture in the current repository is synthetic. All reports generated by this subsystem carry `EligibilityStatus(status="UNVERIFIED", publishable=False, development_only=True)`. Non-null `registration_id` strings or `"real"` evidence labels never automatically grant publication approval; Stage B registration and real held-out governance require a separate trusted verifier.
+- **Owner Learning Requirement (16c):** This reference implementation satisfies software tasks 9a–9h and does not complete or substitute for the project owner's handwritten mathematical explanation and exercise in task 16c.
+- **Zero Provider / Cache Coupling:** All runtime modules use Python's standard library only, operate strictly on validated normalized JSON envelopes, and never invoke LLM providers, Docker containers, databases, or shell commands.
+
+---
+
+## 2. Normalized Panel Validation and Scorer Status Rules (WP1)
+
+An analysis input envelope declares an `ExpectedPlan` with ordered tasks $T = (t_1, \dots, t_n)$ and configuration seed lists $S_c = (s_{c,1}, \dots, s_{c,k_c})$ for each configuration $c \in C$. A valid panel requires exact 1-to-1 coverage of all expected cells:
+
+$$\mathcal{E} = \{ (c, t, s) \mid t \in T,\; c \in C,\; s \in S_c \}, \quad |\mathcal{E}| = n \sum_{c \in C} k_c$$
+
+| `scorer_status` | Required `outcome` | Required `evidence_validity` | Additional Requirement | Headline Treatment |
+|---|---|---|---|---|
+| `passed` | `solved` | `valid` | `execution_complete = True` | Valid solved ($y_{c,t,r} = 1$) |
+| `failed` | `unsolved` | `valid` | `execution_complete = True` | Valid unsolved ($y_{c,t,r} = 0$) |
+| `candidate_error` | `unsolved` | `valid` | `baseline_verified = True` and `execution_complete = True` | Valid unsolved ($y_{c,t,r} = 0$) iff `baseline_verified=True`; otherwise **blocked** |
+| `invalid_evidence` | `undetermined` | `invalid` | — | **Blocked** (`audit.status = "blocked"`) |
+| `infrastructure_error` | `undetermined` | `unknown` | — | **Blocked** (`audit.status = "blocked"`) |
+
+Missing cells, duplicate cells, unexpected cells, mixed splits (`train` mixed with `held_out`), or conflicting task `family_id` assignments block headline metrics (`summary_mode = "blocked"`). Missing `cost_nano_usd` values set `audit.status = "cost_incomplete"`, blocking cost comparisons and frontiers while permitting an explicitly labeled `summary_mode = "success_only"` report when `--allow-success-only` is requested.
+
+---
+
+## 3. Primary Estimands and Cost Semantics (WP2)
+
+For configuration $c$ with $k_c = |S_c|$ declared seeds on each of the $n = |T|$ tasks, let $y_{c,t,r} \in \{0, 1\}$ be the binary solve indicator and $\text{cost}_{c,t,r} \in \mathbb{Z}_{\ge 0}$ be the measured cost in integer nano-USD ($10^{-9}\text{ USD}$).
+
+1. **Per-task mean success rate and mean 1-seed cost:**
+   $$p_{c,t} = \frac{1}{k_c} \sum_{r \in S_c} y_{c,t,r}, \qquad m_{c,t} = \frac{1}{k_c} \sum_{r \in S_c} \text{cost}_{c,t,r}$$
+2. **Equal-task-weighted $\text{pass@1}$ and expected solved tasks:**
+   $$\text{pass@1}(c) = \frac{1}{n} \sum_{t \in T} p_{c,t}, \qquad S_{\text{exp}}(c) = \sum_{t \in T} p_{c,t} = n \cdot \text{pass@1}(c)$$
+3. **Expected 1-seed total cost and mean task cost:**
+   $$C_{\text{exp}}(c) = \sum_{t \in T} m_{c,t}, \qquad \bar{m}(c) = \frac{1}{n} C_{\text{exp}}(c)$$
+4. **Expected cost per solved task (`expected_cost_per_solved_nanos`):**
+   $$\text{CPS}(c) = \begin{cases} \dfrac{C_{\text{exp}}(c)}{S_{\text{exp}}(c)} = \dfrac{\sum_{t \in T} m_{c,t}}{\sum_{t \in T} p_{c,t}} & \text{if } S_{\text{exp}}(c) > 0 \\[8pt] \text{UndefinedValue}(\texttt{"zero\_expected\_solves"}) & \text{if } S_{\text{exp}}(c) = 0 \end{cases}$$
+   All failed runs' measured costs remain in $C_{\text{exp}}(c)$.
+5. **Actual all-repetition spend (`actual_all_repetitions_spend_nanos`):**
+   $$C_{\text{actual}}(c) = \sum_{t \in T} \sum_{r \in S_c} \text{cost}_{c,t,r}$$
+   This is the total historical spend across all repetitions $k_c$ and is **never** divided by single-seed expected solves $S_{\text{exp}}(c)$.
+
+All intermediate arithmetic uses exact `fractions.Fraction` and `int` values, avoiding binary floating-point drift and ambient `Decimal` context mutation.
+
+---
+
+## 4. Paired Task Bootstrap and Zero-Solve Draw Accounting (WP3)
+
+- **Shared Task Resampling:** In each replicate $b \in \{1, \dots, B\}$ (default $B = 10,000$, using an isolated `random.Random(seed)`), $n$ task indices $I^{(b)} = (i^{(b)}_1, \dots, i^{(b)}_n)$ are drawn uniformly with replacement from $\{0, \dots, n-1\}$. Every configuration and cascade series is evaluated on the **identical** task multiset $I^{(b)}$, retaining all seeds of each sampled task.
+- **Empirical Quantiles (Hyndman-Fan Type 7 over `Fraction`):** For $B$ sorted draws $x_{(0)} \le \dots \le x_{(B-1)}$ and quantile $q \in [0, 1]$:
+  $$h = q(B - 1), \quad \ell = \lfloor h \rfloor, \quad u = \lceil h \rceil, \quad Q(q) = x_{(\ell)} + (h - \ell)\bigl(x_{(u)} - x_{(\ell)}\bigr)$$
+- **Zero-Solve Draws:** If any bootstrap replicate $b$ has zero expected solves ($S^{*(b)}_{\text{exp}} = 0$), $\text{CPS}^{*(b)}$ is undefined. The engine records the exact count in `zero_solve_draws` and `undefined_draws` and blocks the unconditional confidence interval endpoints (`lower = upper = UndefinedValue("unconditional_interval_blocked_by_zero_solve_draws")`) rather than silently dropping zero-solve draws to fabricate a conditional interval.
+
+---
+
+## 5. Non-Primary Sensitivity Analyses (WP4)
+
+1. **Family-Cluster Bootstrap (`family_cluster_bootstrap`):** Resamples $M$ distinct `family_id` clusters with replacement, includes every task in each selected cluster occurrence (retaining all seeds), and weights included task occurrences equally (`is_primary = False`). Because the resampled task count $n^{*(b)}$ varies when cluster sizes are unbalanced, total-cost intervals preserve the original $n$-task scale via $\hat{C}^{*(b)}_{\text{target-}n} = n \cdot \bar{m}^{*(b)}$ and report `min_resampled_tasks`, `max_resampled_tasks`, and `mean_resampled_tasks`.
+2. **Seed-Position and Subset Sensitivity (`seed_sensitivity_analysis`):** Evaluates predeclared ordinal seed positions (`0 .. min_c k_c - 1`), `shared_exact_seeds`, and explicit seed subsets without selecting a lucky seed on held-out data.
+
+---
+
+## 6. Cost-vs-Success Pareto Frontiers (WP5)
+
+`compute_both_frontiers` constructs exact rational non-dominance tables on two explicit axes (cost minimized, $\text{pass@1}$ maximized):
+- **Headline Axis (`cost_per_solved`):** $\text{CPS}(c)$ vs $\text{pass@1}(c)$.
+- **Diagnostic Axis (`mean_task_cost`):** $\bar{m}(c)$ vs $\text{pass@1}(c)$.
+
+Series with undefined cost (e.g., `zero_expected_solves` on `cost_per_solved`) receive `status = "undefined_cost"`, `is_on_frontier = False`, and never dominate or get dominated by valid points. Exact rational coordinate ties share a deterministic `tie_group_id`.
+
+---
+
+## 7. Observable-Only Policies and Train-Only Selection (WP6)
+
+- **Strict Boundary (`evaluate_policy`):** Accepts **only** `ObservableSignals` (`has_patch`, `visible_tests_pass`, `hit_step_cap`, `no_command_rate`, `agent_self_reports_done`). Passing a `NormalizedRecord` or dictionary raises `TypeError`, preventing hidden test outcomes, scorer status, or costs from leaking into routing decisions.
+- **`None` and Threshold Semantics:** `visible_tests_not_true` fires when `visible_tests_pass` is `False` or `None`; `visible_tests_is_false` fires only when `False`; `visible_tests_is_none` fires only when `None`. `no_command_rate_gt` uses strict `>` (`Fraction(str(rate)) > threshold`), whereas `no_command_rate_gte` uses `>=`.
+- **Train-Only Selection (`select_policy_on_train`):** Rejects any panel containing `held_out` records. Evaluates $1 \dots 128$ caller-supplied candidate policies on `train`, filters to candidates achieving $\text{pass@1} \ge \text{min\_success\_floor}$, and minimizes `expected_total_cost_nanos` with deterministic tie-breaking: (1) lower `expected_total_cost_nanos`, (2) higher `pass_at_1`, (3) lexicographically smaller canonical `policy_hash`. Returns an immutable `FrozenPolicySelection` recording train dataset/input/plan/candidate hashes.
+
+---
+
+## 8. Cold-Restart Cascade Composition and Trigger Diagnostics (WP7)
+
+A cold-restart cascade first executes configuration $A$. If the observable policy triggers ($e_{t, r_A} = 1$), $A$'s workspace is discarded and configuration $B$ starts from the original repository snapshot. Both runs' costs are charged on escalation, and $B$'s outcome **replaces** $A$'s outcome (never OR'd).
+
+Across $k_A$ seeds of $A$ and $k_B$ seeds of $B$ on task $t$, independent uniform seed selection yields the exact analytical cross-product:
+
+$$p_{\text{cascade}, t} = \frac{1}{k_A} \sum_{r_A \in S_A} \left( (1 - e_{t, r_A}) y_{A, t, r_A} + e_{t, r_A} \bar{y}_{B, t} \right), \qquad \bar{y}_{B, t} = \frac{1}{k_B} \sum_{r_B \in S_B} y_{B, t, r_B}$$
+
+$$m_{\text{cascade}, t} = \frac{1}{k_A} \sum_{r_A \in S_A} \left( \text{cost}_{A, t, r_A} + e_{t, r_A} \bar{c}_{B, t} \right), \qquad \bar{c}_{B, t} = \frac{1}{k_B} \sum_{r_B \in S_B} \text{cost}_{B, t, r_B}$$
+
+### Post-Hoc Trigger Confusion Diagnostics
+
+Defining $A$-unsolved ($y_{A, t, r_A} = 0$) as the positive class:
+- $\text{TP}$: escalated ($e = 1$) and $A$ unsolved ($y_A = 0$)
+- $\text{FP}$: escalated ($e = 1$) and $A$ solved ($y_A = 1$)
+- $\text{FN}$: not escalated ($e = 0$) and $A$ unsolved ($y_A = 0$)
+- $\text{TN}$: not escalated ($e = 0$) and $A$ solved ($y_A = 1$)
+
+$$\text{Precision} = \frac{\text{TP}}{\text{TP} + \text{FP}} \;\;(\text{undefined if } \text{TP}+\text{FP}=0), \qquad \text{Recall} = \frac{\text{TP}}{\text{TP} + \text{FN}} \;\;(\text{undefined if } \text{TP}+\text{FN}=0)$$
+
+Both micro-weighted counts (over all $n \cdot k_A$ declared $A$ runs) and equal-task-weighted rates are reported alongside `harmed_a_runs_count` (escalated $A$-solved runs where $\bar{y}_{B, t} < 1$).
+
+### Synthetic Known-Answer Summary
+
+| Fixture | Series | $\text{pass@1}$ | Expected 1-Seed Total Cost (nanos) | Expected Cost / Solved (nanos) | Notes |
+|---|---|---|---|---|---|
+| `valid_panel.json` | Config `A` | $1/2$ | $6,000,000$ | $3,000,000$ | Actual spend $= 6,000,000$ |
+| `valid_panel.json` | Config `B` | $1/2$ | $40,000,000$ | $20,000,000$ | Actual spend $= 40,000,000$ |
+| `valid_panel.json` | Cascade `A->B` (`visible_tests_not_true`) | $3/4$ | $26,000,000$ | $26,000,000 / 3$ | $35\%$ savings vs `B`; $\text{TP}=2, \text{TN}=2, \text{FP}=\text{FN}=0$ |
+| `unequal_seed_panel.json` | Config `A` (`seeds=[0, 1]`) | $1/2$ | $3$ | $6$ | Actual spend $= 6$ |
+| `unequal_seed_panel.json` | Config `B` (`seeds=[0]`) | $0$ | $10$ | `null` (`zero_expected_solves`) | Actual spend $= 10$ |
+| `unequal_seed_panel.json` | Cascade `A->B` (`visible_tests_not_true`) | $1/2$ | $8$ | $16$ | $(2 + (4 + 10)) / 2 = 8$ nanos |
+
+```
+
+---
+
+## FILE: docs/analysis-integration.md
+
+```markdown
+# Dojo Analysis Subsystem Integration & API Reference (WP1–WP10)
+
+## 1. Public Module Architecture & Dependency Flow
+
+```text
+dojo/solve/signals.py (ObservableSignals)
+       │
+       ▼
+dojo/bench/records.py (WP1: DTOs, bounded JSON parser, canonical SHA-256, panel audit)
+       │
+       ▼
+dojo/bench/stats.py (WP2–WP4: TaskPoint/TaskSeries/SeriesPoint, metrics, bootstrap, sensitivity)
+       ├──► dojo/bench/frontier.py (WP5: cost_per_solved & mean_task_cost Pareto tables)
+       └──► dojo/cascade/policies.py (WP6: ObservablePolicy AST, canonical hash, train selection)
+                   │
+                   ▼
+            dojo/cascade/simulate.py (WP7: cold-restart cross-product cascade & TP/FP/FN/TN)
+                   │
+                   ▼
+            dojo/bench/report.py (WP8: AnalysisReport, output whitelist, combined workload cap)
+                   │
+                   ▼
+            dojo/bench/analyze.py (WP9: standalone offline CLI `python -m dojo.bench.analyze`)
+
+```
+
+---
+
+## 2. Batch B Public Signatures (`policies`, `simulate`, `report`, `analyze`)
+
+```python
+# dojo/cascade/policies.py
+def policy_primitive(kind: str) -> ObservablePolicy: ...
+def policy_threshold(kind: str, threshold: int | float | str | Fraction) -> ObservablePolicy: ...
+def policy_all(*children: ObservablePolicy) -> ObservablePolicy: ...
+def policy_any(*children: ObservablePolicy) -> ObservablePolicy: ...
+def evaluate_policy(policy: ObservablePolicy, signals: ObservableSignals) -> bool: ...
+def compute_policy_hash(policy: ObservablePolicy) -> str: ...
+def compute_candidate_list_hash(candidates: Sequence[ObservablePolicy]) -> str: ...
+def parse_policy_document(doc: Mapping[str, Any]) -> ObservablePolicy: ...
+def parse_policy_json(raw: str | bytes) -> ObservablePolicy: ...
+def parse_candidate_policy_list(raw_data: Any) -> tuple[ObservablePolicy, ...]: ...
+def select_policy_on_train(
+    envelope: NormalizedEnvelope,
+    candidates: Sequence[ObservablePolicy],
+    *,
+    base_config_id: str = "A",
+    escalate_config_id: str = "B",
+    min_success_floor: int | float | str | Fraction,
+) -> FrozenPolicySelection: ...
+def parse_frozen_policy_selection(
+    raw_data: str | bytes | Mapping[str, Any],
+) -> FrozenPolicySelection: ...
+
+# dojo/cascade/simulate.py
+def simulate_cascade(
+    envelope: NormalizedEnvelope,
+    policy: ObservablePolicy,
+    *,
+    base_config_id: str = "A",
+    escalate_config_id: str = "B",
+    series_id: str | None = None,
+    frozen_selection_provenance: dict[str, Any] | None = None,
+) -> CascadeSimulationResult: ...
+def build_cascade_task_series(
+    envelope: NormalizedEnvelope,
+    policy: ObservablePolicy,
+    *,
+    base_config_id: str = "A",
+    escalate_config_id: str = "B",
+    series_id: str | None = None,
+) -> TaskSeries: ...
+def evaluate_frozen_policy(
+    envelope: NormalizedEnvelope,
+    frozen_selection: FrozenPolicySelection,
+    *,
+    series_id: str | None = None,
+) -> CascadeSimulationResult: ...
+
+# dojo/bench/report.py
+def build_analysis_report(
+    envelope: NormalizedEnvelope,
+    *,
+    bootstrap_replicates: int = 10_000,
+    bootstrap_seed: int = 17,
+    confidence_level: float | Fraction = Fraction(95, 100),
+    include_family_sensitivity: bool = True,
+    include_seed_sensitivity: bool = True,
+    policy: ObservablePolicy | None = None,
+    candidate_policies: Sequence[ObservablePolicy] | None = None,
+    min_success_floor: int | float | str | Fraction | None = None,
+    frozen_policy_selection: FrozenPolicySelection | None = None,
+    base_config_id: str = "A",
+    escalate_config_id: str = "B",
+    allow_success_only_when_cost_missing: bool = False,
+) -> AnalysisReport: ...
+def serialize_report_json(report: AnalysisReport, *, indent: int | None = 2) -> str: ...
+def verify_output_whitelist(obj: Any) -> None: ...
+
+# dojo/bench/analyze.py
+def build_arg_parser() -> argparse.ArgumentParser: ...
+def main(argv: Sequence[str] | None = None) -> int: ...
+
+```
+
+---
+
+## 3. Standalone Offline CLI Contract (`dojo/bench/analyze.py`)
+
+```powershell
+.venv\Scripts\python.exe -m dojo.bench.analyze `
+  --input tests/fixtures/analysis/valid_panel.json `
+  --output data/development/analysis-example.json `
+  --bootstrap-replicates 10000 `
+  --seed 17
+
+```
+
+* **Exit Codes:**
+* `0` (`EXIT_OK`): Valid analysis report (or `--allow-success-only` report when only costs are missing) written via exclusive create (`"xb"`), or `--help` displayed.
+* `2` (`EXIT_BLOCKED`): Input panel parsed, but `audit.status` is `"blocked"` (or `"cost_incomplete"` without `--allow-success-only`). No headline metrics are emitted; if `--write-blocked-report` is passed, a blocked audit report with `null` metric fields is written to `--output`.
+* `1` (`EXIT_ERROR`): Argument error, missing/oversized file (`> 1 MiB`), existing `--output` file, malformed JSON, policy violation, or exceeded workload limit (`> 10,000,000`).
+
+
+* **Sanitized Error Output:** All error messages written to `stderr` use fixed error codes (`dojo.bench.analyze error [<code>]: analysis request rejected.`) and never echo file paths, raw JSON fragments, dictionary keys, or exception messages.
+
+---
+
+## 4. JSON Output Envelope Schema (`AnalysisReport.to_dict()`)
+
+```json
+{
+  "schema_version": 1,
+  "method_version": "dojo-stats-foundation-v1",
+  "input_sha256": "<64-char hex>",
+  "expected_plan_hash": "<64-char hex>",
+  "dataset_id": "synthetic_stats_fixture_v1",
+  "evidence_kind": "synthetic",
+  "eligibility_status": {
+    "status": "UNVERIFIED",
+    "publishable": false,
+    "development_only": true,
+    "reason": "Pure mathematical analysis engine cannot verify Stage B registration or real held-out governance."
+  },
+  "provenance": {
+    "schema_version": 1,
+    "method_version": "dojo-stats-foundation-v1",
+    "quantile_method": "sorted_empirical_nearest_rank_linear_endpoints",
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 17,
+    "confidence_level": 0.95,
+    "estimated_bootstrap_evaluations": 300000,
+    "expected_plan": { "tasks": ["..."], "seeds_by_config": { "A": [0], "B": [0] } }
+  },
+  "audit": { "status": "valid", "headline_comparison_allowed": true, "...": "..." },
+  "summary_mode": "headline_complete",
+  "config_metrics": { "A": { "...": "..." }, "B": { "...": "..." } },
+  "frontiers": {
+    "cost_per_solved": { "is_headline_axis": true, "frontier_series_ids": ["A", "cascade:A->B"], "...": "..." },
+    "mean_task_cost": { "is_headline_axis": false, "...": "..." }
+  },
+  "bootstrap": { "series_summaries": { "...": "..." }, "paired_differences": [ { "...": "..." } ] },
+  "policy_selection": null,
+  "cascade": { "series_id": "cascade:A->B", "primary": { "...": "..." }, "trigger_diagnostics": { "...": "..." } },
+  "sensitivity": { "family_cluster_bootstrap": { "...": "..." }, "seed_sensitivity": { "...": "..." } },
+  "limitations": [ "..." ]
+}
+
+```
+
+---
+
+## 5. Remaining Primary-Workspace Integration & Known Foundation Blockers
+
+### 5.1 Primary-Workspace Cache & Dashboard Adapter Tasks (Not Implemented Here)
+
+1. **Cache-to-Envelope Adapter (Task 5c/5d -> 9a):** Map validated SQLite/file cache records and Stage B registration manifests into the normalized JSON input schema (`expected_plan` + `records`), translating host scorer exceptions to `scorer_status="infrastructure_error"`, `outcome="undetermined"`, `evidence_validity="unknown"`.
+2. **Frontend / Chart Consumer (Task 10a/Agent 2):** Consume `frontiers`, `config_metrics`, `bootstrap`, and `cascade` from the exported `AnalysisReport` JSON without recomputing ratios in JavaScript or retuning policies on held-out data.
+
+### 5.2 Known Batch A Foundation Defects (`R1`–`R10` Owned by Task 9g4b)
+
+Per the primary workspace review (`statistics-review-assessment-v1.md`), Batch A (`records.py`, `stats.py`, `frontier.py`) has ten documented defects (`R1`–`R10`) scheduled for repair by the primary workspace in task `9g4b` behind the existing public signatures:
+
+* **R1:** Re-validate `NormalizedEnvelope` audit and canonical hashes at public entry points (`compute_config_metrics`, `build_analysis_report`) so mutated `NormalizedEnvelope` instances cannot bypass panel validation (exposed by `test_foundation_r1_mutated_envelope_records_must_be_rejected_by_report` in `tests/test_analysis_report.py`).
+* **R2:** Reject duplicate or boolean entries in `seed_subset` inside `build_config_task_series`.
+* **R3:** Reject contradictory optional metrics (e.g., `turns == 0` with `commands > 0`).
+* **R4:** Bound the declared `len(tasks) * sum(len(seeds))` cell product against `MAX_RECORDS` before materializing `ExpectedPlan.expected_cells()`.
+* **R5:** Allow valid surrogate pairs in ASCII-escaped JSON (`json.dumps(..., ensure_ascii=True)`) while rejecting decoded lone surrogates (`0xD800..0xDFFF`).
+* **R6 & R10:** Account for worst-case family cluster expansion and pairwise comparisons in `stats.py` workload preflight and reject duplicate `comparison_pairs` (already enforced at the report boundary in `dojo/bench/report.py`).
+* **R7:** Validate `TaskPoint` and `TaskSeries` invariants (`0 <= pass_rate <= 1`, non-negative costs) in `__post_init__`.
+* **R8:** Block panels where `evidence_kind == "real"` rows carry conflicting `registration_id` digests (exposed by `test_foundation_r8_conflicting_real_registration_ids_must_block_panel` in `tests/test_analysis_report.py`).
+* **R9:** Reject boolean or out-of-range `seed_positions` in `seed_sensitivity_analysis`.
+
+```
+
+---
+
+## Verification Commands, Honest Execution Ledger & Known Blockers[cite: 3]
+
+### Primary Workspace Verification Commands[cite: 3]
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/test_cascade.py tests/test_analysis_report.py tests/test_analysis_cli.py -q --tb=short
+.venv\Scripts\pytest.exe tests/test_analysis_records.py tests/test_statistics.py tests/test_cascade.py tests/test_analysis_report.py tests/test_analysis_cli.py -q --tb=short
+.venv\Scripts\ruff.exe check dojo/bench dojo/cascade tests
+
+```
+
+### Honest Execution Status & Known Integration Blockers
+
+
+
+* **Executed in this chat environment:** `0` pytest suites, `0` ruff checks, `0` CLI invocations (this web chat environment has no shell, Python interpreter, or filesystem access).
+
+
+* **Static & Mathematical Verification Completed:**
+* Verified all imports, `__all__` exports (including fixing `"parse_policy_json"` in `dojo/cascade/policies.py`), and function signatures across `records.py`, `stats.py`, `frontier.py`, `policies.py`, `simulate.py`, `report.py`, and `analyze.py`.
+
+
+* Verified that `dojo/bench/analyze.py` reads at most `MAX_INPUT_BYTES + 1` bytes from an open binary stream, bounds scalar strings before `Fraction`/`int` conversion, enforces exclusive `"xb"` file creation, and sanitizes all `stderr` output.
+
+
+
+
+* **Expected Test Behavior Before vs. After Primary Task `9g4b`:**
+* In `tests/test_analysis_report.py`, two tests (`test_foundation_r1_mutated_envelope_records_must_be_rejected_by_report` and `test_foundation_r8_conflicting_real_registration_ids_must_block_panel`) intentionally assert the **expected** post-`9g4b` security/consistency behavior without `xfail` concealment. Against the unmodified Batch A proposal, those two tests will fail because of known foundation defects `R1` and `R8`, and will pass once primary completes `9g4b`.
+
+
+* In `tests/test_statistics.py` (from Batch A), `test_wp4_family_cluster_bootstrap_unbalanced_clusters_preserve_original_n_cost` asserted `300`/`1200` instead of the Hyndman-Fan type 7 values `Fraction(645, 2)` and `Fraction(2355, 2)`; `test_hyndman_fan_type_7_quantile_expectation_on_two_family_draws` in `tests/test_analysis_report.py` verifies the exact `645/2` and `2355/2` values.
+
+
+
+
+
+END OF B CONTINUATION DELIVERY

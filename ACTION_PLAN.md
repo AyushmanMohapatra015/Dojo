@@ -170,10 +170,12 @@ live-credit expiry is a blocking dependency, not resolved by more parallel work.
 | 9g1 | DONE | docs/reviews/statistics-cascade-packet-v1.md: eight source/context files, exact synthetic panel/answers, paired bootstrap/unequal seeds, both frontier axes, leakage/error/undefined-result tests and complete module/test deliverables. Primary owns 5c; math implementation reserved for web agent while response is pending. Owner-written 16c remains gated. |
 | 9g2 | DONE | statistics-cascade-packet-v2.md expands to ten coordinated work packages and 17 minimum delivered source/test/fixture/doc files across 9a-9d/9f/9h. Includes complete normalized I/O boundary, dependency/ownership map, deterministic bounded offline command, exact math, three verified synthetic fixtures and acceptance commands. V1 preserved; share v2; primary owns 5c. |
 | 9g3 | DONE | Owner reports Agent 1 cannot handle ten WPs together: active handoff is now statistics-batch-a-packet-v1.md, exactly original WPs 1-5 with full context/fixtures/source and complete API deliverables. V1/v2 preserved as historical snapshots. Review Batch A before preparing Batch B (6-10) with its actual reviewed code/API. Math implementation remains pending; Agent 2 assignments unchanged. |
-| 9g4 | PARTIAL | Argon intake at 9g4a: Batch A useful but has reproduced defects; prior B file was escaped A copy. Owner replaced it with interrupted genuine B partial: three syntactically complete B modules, incomplete CLI, no promised tests/docs. No application math adopted yet; continuation at 9g4c, primary corrections at 9g4b. |
+| 9g4 | PARTIAL | A and completed B continuation reviewed in separate immutable archives. B bounded tests: 23 pass/2 known-A failures/1 incorrect expensive test excluded; three independent continuation checks reproduce test-oracle/parser/selection defects. No application math adopted; repairs remain 9g4b/9g4e. |
 | 9g4a | DONE | Isolated ten Batch A files and genuine B partial with byte/line/import manifests. Reviewed A sources/API/tests/docs; supplied tests 21 pass/1 incorrect CI assertion fails. Ten independent defect reproductions + one quantile check pass against UNMODIFIED proposal (not acceptance). statistics-review-assessment-v1.md records evidence/dispositions; B modules recovered/syntax checked only, not accepted. |
 | 9g4b | NEXT | Correct/adapt Batch A R1-R10 with acceptance regressions, retaining useful formulas and stable public signatures for the B continuation. Preserve owner-written 16c and actual-evaluation gates; do not import unreviewed proposal wholesale. |
 | 9g4c | DONE | Prepared statistics-b-continuation-packet-v1.md: exactly two missing-delivery groups (WP9 complete CLI; WP10 three tests/two docs) with full A API/source, recovered WP6-WP8, CLI fragment, fixtures and known review defects. Reference code explicitly unaccepted; primary owns A repairs, Argon avoids repeated A/rewrite of completed B blocks. Await response/review before B integration. |
+| 9g4d | DONE | Archived eight completed B files, six Python files parse; inspected source before isolated tests using original A fixtures. 23 passed/2 known-A failures/1 incorrect workload test deselected; three independent checks reproduced B1-B3. continuation-review-assessment-v1.md maps B1-B6, narrow-delta and API evidence. No runtime adoption. |
+| 9g4e | PLANNED | After 9g4b, repair/adapt B1-B6: tiny-cap preflight oracle/sentinels, bound numeric exponents before construction, validate saved selection consistency, preserve minimal public-interface changes, complete workload accounting and explicit export schema. Run complete meaningful acceptance suite before adopting A/B math; retain 16c and registration gates. |
 | 9h | PLANNED | Results export with provenance/config/split hashes; no synthetic-as-real metrics. |
 
 ## 10. Explorer/product experience
@@ -238,8 +240,10 @@ live-credit expiry is a blocking dependency, not resolved by more parallel work.
 | 13j | DONE | Agent 2's allowlisted agent2-submission-demo-packet-v1.md supplies source hashes, current evidence ledger and two bounded deliverables (14k/14l). Two offline rehearsal commands verified, zero provider calls. Agent 1 retains statistics 9g2; primary retains 5d; Agent 3 (Antigravity) remains unassigned. |
 | 13k | DONE | All three Agent 2 originals reviewed/preserved with manifest; agent2-review-assessment-v1.md maps accepted/corrected/deferred findings. Official rules rechecked Oct 22; resolved existing gate/CLI IDs, met G1 and implemented offline ledger. Corrected visible-test and held-out-selection narration; README fixes at 14a1. |
 | 13l1 | DONE | Gravity (Agent 3/Antigravity) folder with allowlisted current source snapshot/manifest, two-task assignment, local/review permissions and output paths. Older D:/Dojo-Antigravity checkout inspected read-only and left intact; source snapshot is current and no .git/runtime data/credentials copied. Static review only; activation remains owner opening folder and pasting prompt. |
-| 13l2 | PLANNED | Gravity read-only data-transfer/evaluator boundary audit supporting 4j/7e/8g: trace actual input/message/patch/receipt/result flows, confirm existing defenses, propose minimal fictional reproductions for new findings. Primary verifies before any source changes. |
-| 13l3 | PLANNED | Gravity registration/publication acceptance design supporting 5f/7a/7g: exact trusted binding and denominator/error rules, no metadata-only approval, no latest-score shortcut; synthetic acceptance matrix and proposed tests, no benchmark outcomes or protocol activation. |
+| 13l2 | DONE | Gravity boundary report delivered and reviewed at 13l4. Useful defense/missing-adapter inventory; no newly confirmed exploit. Hypotheses mapped to 5e, known threat-model limitation remains 4j; no application fix or sign-off implied. |
+| 13l3 | DONE | Gravity proposed registration contract/15 scenarios delivered and reviewed at 13l4. Useful planning reference with namespace/digest, ordering, denominator, trust and schema corrections. Actual 5f/7a/7g implementation remains pending. |
+| 13l4 | DONE | All 110 snapshot files/ID and 28 ledger source hashes match. Inspected proposed tests: primary run 13 passed in 0.21s, many are static checks rather than behavioral acceptance. gravity-primary-assessment-v1.md records accepted/corrected/deferred findings under 4j/5e/5f/7. Originals unchanged; no gate activation. |
+| 13m | DONE | docs/agent-handoff-quality.md links researched technical sources, actual defect-to-check matrix, reusable two-group prompt addendum and chat handoff. Includes exponent/selection checks from 9g4d; no guaranteed token saving or invented error rate. Apply to each future packet. |
 
 ## 14. Submission/publication
 
@@ -280,9 +284,11 @@ live-credit expiry is a blocking dependency, not resolved by more parallel work.
 | 16d | GATED | If L3 proceeds, owner-written gate decisions and rejection reasons. |
 | 16e | PARTIAL | Owner milestone reflections/video explanation; distinguish from AI-written implementation notes. |
 
-Completed this checkpoint: **5d2**, immutable result/valuation persistence.
-Next implementation checkpoint: **9g4b** targeted statistics repairs, then **5e**.
-Argon owns the missing B continuation (**9g4c**);
+Completed review checkpoint: **9g4d/13l4/13m**; last application implementation
+checkpoint remains **5d2**, immutable result/valuation persistence.
+Next implementation checkpoint: **9g4b** targeted statistics repairs, then
+**9g4e** B acceptance/integration, then **5e**.
+Argon's B continuation is received/reviewed (**9g4d**); no rewrite requested.
 Agent 2 owns frontend proposals (**10a2/10a3**). Do not duplicate those modules.
 Scoring threat-model decision **4j**
 remains open and must be resolved before registered model evaluation.

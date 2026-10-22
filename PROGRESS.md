@@ -1,5 +1,37 @@
 # Progress
 
+## Argon continuation / Gravity intake / handoff quality (9g4d/13l4/13m) - 2026-10-22
+
+- Saved B continuation received: 124,541 bytes, eight complete files; six Python
+  files parse. Immutable archive/extraction manifest preserves original response
+  and earlier proposals. Source inspected before isolated review execution;
+  application sources and frozen artifacts unchanged.
+- B supplied tests: 23 pass, 2 failures exposing known A R1/R8, 1 deselected.
+  Excluded workload test expects rejection at 3M below its 10M cap and would
+  instead start costly resampling. Three independent probes pass by reproducing
+  that oracle error, unchecked policy exponent construction (safe sentinel),
+  and inconsistent saved-policy membership accepted/evaluated. These are defect
+  reproductions, not acceptance. B1-B6 documented; adoption remains 9g4b/9g4e.
+- Gravity: all 110 snapshot byte hashes/lengths and snapshot ID match; all 28
+  ledger source hashes match. Read reports/proposed source; primary test run
+  13 passes in 0.21s. Many tests inspect text/signatures rather than behavior.
+  Ledger's 29-file/11-test descriptions differ from observed 28 hashed rows/
+  13 collected tests. Useful static/design reference, not new runtime approval.
+- Primary assessment corrects registration namespace/digest conventions,
+  reversed gate wording, editable Git timestamp assumptions, unknown-cost versus
+  success eligibility, evaluation mutation protection and provider trust claims.
+  Follow-ups remain existing 4j/5e/5f/7 tasks; no registration or threat-model sign-off.
+- Researched primary technical docs and recorded defect-aware handoff matrix,
+  future prompt addendum and restart prompt in docs/agent-handoff-quality.md.
+  Keep primary chat for current work; fresh external chat with one current
+  packet at next assignment. No guaranteed token savings or measured Argon
+  error-rate claim. Generated-code errors do not establish upstream service bugs.
+- Last application checkpoint remains 911 passed; no full rerun needed because
+  no implementation changed. External checks are counted separately. No provider
+  calls/spend, Docker, installations, account changes, Git writes or deployment.
+- Next: primary 9g4b A repairs, then 9g4e B corrections/adoption, then 5e.
+  Agent 2 retains frontend 10a2/10a3. Owner performs scoped Git commands.
+
 ## Argon intake / interrupted B continuation (9g4a/9g4c) - 2026-10-22
 
 - Extracted ten Batch A source/test/fixture/doc files into proposals/batch-a-v1;

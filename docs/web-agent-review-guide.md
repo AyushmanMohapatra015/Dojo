@@ -6,11 +6,14 @@ explicit assumptions, then bring its findings back here for verification.
 
 ## Current high-value assignment
 
-Current assignment: tasks 5a-5f cache identity, concurrent/crashed execution and
-accounting recovery. Use docs/reviews/cache-accounting-packet-v2.md and follow
-docs/parallel-agent-workflow.md. The earlier scoring packet below remains a
-historical review snapshot; do not send it as the current source automatically.
-Other later assignments are paired bootstrap/cascade math and submission review.
+Current ownership/status is ACTION_PLAN.md. Argon's statistics continuation and
+Gravity's boundary/registration proposals are received and reviewed; primary
+repairs remain 9g4b/9g4e, then runner integration 5e. Agent 2 owns frontend
+10a2/10a3. Earlier cache/scoring packets are historical snapshots, not current
+assignments to resend automatically. Follow docs/parallel-agent-workflow.md.
+For every new assignment apply
+[defect-aware handoff requirements](agent-handoff-quality.md), including the
+specific reproduced failure cases and complete-file delivery rules.
 
 ## Required context for every future assignment (ACTION_PLAN 13c-13f)
 

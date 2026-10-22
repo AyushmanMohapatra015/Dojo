@@ -42,6 +42,13 @@ rebuild WP6-WP8 by default or treat the reference foundation as already passing.
 Save the complete new response as `statistics-b-continuation-feedback-v1.txt`.
 The primary reviews and joins both streams before any accepted integration.
 
+Update 2026-10-22: continuation received and archived under
+`proposals/batch-b-continuation-v1`. See `continuation-review-assessment-v1.md`:
+23 supplied tests passed, 2 expose known A failures, 1 incorrect expensive test
+excluded; three independent checks reproduce further proposal issues. No source
+adopted yet. Do not resend the continuation assignment; primary repairs are
+9g4b/9g4e. Future packets follow `../../agent-handoff-quality.md`.
+
 Original assignments stay at their existing paths so previous links and shared
 snapshots remain valid. No files are moved or overwritten. Agent 2's originals
 remain in docs/reviews/agent2; Antigravity is Agent 3 and remains separate.

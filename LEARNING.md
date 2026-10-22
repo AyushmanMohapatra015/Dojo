@@ -1,5 +1,16 @@
 # Learning log
 
+## Tasks 9g4d / 13l4 / 13m - review observation
+
+A passing test can check the wrong promise: finding a constraint string does
+not show that a real database rejects an invalid row. Likewise, a string length
+limit does not bound the integer represented by a scientific exponent. Check
+expensive work before construction, with a sentinel that proves call order.
+A saved policy's own hash can be correct while its relationship to the candidate
+list is wrong; validation must bind those records together. Preserve independent
+mathematical examples and test expectations as carefully as implementation code.
+These are primary review observations, not completion of owner-written work 16c.
+
 ## Task 5d2 - implementation observation
 
 Repricing should add an interpretation, not overwrite the original execution

@@ -1,0 +1,155 @@
+{
+  "source": "docs/reviews/argon/statistics-b-continuation-feedback-v1.txt",
+  "source_sha256": "ab46c523b4a958973e43e81b30f592a8625c1e1ba2135cf648e175a049dfbecc",
+  "source_bytes": 124541,
+  "files": [
+    {
+      "path": "dojo/bench/analyze.py",
+      "sha256": "2d3253120f19b07b34d905153f37bc621e1f9364a1e08f0fde0690a9db6ae593",
+      "bytes": 13576,
+      "source_marker_line": 49,
+      "syntax_valid": true,
+      "imports": [
+        "__future__",
+        "argparse",
+        "collections.abc",
+        "dojo.bench.records",
+        "dojo.bench.report",
+        "dojo.bench.stats",
+        "dojo.cascade.policies",
+        "fractions",
+        "math",
+        "pathlib",
+        "sys",
+        "typing"
+      ],
+      "accepted": false
+    },
+    {
+      "path": "dojo/cascade/policies.py",
+      "sha256": "416c3594982ab51f482c2c65c700f8faa7078fd6007b37f1b8fbb7c9026ad056",
+      "bytes": 33726,
+      "source_marker_line": 447,
+      "syntax_valid": true,
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "dojo.bench.records",
+        "dojo.bench.stats",
+        "dojo.solve.signals",
+        "fractions",
+        "math",
+        "typing"
+      ],
+      "accepted": false
+    },
+    {
+      "path": "dojo/bench/report.py",
+      "sha256": "694e7b8881282cb074bc69ca526ecb2c88f3371051f4796e19a6cb8662ef3a05",
+      "bytes": 17987,
+      "source_marker_line": 1301,
+      "syntax_valid": true,
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "dojo.bench.frontier",
+        "dojo.bench.records",
+        "dojo.bench.stats",
+        "dojo.cascade.policies",
+        "dojo.cascade.simulate",
+        "fractions",
+        "json",
+        "typing"
+      ],
+      "accepted": false
+    },
+    {
+      "path": "tests/test_cascade.py",
+      "sha256": "0fbe9dac3a9aa26faf75930345c8464787e57f2b012ff2026e414a4b38519515",
+      "bytes": 14102,
+      "source_marker_line": 1790,
+      "syntax_valid": true,
+      "imports": [
+        "__future__",
+        "copy",
+        "dojo.bench.records",
+        "dojo.bench.stats",
+        "dojo.cascade.policies",
+        "dojo.cascade.simulate",
+        "dojo.solve.signals",
+        "fractions",
+        "json",
+        "pathlib",
+        "pytest"
+      ],
+      "accepted": false
+    },
+    {
+      "path": "tests/test_analysis_report.py",
+      "sha256": "1dc094dc61851023e05027b434b61ebd4d977f7c6299147817c7a0449d0f1fd5",
+      "bytes": 7226,
+      "source_marker_line": 2125,
+      "syntax_valid": true,
+      "imports": [
+        "__future__",
+        "copy",
+        "dataclasses",
+        "dojo.bench",
+        "dojo.bench.records",
+        "dojo.bench.report",
+        "dojo.cascade.policies",
+        "fractions",
+        "json",
+        "pathlib",
+        "pytest"
+      ],
+      "accepted": false
+    },
+    {
+      "path": "tests/test_analysis_cli.py",
+      "sha256": "19324f9bb30889d468cfb41bebfaf49da1cb925fd842a299ba8c6d56d992d91c",
+      "bytes": 7847,
+      "source_marker_line": 2319,
+      "syntax_valid": true,
+      "imports": [
+        "__future__",
+        "dojo.bench.analyze",
+        "dojo.bench.records",
+        "json",
+        "pathlib",
+        "pytest"
+      ],
+      "accepted": false
+    },
+    {
+      "path": "docs/analysis-methods.md",
+      "sha256": "44126ea300ddd16dafc80e367346793ea20388c903c71e8159d3d7399741b049",
+      "bytes": 11205,
+      "source_marker_line": 2590,
+      "syntax_valid": null,
+      "imports": [],
+      "accepted": false
+    },
+    {
+      "path": "docs/analysis-integration.md",
+      "sha256": "762ee84df543e8b8d54dcf6c1d188cb4b5ee991012f662e66d745fa635aebb15",
+      "bytes": 9454,
+      "source_marker_line": 2715,
+      "syntax_valid": null,
+      "imports": [],
+      "accepted": false
+    }
+  ],
+  "execution_performed": false,
+  "installed_to_application": false,
+  "gravity_provenance": {
+    "snapshot_files_checked": 110,
+    "snapshot_mismatches": [],
+    "ledger_rows_checked": 28,
+    "ledger_mismatches": [],
+    "reading_claim_independently_proven": false,
+    "snapshot_id_matches": true
+  }
+}
