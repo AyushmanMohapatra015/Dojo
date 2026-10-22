@@ -90,7 +90,8 @@ def test_new_schema_reopens_without_side_effects(store):
     assert info['schema_version'] == SCHEMA_VERSION
     assert set(info['tables']) == {'store_meta', 'tasks', 'runs', 'observations',
                                   'artifacts', 'usage', 'evaluations', 'solver_identities',
-                                  'run_context', 'run_events'}
+                                  'run_context', 'run_events', 'execution_records',
+                                  'pricing_snapshots', 'cost_valuations'}
     assert info['scope'] == 'schema_validation_only_not_execution_or_publication'
     assert store.path.read_bytes() == before
 

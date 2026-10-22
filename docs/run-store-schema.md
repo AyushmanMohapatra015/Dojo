@@ -1,12 +1,13 @@
-# Private run store (5a-5c) and cache identities (5b)
+# Private run store (5a-5d) and cache identities (5b)
 
-`dojo.store.schemas` defines schema v2; `RunStore(path).initialize()` creates a
+`dojo.store.schemas` defines schema v3; `RunStore(path).initialize()` creates a
 new file only. `schema_info()` opens an existing DB read-only and checks the
 application ID, version, metadata fingerprint and exact SQL object definitions.
 It refuses missing, incompatible, busy or altered stores without repair or
 implicit creation. Initialization failure leaves a file that is not reset.
 Do not point it at the separate `data/spend.sqlite3` credit ledger. Exact v1 DDL
-is retained in schema_v1.py for provenance. V1 databases are explicitly refused;
+is retained in schema_v1.py and exact v2 in schema_v2.py for provenance. V1/v2
+databases are explicitly refused;
 there is no silent migration/reset. No persistent project run DB was initialized.
 
 No persistent project run DB has been initialized in this checkpoint. Tests use
@@ -25,6 +26,34 @@ builds fail initialization rather than silently relaxing the schema.
 | solver_identities | Canonical solver JSON bound to the computed behavior key |
 | run_context | Exact run/key binding, update/dispatch timestamps and unresolved accounting intent |
 | run_events | Immutable operation history with ownership generation and timestamp |
+| execution_records | Immutable identity-bound private metrics/usage, exact patch and bounded trace |
+| pricing_snapshots | Immutable canonical model/base/rate/source/timestamp snapshot |
+| cost_valuations | Append-only usage-bound historical valuations; no implicit latest/official selector |
+
+`dojo.store.results.ResultStore` extends AttemptStore with `save_record`,
+`read_record`, `append_valuation` and `valuation_history`. `save_record` requires
+an owned, unexpired claim and a validated ExecutionRecord. Synthetic saves
+atomically complete the run, persist observations/artifacts/usage, and mark the
+run `synthetic_record_complete`. Legacy synthetic completion remains available
+but cannot manufacture a detailed record. Both cache entry points validate any
+detailed record and refuse a missing-record downgrade to a legacy cache hit.
+
+Non-synthetic supplied observations are saved only as private UNVERIFIED
+diagnostics. The attempt is fenced/marked uncertain (`unverified_result_recorded`),
+which blocks retry/new non-synthetic preparation. No completed run, canonical
+provider usage row, scoring evidence, ledger settlement or dispatch approval is
+created. This preserves unknown/known diagnostic data without authenticating
+caller-supplied provider counts. Trusted integration remains tasks 5e/6/8.
+
+Records, price snapshots and valuations reject SQL UPDATE/DELETE. Canonical JSON,
+identity/binary digests, usage/metric relationships and every historical valuation
+are rechecked on read/reuse. Cost is recomputed, model/base bound and timestamps
+checked; repeated identical valuations are idempotent. New valuations preserve
+the original record/digest/price interpretation. No "latest is official" policy
+is introduced. History is capped at 1000 entries; failures roll back snapshot,
+record, completion/observations and context changes together. These checks do not
+authenticate against a DB owner rewriting all related content. No persistent
+project DB or actual model run was created during these tests.
 
 Completed execution and visible success never create a score. Passed/failed
 require valid evidence; candidate_error additionally requires a verified

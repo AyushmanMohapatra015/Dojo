@@ -2,7 +2,7 @@
 
 Updated: 2026-10-22. BUILD_SPEC.md defines the product; this file is the live
 execution checklist; PROGRESS.md holds checkpoint history/evidence. Baseline:
-814 offline tests after task 5c, 63 construction tasks (37 train / 26 held-out), no provider
+911 offline tests after task 5d2, 63 construction tasks (37 train / 26 held-out), no provider
 calls/spend. Scaffolds and synthetic checks are not completed benchmark results.
 
 ## Tracking rules
@@ -104,8 +104,10 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 5a | DONE | Initial seven-table v1 foundation retained in schema_v1.py; 5c explicitly versions v2 with three recovery tables and immutable events. New-file initialization, rollback/read-only exact schema validation and execution/evidence/patch constraints retained; old v1 DBs refused without migration. docs/run-store-schema.md. |
 | 5b | DONE | Adapted external solver/scoring identities in dojo/store/identity.py with corrected deterministic numeric/strict parsing validation; 61 identity tests. Runner metadata construction/replay wiring remains 5c/5e; identities alone are not execution/provenance approval. |
 | 5c | DONE | AttemptStore on explicit v2 schema: short atomic claims, token/generation fencing, no automatic expired/ambiguous replay, durable serial accounting intent, checked synthetic artifacts/reuse, immutable events. Forty new tests including independent processes/abrupt exits and rollback/corruption checks; full suite 814. No live dispatch, ledger binding or publication API; real accounting remains 5d/6. |
-| 5d | NEXT | Actual tokens/cost/steps/time, final diff and truncated private trajectory; verify cost from usage/pricing snapshot and metric consistency (review R5/R8), retain history and current transport bounds; evaluator evidence stays separate. |
-| 5e | PLANNED | Working bench/cost/report CLI plus clear unsupported/pending/error states and example commands. |
+| 5d | PARTIAL | Validated private result contracts and immutable storage/history complete at 5d1/5d2. Supplied provider-shaped records remain uncertain diagnostics; actual trusted runtime provenance/usage binding still requires 5e/6/8. No evaluator outcome or billing settlement inferred. |
+| 5d1 | DONE | dojo/store/records.py adapts reviewed usage/valuation/artifact concepts: exact usage-bound integer cost, immutable pricing snapshot, consistent controller metrics, identity limits and bounded private trajectory. 65 regressions cover R5/R8, precision/unknown accounting and bounds; docs/execution-records.md. No storage/dispatch/publication unlock. |
+| 5d2 | DONE | ResultStore on explicit v3 stores bounded private results/metrics and append-only pricing/valuations. Read/reuse recomputes digests/costs including legacy entry points; missing-record downgrade blocked. 32 new regressions, full suite 911. V2 preserved/refused without migration. Synthetic completion atomic; unverified non-synthetic diagnostics fenced uncertain, no live dispatch/settlement/publication. |
+| 5e | NEXT | Working bench/cost/report CLI plus clear unsupported/pending/error states and example commands; construct trusted runner metadata and integrate private result persistence without unlocking gated live transport. |
 | 5f | PLANNED | Registered denominator/error policy: justified candidate errors unsolved; invalid/infrastructure evidence blocks publication. Verify actual registration/provenance and evaluator identity; do not adopt proposal's metadata-only publishable predicate or latest-score selection (review R6/R7). |
 
 ## 6. Financial/live verification gates
@@ -160,6 +162,8 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 9g | PARTIAL | Independent statistics implementation packet prepared at 9g1; await response, then reproduce formulas/code/examples locally. |
 | 9g1 | DONE | docs/reviews/statistics-cascade-packet-v1.md: eight source/context files, exact synthetic panel/answers, paired bootstrap/unequal seeds, both frontier axes, leakage/error/undefined-result tests and complete module/test deliverables. Primary owns 5c; math implementation reserved for web agent while response is pending. Owner-written 16c remains gated. |
 | 9g2 | DONE | statistics-cascade-packet-v2.md expands to ten coordinated work packages and 17 minimum delivered source/test/fixture/doc files across 9a-9d/9f/9h. Includes complete normalized I/O boundary, dependency/ownership map, deterministic bounded offline command, exact math, three verified synthetic fixtures and acceptance commands. V1 preserved; share v2; primary owns 5c. |
+| 9g3 | DONE | Owner reports Agent 1 cannot handle ten WPs together: active handoff is now statistics-batch-a-packet-v1.md, exactly original WPs 1-5 with full context/fixtures/source and complete API deliverables. V1/v2 preserved as historical snapshots. Review Batch A before preparing Batch B (6-10) with its actual reviewed code/API. Math implementation remains pending; Agent 2 assignments unchanged. |
+| 9g4 | PARTIAL | Agent 1 is Argon: dedicated folder, verified assignment copies and Batch B scope. Final inventory found statistics-batch-a.txt and statistics-batch-b-response.md; both await full source/API/test review. Do not assume Batch B was grounded in reviewed Batch A interfaces or integrate either automatically. Scope document alone was not a ready implementation packet. |
 | 9h | PLANNED | Results export with provenance/config/split hashes; no synthetic-as-real metrics. |
 
 ## 10. Explorer/product experience
@@ -167,6 +171,9 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | ID | Status | Task / acceptance evidence |
 |---|---|---|
 | 10a | PLANNED | Results schema, static app and labeled development fixtures. |
+| 10a1 | DONE | docs/reviews/agent2/agent2-explorer-packet-v1.md: two-task frontend implementation handoff, current empty scaffold, reviewed feedback and complete synthetic UI fixture/temporary view-model boundary independent of Argon's APIs. Builder lint/fixture/provenance checked; no frontend implementation claimed. |
+| 10a2 | PLANNED | Agent 2 static React/Vite/Recharts explorer prototype supporting 10a/10b/10d/10f: complete source, synthetic-only labels, strict display adapter/input and accessible comparison/grid/method/error states; review before adoption. |
+| 10a3 | PLANNED | Agent 2 prototype parser/component tests, browser/accessibility checklist and exact build/integration docs; primary executes appropriate checks and accepts corrected code. Real data adapter, privacy approval and hosting remain separate. |
 | 10b | PLANNED | Header/counts/measured cost/time, coherent navigation and accessible responsive design. |
 | 10c | PLANNED | Frontier chart and per-config comparisons with uncertainty. |
 | 10d | PLANNED | Task/config grid, sanitized run status/signals/details, no private/evaluator leakage. |
@@ -218,12 +225,14 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 13h2 | DONE | Audited v1 gaps; immutable cache-accounting-packet-v2.md includes concrete integration/scope contract, exact scorer/input excerpts, decision defaults, synthetic fixtures and complete db.py/schemas.py/test deliverables. V1 preserved; owner shares v2. |
 | 13i | PARTIAL | Service/tool defect log under 1f: sanitized observations, reproduction/confidence and upstream report readiness; notify owner, no automatic issue filing. |
 | 13j | DONE | Agent 2's allowlisted agent2-submission-demo-packet-v1.md supplies source hashes, current evidence ledger and two bounded deliverables (14k/14l). Two offline rehearsal commands verified, zero provider calls. Agent 1 retains statistics 9g2; primary retains 5d; Agent 3 (Antigravity) remains unassigned. |
+| 13k | DONE | All three Agent 2 originals reviewed/preserved with manifest; agent2-review-assessment-v1.md maps accepted/corrected/deferred findings. Official rules rechecked Oct 22; resolved existing gate/CLI IDs, met G1 and implemented offline ledger. Corrected visible-test and held-out-selection narration; README fixes at 14a1. |
 
 ## 14. Submission/publication
 
 | ID | Status | Task / acceptance evidence |
 |---|---|---|
-| 14a | PLANNED | Fresh-checkout README/setup/run commands, scope and separate synthetic/live labels. |
+| 14a | PARTIAL | README status/count/runtime/rehearsal corrections at 14a1; fresh-checkout setup/run reproduction remains pending. |
+| 14a1 | DONE | Confirmed Agent 2 README corrections: 63/37/26 construction with G1 met, partial offline solver/store status, 879-test checkpoint, locked verifier/runtime wording and checked rehearsal commands. Preserved frozen packaging and financial gates; dry-run cost rechecked, zero requests/reservations. |
 | 14b | PLANNED | Actual NVIDIA/Nebius contribution, licenses, references, significant submission-period changes and limitations. |
 | 14c | GATED | Full credential/history/privacy review and owner approval for public repository; detect license. |
 | 14d | GATED | Approved demo/test-build hosting and local fallback; free judge access through Dec 15. |
@@ -233,8 +242,8 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 14h | PLANNED | Feature freeze, fresh reproduction, browser/demo, result/claim and all-links review. |
 | 14i | GATED | Authorized submission by Oct 29; verify receipt/status; no post-deadline edits. |
 | 14j | PLANNED | Handoff inventory and judge-access maintenance without continuing paid inference. |
-| 14k | PLANNED | Agent 2: evidence/claim and submission-readiness audit supporting 14a/14b/14g/14h. Produce proposed corrections, ranked blockers and acceptance checks; primary validates before integration. No publication or runtime claims from synthetic evidence. |
-| 14l | PLANNED | Agent 2: timed <=180-second demo storyboard, recording checklist and honest fallback supporting 14d/14e. Separate recordable offline scenes from gated real NVIDIA/Nebius evidence and future explorer screens. No upload/deployment authorization. |
+| 14k | DONE | Agent 2 audit delivered and reviewed at 13k; accepted README fixes at 14a1, missing-context claims mapped to existing IDs. Reviewed planning deliverable only: real runtime, README reproduction and submission remain incomplete. |
+| 14l | DONE | Agent 2 proposed storyboard/checklists reviewed: original scene sum 172s, synthetic/live labels and fallback retained. Assessment corrects visible-test, cost and held-out winner-selection wording. Recording/re-timing/upload remain 14e/14f; no deployment authorized. |
 
 ## 15. Post-project account/tool cleanup
 
@@ -257,9 +266,9 @@ conditions; record optional go/no-go decisions under BUILD_SPEC and owner direct
 | 16d | GATED | If L3 proceeds, owner-written gate decisions and rejection reasons. |
 | 16e | PARTIAL | Owner milestone reflections/video explanation; distinguish from AI-written implementation notes. |
 
-Completed this checkpoint: **5c**, adapting reviewed transaction/recovery ideas.
-Next implementation checkpoint: **5d**. External agent owns **9g2** work packages;
-do not duplicate its analysis implementation while the response is pending.
+Completed this checkpoint: **5d2**, immutable result/valuation persistence.
+Next implementation checkpoint: **5e**. Argon owns statistics Batch A (**9g3/9g4**);
+Agent 2 owns frontend proposals (**10a2/10a3**). Do not duplicate those modules.
 Scoring threat-model decision **4j**
 remains open and must be resolved before registered model evaluation.
 Eligible urgent account/rules/context work may proceed alongside offline tasks;

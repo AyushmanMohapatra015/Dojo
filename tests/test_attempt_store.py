@@ -14,7 +14,7 @@ from dojo.store import schema_v1
 from dojo.store.attempts import AttemptStore, OwnershipError
 from dojo.store.db import StoreError
 from dojo.store.identity import SolverIdentity, canonical_json_bytes
-from dojo.store.schemas import MAX_PATCH_BYTES, MAX_TRAJECTORY_BYTES
+from dojo.store.schemas import MAX_PATCH_BYTES, MAX_TRAJECTORY_BYTES, SCHEMA_VERSION
 
 NOW = datetime(2026, 10, 22, 10, tzinfo=UTC)
 
@@ -95,7 +95,7 @@ def test_abrupt_worker_exit_preserves_only_committed_state(store, committed):
         process.join(timeout=10)
         assert process.exitcode == 17
         reopened = AttemptStore(store.path)
-        assert reopened.schema_info()['schema_version'] == 2
+        assert reopened.schema_info()['schema_version'] == SCHEMA_VERSION
         claim = reopened.claim(identity(), now=NOW)
         assert claim.status == ('already_claimed' if committed else 'acquired')
         if committed:

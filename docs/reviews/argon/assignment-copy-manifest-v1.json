@@ -1,0 +1,23 @@
+{
+    "schema_version":  1,
+    "agent":  "Argon (Agent 1)",
+    "created":  "2026-10-22",
+    "copy_only":  true,
+    "files":  [
+                  {
+                      "source":  "docs/reviews/statistics-batch-a-packet-v1.md",
+                      "copy":  "docs/reviews/argon/statistics-batch-a-packet-v1.md",
+                      "sha256":  "108d9817546c4afd9618da125f575128666788f9b35f7d1ff9b4a6ab5af31de9"
+                  },
+                  {
+                      "source":  "docs/reviews/statistics-cascade-packet-v2.md",
+                      "copy":  "docs/reviews/argon/reference/statistics-cascade-packet-v2.md",
+                      "sha256":  "d864e4afe7505a3f222b065b130983de9296032e1906ad826832fcf4546d8b46"
+                  },
+                  {
+                      "source":  "docs/reviews/statistics-work-package-v2.md",
+                      "copy":  "docs/reviews/argon/reference/statistics-work-package-v2.md",
+                      "sha256":  "e8e1e4706f949d4442314783c20eb4377c8137f6820524ecc3d2b14a330972b5"
+                  }
+              ]
+}

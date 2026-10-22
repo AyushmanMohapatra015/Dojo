@@ -1,5 +1,29 @@
 # Learning log
 
+## Task 5d2 - implementation observation
+
+Repricing should add an interpretation, not overwrite the original execution
+or pretend a new price was used when the model ran. We preserve each snapshot,
+recompute its cost on reads and require an explicit choice of valuation later.
+Caller-supplied provider-looking data is not a trusted response: saving it as
+an uncertain diagnostic preserves evidence without approving a retry or settling
+billing. Older cache entry points also need to check new records; otherwise a
+missing row can accidentally downgrade a checked result into a weaker legacy
+cache hit. Schema versioning makes that change explicit without rewriting old
+databases. This is implementation observation, not the owner's exercise work.
+
+## Task 5d1 - implementation observation
+
+A valid-looking cost field can still be wrong: bind it to exact usage and an
+immutable price snapshot, then recompute. Cached/reasoning tokens are subsets,
+so adding them again would overcount. Integer nano-USD arithmetic avoids mutable
+Decimal precision and float-money errors; the rounding policy still needs a name
+because aggregate and per-request rounding can differ. Unknown usage must remain
+unknown. Deriving signals from checked turn/command counts prevents contradictory
+records. A bounded private trace can retain a valid UTF-8 prefix and original
+digest without claiming the missing content was checked or made public. These
+implementation observations do not replace the owner's learning exercises.
+
 ## Task 5c - implementation observation
 
 Owning a task locally does not prove a remote call was never sent. Expiring a

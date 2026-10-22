@@ -1,0 +1,4282 @@
+## Batch A Delivery Manifest & WP1–WP5 Checklist
+
+
+
+### File and Dependency Manifest
+
+
+
+| File Path | Role in Batch A | Runtime / Test Dependencies |
+| --- | --- | --- |
+| `dojo/bench/records.py` | **WP1**: Immutable normalized record/plan/audit DTOs, strict bounded JSON parsing, canonical SHA-256 identity, complete panel & evidence validation.
+
+ | Python standard library (`dataclasses`, `fractions`, `hashlib`, `json`, `math`, `re`, `typing`) + `dojo.solve.signals.ObservableSignals`<br> |
+| `dojo/bench/stats.py` | **WP2, WP3, WP4**: Reusable `TaskSeries` / `SeriesPoint` abstractions, exact `Fraction` primary metrics, paired task bootstrap, family-cluster bootstrap, and seed sensitivity.
+
+ | Python standard library (`dataclasses`, `fractions`, `math`, `random`, `typing`) + `dojo.bench.records`<br> |
+| `dojo/bench/frontier.py` | **WP5**: Exact rational Pareto non-dominance and tie-group evaluation across both `cost_per_solved` and `mean_task_cost` axes, with undefined-point exclusion.
+
+ | Python standard library (`dataclasses`, `fractions`, `typing`) + `dojo.bench.records`, `dojo.bench.stats`<br> |
+| `tests/test_analysis_records.py` | **WP1 Acceptance Tests**: Valid/invalid fixture parsing, duplicate JSON keys, lone surrogates, bool/int/float traps, candidate_error baseline rules, canonical hashes.
+
+ | `pytest` + `dojo.bench.records`<br> |
+| `tests/test_statistics.py` | **WP2–WP5 Acceptance Tests**: Exact known-answer arithmetic, unequal seeds, injectable paired bootstrap indices, zero-solve draws, RNG isolation, family/seed sensitivity, and frontiers.
+
+ | `pytest` + `dojo.bench.records`, `dojo.bench.stats`, `dojo.bench.frontier`<br> |
+| `tests/fixtures/analysis/valid_panel.json` | 4-task synthetic train panel fixture (without `expected` test annotation).
+
+ | JSON data
+
+ |
+| `tests/fixtures/analysis/unequal_seed_panel.json` | 1-task unequal-seed (`A: [0, 1]`, `B: [0]`) synthetic fixture (without `expected` test annotation).
+
+ | JSON data
+
+ |
+| `tests/fixtures/analysis/invalid_panel.json` | Deliberately invalid panel fixture missing `B/synthetic_stats_4/0` and duplicating `A/synthetic_stats_1/0` (without `expected` test annotation).
+
+ | JSON data
+
+ |
+| `docs/analysis-foundation-methods.md` | Mathematical specification, estimands, quantile rules, zero-solve handling, sensitivity weighting, and inference limitations.
+
+ | Markdown documentation
+
+ |
+| `docs/analysis-foundation-api.md` | Public symbols, exact signatures, DTO schemas, Batch B cascade extension seams, limits, and executable usage examples.
+
+ | Markdown documentation
+
+ |
+
+---
+
+### Work Package Completion Checklist (WP1–WP5 Only)
+
+
+
+| WP | Plan Scope | Status | Deliverable & Verification Summary |
+| --- | --- | --- | --- |
+| **WP1** | 9a / 9h | **COMPLETE (UNEXECUTED)** | `dojo/bench/records.py` & `tests/test_analysis_records.py`: Enforces 1 MiB byte limit, JSON nesting depth $\le 32$, $\le 10,000$ records, duplicate-key rejection, lone surrogate (`\uD800`–`\uDFFF`) and huge-exponent rejection, strict `bool` vs `int` checks, `scorer_status`/`outcome`/`evidence_validity`/`baseline_verified` matrix, exact expected-plan coverage, and record-order-invariant canonical SHA-256 digests.
+
+ |
+| **WP2** | 9a | **COMPLETE (UNEXECUTED)** | `dojo/bench/stats.py` & `tests/test_statistics.py`: Computes equal-task-weighted `pass_at_1`, expected 1-seed total cost (`expected_total_cost_nanos`), `mean_task_cost_nanos`, `expected_cost_per_solved_nanos`, and `actual_all_repetitions_spend_nanos` using exact `Fraction` and `int` arithmetic. Secondary metrics (`turns`, `commands`, `actual_prompt_tokens`, `actual_completion_tokens`, `wall_seconds`, `hit_step_cap`, `no_command_rate`) report known/missing counts without inferring `0`.
+
+ |
+| **WP3** | 9b / 9c | **COMPLETE (UNEXECUTED)** | `dojo/bench/stats.py` & `tests/test_statistics.py`: Paired task bootstrap with default 10,000 replicates, local `random.Random(seed)` RNG isolation, injectable `sampled_task_indices` for index-level pairing tests, workload cap ($\le 10,000,000$ task-series evaluations), explicit `zero_solve_draws`, blocked unconditional intervals when any resample has 0 solves, and paired deltas (`B - A`).
+
+ |
+| **WP4** | 9f | **COMPLETE (UNEXECUTED)** | `dojo/bench/stats.py` & `tests/test_statistics.py`: Family-cluster bootstrap (`family_cluster_bootstrap`) resampling families with replacement while preserving the original-$n$ total cost target ($n \times \bar{m}^*$), and `seed_sensitivity_analysis` evaluating predeclared seed positions (`k`-th seed) and explicit seed subsets without held-out selection.
+
+ |
+| **WP5** | 9c | **COMPLETE (UNEXECUTED)** | `dojo/bench/frontier.py` & `tests/test_statistics.py`: Exact `Fraction` Pareto frontier evaluation on both `cost_per_solved` and `mean_task_cost` vs `pass_at_1`. Separates `undefined_cost` configs (e.g., zero solves or missing costs) so they never dominate or get dominated by valid points, and groups exact rational ties into deterministic `tie_group` IDs.
+
+ |
+| **WP6–10** | Batch B | **DEFERRED** | Policies, frozen train selection, cold-restart cascade composition, report export, and offline CLI are intentionally deferred per Batch A instructions.
+
+ |
+
+---
+
+## FILE: dojo/bench/records.py
+
+```python
+"""WP1: Normalized immutable analysis records, expected plan, bounded JSON parser, and panel audit."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import re
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from fractions import Fraction
+from typing import Any
+
+from dojo.solve.signals import ObservableSignals
+
+SCHEMA_VERSION: int = 1
+FOUNDATION_METHOD_VERSION: str = "dojo-stats-foundation-v1"
+
+MAX_INPUT_BYTES: int = 1_048_576  # 1 MiB
+MAX_JSON_DEPTH: int = 32
+MAX_RECORDS: int = 10_000
+MAX_COST_NANO_USD: int = 10**18  # 1 billion USD in nano-USD
+MAX_COUNT_VALUE: int = 10**12
+MAX_WALL_SECONDS: float = 10**7
+MAX_STRING_LENGTH: int = 256
+MAX_NUMBER_TOKEN_CHARS: int = 64
+
+VALID_SPLITS: frozenset[str] = frozenset({"train", "held_out"})
+VALID_EVIDENCE_KINDS: frozenset[str] = frozenset({"synthetic", "real"})
+VALID_OUTCOMES: frozenset[str] = frozenset({"solved", "unsolved", "undetermined"})
+VALID_EVIDENCE_VALIDITIES: frozenset[str] = frozenset({"valid", "invalid", "unknown"})
+VALID_SCORER_STATUSES: frozenset[str] = frozenset(
+    {
+        "passed",
+        "failed",
+        "candidate_error",
+        "invalid_evidence",
+        "infrastructure_error",
+    }
+)
+
+REQUIRED_ENVELOPE_KEYS: frozenset[str] = frozenset(
+    {
+        "schema_version",
+        "evidence_kind",
+        "dataset_id",
+        "expected_plan",
+        "records",
+    }
+)
+REQUIRED_PLAN_KEYS: frozenset[str] = frozenset({"tasks", "seeds_by_config"})
+REQUIRED_SIGNAL_KEYS: frozenset[str] = frozenset(
+    {
+        "has_patch",
+        "visible_tests_pass",
+        "hit_step_cap",
+        "no_command_rate",
+        "agent_self_reports_done",
+    }
+)
+REQUIRED_RECORD_KEYS: frozenset[str] = frozenset(
+    {
+        "task_id",
+        "config_id",
+        "seed",
+        "split",
+        "family_id",
+        "dataset_id",
+        "evidence_kind",
+        "registration_id",
+        "execution_complete",
+        "outcome",
+        "evidence_validity",
+        "scorer_status",
+        "baseline_verified",
+        "cost_nano_usd",
+        "signals",
+    }
+)
+OPTIONAL_RECORD_KEYS: frozenset[str] = frozenset(
+    {
+        "turns",
+        "commands",
+        "actual_prompt_tokens",
+        "actual_completion_tokens",
+        "wall_seconds",
+    }
+)
+ALLOWED_RECORD_KEYS: frozenset[str] = REQUIRED_RECORD_KEYS | OPTIONAL_RECORD_KEYS
+
+_SURROGATE_ESCAPE_RE = re.compile(r"\\u[dD][89a-fA-F][0-9a-fA-F]{2}")
+_NUMBER_TOKEN_RE = re.compile(r"-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?")
+
+__all__ = [
+    "ALLOWED_RECORD_KEYS",
+    "AnalysisInputError",
+    "AuditFinding",
+    "EligibilityStatus",
+    "ExpectedPlan",
+    "FOUNDATION_METHOD_VERSION",
+    "MAX_COST_NANO_USD",
+    "MAX_COUNT_VALUE",
+    "MAX_INPUT_BYTES",
+    "MAX_JSON_DEPTH",
+    "MAX_RECORDS",
+    "NormalizedEnvelope",
+    "NormalizedRecord",
+    "OPTIONAL_RECORD_KEYS",
+    "PanelAudit",
+    "REQUIRED_ENVELOPE_KEYS",
+    "REQUIRED_PLAN_KEYS",
+    "REQUIRED_RECORD_KEYS",
+    "REQUIRED_SIGNAL_KEYS",
+    "SCHEMA_VERSION",
+    "UndefinedValue",
+    "VALID_EVIDENCE_KINDS",
+    "VALID_EVIDENCE_VALIDITIES",
+    "VALID_OUTCOMES",
+    "VALID_SCORER_STATUSES",
+    "VALID_SPLITS",
+    "canonical_json_bytes",
+    "canonical_sha256",
+    "compute_expected_plan_hash",
+    "compute_input_sha256",
+    "format_fraction_Or_undef",
+    "loads_bounded_json",
+    "parse_analysis_envelope",
+    "parse_analysis_json",
+    "validate_panel",
+]
+
+
+class AnalysisInputError(ValueError):
+    """Raised when raw JSON or envelope structure violates hard schema/safety bounds."""
+
+
+@dataclass(frozen=True)
+class UndefinedValue:
+    """Explicit representation of an undefined quantity, serializable to JSON null + reason."""
+
+    reason: str
+    numerator: int | str | None = None
+    denominator: int | str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "value": None,
+            "defined": False,
+            "reason": self.reason,
+            "numerator": self.numerator,
+            "denominator": self.denominator,
+        }
+
+
+@dataclass(frozen=True)
+class EligibilityStatus:
+    """Provenance and publication eligibility status; always unverified in this math engine."""
+
+    status: str = "UNVERIFIED"
+    publishable: bool = False
+    development_only: bool = True
+    reason: str = (
+        "Pure mathematical analysis engine cannot verify Stage B registration or real "
+        "held-out governance."
+    )
+
+    def __post_init__(self) -> None:
+        if self.status != "UNVERIFIED" or self.publishable is not False:
+            raise ValueError("EligibilityStatus in math engine must remain UNVERIFIED/non-publishable")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "status": self.status,
+            "publishable": self.publishable,
+            "development_only": self.development_only,
+            "reason": self.reason,
+        }
+
+
+@dataclass(frozen=True)
+class ExpectedPlan:
+    """Declared experimental design specifying ordered tasks and exact seeds per config."""
+
+    tasks: tuple[str, ...]
+    seeds_by_config: tuple[tuple[str, tuple[int, ...]], ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.tasks, tuple) or not self.tasks:
+            raise AnalysisInputError("expected_plan.tasks must be a non-empty tuple of task IDs")
+        seen_tasks: set[str] = set()
+        for task_id in self.tasks:
+            _validate_identifier(task_id, "expected_plan.tasks item")
+            if task_id in seen_tasks:
+                raise AnalysisInputError(f"Duplicate task_id in expected_plan.tasks: {task_id!r}")
+            seen_tasks.add(task_id)
+
+        if not isinstance(self.seeds_by_config, tuple) or not self.seeds_by_config:
+            raise AnalysisInputError("expected_plan.seeds_by_config must be a non-empty tuple")
+        seen_configs: set[str] = set()
+        for item in self.seeds_by_config:
+            if not isinstance(item, tuple) or len(item) != 2:
+                raise AnalysisInputError("seeds_by_config entries must be (config_id, seeds) pairs")
+            config_id, seeds = item
+            _validate_identifier(config_id, "expected_plan.seeds_by_config key")
+            if config_id in seen_configs:
+                raise AnalysisInputError(f"Duplicate config_id in expected_plan: {config_id!r}")
+            seen_configs.add(config_id)
+            if not isinstance(seeds, tuple) or not seeds:
+                raise AnalysisInputError(
+                    f"expected_plan.seeds_by_config[{config_id!r}] must be a non-empty seed list"
+                )
+            seen_seeds: set[int] = set()
+            for seed in seeds:
+                if not _is_exact_int(seed) or seed < 0 or seed > MAX_COUNT_VALUE:
+                    raise AnalysisInputError(
+                        f"Seed in expected_plan.seeds_by_config[{config_id!r}] must be a non-negative int"
+                    )
+                if seed in seen_seeds:
+                    raise AnalysisInputError(
+                        f"Duplicate seed {seed} in expected_plan.seeds_by_config[{config_id!r}]"
+                    )
+                seen_seeds.add(seed)
+
+    @property
+    def config_ids(self) -> tuple[str, ...]:
+        return tuple(cfg for cfg, _ in self.seeds_by_config)
+
+    def seeds_for_config(self, config_id: str) -> tuple[int, ...]:
+        for cfg, seeds in self.seeds_by_config:
+            if cfg == config_id:
+                return seeds
+        raise KeyError(f"Unknown config_id in expected_plan: {config_id!r}")
+
+    def seeds_map(self) -> dict[str, tuple[int, ...]]:
+        return dict(self.seeds_by_config)
+
+    def expected_cells(self) -> tuple[tuple[str, str, int], ...]:
+        cells: list[tuple[str, str, int]] = []
+        for task_id in self.tasks:
+            for config_id, seeds in self.seeds_by_config:
+                for seed in seeds:
+                    cells.append((config_id, task_id, seed))
+        return tuple(cells)
+
+    def to_canonical_dict(self) -> dict[str, Any]:
+        """Preserve declared task order and declared seed order per config for expected_plan_hash."""
+        return {
+            "tasks": list(self.tasks),
+            "seeds_by_config": {
+                cfg: list(seeds) for cfg, seeds in sorted(self.seeds_by_config, key=lambda x: x[0])
+            },
+        }
+
+
+@dataclass(frozen=True)
+class NormalizedRecord:
+    """Immutable validated run record across the analysis boundary."""
+
+    task_id: str
+    config_id: str
+    seed: int
+    split: str
+    family_id: str
+    dataset_id: str
+    evidence_kind: str
+    registration_id: str | None
+    execution_complete: bool
+    outcome: str
+    evidence_validity: str
+    scorer_status: str
+    baseline_verified: bool
+    cost_nano_usd: int | None
+    signals: ObservableSignals
+    turns: int | None = None
+    commands: int | None = None
+    actual_prompt_tokens: int | None = None
+    actual_completion_tokens: int | None = None
+    wall_seconds: Fraction | None = None
+
+    def __post_init__(self) -> None:
+        _validate_identifier(self.task_id, "task_id")
+        _validate_identifier(self.config_id, "config_id")
+        if not _is_exact_int(self.seed) or self.seed < 0 or self.seed > MAX_COUNT_VALUE:
+            raise AnalysisInputError("seed must be a non-negative integer (bool rejected)")
+        if self.split not in VALID_SPLITS:
+            raise AnalysisInputError(f"Invalid split: {self.split!r}")
+        _validate_identifier(self.family_id, "family_id")
+        _validate_identifier(self.dataset_id, "dataset_id")
+        if self.evidence_kind not in VALID_EVIDENCE_KINDS:
+            raise AnalysisInputError(f"Invalid evidence_kind: {self.evidence_kind!r}")
+        if self.registration_id is not None:
+            _validate_identifier(self.registration_id, "registration_id")
+        if not isinstance(self.execution_complete, bool):
+            raise AnalysisInputError("execution_complete must be a bool")
+        if self.outcome not in VALID_OUTCOMES:
+            raise AnalysisInputError(f"Invalid outcome: {self.outcome!r}")
+        if self.evidence_validity not in VALID_EVIDENCE_VALIDITIES:
+            raise AnalysisInputError(f"Invalid evidence_validity: {self.evidence_validity!r}")
+        if self.scorer_status not in VALID_SCORER_STATUSES:
+            raise AnalysisInputError(f"Invalid scorer_status: {self.scorer_status!r}")
+        if not isinstance(self.baseline_verified, bool):
+            raise AnalysisInputError("baseline_verified must be a bool")
+        if self.cost_nano_usd is not None:
+            if (
+                not _is_exact_int(self.cost_nano_usd)
+                or self.cost_nano_usd < 0
+                or self.cost_nano_usd > MAX_COST_NANO_USD
+            ):
+                raise AnalysisInputError("cost_nano_usd must be a non-negative integer within bounds")
+        if not isinstance(self.signals, ObservableSignals):
+            raise AnalysisInputError("signals must be an ObservableSignals instance")
+        _validate_signals_instance(self.signals)
+
+        for field_name, val in (
+            ("turns", self.turns),
+            ("commands", self.commands),
+            ("actual_prompt_tokens", self.actual_prompt_tokens),
+            ("actual_completion_tokens", self.actual_completion_tokens),
+        ):
+            if val is not None:
+                if not _is_exact_int(val) or val < 0 or val > MAX_COUNT_VALUE:
+                    raise AnalysisInputError(f"{field_name} must be a non-negative integer or null")
+
+        if self.wall_seconds is not None:
+            if not isinstance(self.wall_seconds, Fraction):
+                raise AnalysisInputError("wall_seconds must be normalized to Fraction or None")
+            if self.wall_seconds < 0 or self.wall_seconds > Fraction(int(MAX_WALL_SECONDS), 1):
+                raise AnalysisInputError("wall_seconds must be non-negative and within bounds")
+
+    @property
+    def cell_key(self) -> tuple[str, str, int]:
+        return (self.config_id, self.task_id, self.seed)
+
+    def to_canonical_dict(self) -> dict[str, Any]:
+        return {
+            "actual_completion_tokens": self.actual_completion_tokens,
+            "actual_prompt_tokens": self.actual_prompt_tokens,
+            "baseline_verified": self.baseline_verified,
+            "commands": self.commands,
+            "config_id": self.config_id,
+            "cost_nano_usd": self.cost_nano_usd,
+            "dataset_id": self.dataset_id,
+            "evidence_kind": self.evidence_kind,
+            "evidence_validity": self.evidence_validity,
+            "execution_complete": self.execution_complete,
+            "family_id": self.family_id,
+            "outcome": self.outcome,
+            "registration_id": self.registration_id,
+            "scorer_status": self.scorer_status,
+            "seed": self.seed,
+            "signals": {
+                "agent_self_reports_done": self.signals.agent_self_reports_done,
+                "has_patch": self.signals.has_patch,
+                "hit_step_cap": self.signals.hit_step_cap,
+                "no_command_rate": str(Fraction(str(self.signals.no_command_rate))),
+                "visible_tests_pass": self.signals.visible_tests_pass,
+            },
+            "split": self.split,
+            "task_id": self.task_id,
+            "turns": self.turns,
+            "wall_seconds": str(self.wall_seconds) if self.wall_seconds is not None else None,
+        }
+
+
+@dataclass(frozen=True)
+class AuditFinding:
+    """Single structured validation finding for a panel or record."""
+
+    code: str
+    severity: str  # "blocker" | "warning"
+    message: str
+    config_id: str | None = None
+    task_id: str | None = None
+    seed: int | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "code": self.code,
+            "severity": self.severity,
+            "message": self.message,
+            "config_id": self.config_id,
+            "task_id": self.task_id,
+            "seed": self.seed,
+        }
+
+
+@dataclass(frozen=True)
+class PanelAudit:
+    """Complete structured audit verdict for an input panel."""
+
+    status: str  # "valid" | "cost_incomplete" | "blocked"
+    headline_Comparison_allowed: bool
+    cost_comparison_allowed: bool
+    success_only_allowed: bool
+    findings: tuple[AuditFinding, ...]
+    expected_cell_count: int
+    observed_record_count: int
+    valid_cell_count: int
+    missing_cost_configs: tuple[str, ...]
+    splits_present: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "status": self.status,
+            "headline_comparison_allowed": self.headline_Comparison_allowed,
+            "cost_comparison_allowed": self.cost_comparison_allowed,
+            "success_only_allowed": self.success_only_allowed,
+            "expected_cell_count": self.expected_cell_count,
+            "observed_record_count": self.observed_record_count,
+            "valid_cell_count": self.valid_cell_count,
+            "missing_cost_configs": list(self.missing_cost_configs),
+            "splits_present": list(self.splits_present),
+            "findings": [f.to_dict() for f in self.findings],
+        }
+
+
+@dataclass(frozen=True)
+class NormalizedEnvelope:
+    """Validated top-level analysis input envelope with canonical hashes and panel audit."""
+
+    schema_version: int
+    dataset_id: str
+    evidence_kind: str
+    expected_plan: ExpectedPlan
+    records: tuple[NormalizedRecord, ...]
+    input_sha256: str
+    expected_plan_hash: str
+    eligibility_status: EligibilityStatus
+    audit: PanelAudit
+
+
+def _is_exact_int(value: Any) -> bool:
+    return type(value) is int
+
+
+def _validate_identifier(value: Any, field_name: str) -> str:
+    if not isinstance(value, str) or not value or len(value) > MAX_STRING_LENGTH:
+        raise AnalysisInputError(
+            f"{field_name} must be a non-empty string of at most {MAX_STRING_LENGTH} chars"
+        )
+    if value.strip() != value:
+        raise AnalysisInputError(f"{field_name} must not have leading or trailing whitespace")
+    for ch in value:
+        code = ord(ch)
+        if code < 32 or code == 127 or 0xD800 <= code <= 0xDFFF:
+            raise AnalysisInputError(
+                f"{field_name} contains control characters or lone surrogates"
+            )
+    return value
+
+
+def _validate_signals_instance(signals: ObservableSignals) -> None:
+    if not isinstance(signals.has_patch, bool):
+        raise AnalysisInputError("signals.has_patch must be a bool")
+    if signals.visible_tests_pass is not None and not isinstance(signals.visible_tests_pass, bool):
+        raise AnalysisInputError("signals.visible_tests_pass must be bool or null")
+    if not isinstance(signals.hit_step_cap, bool):
+        raise AnalysisInputError("signals.hit_step_cap must be a bool")
+    if not isinstance(signals.agent_self_reports_done, bool):
+        raise AnalysisInputError("signals.agent_self_reports_done must be a bool")
+    if isinstance(signals.no_command_rate, bool) or not isinstance(
+        signals.no_command_rate, (int, float)
+    ):
+        raise AnalysisInputError("signals.no_command_rate must be a finite number in [0.0, 1.0]")
+    rate = float(signals.no_command_rate)
+    if not math.isfinite(rate) or rate < 0.0 or rate > 1.0:
+        raise AnalysisInputError("signals.no_command_rate must be finite and within [0.0, 1.0]")
+
+
+def _check_json_depth(obj: Any, current_depth: int = 0) -> None:
+    if current_depth > MAX_JSON_DEPTH:
+        raise AnalysisInputError(f"JSON nesting depth exceeds maximum of {MAX_JSON_DEPTH}")
+    if isinstance(obj, dict):
+        for v in obj.values():
+            _check_json_depth(v, current_depth + 1)
+    elif isinstance(obj, list):
+        for item in obj:
+            _check_json_depth(item, current_depth + 1)
+
+
+def _scan_raw_json_hazards(raw_text: str) -> None:
+    """Reject lone UTF-16 surrogates (literal or escaped) and oversized numeric literals."""
+    for ch in raw_text:
+        if 0xD800 <= ord(ch) <= 0xDFFF:
+            raise AnalysisInputError("Input contains lone UTF-16 surrogate character")
+    if _SURROGATE_ESCAPE_RE.search(raw_text):
+        raise AnalysisInputError("Input contains escaped UTF-16 surrogate sequence")
+
+    # Scan outside string literals for overly long number tokens or extreme exponents.
+    in_string = False
+    escape = False
+    i = 0
+    n = len(raw_text)
+    while i < n:
+        ch = raw_text[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            in_string = True
+            i += 1
+            continue
+        if ch in "-0123456789":
+            match = _NUMBER_TOKEN_RE.match(raw_text, i)
+            if match:
+                token = match.group(0)
+                if len(token) > MAX_NUMBER_TOKEN_CHARS:
+                    raise AnalysisInputError("Numeric literal exceeds maximum token length")
+                if "e" in token or "E" in token:
+                    exp_str = token.lower().split("e", 1)[1]
+                    if abs(int(exp_str)) > 30:
+                        raise AnalysisInputError("Numeric exponent magnitude exceeds safe bound (30)")
+                i = match.end()
+                continue
+        i += 1
+
+
+def loads_bounded_json(raw: str | bytes) -> dict[str, Any]:
+    """Parse JSON with size, depth, duplicate-key, non-finite, and surrogate guards."""
+    if isinstance(raw, bytes):
+        if len(raw) > MAX_INPUT_BYTES:
+            raise AnalysisInputError(f"Input size {len(raw)} exceeds limit of {MAX_INPUT_BYTES} bytes")
+        try:
+            text = raw.decode("utf-8", errors="strict")
+        except UnicodeDecodeError as exc:
+            raise AnalysisInputError("Input is not valid UTF-8") from exc
+    elif isinstance(raw, str):
+        encoded = raw.encode("utf-8", errors="surrogatepass")
+        if len(encoded) > MAX_INPUT_BYTES:
+            raise AnalysisInputError(
+                f"Input size {len(encoded)} exceeds limit of {MAX_INPUT_BYTES} bytes"
+            )
+        text = raw
+    else:
+        raise AnalysisInputError("Input must be str or bytes")
+
+    _scan_raw_json_hazards(text)
+
+    def _reject_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for k, v in pairs:
+            if not isinstance(k, str) or len(k) > MAX_STRING_LENGTH:
+                raise AnalysisInputError("JSON object key must be a bounded string")
+            if k in result:
+                raise AnalysisInputError(f"Duplicate JSON key: {k!r}")
+            result[k] = v
+        return result
+
+    def _reject_nonfinite(constant: str) -> Any:
+        raise AnalysisInputError(f"Non-finite JSON numeric constant rejected: {constant}")
+
+    try:
+        parsed = json.loads(
+            text,
+            object_pairs_hook=_reject_duplicates,
+            parse_constant=_reject_nonfinite,
+        )
+    except AnalysisInputError:
+        raise
+    except Exception as exc:
+        raise AnalysisInputError(f"Malformed JSON input: {exc}") from exc
+
+    if not isinstance(parsed, dict):
+        raise AnalysisInputError("Top-level JSON value must be an object")
+    _check_json_depth(parsed, 0)
+    return parsed
+
+
+def _parse_expected_plan(raw_plan: Any) -> ExpectedPlan:
+    if not isinstance(raw_plan, Mapping):
+        raise AnalysisInputError("expected_plan must be a JSON object")
+    keys = set(raw_plan.keys())
+    if keys != REQUIRED_PLAN_KEYS:
+        unknown = sorted(keys - REQUIRED_PLAN_KEYS)
+        missing = sorted(REQUIRED_PLAN_KEYS - keys)
+        raise AnalysisInputError(
+            f"expected_plan key mismatch (missing={missing}, unknown={unknown})"
+        )
+    raw_tasks = raw_plan["tasks"]
+    if not isinstance(raw_tasks, list) or not raw_tasks:
+        raise AnalysisInputError("expected_plan.tasks must be a non-empty list")
+    tasks = tuple(_validate_identifier(t, "expected_plan.tasks item") for t in raw_tasks)
+
+    raw_sbc = raw_plan["seeds_by_config"]
+    if not isinstance(raw_sbc, Mapping) or not raw_sbc:
+        raise AnalysisInputError("expected_plan.seeds_by_config must be a non-empty object")
+    seeds_by_config: list[tuple[str, tuple[int, ...]]] = []
+    for cfg_id, raw_seeds in raw_sbc.items():
+        _validate_identifier(cfg_id, "expected_plan.seeds_by_config key")
+        if not isinstance(raw_seeds, list) or not raw_seeds:
+            raise AnalysisInputError(
+                f"expected_plan.seeds_by_config[{cfg_id!r}] must be a non-empty list"
+            )
+        parsed_seeds: list[int] = []
+        for s in raw_seeds:
+            if not _is_exact_int(s) or s < 0 or s > MAX_COUNT_VALUE:
+                raise AnalysisInputError(
+                    f"Seed in expected_plan.seeds_by_config[{cfg_id!r}] must be a non-negative integer"
+                )
+            parsed_seeds.append(s)
+        seeds_by_config.append((cfg_id, tuple(parsed_seeds)))
+
+    return ExpectedPlan(tasks=tasks, seeds_by_config=tuple(seeds_by_config))
+
+
+def _parse_signals(raw_signals: Any) -> ObservableSignals:
+    if not isinstance(raw_signals, Mapping):
+        raise AnalysisInputError("record.signals must be a JSON object")
+    keys = set(raw_signals.keys())
+    if keys != REQUIRED_SIGNAL_KEYS:
+        unknown = sorted(keys - REQUIRED_SIGNAL_KEYS)
+        missing = sorted(REQUIRED_SIGNAL_KEYS - keys)
+        raise AnalysisInputError(
+            f"record.signals key mismatch (missing={missing}, unknown={unknown})"
+        )
+    no_cmd = raw_signals["no_command_rate"]
+    if isinstance(no_cmd, bool) or not isinstance(no_cmd, (int, float)):
+        raise AnalysisInputError("signals.no_command_rate must be a finite float or int")
+    rate_float = float(no_cmd)
+    if not math.isfinite(rate_float) or rate_float < 0.0 or rate_float > 1.0:
+        raise AnalysisInputError("signals.no_command_rate must be finite and within [0.0, 1.0]")
+
+    signals = ObservableSignals(
+        has_patch=raw_signals["has_patch"],
+        visible_tests_pass=raw_signals["visible_tests_pass"],
+        hit_step_cap=raw_signals["hit_step_cap"],
+        no_command_rate=rate_float,
+        agent_self_reports_done=raw_signals["agent_self_reports_done"],
+    )
+    _validate_signals_instance(signals)
+    return signals
+
+
+def _parse_optional_wall_seconds(val: Any) -> Fraction | None:
+    if val is None:
+        return None
+    if isinstance(val, bool) or not isinstance(val, (int, float)):
+        raise AnalysisInputError("wall_seconds must be a finite non-negative number or null")
+    if isinstance(val, float) and not math.isfinite(val):
+        raise AnalysisInputError("wall_seconds must be finite")
+    frac = Fraction(str(val))
+    if frac < 0 or frac > Fraction(int(MAX_WALL_SECONDS), 1):
+        raise AnalysisInputError("wall_seconds out of bounds")
+    return frac
+
+
+def _parse_record(raw_rec: Any, index: int) -> NormalizedRecord:
+    if not isinstance(raw_rec, Mapping):
+        raise AnalysisInputError(f"records[{index}] must be a JSON object")
+    keys = set(raw_rec.keys())
+    missing = REQUIRED_RECORD_KEYS - keys
+    unknown = keys - ALLOWED_RECORD_KEYS
+    if missing or unknown:
+        raise AnalysisInputError(
+            f"records[{index}] field mismatch (missing={sorted(missing)}, unknown={sorted(unknown)})"
+        )
+
+    signals = _parse_signals(raw_rec["signals"])
+    wall_seconds = _parse_optional_wall_seconds(raw_rec.get("wall_seconds"))
+
+    return NormalizedRecord(
+        task_id=raw_rec["task_id"],
+        config_id=raw_rec["config_id"],
+        seed=raw_rec["seed"],
+        split=raw_rec["split"],
+        family_id=raw_rec["family_id"],
+        dataset_id=raw_rec["dataset_id"],
+        evidence_kind=raw_rec["evidence_kind"],
+        registration_id=raw_rec["registration_id"],
+        execution_complete=raw_rec["execution_complete"],
+        outcome=raw_rec["outcome"],
+        evidence_validity=raw_rec["evidence_validity"],
+        scorer_status=raw_rec["scorer_status"],
+        baseline_verified=raw_rec["baseline_verified"],
+        cost_nano_usd=raw_rec["cost_nano_usd"],
+        signals=signals,
+        turns=raw_rec.get("turns"),
+        commands=raw_rec.get("commands"),
+        actual_prompt_tokens=raw_rec.get("actual_prompt_tokens"),
+        actual_completion_tokens=raw_rec.get("actual_completion_tokens"),
+        wall_seconds=wall_seconds,
+    )
+
+
+def _audit_single_record_semantics(
+    rec: NormalizedRecord,
+    envelope_dataset_id: str,
+    envelope_evidence_kind: str,
+) -> list[AuditFinding]:
+    """Check record-level protocol and scorer/outcome/validity consistency rules."""
+    findings: list[AuditFinding] = []
+    cfg, task, seed = rec.config_id, rec.task_id, rec.seed
+
+    if rec.dataset_id != envelope_dataset_id:
+        findings.append(
+            AuditFinding(
+                code="conflicting_dataset_id",
+                severity="blocker",
+                message=(
+                    f"Record dataset_id {rec.dataset_id!r} conflicts with envelope "
+                    f"dataset_id {envelope_dataset_id!r}"
+                ),
+                config_id=cfg,
+                task_id=task,
+                seed=seed,
+            )
+        )
+
+    if rec.evidence_kind != envelope_evidence_kind:
+        findings.append(
+            AuditFinding(
+                code="conflicting_evidence_kind",
+                severity="blocker",
+                message=(
+                    f"Record evidence_kind {rec.evidence_kind!r} conflicts with envelope "
+                    f"evidence_kind {envelope_evidence_kind!r}"
+                ),
+                config_id=cfg,
+                task_id=task,
+                seed=seed,
+            )
+        )
+
+    # Normalization rule table:
+    # 1. scorer_status == "passed" -> outcome == "solved", evidence_validity == "valid", execution_complete == True
+    # 2. scorer_status == "failed" -> outcome == "unsolved", evidence_validity == "valid", execution_complete == True
+    # 3. scorer_status == "candidate_error" -> valid unsolved ONLY when baseline_verified is True and execution_complete is True
+    # 4. scorer_status == "invalid_evidence" -> outcome == "undetermined", evidence_validity == "invalid" (blocks headline)
+    # 5. scorer_status == "infrastructure_error" -> outcome == "undetermined", evidence_validity == "unknown" (blocks headline)
+    if rec.scorer_status == "passed":
+        if (
+            rec.outcome != "solved"
+            or rec.evidence_validity != "valid"
+            or not rec.execution_complete
+        ):
+            findings.append(
+                AuditFinding(
+                    code="contradictory_scorer_outcome",
+                    severity="blocker",
+                    message=(
+                        "scorer_status='passed' requires outcome='solved', "
+                        "evidence_validity='valid', and execution_complete=True"
+                    ),
+                    config_id=cfg,
+                    task_id=task,
+                    seed=seed,
+                )
+            )
+    elif rec.scorer_status == "failed":
+        if (
+            rec.outcome != "unsolved"
+            or rec.evidence_validity != "valid"
+            or not rec.execution_complete
+        ):
+            findings.append(
+                AuditFinding(
+                    code="contradictory_scorer_outcome",
+                    severity="blocker",
+                    message=(
+                        "scorer_status='failed' requires outcome='unsolved', "
+                        "evidence_validity='valid', and execution_complete=True"
+                    ),
+                    config_id=cfg,
+                    task_id=task,
+                    seed=seed,
+                )
+            )
+    elif rec.scorer_status == "candidate_error":
+        if not rec.baseline_verified:
+            findings.append(
+                AuditFinding(
+                    code="unverified_candidate_error_baseline",
+                    severity="blocker",
+                    message=(
+                        "scorer_status='candidate_error' requires baseline_verified=True "
+                        "to count as a valid unsolved run"
+                    ),
+                    config_id=cfg,
+                    task_id=task,
+                    seed=seed,
+                )
+            )
+        if (
+            rec.outcome != "unsolved"
+            or rec.evidence_validity != "valid"
+            or not rec.execution_complete
+        ):
+            findings.append(
+                AuditFinding(
+                    code="contradictory_scorer_outcome",
+                    severity="blocker",
+                    message=(
+                        "scorer_status='candidate_error' requires outcome='unsolved', "
+                        "evidence_validity='valid', and execution_complete=True"
+                    ),
+                    config_id=cfg,
+                    task_id=task,
+                    seed=seed,
+                )
+            )
+    elif rec.scorer_status == "invalid_evidence":
+        if rec.outcome != "undetermined" or rec.evidence_validity != "invalid":
+            findings.append(
+                AuditFinding(
+                    code="contradictory_scorer_outcome",
+                    severity="blocker",
+                    message=(
+                        "scorer_status='invalid_evidence' requires outcome='undetermined' "
+                        "and evidence_validity='invalid'"
+                    ),
+                    config_id=cfg,
+                    task_id=task,
+                    seed=seed,
+                )
+            )
+        findings.append(
+            AuditFinding(
+                code="invalid_evidence_cell",
+                severity="blocker",
+                message=f"Cell {cfg}/{task}/seed{seed} has invalid_evidence and blocks aggregation",
+                config_id=cfg,
+                task_id=task,
+                seed=seed,
+            )
+        )
+    elif rec.scorer_status == "infrastructure_error":
+        if rec.outcome != "undetermined" or rec.evidence_validity != "unknown":
+            findings.append(
+                AuditFinding(
+                    code="contradictory_scorer_outcome",
+                    severity="blocker",
+                    message=(
+                        "scorer_status='infrastructure_error' requires outcome='undetermined' "
+                        "and evidence_validity='unknown'"
+                    ),
+                    config_id=cfg,
+                    task_id=task,
+                    seed=seed,
+                )
+            )
+        findings.append(
+            AuditFinding(
+                code="infrastructure_error_cell",
+                severity="blocker",
+                message=(
+                    f"Cell {cfg}/{task}/seed{seed} had infrastructure_error and blocks aggregation"
+                ),
+                config_id=cfg,
+                task_id=task,
+                seed=seed,
+            )
+        )
+
+    if not rec.execution_complete and rec.scorer_status not in {
+        "invalid_evidence",
+        "infrastructure_error",
+    }:
+        findings.append(
+            AuditFinding(
+                code="incomplete_execution_cell",
+                severity="blocker",
+                message=f"Cell {cfg}/{task}/seed{seed} has execution_complete=False",
+                config_id=cfg,
+                task_id=task,
+                seed=seed,
+            )
+        )
+
+    return findings
+
+
+def validate_panel(
+    expected_plan: ExpectedPlan,
+    records: Sequence[NormalizedRecord],
+    *,
+    dataset_id: str,
+    evidence_kind: str,
+) -> PanelAudit:
+    """Validate complete task/config/seed coverage, split/family consistency, and cost availability."""
+    findings: list[AuditFinding] = []
+    expected_cells = expected_plan.expected_cells()
+    expected_set = set(expected_cells)
+
+    cell_counts: dict[tuple[str, str, int], int] = {}
+    records_by_cell: dict[tuple[str, str, int], list[NormalizedRecord]] = {}
+    splits_seen: set[str] = set()
+    task_families: dict[str, str] = {}
+    task_splits: dict[str, str] = {}
+
+    for rec in records:
+        splits_seen.add(rec.split)
+        cell = rec.cell_key
+        cell_counts[cell] = cell_counts.get(cell, 0) + 1
+        records_by_cell.setdefault(cell, []).append(rec)
+
+        if cell not in expected_set:
+            findings.append(
+                AuditFinding(
+                    code="unexpected_cell",
+                    severity="blocker",
+                    message=f"unexpected {rec.config_id}/{rec.task_id}/seed{rec.seed}",
+                    config_id=rec.config_id,
+                    task_id=rec.task_id,
+                    seed=rec.seed,
+                )
+            )
+
+        if rec.task_id in task_families and task_families[rec.task_id] != rec.family_id:
+            findings.append(
+                AuditFinding(
+                    code="inconsistent_task_family",
+                    severity="blocker",
+                    message=(
+                        f"Task {rec.task_id!r} has conflicting family_id values: "
+                        f"{task_families[rec.task_id]!r} vs {rec.family_id!r}"
+                    ),
+                    config_id=rec.config_id,
+                    task_id=rec.task_id,
+                    seed=rec.seed,
+                )
+            )
+        else:
+            task_families[rec.task_id] = rec.family_id
+
+        if rec.task_id in task_splits and task_splits[rec.task_id] != rec.split:
+            findings.append(
+                AuditFinding(
+                    code="inconsistent_task_split",
+                    severity="blocker",
+                    message=(
+                        f"Task {rec.task_id!r} has conflicting split values: "
+                        f"{task_splits[rec.task_id]!r} vs {rec.split!r}"
+                    ),
+                    config_id=rec.config_id,
+                    task_id=rec.task_id,
+                    seed=rec.seed,
+                )
+            )
+        else:
+            task_splits[rec.task_id] = rec.split
+
+        findings.extend(_audit_single_record_semantics(rec, dataset_id, evidence_kind))
+
+    if len(splits_seen) > 1:
+        findings.append(
+            AuditFinding(
+                code="mixed_splits_in_panel",
+                severity="blocker",
+                message=f"Panel mixes multiple dataset splits: {sorted(splits_seen)}",
+            )
+        )
+
+    # Check duplicates in deterministic cell order
+    for cell in sorted(cell_counts):
+        count = cell_counts[cell]
+        if count > 1:
+            cfg, task, seed = cell
+            findings.append(
+                AuditFinding(
+                    code="duplicate_cell",
+                    severity="blocker",
+                    message=f"duplicate {cfg}/{task}/seed{seed} (count={count})",
+                    config_id=cfg,
+                    task_id=task,
+                    seed=seed,
+                )
+            )
+
+    # Check missing cells in declared plan order
+    for cfg, task, seed in expected_cells:
+        if (cfg, task, seed) not in cell_counts:
+            findings.append(
+                AuditFinding(
+                    code="missing_cell",
+                    severity="blocker",
+                    message=f"missing {cfg}/{task}/seed{seed}",
+                    config_id=cfg,
+                    task_id=task,
+                    seed=seed,
+                )
+            )
+
+    # Count valid cells and check missing cost per config
+    valid_cell_count = 0
+    missing_cost_configs: set[str] = set()
+    for cfg, task, seed in expected_cells:
+        cell_recs = records_by_cell.get((cfg, task, seed), [])
+        if len(cell_recs) == 1:
+            r = cell_recs[0]
+            if (
+                r.evidence_validity == "valid"
+                and r.outcome in {"solved", "unsolved"}
+                and r.execution_complete
+                and (r.scorer_status != "candidate_error" or r.baseline_verified)
+            ):
+                valid_cell_count += 1
+            if r.cost_nano_usd is None:
+                missing_cost_configs.add(cfg)
+                findings.append(
+                    AuditFinding(
+                        code="missing_cost_nano_usd",
+                        severity="warning",
+                        message=f"missing cost_nano_usd for {cfg}/{task}/seed{seed}",
+                        config_id=cfg,
+                        task_id=task,
+                        seed=seed,
+                    )
+                )
+
+    has_blocker = any(f.severity == "blocker" for f in findings) or (
+        valid_cell_count != len(expected_cells)
+    )
+    if has_blocker:
+        status = "blocked"
+        headline_ok = False
+        cost_ok = False
+        success_only_ok = False
+    elif missing_cost_configs:
+        status = "cost_incomplete"
+        headline_ok = False
+        cost_ok = False
+        success_only_ok = True
+    else:
+        status = "valid"
+        headline_ok = True
+        cost_ok = True
+        success_only_ok = True
+
+    return PanelAudit(
+        status=status,
+        headline_Comparison_allowed=headline_ok,
+        cost_comparison_allowed=cost_ok,
+        success_only_allowed=success_only_ok,
+        findings=tuple(findings),
+        expected_cell_count=len(expected_cells),
+        observed_record_count=len(records),
+        valid_cell_count=valid_cell_count,
+        missing_cost_configs=tuple(sorted(missing_cost_configs)),
+        splits_present=tuple(sorted(splits_seen)),
+    )
+
+
+def canonical_json_bytes(obj: Any) -> bytes:
+    """Serialize a canonical dictionary/list structure to deterministic UTF-8 JSON bytes."""
+    return json.dumps(
+        obj,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("utf-8")
+
+
+def canonical_sha256(obj: Any) -> str:
+    """Return hex SHA-256 of canonical JSON bytes."""
+    return hashlib.sha256(canonical_json_bytes(obj)).hexdigest()
+
+
+def compute_expected_plan_hash(expected_plan: ExpectedPlan) -> str:
+    """Compute SHA-256 of expected_plan preserving declared task and seed ordering."""
+    return canonical_sha256(expected_plan.to_canonical_dict())
+
+
+def compute_input_sha256(
+    *,
+    schema_version: int,
+    dataset_id: str,
+    evidence_kind: str,
+    expected_plan: ExpectedPlan,
+    records: Sequence[NormalizedRecord],
+) -> str:
+    """Compute canonical SHA-256 of normalized envelope invariant to record input ordering."""
+    sorted_records = sorted(
+        (r.to_canonical_dict() for r in records),
+        key=lambda d: (
+            d["config_id"],
+            d["task_id"],
+            d["seed"],
+            canonical_json_bytes(d).decode("ascii"),
+        ),
+    )
+    canonical_envelope = {
+        "dataset_id": dataset_id,
+        "evidence_kind": evidence_kind,
+        "expected_plan": expected_plan.to_canonical_dict(),
+        "records": sorted_records,
+        "schema_version": schema_version,
+    }
+    return canonical_sha256(canonical_envelope)
+
+
+def parse_analysis_envelope(data: Mapping[str, Any]) -> NormalizedEnvelope:
+    """Validate and normalize a parsed JSON dictionary into an immutable NormalizedEnvelope."""
+    if not isinstance(data, Mapping):
+        raise AnalysisInputError("Envelope must be a mapping")
+    keys = set(data.keys())
+    if "expected" in keys:
+        raise AnalysisInputError(
+            "Test-harness 'expected' field is not permitted in production analysis input"
+        )
+    if keys != REQUIRED_ENVELOPE_KEYS:
+        unknown = sorted(keys - REQUIRED_ENVELOPE_KEYS)
+        missing = sorted(REQUIRED_ENVELOPE_KEYS - keys)
+        raise AnalysisInputError(
+            f"Envelope key mismatch (missing={missing}, unknown={unknown})"
+        )
+
+    schema_version = data["schema_version"]
+    if not _is_exact_int(schema_version) or schema_version != SCHEMA_VERSION:
+        raise AnalysisInputError(
+            f"Unsupported schema_version: {schema_version!r} (expected {SCHEMA_VERSION})"
+        )
+
+    dataset_id = _validate_identifier(data["dataset_id"], "dataset_id")
+    evidence_kind = data["evidence_kind"]
+    if evidence_kind not in VALID_EVIDENCE_KINDS:
+        raise AnalysisInputError(f"Invalid envelope evidence_kind: {evidence_kind!r}")
+
+    expected_plan = _parse_expected_plan(data["expected_plan"])
+
+    raw_records = data["records"]
+    if not isinstance(raw_records, list):
+        raise AnalysisInputError("records must be a JSON list")
+    if len(raw_records) > MAX_RECORDS:
+        raise AnalysisInputError(
+            f"Record count {len(raw_records)} exceeds maximum of {MAX_RECORDS}"
+        )
+
+    records = tuple(_parse_record(r, idx) for idx, r in enumerate(raw_records))
+
+    audit = validate_panel(
+        expected_plan,
+        records,
+        dataset_id=dataset_id,
+        evidence_kind=evidence_kind,
+    )
+    plan_hash = compute_expected_plan_hash(expected_plan)
+    input_hash = compute_input_sha256(
+        schema_version=schema_version,
+        dataset_id=dataset_id,
+        evidence_kind=evidence_kind,
+        expected_plan=expected_plan,
+        records=records,
+    )
+
+    return NormalizedEnvelope(
+        schema_version=schema_version,
+        dataset_id=dataset_id,
+        evidence_kind=evidence_kind,
+        expected_plan=expected_plan,
+        records=records,
+        input_sha256=input_hash,
+        expected_plan_hash=plan_hash,
+        eligibility_status=EligibilityStatus(),
+        audit=audit,
+    )
+
+
+def parse_analysis_json(raw: str | bytes) -> NormalizedEnvelope:
+    """Parse bounded raw JSON bytes/str directly into a NormalizedEnvelope."""
+    parsed = loads_bounded_json(raw)
+    return parse_analysis_envelope(parsed)
+
+
+def format_fraction_Or_undef(value: Fraction | UndefinedValue) -> dict[str, Any]:
+    """Serialize a Fraction or UndefinedValue into a deterministic JSON-safe dictionary."""
+    if isinstance(value, UndefinedValue):
+        return value.to_dict()
+    if not isinstance(value, Fraction):
+        raise TypeError(f"Expected Fraction or UndefinedValue, got {type(value).__name__}")
+    return {
+        "value": float(value),
+        "exact": f"{value.numerator}/{value.denominator}" if value.denominator != 1 else str(value.numerator),
+        "numerator": value.numerator,
+        "denominator": value.denominator,
+        "defined": True,
+        "reason": None,
+    }
+
+```
+
+---
+
+## FILE: dojo/bench/stats.py
+
+```python
+"""WP2, WP3, WP4: Primary metrics, paired task bootstrap, family-cluster and seed sensitivity."""
+
+from __future__ import annotations
+
+import math
+import random
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from fractions import Fraction
+from typing import Any
+
+from dojo.bench.records import (
+     FOUNDATION_METHOD_VERSION,
+    AnalysisInputError,
+    NormalizedEnvelope,
+    NormalizedRecord,
+    UndefinedValue,
+    format_fraction_Or_undef,
+)
+
+DEFAULT_BOOTSTRAP_REPLICATES: int = 10_000
+MAX_BOOTSTRAP_REPLICATES: int = 100_000
+MAX_BOOTSTRAP_WORKLOAD: int = 10_000_000  # Max (replicates * n_tasks * n_series)
+QUANTILE_METHOD: str = "sorted_empirical_nearest_rank_linear_endpoints"
+
+__all__ = [
+    "BootstrapInterval",
+    "ConfigMetrics",
+    "DEFAULT_BOOTSTRAP_REPLICATES",
+    "FamilyBootstrapResult",
+    "FamilySeriesSummary",
+    "MAX_BOOTSTRAP_REPLICATES",
+    "MAX_BOOTSTRAP_WORKLOAD",
+    "PairedBootstrapResult",
+    "PairedDifferenceSummary",
+    "QUANTILE_METHOD",
+    "SecondaryMetricSummary",
+    "SeedSensitivityEntry",
+    "SeedSensitivityResult",
+    "SeriesBootstrapSummary",
+    "SeriesPoint",
+    "TaskPoint",
+    "TaskSeries",
+    "build_config_task_series",
+    "compute_all_config_metrics",
+    "compute_config_metrics",
+    "compute_empirical_quantile",
+    "evaluate_series_point",
+    "family_cluster_bootstrap",
+    "paired_task_bootstrap",
+    "seed_sensitivity_analysis",
+]
+
+
+@dataclass(frozen=True)
+class TaskPoint:
+    """Per-task aggregated success rate and mean 1-seed cost for a config or cascade series."""
+
+    task_id: str
+    family_id: str
+    seed_count: int
+    pass_rate: Fraction
+    mean_cost_nanos: Fraction | None
+    actual_all_seeds_cost_nanos: int | None
+
+
+@dataclass(frozen=True)
+class TaskSeries:
+    """Reusable ordered per-task series for any baseline config or Batch B cascade policy."""
+
+    series_id: str
+    series_kind: str  # "config" | "cascade" | "seed_subset"
+    tasks: tuple[TaskPoint, ...]
+    declared_seed_count: int
+    has_complete_costs: bool
+
+    def __post_init__(self) -> None:
+        if not self.tasks:
+            raise ValueError("TaskSeries.tasks must be non-empty")
+
+    @property
+    def n_tasks(self) -> int:
+        return len(self.tasks)
+
+
+@dataclass(frozen=True)
+class SeriesPoint:
+    """Point estimates for a TaskSeries across n tasks (or resampled tasks)."""
+
+    series_id: str
+    n_tasks: int
+    pass_at_1: Fraction
+    expected_solved_tasks: Fraction
+    expected_total_cost_nanos: Fraction | UndefinedValue
+    mean_task_cost_nanos: Fraction | UndefinedValue
+    expected_cost_per_solved_nanos: Fraction | UndefinedValue
+    actual_all_repetitions_spend_nanos: int | UndefinedValue
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "series_id": self.series_id,
+            "n_tasks": self.n_tasks,
+            "pass_at_1": format_fraction_Or_undef(self.pass_at_1),
+            "expected_solved_tasks": format_fraction_Or_undef(self.expected_solved_tasks),
+            "expected_total_cost_nanos": format_fraction_Or_undef(self.expected_total_cost_nanos),
+            "mean_task_cost_nanos": format_fraction_Or_undef(self.mean_task_cost_nanos),
+            "expected_cost_per_solved_nanos": format_fraction_Or_undef(
+                self.expected_cost_per_solved_nanos
+            ),
+            "actual_all_repetitions_spend_nanos": (
+                self.actual_all_repetitions_spend_nanos.to_dict()
+                if isinstance(self.actual_all_repetitions_spend_nanos, UndefinedValue)
+                else {
+                    "value": self.actual_all_repetitions_spend_nanos,
+                    "defined": True,
+                    "reason": None,
+                }
+            ),
+        }
+
+
+@dataclass(frozen=True)
+class SecondaryMetricSummary:
+    """Summary of an optional/secondary metric without inferring 0 for absent values."""
+
+    metric_name: str
+    total_runs: int
+    known_runs: int
+    missing_runs: int
+    task_weighted_mean: Fraction | UndefinedValue
+    all_repetitions_sum: Fraction | UndefinedValue
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "metric_name": self.metric_name,
+            "total_runs": self.total_runs,
+            "known_runs": self.known_runs,
+            "missing_runs": self.missing_runs,
+            "task_weighted_mean": format_fraction_Or_undef(self.task_weighted_mean),
+            "all_repetitions_sum": format_fraction_Or_undef(self.all_repetitions_sum),
+        }
+
+
+@dataclass(frozen=True)
+class ConfigMetrics:
+    """Complete WP2 primary and secondary metrics for a single configuration."""
+
+    config_id: str
+    dataset_id: str
+    split: str
+    n_tasks: int
+    declared_seeds: tuple[int, ...]
+    total_runs: int
+    primary: SeriesPoint
+    task_points: tuple[TaskPoint, ...]
+    secondary_metrics: Mapping[str, SecondaryMetricSummary]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "config_id": self.config_id,
+            "dataset_id": self.dataset_id,
+            "split": self.split,
+            "n_tasks": self.n_tasks,
+            "declared_seeds": list(self.declared_seeds),
+            "declared_seed_count": len(self.declared_seeds),
+            "total_runs": self.total_runs,
+            "primary": self.primary.to_dict(),
+            "secondary_metrics": {
+                k: v.to_dict() for k, v in sorted(self.secondary_metrics.items())
+            },
+        }
+
+
+@dataclass(frozen=True)
+class BootstrapInterval:
+    """Empirical bootstrap confidence interval with explicit undefined/zero-solve accounting."""
+
+    metric_name: str
+    point_estimate: Fraction | UndefinedValue
+    lower: Fraction | UndefinedValue
+    upper: Fraction | UndefinedValue
+    confidence_level: Fraction
+    replicates: int
+    defined_draws: int
+    undefined_draws: int
+    zero_solve_draws: int
+    quantile_method: str = QUANTILE_METHOD
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "metric_name": self.metric_name,
+            "point_estimate": format_fraction_Or_undef(self.point_estimate),
+            "lower": format_fraction_Or_undef(self.lower),
+            "upper": format_fraction_Or_undef(self.upper),
+            "confidence_level": float(self.confidence_level),
+            "replicates": self.replicates,
+            "defined_draws": self.defined_draws,
+            "undefined_draws": self.undefined_draws,
+            "zero_solve_draws": self.zero_solve_draws,
+            "quantile_method": self.quantile_method,
+        }
+
+
+@dataclass(frozen=True)
+class SeriesBootstrapSummary:
+    """Bootstrap intervals for a single config or cascade series."""
+
+    series_id: str
+    pass_at_1: BootstrapInterval
+    expected_total_cost_nanos: BootstrapInterval
+    mean_task_cost_nanos: BootstrapInterval
+    expected_cost_per_solved_nanos: BootstrapInterval
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "series_id": self.series_id,
+            "pass_at_1": self.pass_at_1.to_dict(),
+            "expected_total_cost_nanos": self.expected_total_cost_nanos.to_dict(),
+            "mean_task_cost_nanos": self.mean_task_cost_nanos.to_dict(),
+            "expected_cost_per_solved_nanos": self.expected_cost_per_solved_nanos.to_dict(),
+        }
+
+
+@dataclass(frozen=True)
+class PairedDifferenceSummary:
+    """Paired bootstrap delta (target - baseline) using identical sampled task indices."""
+
+    baseline_id: str
+    target_id: str
+    delta_pass_at_1: BootstrapInterval
+    delta_expected_total_cost_nanos: BootstrapInterval
+    delta_expected_cost_per_solved_nanos: BootstrapInterval
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "baseline_id": self.baseline_id,
+            "target_id": self.target_id,
+            "definition": f"{self.target_id} minus {self.baseline_id}",
+            "delta_pass_at_1": self.delta_pass_at_1.to_dict(),
+            "delta_expected_total_cost_nanos": self.delta_expected_total_cost_nanos.to_dict(),
+            "delta_expected_cost_per_solved_nanos": (
+                self.delta_expected_cost_per_solved_nanos.to_dict()
+            ),
+        }
+
+
+@dataclass(frozen=True)
+class PairedBootstrapResult:
+    """WP3 paired task bootstrap output across all compared series."""
+
+    method_version: str
+    estimand_label: str
+    replicates: int
+    seed: int | None
+    confidence_level: Fraction
+    n_tasks: int
+    quantile_method: str
+    series_summaries: Mapping[str, SeriesBootstrapSummary]
+    paired_differences: tuple[PairedDifferenceSummary, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "method_version": self.method_version,
+            "estimand_label": self.estimand_label,
+            "replicates": self.replicates,
+            "seed": self.seed,
+            "confidence_level": float(self.confidence_level),
+            "n_tasks": self.n_tasks,
+            "quantile_method": self.quantile_method,
+            "series_summaries": {
+                k: v.to_dict() for k, v in sorted(self.series_summaries.items())
+            },
+            "paired_differences": [d.to_dict() for d in self.paired_differences],
+        }
+
+
+@dataclass(frozen=True)
+class FamilySeriesSummary:
+    """Cluster-resampled summary for a single series, preserving original_n for total cost."""
+
+    series_id: str
+    pass_at_1: BootstrapInterval
+    target_n_expected_total_cost_nanos: BootstrapInterval
+    mean_task_cost_nanos: BootstrapInterval
+    expected_cost_per_solved_nanos: BootstrapInterval
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "series_id": self.series_id,
+            "pass_at_1": self.pass_at_1.to_dict(),
+            "target_n_expected_total_cost_nanos": (
+                self.target_n_expected_total_cost_nanos.to_dict()
+            ),
+            "mean_task_cost_nanos": self.mean_task_cost_nanos.to_dict(),
+            "expected_cost_per_solved_nanos": self.expected_cost_per_solved_nanos.to_dict(),
+        }
+
+
+@dataclass(frozen=True)
+class FamilyBootstrapResult:
+    """WP4 non-primary family-cluster bootstrap sensitivity analysis."""
+
+    is_primary: bool
+    estimand_label: str
+    weighting_method: str
+    total_cost_scaling_rule: str
+    replicates: int
+    seed: int | None
+    confidence_level: Fraction
+    original_n_tasks: int
+    n_families: int
+    family_sizes: Mapping[str, int]
+    min_resampled_tasks: int
+    max_resampled_tasks: int
+    mean_resampled_tasks: Fraction
+    series_summaries: Mapping[str, FamilySeriesSummary]
+    paired_differences: tuple[PairedDifferenceSummary, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "is_primary": self.is_primary,
+            "estimand_label": self.estimand_label,
+            "weighting_method": self.weighting_method,
+            "total_cost_scaling_rule": self.total_cost_scaling_rule,
+            "replicates": self.replicates,
+            "seed": self.seed,
+            "confidence_level": float(self.confidence_level),
+            "original_n_tasks": self.original_n_tasks,
+            "n_families": self.n_families,
+            "family_sizes": dict(sorted(self.family_sizes.items())),
+            "min_resampled_tasks": self.min_resampled_tasks,
+            "max_resampled_tasks": self.max_resampled_tasks,
+            "mean_resampled_tasks": format_fraction_Or_undef(self.mean_resampled_tasks),
+            "series_summaries": {
+                k: v.to_dict() for k, v in sorted(self.series_summaries.items())
+            },
+            "paired_differences": [d.to_dict() for d in self.paired_differences],
+        }
+
+
+@dataclass(frozen=True)
+class SeedSensitivityEntry:
+    """Metrics for a predeclared seed position or seed subset on a single config."""
+
+    config_id: str
+    slice_label: str
+    selected_seeds: tuple[int, ...]
+    point: SeriesPoint
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "config_id": self.config_id,
+            "slice_label": self.slice_label,
+            "selected_seeds": list(self.selected_seeds),
+            "point": self.point.to_dict(),
+        }
+
+
+@dataclass(frozen=True)
+class SeedSensitivityResult:
+    """WP4 non-primary seed-position and seed-subset sensitivity report."""
+
+    is_primary: bool
+    estimand_label: str
+    declared_seeds_by_config: Mapping[str, tuple[int, ...]]
+    common_seed_positions: tuple[int, ...]
+    shared_exact_seeds: tuple[int, ...]
+    comparison_rules_note: str
+    entries: tuple[SeedSensitivityEntry, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "is_primary": self.is_primary,
+            "estimand_label": self.estimand_label,
+            "declared_seeds_by_config": {
+                k: list(v) for k, v in sorted(self.declared_seeds_by_config.items())
+            },
+            "common_seed_positions": list(self.common_seed_positions),
+            "shared_exact_seeds": list(self.shared_exact_seeds),
+            "comparison_rules_note": self.comparison_rules_note,
+            "entries": [e.to_dict() for e in self.entries],
+        }
+
+
+def _require_headline_or_success_allowed(
+    envelope: NormalizedEnvelope,
+    *,
+    require_costs: bool = False,
+) -> None:
+    if not envelope.audit.success_only_allowed:
+        reasons = ", ".join(f.message for f in envelope.audit.findings if f.severity == "blocker")
+        raise AnalysisInputError(
+            f"Panel audit status is {envelope.audit.status!r}; headline aggregation blocked: {reasons}"
+        )
+    if require_costs and not envelope.audit.cost_comparison_allowed:
+        raise AnalysisInputError(
+            f"Panel has missing costs for configs {envelope.audit.missing_cost_configs}; "
+            "cost-dependent comparison blocked"
+        )
+
+
+def evaluate_series_point(
+    series_id: str,
+    task_points: Sequence[TaskPoint],
+    *,
+    target_n_tasks: int | None = None,
+    include_actual_spend: bool = True,
+) -> SeriesPoint:
+    """Evaluate primary estimands from an arbitrary sequence of TaskPoints."""
+    if not task_points:
+        raise ValueError("task_points must be non-empty")
+    n_obs = len(task_points)
+    effective_n = target_n_tasks if target_n_tasks is not None else n_obs
+
+    sum_p = sum((tp.pass_rate for tp in task_points), Fraction(0, 1))
+    pass_at_1 = sum_p / Fraction(n_obs, 1)
+    expected_solved = pass_at_1 * Fraction(effective_n, 1)
+
+    if any(tp.mean_cost_nanos is None for tp in task_points):
+        undef_cost = UndefinedValue(reason="missing_cost_nano_usd")
+        return SeriesPoint(
+            series_id=series_id,
+            n_tasks=effective_n,
+            pass_at_1=pass_at_1,
+            expected_solved_tasks=expected_solved,
+            expected_total_cost_nanos=undef_cost,
+            mean_task_cost_nanos=undef_cost,
+            expected_cost_per_solved_nanos=undef_cost,
+            actual_all_repetitions_spend_nanos=undef_cost,
+        )
+
+    sum_m = sum(
+        (tp.mean_cost_nanos for tp in task_points if tp.mean_cost_nanos is not None),
+        Fraction(0, 1),
+    )
+    mean_task_cost = sum_m / Fraction(n_obs, 1)
+    expected_total_cost = mean_task_cost * Fraction(effective_n, 1)
+
+    if sum_p == 0:
+        cost_per_solved: Fraction | UndefinedValue = UndefinedValue(
+            reason="zero_expected_solves",
+            numerator=str(expected_total_cost),
+            denominator=0,
+        )
+    else:
+        # Note: sum_m / sum_p == expected_total_cost / expected_solved
+        cost_per_solved = expected_total_cost / expected_solved
+
+    if include_actual_spend and all(tp.actual_all_seeds_cost_nanos is not None for tp in task_points):
+        actual_spend: int | UndefinedValue = sum(
+            tp.actual_all_seeds_cost_nanos
+            for tp in task_points
+            if tp.actual_all_seeds_cost_nanos is not None
+        )
+    else:
+        actual_spend = UndefinedValue(
+            reason="not_applicable_to_resample_or_synthetic_series"
+            if not include_actual_spend
+            else "missing_cost_nano_usd"
+        )
+
+    return SeriesPoint(
+        series_id=series_id,
+        n_tasks=effective_n,
+        pass_at_1=pass_at_1,
+        expected_solved_tasks=expected_solved,
+        expected_total_cost_nanos=expected_total_cost,
+        mean_task_cost_nanos=mean_task_cost,
+        expected_cost_per_solved_nanos=cost_per_solved,
+        actual_all_repetitions_spend_nanos=actual_spend,
+    )
+
+
+def build_config_task_series(
+    envelope: NormalizedEnvelope,
+    config_id: str,
+    *,
+    seed_subset: Sequence[int] | None = None,
+    series_id: str | None = None,
+) -> TaskSeries:
+    """Build an ordered TaskSeries for `config_id` (optionally restricted to `seed_subset`)."""
+    _require_headline_or_success_allowed(envelope, require_costs=False)
+    declared_seeds = envelope.expected_plan.seeds_for_config(config_id)
+    if seed_subset is None:
+        active_seeds = declared_seeds
+        kind = "config"
+    else:
+        active_seeds = tuple(seed_subset)
+        if not active_seeds:
+            raise ValueError("seed_subset must be non-empty")
+        declared_set = set(declared_seeds)
+        for s in active_seeds:
+            if s not in declared_set:
+                raise ValueError(
+                    f"Seed {s} in seed_subset is not in declared seeds {declared_seeds} "
+                    f"for config {config_id!r}"
+                )
+        kind = "seed_subset"
+
+    cell_lookup: dict[tuple[str, int], NormalizedRecord] = {}
+    for rec in envelope.records:
+        if rec.config_id == config_id:
+            cell_lookup[(rec.task_id, rec.seed)] = rec
+
+    k_c = len(active_seeds)
+    task_points: list[TaskPoint] = []
+    has_complete_costs = True
+
+    for task_id in envelope.expected_plan.tasks:
+        runs = [cell_lookup[(task_id, s)] for s in active_seeds]
+        family_id = runs[0].family_id
+        solved_count = sum(1 for r in runs if r.outcome == "solved")
+        pass_rate = Fraction(solved_count, k_c)
+
+        if any(r.cost_nano_usd is None for r in runs):
+            has_complete_costs = False
+            mean_cost: Fraction | None = None
+            actual_cost: int | None = None
+        else:
+            actual_cost = sum(r.cost_nano_usd for r in runs if r.cost_nano_usd is not None)
+            mean_cost = Fraction(actual_cost, k_c)
+
+        task_points.append(
+            TaskPoint(
+                task_id=task_id,
+                family_id=family_id,
+                seed_count=k_c,
+                pass_rate=pass_rate,
+                mean_cost_nanos=mean_cost,
+                actual_all_seeds_cost_nanos=actual_cost,
+            )
+        )
+
+    return TaskSeries(
+        series_id=series_id if series_id is not None else config_id,
+        series_kind=kind,
+        tasks=tuple(task_points),
+        declared_seed_count=k_c,
+        has_complete_costs=has_complete_costs,
+    )
+
+
+def _compute_secondary_metrics(
+    envelope: NormalizedEnvelope,
+    config_id: str,
+) -> dict[str, SecondaryMetricSummary]:
+    declared_seeds = envelope.expected_plan.seeds_for_config(config_id)
+    k_c = len(declared_seeds)
+    tasks = envelope.expected_plan.tasks
+    n_tasks = len(tasks)
+    total_runs = n_tasks * k_c
+
+    cell_lookup: dict[tuple[str, int], NormalizedRecord] = {
+        (r.task_id, r.seed): r for r in envelope.records if r.config_id == config_id
+    }
+
+    extractors: dict[str, Any] = {
+        "turns": lambda r: Fraction(r.turns, 1) if r.turns is not None else None,
+        "commands": lambda r: Fraction(r.commands, 1) if r.commands is not None else None,
+        "actual_prompt_tokens": (
+            lambda r: Fraction(r.actual_prompt_tokens, 1)
+            if r.actual_prompt_tokens is not None
+            else None
+        ),
+        "actual_completion_tokens": (
+            lambda r: Fraction(r.actual_completion_tokens, 1)
+            if r.actual_completion_tokens is not None
+            else None
+        ),
+        "wall_seconds": lambda r: r.wall_seconds,
+        "hit_step_cap_rate": lambda r: Fraction(1 if r.signals.hit_step_cap else 0, 1),
+        "no_command_rate": lambda r: Fraction(str(r.signals.no_command_rate)),
+    }
+
+    summaries: dict[str, SecondaryMetricSummary] = {}
+    for name, fn in extractors.items():
+        known_runs = 0
+        missing_runs = 0
+        all_sum = Fraction(0, 1)
+        task_means: list[Fraction] = []
+        all_tasks_complete = True
+
+        for t_id in tasks:
+            t_vals: list[Fraction] = []
+            for s in declared_seeds:
+                val = fn(cell_lookup[(t_id, s)])
+                if val is None:
+                    missing_runs += 1
+                    all_tasks_complete = False
+                else:
+                    known_runs += 1
+                    all_sum += val
+                    t_vals.append(val)
+            if len(t_vals) == k_c:
+                task_means.append(sum(t_vals, Fraction(0, 1)) / Fraction(k_c, 1))
+
+        if all_tasks_complete and len(task_means) == n_tasks:
+            tw_mean: Fraction | UndefinedValue = sum(task_means, Fraction(0, 1)) / Fraction(
+                n_tasks, 1
+            )
+            rep_sum: Fraction | UndefinedValue = all_sum
+        else:
+            reason = "absent_optional_metric" if known_runs == 0 else "partial_optional_metric"
+            tw_mean = UndefinedValue(
+                reason=reason, numerator=known_runs, denominator=total_runs
+            )
+            rep_sum = UndefinedValue(
+                reason=reason, numerator=known_runs, denominator=total_runs
+            )
+
+        summaries[name] = SecondaryMetricSummary(
+            metric_name=name,
+            total_runs=total_runs,
+            known_runs=known_runs,
+            missing_runs=missing_runs,
+            task_weighted_mean=tw_mean,
+            all_repetitions_sum=rep_sum,
+        )
+
+    return summaries
+
+
+def compute_config_metrics(envelope: NormalizedEnvelope, config_id: str) -> ConfigMetrics:
+    """Compute exact WP2 primary and secondary metrics for a single configuration."""
+    series = build_config_task_series(envelope, config_id)
+    point = evaluate_series_point(config_id, series.tasks, include_actual_spend=True)
+    declared_seeds = envelope.expected_plan.seeds_for_config(config_id)
+    split = envelope.audit.splits_present[0] if envelope.audit.splits_present else "train"
+    secondary = _compute_secondary_metrics(envelope, config_id)
+
+    return ConfigMetrics(
+        config_id=config_id,
+        dataset_id=envelope.dataset_id,
+        split=split,
+        n_tasks=series.n_tasks,
+        declared_seeds=declared_seeds,
+        total_runs=series.n_tasks * len(declared_seeds),
+        primary=point,
+        task_points=series.tasks,
+        secondary_metrics=secondary,
+    )
+
+
+def compute_all_config_metrics(envelope: NormalizedEnvelope) -> dict[str, ConfigMetrics]:
+    """Compute WP2 metrics for all configurations in expected_plan."""
+    _require_headline_or_success_allowed(envelope, require_costs=False)
+    return {
+        cfg_id: compute_config_metrics(envelope, cfg_id)
+        for cfg_id in sorted(envelope.expected_plan.config_ids)
+    }
+
+
+def compute_empirical_quantile(sorted_values: Sequence[Fraction], q: Fraction) -> Fraction:
+    """Compute exact piecewise-linear empirical quantile (Hyndman-Fan type 7 over Fractions).
+
+    For sorted values x[0] <= x[1] <= ... <= x[m-1] and quantile q in [0, 1]:
+      index h = q * (m - 1)
+      lo = floor(h), hi = ceil(h), frac = h - lo
+      quantile = x[lo] + frac * (x[hi] - x[lo])
+    """
+    if not sorted_values:
+        raise ValueError("Cannot compute quantile of empty sequence")
+    if q < 0 or q > 1:
+        raise ValueError(f"Quantile q must be in [0, 1], got {q}")
+    m = len(sorted_values)
+    if m == 1:
+        return sorted_values[0]
+    h = q * Fraction(m - 1, 1)
+    lo = math.floor(h)
+    hi = math.ceil(h)
+    if lo == hi:
+        return sorted_values[lo]
+    weight = h - Fraction(lo, 1)
+    return sorted_values[lo] + weight * (sorted_values[hi] - sorted_values[lo])
+
+
+def _build_bootstrap_interval(
+    metric_name: str,
+    point_estimate: Fraction | UndefinedValue,
+    draws: Sequence[Fraction | UndefinedValue],
+    confidence_level: Fraction,
+    *,
+    zero_solve_draws: int = 0,
+) -> BootstrapInterval:
+    replicates = len(draws)
+    defined_vals: list[Fraction] = [d for d in draws if isinstance(d, Fraction)]
+    undefined_count = replicates - len(defined_vals)
+
+    alpha = Fraction(1, 1) - confidence_level
+    q_low = alpha / Fraction(2, 1)
+    q_high = Fraction(1, 1) - q_low
+
+    # Never silently discard undefined / zero-solve draws and report a conditional interval
+    # as an unconditional confidence interval.
+    if isinstance(point_estimate, UndefinedValue) or undefined_count > 0 or not defined_vals:
+        reason = (
+            "unconditional_interval_blocked_by_zero_solve_draws"
+            if zero_solve_draws > 0
+            else (
+                point_estimate.reason
+                if isinstance(point_estimate, UndefinedValue)
+                else "undefined_bootstrap_draws_present"
+            )
+        )
+        undef = UndefinedValue(
+            reason=reason,
+            numerator=len(defined_vals),
+            denominator=replicates,
+        )
+        return BootstrapInterval(
+            metric_name=metric_name,
+            point_estimate=point_estimate,
+            lower=undef,
+            upper=undef,
+            confidence_level=confidence_level,
+            replicates=replicates,
+            defined_draws=len(defined_vals),
+            undefined_draws=undefined_count,
+            zero_solve_draws=zero_solve_draws,
+        )
+
+    sorted_vals = sorted(defined_vals)
+    return BootstrapInterval(
+        metric_name=metric_name,
+        point_estimate=point_estimate,
+        lower=compute_empirical_quantile(sorted_vals, q_low),
+        upper=compute_empirical_quantile(sorted_vals, q_high),
+        confidence_level=confidence_level,
+        replicates=replicates,
+        defined_draws=len(defined_vals),
+        undefined_draws=0,
+        zero_solve_draws=zero_solve_draws,
+    )
+
+
+def _validate_bootstrap_params(
+    replicates: int,
+    n_units: int,
+    n_series: int,
+    confidence_level: float | Fraction,
+) -> Fraction:
+    if isinstance(replicates, bool) or not isinstance(replicates, int):
+        raise AnalysisInputError("replicates must be an integer")
+    if replicates < 1 or replicates > MAX_BOOTSTRAP_REPLICATES:
+        raise AnalysisInputError(
+            f"replicates must be between 1 and {MAX_BOOTSTRAP_REPLICATES}, got {replicates}"
+        )
+    workload = replicates * max(1, n_units) * max(1, n_series)
+    if workload > MAX_BOOTSTRAP_WORKLOAD:
+        raise AnalysisInputError(
+            f"Estimated bootstrap workload ({workload} task-series evaluations) exceeds "
+            f"maximum of {MAX_BOOTSTRAP_WORKLOAD}"
+        )
+    if isinstance(confidence_level, bool) or not isinstance(
+        confidence_level, (int, float, Fraction)
+    ):
+        raise AnalysisInputError("confidence_level must be a number in (0, 1)")
+    if isinstance(confidence_level, float) and not math.isfinite(confidence_level):
+        raise AnalysisInputError("confidence_level must be finite")
+    conf = (
+        confidence_level
+        if isinstance(confidence_level, Fraction)
+        else Fraction(str(confidence_level))
+    )
+    if conf <= 0 or conf >= 1:
+        raise AnalysisInputError("confidence_level must be strictly between 0 and 1")
+    return conf
+
+
+def paired_task_bootstrap(
+    series_list: Sequence[TaskSeries],
+    *,
+    replicates: int = DEFAULT_BOOTSTRAP_REPLICATES,
+    seed: int = 17,
+    confidence_level: float | Fraction = Fraction(95, 100),
+    comparison_pairs: Sequence[tuple[str, str]] | None = None,
+    sampled_task_indices: Sequence[Sequence[int]] | None = None,
+) -> PairedBootstrapResult:
+    """WP3 paired task bootstrap across all supplied TaskSeries using shared task index draws."""
+    if not series_list:
+        raise AnalysisInputError("series_list must be non-empty")
+
+    n_tasks = series_list[0].n_tasks
+    task_ids = tuple(tp.task_id for tp in series_list[0].tasks)
+    series_by_id: dict[str, TaskSeries] = {}
+    for s in series_list:
+        if s.series_id in series_by_id:
+            raise AnalysisInputError(f"Duplicate series_id in bootstrap: {s.series_id!r}")
+        if s.n_tasks != n_tasks or tuple(tp.task_id for tp in s.tasks) != task_ids:
+            raise AnalysisInputError(
+                f"Series {s.series_id!r} task alignment does not match {series_list[0].series_id!r}"
+            )
+        series_by_id[s.series_id] = s
+
+    if sampled_task_indices is not None:
+        if not sampled_task_indices:
+            raise AnalysisInputError("sampled_task_indices must be non-empty when provided")
+        effective_replicates = len(sampled_task_indices)
+    else:
+        effective_replicates = replicates
+
+    conf = _validate_bootstrap_params(
+        effective_replicates, n_tasks, len(series_list), confidence_level
+    )
+
+    if sampled_task_indices is None:
+        if isinstance(seed, bool) or not isinstance(seed, int):
+            raise AnalysisInputError("seed must be an integer")
+        rng = random.Random(seed)
+        index_draws: list[tuple[int, ...]] = [
+            tuple(rng.randrange(n_tasks) for _ in range(n_tasks))
+            for _ in range(effective_replicates)
+        ]
+        used_seed: int | None = seed
+    else:
+        index_draws = []
+        for draw in sampled_task_indices:
+            if len(draw) != n_tasks:
+                raise AnalysisInputError(
+                    f"Each injected index draw must have length n_tasks={n_tasks}"
+                )
+            for idx in draw:
+                if isinstance(idx, bool) or not isinstance(idx, int) or idx < 0 or idx >= n_tasks:
+                    raise AnalysisInputError(f"Invalid task index {idx!r} in sampled_task_indices")
+            index_draws.append(tuple(draw))
+        used_seed = None
+
+    if comparison_pairs is None:
+        ordered_ids = sorted(series_by_id)
+        pairs: list[tuple[str, str]] = []
+        for i in range(len(ordered_ids)):
+            for j in range(i + 1, len(ordered_ids)):
+                pairs.append((ordered_ids[i], ordered_ids[j]))
+    else:
+        pairs = list(comparison_pairs)
+        for base_id, targ_id in pairs:
+            if base_id not in series_by_id or targ_id not in series_by_id:
+                raise AnalysisInputError(
+                    f"Unknown series in comparison_pairs: ({base_id!r}, {targ_id!r})"
+                )
+
+    point_by_series: dict[str, SeriesPoint] = {
+        s_id: evaluate_series_point(s_id, s.tasks, include_actual_spend=True)
+        for s_id, s in series_by_id.items()
+    }
+
+    draws_by_series: dict[str, list[SeriesPoint]] = {s_id: [] for s_id in series_by_id}
+    for indices in index_draws:
+        for s_id, s in series_by_id.items():
+            sampled_points = [s.tasks[idx] for idx in indices]
+            draws_by_series[s_id].append(
+                evaluate_series_point(s_id, sampled_points, include_actual_spend=False)
+            )
+
+    series_summaries: dict[str, SeriesBootstrapSummary] = {}
+    for s_id, pt in point_by_series.items():
+        s_draws = draws_by_series[s_id]
+        zero_solves = sum(1 for d in s_draws if d.expected_solved_tasks == 0)
+        series_summaries[s_id] = SeriesBootstrapSummary(
+            series_id=s_id,
+            pass_at_1=_build_bootstrap_interval(
+                "pass_at_1",
+                pt.pass_at_1,
+                [d.pass_at_1 for d in s_draws],
+                conf,
+            ),
+            expected_total_cost_nanos=_build_bootstrap_interval(
+                "expected_total_cost_nanos",
+                pt.expected_total_cost_nanos,
+                [d.expected_total_cost_nanos for d in s_draws],
+                conf,
+            ),
+            mean_task_cost_nanos=_build_bootstrap_interval(
+                "mean_task_cost_nanos",
+                pt.mean_task_cost_nanos,
+                [d.mean_task_cost_nanos for d in s_draws],
+                conf,
+            ),
+            expected_cost_per_solved_nanos=_build_bootstrap_interval(
+                "expected_cost_per_solved_nanos",
+                pt.expected_cost_per_solved_nanos,
+                [d.expected_cost_per_solved_nanos for d in s_draws],
+                conf,
+                zero_solve_draws=zero_solves,
+            ),
+        )
+
+    paired_diffs: list[PairedDifferenceSummary] = []
+    for base_id, targ_id in pairs:
+        base_pt = point_by_series[base_id]
+        targ_pt = point_by_series[targ_id]
+        base_draws = draws_by_series[base_id]
+        targ_draws = draws_by_series[targ_id]
+
+        # 1. Delta pass@1
+        pt_delta_p = targ_pt.pass_at_1 - base_pt.pass_at_1
+        draws_delta_p = [t.pass_at_1 - b.pass_at_1 for b, t in zip(base_draws, targ_draws)]
+
+        # 2. Delta expected total cost
+        if isinstance(base_pt.expected_total_cost_nanos, Fraction) and isinstance(
+            targ_pt.expected_total_cost_nanos, Fraction
+        ):
+            pt_delta_cost: Fraction | UndefinedValue = (
+                targ_pt.expected_total_cost_nanos - base_pt.expected_total_cost_nanos
+            )
+        else:
+            pt_delta_cost = UndefinedValue(reason="missing_cost_nano_usd")
+
+        draws_delta_cost: list[Fraction | UndefinedValue] = []
+        for b, t in zip(base_draws, targ_draws):
+            if isinstance(b.expected_total_cost_nanos, Fraction) and isinstance(
+                t.expected_total_cost_nanos, Fraction
+            ):
+                draws_delta_cost.append(
+                    t.expected_total_cost_nanos - b.expected_total_cost_nanos
+                )
+            else:
+                draws_delta_cost.append(UndefinedValue(reason="missing_cost_nano_usd"))
+
+        # 3. Delta expected cost per solved
+        if isinstance(base_pt.expected_cost_per_solved_nanos, Fraction) and isinstance(
+            targ_pt.expected_cost_per_solved_nanos, Fraction
+        ):
+            pt_delta_cps: Fraction | UndefinedValue = (
+                targ_pt.expected_cost_per_solved_nanos - base_pt.expected_cost_per_solved_nanos
+            )
+        else:
+            pt_delta_cps = UndefinedValue(
+                reason=(
+                    "zero_expected_solves"
+                    if (base_pt.expected_solved_tasks == 0 or targ_pt.expected_solved_tasks == 0)
+                    else "missing_cost_nano_usd"
+                )
+            )
+
+        draws_delta_cps: list[Fraction | UndefinedValue] = []
+        pair_zero_solves = 0
+        for b, t in zip(base_draws, targ_draws):
+            if b.expected_solved_tasks == 0 or t.expected_solved_tasks == 0:
+                pair_zero_solves += 1
+            if isinstance(b.expected_cost_per_solved_nanos, Fraction) and isinstance(
+                t.expected_cost_per_solved_nanos, Fraction
+            ):
+                draws_delta_cps.append(
+                    t.expected_cost_per_solved_nanos - b.expected_cost_per_solved_nanos
+                )
+            else:
+                draws_delta_cps.append(
+                    UndefinedValue(
+                        reason=(
+                            "zero_expected_solves"
+                            if (b.expected_solved_tasks == 0 or t.expected_solved_tasks == 0)
+                            else "missing_cost_nano_usd"
+                        )
+                    )
+                )
+
+        paired_diffs.append(
+            PairedDifferenceSummary(
+                baseline_id=base_id,
+                target_id=targ_id,
+                delta_pass_at_1=_build_bootstrap_interval(
+                    "delta_pass_at_1", pt_delta_p, draws_delta_p, conf
+                ),
+                delta_expected_total_cost_nanos=_build_bootstrap_interval(
+                    "delta_expected_total_cost_nanos", pt_delta_cost, draws_delta_cost, conf
+                ),
+                delta_expected_cost_per_solved_nanos=_build_bootstrap_interval(
+                    "delta_expected_cost_per_solved_nanos",
+                    pt_delta_cps,
+                    draws_delta_cps,
+                    conf,
+                    zero_solve_draws=pair_zero_solves,
+                ),
+            )
+        )
+
+    return PairedBootstrapResult(
+        method_version=FOUNDATION_METHOD_VERSION,
+        estimand_label="primary_equal_task_weighted_independent_task_bootstrap",
+        replicates=effective_replicates,
+        seed=used_seed,
+        confidence_level=conf,
+        n_tasks=n_tasks,
+        quantile_method=QUANTILE_METHOD,
+        series_summaries=series_summaries,
+        paired_differences=tuple(paired_diffs),
+    )
+
+
+def family_cluster_bootstrap(
+    series_list: Sequence[TaskSeries],
+    *,
+    replicates: int = DEFAULT_BOOTSTRAP_REPLICATES,
+    seed: int = 17,
+    confidence_level: float | Fraction = Fraction(95, 100),
+    comparison_pairs: Sequence[tuple[str, str]] | None = None,
+    sampled_family_indices: Sequence[Sequence[int]] | None = None,
+) -> FamilyBootstrapResult:
+    """WP4 sensitivity: resample task families with replacement and preserve original_n cost target."""
+    if not series_list:
+        raise AnalysisInputError("series_list must be non-empty")
+
+    original_n = series_list[0].n_tasks
+    task_ids = tuple(tp.task_id for tp in series_list[0].tasks)
+    family_ids_by_task = tuple(tp.family_id for tp in series_list[0].tasks)
+
+    series_by_id: dict[str, TaskSeries] = {}
+    for s in series_list:
+        if s.series_id in series_by_id:
+            raise AnalysisInputError(f"Duplicate series_id: {s.series_id!r}")
+        if (
+            s.n_tasks != original_n
+            or tuple(tp.task_id for tp in s.tasks) != task_ids
+            or tuple(tp.family_id for tp in s.tasks) != family_ids_by_task
+        ):
+            raise AnalysisInputError(
+                f"Series {s.series_id!r} task/family alignment does not match {series_list[0].series_id!r}"
+            )
+        series_by_id[s.series_id] = s
+
+    # Preserve deterministic family order by first appearance in expected_plan.tasks
+    ordered_families: list[str] = []
+    family_to_task_indices: dict[str, list[int]] = {}
+    for idx, fam_id in enumerate(family_ids_by_task):
+        if fam_id not in family_to_task_indices:
+            ordered_families.append(fam_id)
+            family_to_task_indices[fam_id] = []
+        family_to_task_indices[fam_id].append(idx)
+
+    n_families = len(ordered_families)
+    family_sizes = {fam: len(indices) for fam, indices in family_to_task_indices.items()}
+
+    if sampled_family_indices is not None:
+        if not sampled_family_indices:
+            raise AnalysisInputError("sampled_family_indices must be non-empty when provided")
+        effective_replicates = len(sampled_family_indices)
+    else:
+        effective_replicates = replicates
+
+    conf = _validate_bootstrap_params(
+        effective_replicates, original_n, len(series_list), confidence_level
+    )
+
+    if sampled_family_indices is None:
+        if isinstance(seed, bool) or not isinstance(seed, int):
+            raise AnalysisInputError("seed must be an integer")
+        rng = random.Random(seed)
+        fam_draws: list[tuple[int, ...]] = [
+            tuple(rng.randrange(n_families) for _ in range(n_families))
+            for _ in range(effective_replicates)
+        ]
+        used_seed: int | None = seed
+    else:
+        fam_draws = []
+        for draw in sampled_family_indices:
+            if len(draw) != n_families:
+                raise AnalysisInputError(
+                    f"Each injected family draw must have length n_families={n_families}"
+                )
+            for f_idx in draw:
+                if (
+                    isinstance(f_idx, bool)
+                    or not isinstance(f_idx, int)
+                    or f_idx < 0
+                    or f_idx >= n_families
+                ):
+                    raise AnalysisInputError(f"Invalid family index {f_idx!r}")
+            fam_draws.append(tuple(draw))
+        used_seed = None
+
+    if comparison_pairs is None:
+        ordered_ids = sorted(series_by_id)
+        pairs: list[tuple[str, str]] = []
+        for i in range(len(ordered_ids)):
+            for j in range(i + 1, len(ordered_ids)):
+                pairs.append((ordered_ids[i], ordered_ids[j]))
+    else:
+        pairs = list(comparison_pairs)
+        for base_id, targ_id in pairs:
+            if base_id not in series_by_id or targ_id not in series_by_id:
+                raise AnalysisInputError(
+                    f"Unknown series in comparison_pairs: ({base_id!r}, {targ_id!r})"
+                )
+
+    point_by_series: dict[str, SeriesPoint] = {
+        s_id: evaluate_series_point(
+            s_id, s.tasks, target_n_tasks=original_n, include_actual_spend=True
+        )
+        for s_id, s in series_by_id.items()
+    }
+
+    draws_by_series: dict[str, list[SeriesPoint]] = {s_id: [] for s_id in series_by_id}
+    resampled_task_counts: list[int] = []
+
+    for f_indices in fam_draws:
+        expanded_task_indices: list[int] = []
+        for f_idx in f_indices:
+            fam_id = ordered_families[f_idx]
+            expanded_task_indices.extend(family_to_task_indices[fam_id])
+        resampled_task_counts.append(len(expanded_task_indices))
+
+        for s_id, s in series_by_id.items():
+            sampled_tasks = [s.tasks[t_idx] for t_idx in expanded_task_indices]
+            draws_by_series[s_id].append(
+                evaluate_series_point(
+                    s_id,
+                    sampled_tasks,
+                    target_n_tasks=original_n,
+                    include_actual_spend=False,
+                )
+            )
+
+    series_summaries: dict[str, FamilySeriesSummary] = {}
+    for s_id, pt in point_by_series.items():
+        s_draws = draws_by_series[s_id]
+        zero_solves = sum(1 for d in s_draws if d.expected_solved_tasks == 0)
+        series_summaries[s_id] = FamilySeriesSummary(
+            series_id=s_id,
+            pass_at_1=_build_bootstrap_interval(
+                "pass_at_1",
+                pt.pass_at_1,
+                [d.pass_at_1 for d in s_draws],
+                conf,
+            ),
+            target_n_expected_total_cost_nanos=_build_bootstrap_interval(
+                "target_n_expected_total_cost_nanos",
+                pt.expected_total_cost_nanos,
+                [d.expected_total_cost_nanos for d in s_draws],
+                conf,
+            ),
+            mean_task_cost_nanos=_build_bootstrap_interval(
+                "mean_task_cost_nanos",
+                pt.mean_task_cost_nanos,
+                [d.mean_task_cost_nanos for d in s_draws],
+                conf,
+            ),
+            expected_cost_per_solved_nanos=_build_bootstrap_interval(
+                "expected_cost_per_solved_nanos",
+                pt.expected_cost_per_solved_nanos,
+                [d.expected_cost_per_solved_nanos for d in s_draws],
+                conf,
+                zero_solve_draws=zero_solves,
+            ),
+        )
+
+    paired_diffs: list[PairedDifferenceSummary] = []
+    for base_id, targ_id in pairs:
+        base_pt = point_by_series[base_id]
+        targ_pt = point_by_series[targ_id]
+        base_draws = draws_by_series[base_id]
+        targ_draws = draws_by_series[targ_id]
+
+        pt_delta_p = targ_pt.pass_at_1 - base_pt.pass_at_1
+        draws_delta_p = [t.pass_at_1 - b.pass_at_1 for b, t in zip(base_draws, targ_draws)]
+
+        if isinstance(base_pt.expected_total_cost_nanos, Fraction) and isinstance(
+            targ_pt.expected_total_cost_nanos, Fraction
+        ):
+            pt_delta_cost: Fraction | UndefinedValue = (
+                targ_pt.expected_total_cost_nanos - base_pt.expected_total_cost_nanos
+            )
+        else:
+            pt_delta_cost = UndefinedValue(reason="missing_cost_nano_usd")
+
+        draws_delta_cost: list[Fraction | UndefinedValue] = []
+        for b, t in zip(base_draws, targ_draws):
+            if isinstance(b.expected_total_cost_nanos, Fraction) and isinstance(
+                t.expected_total_cost_nanos, Fraction
+            ):
+                draws_delta_cost.append(
+                    t.expected_total_cost_nanos - b.expected_total_cost_nanos
+                )
+            else:
+                draws_delta_cost.append(UndefinedValue(reason="missing_cost_nano_usd"))
+
+        if isinstance(base_pt.expected_cost_per_solved_nanos, Fraction) and isinstance(
+            targ_pt.expected_cost_per_solved_nanos, Fraction
+        ):
+            pt_delta_cps: Fraction | UndefinedValue = (
+                targ_pt.expected_cost_per_solved_nanos - base_pt.expected_cost_per_solved_nanos
+            )
+        else:
+            pt_delta_cps = UndefinedValue(
+                reason=(
+                    "zero_expected_solves"
+                    if (base_pt.expected_solved_tasks == 0 or targ_pt.expected_solved_tasks == 0)
+                    else "missing_cost_nano_usd"
+                )
+            )
+
+        draws_delta_cps: list[Fraction | UndefinedValue] = []
+        pair_zero_solves = 0
+        for b, t in zip(base_draws, targ_draws):
+            if b.expected_solved_tasks == 0 or t.expected_solved_tasks == 0:
+                pair_zero_solves += 1
+            if isinstance(b.expected_cost_per_solved_nanos, Fraction) and isinstance(
+                t.expected_cost_per_solved_nanos, Fraction
+            ):
+                draws_delta_cps.append(
+                    t.expected_cost_per_solved_nanos - b.expected_cost_per_solved_nanos
+                )
+            else:
+                draws_delta_cps.append(
+                    UndefinedValue(
+                        reason=(
+                            "zero_expected_solves"
+                            if (b.expected_solved_tasks == 0 or t.expected_solved_tasks == 0)
+                            else "missing_cost_nano_usd"
+                        )
+                    )
+                )
+
+        paired_diffs.append(
+            PairedDifferenceSummary(
+                baseline_id=base_id,
+                target_id=targ_id,
+                delta_pass_at_1=_build_bootstrap_interval(
+                    "delta_pass_at_1", pt_delta_p, draws_delta_p, conf
+                ),
+                delta_expected_total_cost_nanos=_build_bootstrap_interval(
+                    "delta_target_n_expected_total_cost_nanos",
+                    pt_delta_cost,
+                    draws_delta_cost,
+                    conf,
+                ),
+                delta_expected_cost_per_solved_nanos=_build_bootstrap_interval(
+                    "delta_expected_cost_per_solved_nanos",
+                    pt_delta_cps,
+                    draws_delta_cps,
+                    conf,
+                    zero_solve_draws=pair_zero_solves,
+                ),
+            )
+        )
+
+    mean_n_star = Fraction(sum(resampled_task_counts), len(resampled_task_counts))
+    return FamilyBootstrapResult(
+        is_primary=False,
+        estimand_label="sensitivity_family_cluster_bootstrap_task_weighted_within_resampled_clusters",
+        weighting_method=(
+            "Resample m=n_families clusters with replacement; include all tasks in each selected "
+            "family occurrence (retaining all seeds) and weight included task occurrences equally."
+        ),
+        total_cost_scaling_rule=(
+            "Report original_n * resampled_mean_task_cost so total-cost intervals remain on the "
+            "n-task target scale even when resampled task count n* varies across cluster draws."
+        ),
+        replicates=effective_replicates,
+        seed=used_seed,
+        confidence_level=conf,
+        original_n_tasks=original_n,
+        n_families=n_families,
+        family_sizes=family_sizes,
+        min_resampled_tasks=min(resampled_task_counts),
+        max_resampled_tasks=max(resampled_task_counts),
+        mean_resampled_tasks=mean_n_star,
+        series_summaries=series_summaries,
+        paired_differences=tuple(paired_diffs),
+    )
+
+
+def seed_sensitivity_analysis(
+    envelope: NormalizedEnvelope,
+    *,
+    seed_positions: Sequence[int] | None = None,
+    seed_subsets_by_config: Mapping[str, Sequence[Sequence[int]]] | None = None,
+) -> SeedSensitivityResult:
+    """WP4 non-primary seed-position and predeclared seed-subset sensitivity analysis."""
+    _require_headline_or_success_allowed(envelope, require_costs=False)
+    seeds_map = envelope.expected_plan.seeds_map()
+    config_ids = sorted(seeds_map)
+
+    min_seed_count = min(len(seeds) for seeds in seeds_map.values())
+    common_positions = tuple(range(min_seed_count))
+
+    shared_seeds_set = set(seeds_map[config_ids[0]])
+    for cfg in config_ids[1:]:
+        shared_seeds_set &= set(seeds_map[cfg])
+    shared_exact_seeds = tuple(sorted(shared_seeds_set))
+
+    entries: list[SeedSensitivityEntry] = []
+
+    # 1. Full declared seed list per config (reference baseline within sensitivity table)
+    for cfg in config_ids:
+        declared = seeds_map[cfg]
+        series = build_config_task_series(
+            envelope, cfg, seed_subset=declared, series_id=f"{cfg}:all_declared_seeds"
+        )
+        pt = evaluate_series_point(series.series_id, series.tasks, include_actual_spend=True)
+        entries.append(
+            SeedSensitivityEntry(
+                config_id=cfg,
+                slice_label="all_declared_seeds",
+                selected_seeds=declared,
+                point=pt,
+            )
+        )
+
+    # 2. Predeclared single-seed positions (default: all positions available per config)
+    for cfg in config_ids:
+        declared = seeds_map[cfg]
+        positions = (
+            tuple(range(len(declared)))
+            if seed_positions is None
+            else tuple(p for p in seed_positions if 0 <= p < len(declared))
+        )
+        for pos in positions:
+            chosen = (declared[pos],)
+            label = f"position_{pos}_seed_{declared[pos]}"
+            series = build_config_task_series(
+                envelope, cfg, seed_subset=chosen, series_id=f"{cfg}:{label}"
+            )
+            pt = evaluate_series_point(series.series_id, series.tasks, include_actual_spend=True)
+            entries.append(
+                SeedSensitivityEntry(
+                    config_id=cfg,
+                    slice_label=label,
+                    selected_seeds=chosen,
+                    point=pt,
+                )
+            )
+
+    # 3. Caller-supplied explicit seed subsets per config
+    if seed_subsets_by_config is not None:
+        for cfg in sorted(seed_subsets_by_config):
+            if cfg not in seeds_map:
+                raise AnalysisInputError(f"Unknown config_id in seed_subsets_by_config: {cfg!r}")
+            for subset in seed_subsets_by_config[cfg]:
+                subset_tuple = tuple(subset)
+                if not subset_tuple:
+                    raise AnalysisInputError(f"Empty seed subset for config {cfg!r}")
+                label = "subset_" + "_".join(str(s) for s in subset_tuple)
+                series = build_config_task_series(
+                    envelope, cfg, seed_subset=subset_tuple, series_id=f"{cfg}:{label}"
+                )
+                pt = evaluate_series_point(
+                    series.series_id, series.tasks, include_actual_spend=True
+                )
+                entries.append(
+                    SeedSensitivityEntry(
+                        config_id=cfg,
+                        slice_label=label,
+                        selected_seeds=subset_tuple,
+                        point=pt,
+                    )
+                )
+
+    note = (
+        "Non-primary diagnostic only: never select a winning seed or headline metric on held-out. "
+        "When configs declare unequal seed counts, cross-config single-seed comparisons are valid "
+        "at predeclared ordinal positions 0..min(k_c)-1 or on shared_exact_seeds, while "
+        "within-config slices show variance across repetitions."
+    )
+
+    return SeedSensitivityResult(
+        is_primary=False,
+        estimand_label="sensitivity_predeclared_seed_positions_and_subsets",
+        declared_seeds_by_config=seeds_map,
+        common_seed_positions=common_positions,
+        shared_exact_seeds=shared_exact_seeds,
+        comparison_rules_note=note,
+        entries=tuple(entries),
+    )
+
+```
+
+---
+
+## FILE: dojo/bench/frontier.py
+
+```python
+"""WP5: Exact rational cost/success Pareto frontiers and tie-group tables on both cost axes."""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from dataclasses import dataclass
+from fractions import Fraction
+from typing import Any
+
+from dojo.bench.records import (
+    AnalysisInputError,
+    NormalizedEnvelope,
+    UndefinedValue,
+    format_fraction_Or_undef,
+)
+from dojo.bench.stats import ConfigMetrics, SeriesPoint, compute_all_config_metrics
+
+COST_AXIS_COST_PER_SOLVED: str = "cost_per_solved"
+COST_AXIS_MEAN_TASK_COST: str = "mean_task_cost"
+VALID_COST_AXES: frozenset[str] = frozenset(
+    {COST_AXIS_COST_PER_SOLVED, COST_AXIS_MEAN_TASK_COST}
+)
+
+__all__ = [
+    "COST_AXIS_COST_PER_SOLVED",
+    "COST_AXIS_MEAN_TASK_COST",
+    "FrontierRow",
+    "FrontierTable",
+    "VALID_COST_AXES",
+    "compute_both_frontiers",
+    "compute_frontier",
+    "compute_frontiers_from_envelope",
+]
+
+
+@dataclass(frozen=True)
+class FrontierRow:
+    """Single row in a cost-vs-pass@1 Pareto non-dominance table."""
+
+    series_id: str
+    cost_axis: str
+    pass_at_1: Fraction
+    cost_value_nanos: Fraction | UndefinedValue
+    status: str  # "non_dominated" | "dominated" | "undefined_cost"
+    is_on_frontier: bool
+    tie_group_id: str | None
+    tied_with: tuple[str, ...]
+    dominated_by: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "series_id": self.series_id,
+            "cost_axis": self.cost_axis,
+            "pass_at_1": format_fraction_Or_undef(self.pass_at_1),
+            "cost_value_nanos": format_fraction_Or_undef(self.cost_value_nanos),
+            "status": self.status,
+            "is_on_frontier": self.is_on_frontier,
+            "tie_group_id": self.tie_group_id,
+            "tied_with": list(self.tied_with),
+            "dominated_by": list(self.dominated_by),
+        }
+
+
+@dataclass(frozen=True)
+class FrontierTable:
+    """Complete chart-ready Pareto frontier table for one explicit cost axis."""
+
+    cost_axis: str
+    is_headline_axis: bool
+    objective_rule: str
+    tie_handling_rule: str
+    undefined_handling_rule: str
+    frontier_series_ids: tuple[str, ...]
+    dominated_series_ids: tuple[str, ...]
+    undefined_series_ids: tuple[str, ...]
+    rows: tuple[FrontierRow, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "cost_axis": self.cost_axis,
+            "is_headline_axis": self.is_headline_axis,
+            "objective_rule": self.objective_rule,
+            "tie_handling_rule": self.tie_handling_rule,
+            "undefined_handling_rule": self.undefined_handling_rule,
+            "frontier_series_ids": list(self.frontier_series_ids),
+            "dominated_series_ids": list(self.dominated_series_ids),
+            "undefined_series_ids": list(self.undefined_series_ids),
+            "rows": [r.to_dict() for r in self.rows],
+        }
+
+
+def _extract_point(item: SeriesPoint | ConfigMetrics) -> SeriesPoint:
+    if isinstance(item, ConfigMetrics):
+        return item.primary
+    if isinstance(item, SeriesPoint):
+        return item
+    raise TypeError(f"Expected SeriesPoint or ConfigMetrics, got {type(item).__name__}")
+
+
+def _extract_cost(pt: SeriesPoint, cost_axis: str) -> Fraction | UndefinedValue:
+    if cost_axis == COST_AXIS_COST_PER_SOLVED:
+        return pt.expected_cost_per_solved_nanos
+    if cost_axis == COST_AXIS_MEAN_TASK_COST:
+        return pt.mean_task_cost_nanos
+    raise AnalysisInputError(
+        f"Unsupported cost_axis {cost_axis!r}; must be one of {sorted(VALID_COST_AXES)}"
+    )
+
+
+def _dominates(
+    cost_a: Fraction,
+    pass_a: Fraction,
+    cost_b: Fraction,
+    pass_b: Fraction,
+) -> bool:
+    """Return True iff A Pareto-dominates B (cost minimized, pass@1 maximized)."""
+    return (cost_a <= cost_b and pass_a >= pass_b) and (cost_a < cost_b or pass_a > pass_b)
+
+
+def compute_frontier(
+    items: Sequence[SeriesPoint | ConfigMetrics],
+    *,
+    cost_axis: str = COST_AXIS_COST_PER_SOLVED,
+) -> FrontierTable:
+    """Compute exact rational Pareto frontier for `cost_axis` vs `pass_at_1`."""
+    if cost_axis not in VALID_COST_AXES:
+        raise AnalysisInputError(
+            f"Unsupported cost_axis {cost_axis!r}; must be one of {sorted(VALID_COST_AXES)}"
+        )
+
+    points = [_extract_point(x) for x in items]
+    seen_ids: set[str] = set()
+    for pt in points:
+        if pt.series_id in seen_ids:
+            raise AnalysisInputError(f"Duplicate series_id in frontier input: {pt.series_id!r}")
+        seen_ids.add(pt.series_id)
+
+    defined_pts: list[tuple[SeriesPoint, Fraction]] = []
+    undefined_pts: list[tuple[SeriesPoint, UndefinedValue]] = []
+
+    for pt in points:
+        c_val = _extract_cost(pt, cost_axis)
+        if isinstance(c_val, UndefinedValue):
+            undefined_pts.append((pt, c_val))
+        else:
+            defined_pts.append((pt, c_val))
+
+    # Sort defined points by (cost ascending, pass_at_1 descending, series_id ascending)
+    defined_pts.sort(key=lambda pair: (pair[1], -pair[0].pass_at_1, pair[0].series_id))
+    undefined_pts.sort(key=lambda pair: pair[0].series_id)
+
+    # Assign deterministic tie_group_id to exact (cost, pass_at_1) coordinate pairs
+    coord_groups: dict[tuple[Fraction, Fraction], list[str]] = {}
+    for pt, c_val in defined_pts:
+        coord = (c_val, pt.pass_at_1)
+        coord_groups.setdefault(coord, []).append(pt.series_id)
+
+    coord_to_group_id: dict[tuple[Fraction, Fraction], str] = {}
+    for idx, coord in enumerate(coord_groups, start=1):
+        coord_to_group_id[coord] = f"tie_group_{idx}"
+
+    defined_rows: list[FrontierRow] = []
+    frontier_ids: list[str] = []
+    dominated_ids: list[str] = []
+
+    for pt_i, cost_i in defined_pts:
+        dominators: list[str] = []
+        for pt_j, cost_j in defined_pts:
+            if pt_j.series_id == pt_i.series_id:
+                continue
+            if _dominates(cost_j, pt_j.pass_at_1, cost_i, pt_i.pass_at_1):
+                dominators.append(pt_j.series_id)
+
+        dominators.sort()
+        coord = (cost_i, pt_i.pass_at_1)
+        tied_peers = tuple(s_id for s_id in coord_groups[coord] if s_id != pt_i.series_id)
+        group_id = coord_to_group_id[coord] if len(coord_groups[coord]) > 1 else None
+
+        if not dominators:
+            status = "non_dominated"
+            is_front = True
+            frontier_ids.append(pt_i.series_id)
+        else:
+            status = "dominated"
+            is_front = False
+            dominated_ids.append(pt_i.series_id)
+
+        defined_rows.append(
+            FrontierRow(
+                series_id=pt_i.series_id,
+                cost_axis=cost_axis,
+                pass_at_1=pt_i.pass_at_1,
+                cost_value_nanos=cost_i,
+                status=status,
+                is_on_frontier=is_front,
+                tie_group_id=group_id,
+                tied_with=tied_peers,
+                dominated_by=tuple(dominators),
+            )
+        )
+
+    undefined_rows: list[FrontierRow] = []
+    undefined_ids: list[str] = []
+    for pt_u, undef_val in undefined_pts:
+        undefined_ids.append(pt_u.series_id)
+        undefined_rows.append(
+            FrontierRow(
+                series_id=pt_u.series_id,
+                cost_axis=cost_axis,
+                pass_at_1=pt_u.pass_at_1,
+                cost_value_nanos=undef_val,
+                status="undefined_cost",
+                is_on_frontier=False,
+                tie_group_id=None,
+                tied_with=(),
+                dominated_by=(),
+            )
+        )
+
+    all_rows = tuple(defined_rows + undefined_rows)
+    return FrontierTable(
+        cost_axis=cost_axis,
+        is_headline_axis=(cost_axis == COST_AXIS_COST_PER_SOLVED),
+        objective_rule="Minimize exact rational cost_value_nanos; maximize exact rational pass_at_1.",
+        tie_handling_rule=(
+            "Retain all tied non-dominated series on the frontier and link identical "
+            "(cost, pass_at_1) coordinates via deterministic tie_group_id and tied_with lists."
+        ),
+        undefined_handling_rule=(
+            "Points with undefined cost (e.g., zero_expected_solves on cost_per_solved or "
+            "missing_cost_nano_usd) are labeled status='undefined_cost', excluded from the "
+            "valid frontier, and never dominate or get dominated by valid points."
+        ),
+        frontier_series_ids=tuple(frontier_ids),
+        dominated_series_ids=tuple(dominated_ids),
+        undefined_series_ids=tuple(undefined_ids),
+        rows=all_rows,
+    )
+
+
+def compute_both_frontiers(
+    items: Sequence[SeriesPoint | ConfigMetrics],
+) -> dict[str, FrontierTable]:
+    """Compute both headline (`cost_per_solved`) and diagnostic (`mean_task_cost`) frontiers."""
+    return {
+        COST_AXIS_COST_PER_SOLVED: compute_frontier(
+            items, cost_axis=COST_AXIS_COST_PER_SOLVED
+        ),
+        COST_AXIS_MEAN_TASK_COST: compute_frontier(
+            items, cost_axis=COST_AXIS_MEAN_TASK_COST
+        ),
+    }
+
+
+def compute_frontiers_from_envelope(
+    envelope: NormalizedEnvelope,
+) -> dict[str, FrontierTable]:
+    """Validate cost completeness on `envelope` and compute both frontier tables."""
+    if not envelope.audit.cost_comparison_allowed:
+        raise AnalysisInputError(
+            f"Cannot compute cost frontiers when panel audit status is {envelope.audit.status!r}"
+        )
+    metrics_map = compute_all_config_metrics(envelope)
+    return compute_both_frontiers(list(metrics_map.values()))
+
+```
+
+---
+
+## FILE: tests/fixtures/analysis/valid_panel.json
+
+```json
+{
+  "schema_version": 1,
+  "evidence_kind": "synthetic",
+  "dataset_id": "synthetic_stats_fixture_v1",
+  "expected_plan": {
+    "tasks": [
+      "synthetic_stats_1",
+      "synthetic_stats_2",
+      "synthetic_stats_3",
+      "synthetic_stats_4"
+    ],
+    "seeds_by_config": {
+      "A": [
+        0
+      ],
+      "B": [
+        0
+      ]
+    }
+  },
+  "records": [
+    {
+      "task_id": "synthetic_stats_1",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_1",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 1000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_1",
+      "config_id": "B",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_1",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 10000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": null,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_2",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_2",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 2000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": false,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_2",
+      "config_id": "B",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_2",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 10000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": null,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_3",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_3",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 1000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": null,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_3",
+      "config_id": "B",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_3",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 10000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": null,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_4",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_4",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 2000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_4",
+      "config_id": "B",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_4",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 10000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": null,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    }
+  ]
+}
+
+```
+
+---
+
+## FILE: tests/fixtures/analysis/unequal_seed_panel.json
+
+```json
+{
+  "schema_version": 1,
+  "evidence_kind": "synthetic",
+  "dataset_id": "synthetic_stats_fixture_v1",
+  "expected_plan": {
+    "tasks": [
+      "synthetic_unequal_1"
+    ],
+    "seeds_by_config": {
+      "A": [
+        0,
+        1
+      ],
+      "B": [
+        0
+      ]
+    }
+  },
+  "records": [
+    {
+      "task_id": "synthetic_unequal_1",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_1",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 2,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_unequal_1",
+      "config_id": "A",
+      "seed": 1,
+      "split": "train",
+      "family_id": "synthetic_family_1",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 4,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": false,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_unequal_1",
+      "config_id": "B",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_1",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 10,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": null,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    }
+  ]
+}
+
+```
+
+---
+
+## FILE: tests/fixtures/analysis/invalid_panel.json
+
+```json
+{
+  "schema_version": 1,
+  "evidence_kind": "synthetic",
+  "dataset_id": "synthetic_stats_fixture_v1",
+  "expected_plan": {
+    "tasks": [
+      "synthetic_stats_1",
+      "synthetic_stats_2",
+      "synthetic_stats_3",
+      "synthetic_stats_4"
+    ],
+    "seeds_by_config": {
+      "A": [
+        0
+      ],
+      "B": [
+        0
+      ]
+    }
+  },
+  "records": [
+    {
+      "task_id": "synthetic_stats_1",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_1",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 1000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_1",
+      "config_id": "B",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_1",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 10000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": null,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_2",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_2",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 2000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": false,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_2",
+      "config_id": "B",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_2",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 10000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": null,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_3",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_3",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 1000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": null,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_3",
+      "config_id": "B",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_3",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 10000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": null,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_4",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_4",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 2000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "synthetic_stats_1",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "synthetic_family_1",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 1000000,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    }
+  ]
+}
+
+```
+
+---
+
+## FILE: tests/test_analysis_records.py
+
+```python
+"""WP1 tests: normalized records, expected plan, bounded JSON parser, and panel audit."""
+
+from __future__ import annotations
+
+import copy
+import json
+from fractions import Fraction
+from pathlib import Path
+
+import pytest
+
+from dojo.bench.records import (
+    MAX_INPUT_BYTES,
+    MAX_JSON_DEPTH,
+    AnalysisInputError,
+    parse_analysis_envelope,
+    parse_analysis_json,
+)
+
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "analysis"
+
+
+def _load_fixture_dict(name: str) -> dict:
+    return json.loads((FIXTURES_DIR / name).read_text(encoding="utf-8"))
+
+
+def test_valid_panel_fixture_parses_and_passes_audit() -> None:
+    raw = (FIXTURES_DIR / "valid_panel.json").read_bytes()
+    env = parse_analysis_json(raw)
+
+    assert env.schema_version == 1
+    assert env.dataset_id == "synthetic_stats_fixture_v1"
+    assert env.evidence_kind == "synthetic"
+    assert env.eligibility_status.status == "UNVERIFIED"
+    assert env.eligibility_status.publishable is False
+    assert env.audit.status == "valid"
+    assert env.audit.headline_Comparison_allowed is True
+    assert env.audit.cost_comparison_allowed is True
+    assert env.audit.expected_cell_count == 8
+    assert env.audit.valid_cell_count == 8
+    assert env.audit.findings == ()
+
+
+def test_invalid_panel_fixture_reports_missing_and_duplicate_cells() -> None:
+    raw = (FIXTURES_DIR / "invalid_panel.json").read_bytes()
+    env = parse_analysis_json(raw)
+
+    assert env.audit.status == "blocked"
+    assert env.audit.headline_Comparison_allowed is False
+    assert env.audit.cost_comparison_allowed is False
+    messages = [f.message for f in env.audit.findings]
+    assert any("missing B/synthetic_stats_4/seed0" in m for m in messages)
+    assert any("duplicate A/synthetic_stats_1/seed0" in m for m in messages)
+
+
+def test_record_order_invariance_and_expected_plan_order_sensitivity() -> None:
+    data1 = _load_fixture_dict("valid_panel.json")
+    data2 = copy.deepcopy(data1)
+    data2["records"] = list(reversed(data2["records"]))
+
+    env1 = parse_analysis_envelope(data1)
+    env2 = parse_analysis_envelope(data2)
+    assert env1.input_sha256 == env2.input_sha256
+    assert env1.expected_plan_hash == env2.expected_plan_hash
+
+    # Changing declared task order in expected_plan MUST change expected_plan_hash
+    data3 = copy.deepcopy(data1)
+    data3["expected_plan"]["tasks"] = list(reversed(data3["expected_plan"]["tasks"]))
+    env3 = parse_analysis_envelope(data3)
+    assert env3.expected_plan_hash != env1.expected_plan_hash
+
+
+def test_rejects_test_harness_expected_annotation_in_envelope() -> None:
+    data = _load_fixture_dict("valid_panel.json")
+    data["expected"] = {"a_pass_rate": "1/2"}
+    with pytest.raises(AnalysisInputError, match="expected"):
+        parse_analysis_envelope(data)
+
+
+def test_rejects_duplicate_json_keys_and_nonfinite_numbers() -> None:
+    dup_json = (
+        '{"schema_version": 1, "schema_version": 1, "evidence_kind": "synthetic", '
+        '"dataset_id": "d1", "expected_plan": {"tasks": ["t1"], "seeds_by_config": {"A": [0]}}, '
+        '"records": []}'
+    )
+    with pytest.raises(AnalysisInputError, match="Duplicate JSON key"):
+        parse_analysis_json(dup_json)
+
+    nan_json = dup_json.replace('"schema_version": 1, "schema_version": 1', '"schema_version": NaN')
+    with pytest.raises(AnalysisInputError, match="Non-finite"):
+        parse_analysis_json(nan_json)
+
+
+def test_rejects_lone_surrogates_and_extreme_exponents() -> None:
+    data = _load_fixture_dict("valid_panel.json")
+    raw_text = json.dumps(data)
+
+    surrogate_json = raw_text.replace("synthetic_stats_1", "bad\\ud800id")
+    with pytest.raises(AnalysisInputError, match="surrogate"):
+        parse_analysis_json(surrogate_json)
+
+    huge_exp_json = raw_text.replace("1000000", "1e9999")
+    with pytest.raises(AnalysisInputError, match="exponent"):
+        parse_analysis_json(huge_exp_json)
+
+
+def test_rejects_oversized_input_and_excessive_nesting_depth() -> None:
+    oversized = b" " * (MAX_INPUT_BYTES + 1)
+    with pytest.raises(AnalysisInputError, match="exceeds limit"):
+        parse_analysis_json(oversized)
+
+    nested: dict = {"a": 1}
+    for _ in range(MAX_JSON_DEPTH + 2):
+        nested = {"nested": nested}
+    with pytest.raises(AnalysisInputError, match="depth"):
+        parse_analysis_json(json.dumps(nested))
+
+
+def test_rejects_bool_as_seed_money_or_count() -> None:
+    data = _load_fixture_dict("valid_panel.json")
+    bad_seed = copy.deepcopy(data)
+    bad_seed["records"][0]["seed"] = False
+    with pytest.raises(AnalysisInputError, match="seed"):
+        parse_analysis_envelope(bad_seed)
+
+    bad_cost = copy.deepcopy(data)
+    bad_cost["records"][0]["cost_nano_usd"] = True
+    with pytest.raises(AnalysisInputError, match="cost_nano_usd"):
+        parse_analysis_envelope(bad_cost)
+
+    bad_turns = copy.deepcopy(data)
+    bad_turns["records"][0]["turns"] = True
+    with pytest.raises(AnalysisInputError, match="turns"):
+        parse_analysis_envelope(bad_turns)
+
+
+def test_candidate_error_baseline_verified_rule() -> None:
+    data = _load_fixture_dict("valid_panel.json")
+    # Record 2 is A/synthetic_stats_2/seed0 (unsolved)
+    data["records"][2]["scorer_status"] = "candidate_error"
+    data["records"][2]["baseline_verified"] = False
+
+    env_blocked = parse_analysis_envelope(data)
+    assert env_blocked.audit.status == "blocked"
+    assert any(
+        f.code == "unverified_candidate_error_baseline" for f in env_blocked.audit.findings
+    )
+
+    # When baseline_verified is True, candidate_error is a valid unsolved outcome
+    data["records"][2]["baseline_verified"] = True
+    env_valid = parse_analysis_envelope(data)
+    assert env_valid.audit.status == "valid"
+    assert env_valid.audit.headline_Comparison_allowed is True
+
+
+def test_invalid_evidence_and_infrastructure_error_block_headline() -> None:
+    data = _load_fixture_dict("valid_panel.json")
+    data["records"][2]["scorer_status"] = "invalid_evidence"
+    data["records"][2]["outcome"] = "undetermined"
+    data["records"][2]["evidence_validity"] = "invalid"
+
+    env = parse_analysis_envelope(data)
+    assert env.audit.status == "blocked"
+    assert env.audit.headline_Comparison_allowed is False
+    assert any(f.code == "invalid_evidence_cell" for f in env.audit.findings)
+
+    data_infra = _load_fixture_dict("valid_panel.json")
+    data_infra["records"][2]["scorer_status"] = "infrastructure_error"
+    data_infra["records"][2]["outcome"] = "undetermined"
+    data_infra["records"][2]["evidence_validity"] = "unknown"
+
+    env_infra = parse_analysis_envelope(data_infra)
+    assert env_infra.audit.status == "blocked"
+    assert any(f.code == "infrastructure_error_cell" for f in env_infra.audit.findings)
+
+
+def test_missing_cost_allows_success_only_but_blocks_cost_comparisons() -> None:
+    data = _load_fixture_dict("valid_panel.json")
+    data["records"][0]["cost_nano_usd"] = None
+
+    env = parse_analysis_envelope(data)
+    assert env.audit.status == "cost_incomplete"
+    assert env.audit.headline_Comparison_allowed is False
+    assert env.audit.cost_comparison_allowed is False
+    assert env.audit.success_only_allowed is True
+    assert env.audit.missing_cost_configs == ("A",)
+
+
+def test_optional_secondary_fields_accepted_and_unknown_fields_rejected() -> None:
+    data = _load_fixture_dict("valid_panel.json")
+    for r in data["records"]:
+        r["turns"] = 5
+        r["commands"] = 4
+        r["actual_prompt_tokens"] = 1200
+        r["actual_completion_tokens"] = 300
+        r["wall_seconds"] = 12.5
+
+    env = parse_analysis_envelope(data)
+    assert env.records[0].turns == 5
+    assert env.records[0].wall_seconds == Fraction(25, 2)
+
+    data["records"][0]["secret_unknown_field"] = 123
+    with pytest.raises(AnalysisInputError, match="field mismatch"):
+        parse_analysis_envelope(data)
+
+
+def test_nonempty_registration_id_never_grants_publishable_eligibility() -> None:
+    data = _load_fixture_dict("valid_panel.json")
+    for r in data["records"]:
+        r["registration_id"] = "stage_b_fake_registration_digest"
+    env = parse_analysis_envelope(data)
+    assert env.eligibility_status.status == "UNVERIFIED"
+    assert env.eligibility_status.publishable is False
+
+```
+
+---
+
+## FILE: tests/test_statistics.py
+
+```python
+"""WP2, WP3, WP4, WP5 tests: known answers, bootstrap pairing, sensitivity, and frontiers."""
+
+from __future__ import annotations
+
+import copy
+import json
+import random
+from fractions import Fraction
+from pathlib import Path
+
+import pytest
+
+from dojo.bench.frontier import (
+    COST_AXIS_COST_PER_SOLVED,
+    COST_AXIS_MEAN_TASK_COST,
+    compute_both_frontiers,
+    compute_frontier,
+    compute_frontiers_from_envelope,
+)
+from dojo.bench.records import (
+    AnalysisInputError,
+    UndefinedValue,
+    parse_analysis_envelope,
+    parse_analysis_json,
+)
+from dojo.bench.stats import (
+    MAX_BOOTSTRAP_WORKLOAD,
+    SeriesPoint,
+    TaskPoint,
+    TaskSeries,
+    build_config_task_series,
+    compute_all_config_metrics,
+    compute_config_metrics,
+    evaluate_series_point,
+    family_cluster_bootstrap,
+    paired_task_bootstrap,
+    seed_sensitivity_analysis,
+)
+
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "analysis"
+
+
+def test_wp2_known_answers_on_valid_panel_fixture() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "valid_panel.json").read_bytes())
+    metrics = compute_all_config_metrics(env)
+
+    m_a = metrics["A"]
+    assert m_a.n_tasks == 4
+    assert m_a.declared_seeds == (0,)
+    assert m_a.primary.pass_at_1 == Fraction(1, 2)
+    assert m_a.primary.expected_solved_tasks == Fraction(2, 1)
+    assert m_a.primary.expected_total_cost_nanos == Fraction(6_000_000, 1)
+    assert m_a.primary.mean_task_cost_nanos == Fraction(1_500_000, 1)
+    assert m_a.primary.expected_cost_per_solved_nanos == Fraction(3_000_000, 1)
+    assert m_a.primary.actual_all_repetitions_spend_nanos == 6_000_000
+
+    # Optional secondary metrics default to UndefinedValue when absent, never 0
+    assert isinstance(m_a.secondary_metrics["turns"].task_weighted_mean, UndefinedValue)
+    assert m_a.secondary_metrics["turns"].known_runs == 0
+    assert m_a.secondary_metrics["turns"].missing_runs == 4
+
+    m_b = metrics["B"]
+    assert m_b.primary.pass_at_1 == Fraction(1, 2)
+    assert m_b.primary.expected_total_cost_nanos == Fraction(40_000_000, 1)
+    assert m_b.primary.expected_cost_per_solved_nanos == Fraction(20_000_000, 1)
+    assert m_b.primary.actual_all_repetitions_spend_nanos == 40_000_000
+
+
+def test_wp2_unequal_seed_fixture_and_zero_solve_undefined_denominator() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "unequal_seed_panel.json").read_bytes())
+    metrics = compute_all_config_metrics(env)
+
+    # Config A has 2 seeds on 1 task: seed 0 solved (cost 2), seed 1 unsolved (cost 4)
+    # Expected 1-seed total cost = (2 + 4)/2 = 3; actual all-repeat spend = 6
+    m_a = metrics["A"]
+    assert m_a.declared_seeds == (0, 1)
+    assert m_a.primary.pass_at_1 == Fraction(1, 2)
+    assert m_a.primary.expected_total_cost_nanos == Fraction(3, 1)
+    assert m_a.primary.actual_all_repetitions_spend_nanos == 6
+    assert m_a.primary.expected_cost_per_solved_nanos == Fraction(6, 1)
+
+    # Config B has 1 seed on 1 task: seed 0 unsolved (cost 10) -> zero expected solves
+    m_b = metrics["B"]
+    assert m_b.primary.pass_at_1 == Fraction(0, 1)
+    assert m_b.primary.expected_total_cost_nanos == Fraction(10, 1)
+    assert m_b.primary.actual_all_repetitions_spend_nanos == 10
+    assert isinstance(m_b.primary.expected_cost_per_solved_nanos, UndefinedValue)
+    assert m_b.primary.expected_cost_per_solved_nanos.reason == "zero_expected_solves"
+    assert m_b.primary.to_dict()["expected_cost_per_solved_nanos"]["value"] is None
+
+
+def test_wp3_paired_bootstrap_injectable_indices_and_zero_solve_accounting() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "valid_panel.json").read_bytes())
+    series_a = build_config_task_series(env, "A")
+    series_b = build_config_task_series(env, "B")
+
+    # Task outcomes (0-indexed):
+    # task 0: A=1 (cost 1M), B=1 (cost 10M)
+    # task 1: A=0 (cost 2M), B=1 (cost 10M)
+    # task 2: A=0 (cost 1M), B=0 (cost 10M)
+    # task 3: A=1 (cost 2M), B=0 (cost 10M)
+    injected_draws = [
+        (0, 0, 0, 0),  # Both A and B solve 4/4 -> delta pass@1 = 0
+        (1, 1, 1, 1),  # A solves 0/4 (zero solve!), B solves 4/4 -> delta pass@1 = +1
+        (2, 2, 2, 2),  # Both A and B solve 0/4 (zero solve!) -> delta pass@1 = 0
+        (0, 1, 2, 3),  # Original panel -> A=1/2, B=1/2 -> delta pass@1 = 0
+    ]
+
+    res = paired_task_bootstrap(
+        [series_a, series_b],
+        sampled_task_indices=injected_draws,
+        confidence_level=Fraction(95, 100),
+    )
+
+    sum_a = res.series_summaries["A"]
+    assert sum_a.expected_cost_per_solved_nanos.zero_solve_draws == 2
+    assert sum_a.expected_cost_per_solved_nanos.defined_draws == 2
+    assert sum_a.expected_cost_per_solved_nanos.undefined_draws == 2
+    # Because zero-solve draws occurred, unconditional CI for cost/solve must be blocked (UndefinedValue)
+    assert isinstance(sum_a.expected_cost_per_solved_nanos.lower, UndefinedValue)
+    assert (
+        sum_a.expected_cost_per_solved_nanos.lower.reason
+        == "unconditional_interval_blocked_by_zero_solve_draws"
+    )
+
+    diff_ab = res.paired_differences[0]
+    assert diff_ab.baseline_id == "A"
+    assert diff_ab.target_id == "B"
+    assert diff_ab.delta_pass_at_1.point_estimate == Fraction(0, 1)
+    assert diff_ab.delta_expected_total_cost_nanos.point_estimate == Fraction(34_000_000, 1)
+
+
+def test_wp3_pairing_cancels_variance_for_identical_series_and_isolates_global_rng() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "valid_panel.json").read_bytes())
+    series_a1 = build_config_task_series(env, "A", series_id="A_copy_1")
+    series_a2 = build_config_task_series(env, "A", series_id="A_copy_2")
+
+    random.seed(99999)
+    expected_next_random = random.random()
+    random.seed(99999)
+
+    res = paired_task_bootstrap([series_a1, series_a2], replicates=200, seed=42)
+    # Global random state must be completely untouched by paired_task_bootstrap
+    assert random.random() == expected_next_random
+
+    # Because both series share the exact same sampled task indices on every draw,
+    # their paired difference on every draw is identically 0!
+    diff = res.paired_differences[0]
+    assert diff.delta_pass_at_1.lower == Fraction(0, 1)
+    assert diff.delta_pass_at_1.upper == Fraction(0, 1)
+    assert diff.delta_expected_total_cost_nanos.lower == Fraction(0, 1)
+    assert diff.delta_expected_total_cost_nanos.upper == Fraction(0, 1)
+
+
+def test_wp3_bootstrap_workload_cap_rejects_oversized_requests() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "valid_panel.json").read_bytes())
+    # Create enough synthetic series so replicates * n_tasks * n_series > 10,000,000
+    many_series = [
+        build_config_task_series(env, "A", series_id=f"S_{i}") for i in range(30)
+    ]
+    with pytest.raises(AnalysisInputError, match="workload"):
+        paired_task_bootstrap(many_series, replicates=100_000)
+
+
+def test_wp4_family_cluster_bootstrap_unbalanced_clusters_preserve_original_n_cost() -> None:
+    # Build an unbalanced 3-task, 2-family series:
+    # fam_small (1 task): pass=1, mean_cost=100
+    # fam_large (2 tasks): pass=0, mean_cost=400 each
+    # Original n = 3 tasks.
+    tasks = (
+        TaskPoint("t1", "fam_small", 1, Fraction(1, 1), Fraction(100, 1), 100),
+        TaskPoint("t2", "fam_large", 1, Fraction(0, 1), Fraction(400, 1), 400),
+        TaskPoint("t3", "fam_large", 1, Fraction(0, 1), Fraction(400, 1), 400),
+    )
+    series = TaskSeries("A", "config", tasks, declared_seed_count=1, has_complete_costs=True)
+
+    # Inject family draws (0 = fam_small, 1 = fam_large):
+    # Draw 0: (0, 0) -> 2 tasks total, all cost 100 -> mean_task_cost = 100, target_n_total_cost = 3 * 100 = 300
+    # Draw 1: (1, 1) -> 4 tasks total, all cost 400 -> mean_task_cost = 400, target_n_total_cost = 3 * 400 = 1200
+    fam_res = family_cluster_bootstrap(
+        [series],
+        sampled_family_indices=[(0, 0), (1, 1)],
+    )
+
+    assert fam_res.is_primary is False
+    assert fam_res.original_n_tasks == 3
+    assert fam_res.n_families == 2
+    assert fam_res.min_resampled_tasks == 2
+    assert fam_res.max_resampled_tasks == 4
+    assert fam_res.mean_resampled_tasks == Fraction(3, 1)
+
+    s_sum = fam_res.series_summaries["A"]
+    assert s_sum.target_n_expected_total_cost_nanos.lower == Fraction(300, 1)
+    assert s_sum.target_n_expected_total_cost_nanos.upper == Fraction(1200, 1)
+
+
+def test_wp4_seed_sensitivity_on_asymmetric_seeds() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "unequal_seed_panel.json").read_bytes())
+    sens = seed_sensitivity_analysis(
+        env,
+        seed_subsets_by_config={"A": [(0,), (1,), (0, 1)]},
+    )
+
+    assert sens.is_primary is False
+    assert sens.common_seed_positions == (0,)
+    assert sens.shared_exact_seeds == (0,)
+
+    by_label = {(e.config_id, e.slice_label): e for e in sens.entries}
+    assert by_label[("A", "position_0_seed_0")].point.pass_at_1 == Fraction(1, 1)
+    assert by_label[("A", "position_1_seed_1")].point.pass_at_1 == Fraction(0, 1)
+    assert by_label[("A", "all_declared_seeds")].point.pass_at_1 == Fraction(1, 2)
+
+
+def test_wp5_frontiers_dominated_tied_and_undefined_zero_solve_points() -> None:
+    # Hand-calculated points:
+    # C_fast_good: pass=3/4, mean_cost=100, expected_total=400 (n=4), cost/solve = 400/3 = 133.33
+    # C_tied:      pass=3/4, mean_cost=100, expected_total=400 (n=4), cost/solve = 400/3
+    # C_cheap_low: pass=1/4, mean_cost=50,  expected_total=200 (n=4), cost/solve = 200/1 = 200
+    #   -> Notice: On mean_task_cost (50 < 100), C_cheap_low is NON-DOMINATED!
+    #   -> On cost_per_solved (200 > 400/3 and pass 1/4 < 3/4), C_cheap_low IS DOMINATED by C_fast_good!
+    # C_zero_solve: pass=0, mean_cost=10, expected_total=40, cost/solve = UndefinedValue("zero_expected_solves")
+    #   -> On cost_per_solved, C_zero_solve is status="undefined_cost" and CANNOT dominate anything.
+    #   -> On mean_task_cost, C_zero_solve has defined cost=10 (lowest cost!) so it is non-dominated on mean_task_cost.
+
+    p_fast = SeriesPoint(
+        series_id="C_fast_good",
+        n_tasks=4,
+        pass_at_1=Fraction(3, 4),
+        expected_solved_tasks=Fraction(3, 1),
+        expected_total_cost_nanos=Fraction(400, 1),
+        mean_task_cost_nanos=Fraction(100, 1),
+        expected_cost_per_solved_nanos=Fraction(400, 3),
+        actual_all_repetitions_spend_nanos=400,
+    )
+    p_tied = SeriesPoint(
+        series_id="C_tied",
+        n_tasks=4,
+        pass_at_1=Fraction(3, 4),
+        expected_solved_tasks=Fraction(3, 1),
+        expected_total_cost_nanos=Fraction(400, 1),
+        mean_task_cost_nanos=Fraction(100, 1),
+        expected_cost_per_solved_nanos=Fraction(400, 3),
+        actual_all_repetitions_spend_nanos=400,
+    )
+    p_cheap = SeriesPoint(
+        series_id="C_cheap_low",
+        n_tasks=4,
+        pass_at_1=Fraction(1, 4),
+        expected_solved_tasks=Fraction(1, 1),
+        expected_total_cost_nanos=Fraction(200, 1),
+        mean_task_cost_nanos=Fraction(50, 1),
+        expected_cost_per_solved_nanos=Fraction(200, 1),
+        actual_all_repetitions_spend_nanos=200,
+    )
+    p_zero = SeriesPoint(
+        series_id="C_zero_solve",
+        n_tasks=4,
+        pass_at_1=Fraction(0, 1),
+        expected_solved_tasks=Fraction(0, 1),
+        expected_total_cost_nanos=Fraction(40, 1),
+        mean_task_cost_nanos=Fraction(10, 1),
+        expected_cost_per_solved_nanos=UndefinedValue(reason="zero_expected_solves"),
+        actual_all_repetitions_spend_nanos=40,
+    )
+
+    both = compute_both_frontiers([p_fast, p_tied, p_cheap, p_zero])
+
+    headline = both[COST_AXIS_COST_PER_SOLVED]
+    assert headline.is_headline_axis is True
+    assert headline.frontier_series_ids == ("C_fast_good", "C_tied")
+    assert headline.dominated_series_ids == ("C_cheap_low",)
+    assert headline.undefined_series_ids == ("C_zero_solve",)
+
+    rows_cps = {r.series_id: r for r in headline.rows}
+    assert rows_cps["C_fast_good"].tie_group_id == "tie_group_1"
+    assert rows_cps["C_fast_good"].tied_with == ("C_tied",)
+    assert rows_cps["C_cheap_low"].dominated_by == ("C_fast_good", "C_tied")
+    assert rows_cps["C_zero_solve"].status == "undefined_cost"
+    assert rows_cps["C_zero_solve"].is_on_frontier is False
+
+    diag = both[COST_AXIS_MEAN_TASK_COST]
+    assert diag.is_headline_axis is False
+    assert diag.frontier_series_ids == ("C_zero_solve", "C_cheap_low", "C_fast_good", "C_tied")
+    assert diag.dominated_series_ids == ()
+    assert diag.undefined_series_ids == ()
+
+
+def test_wp5_valid_panel_fixture_frontiers() -> None:
+    env = parse_analysis_json((FIXTURES_DIR / "valid_panel.json").read_bytes())
+    frontiers = compute_frontiers_from_envelope(env)
+
+    # A has pass@1=1/2, cost/solve=3M; B has pass@1=1/2, cost/solve=20M -> A dominates B
+    cps_table = frontiers[COST_AXIS_COST_PER_SOLVED]
+    assert cps_table.frontier_series_ids == ("A",)
+    assert cps_table.dominated_series_ids == ("B",)
+
+```
+
+---
+
+## FILE: docs/analysis-foundation-methods.md
+
+```markdown
+# Dojo Statistics Foundation Methods Reference (Batch A: WP1–WP5)
+
+## 1. Scope and Governance Boundary
+
+This document specifies the mathematical definitions, normalization rules, bootstrap resampling algorithms, sensitivity analyses, and Pareto frontier constructions implemented in `dojo/bench/records.py`, `dojo/bench/stats.py`, and `dojo/bench/frontier.py`.
+
+- **No Implicit Publication Authority:** Every input envelope is assigned `EligibilityStatus(status="UNVERIFIED", publishable=False, development_only=True)`. Passing a non-null `registration_id` or `evidence_kind="real"` never flips `publishable` to `True`. Stage B registration and real held-out governance require a separate trusted protocol verifier.
+- **No Usage/Price Inference:** Provider spend is taken strictly from validated integer `cost_nano_usd` fields ($10^{-9}\text{ USD}$). Missing cost (`null`) is never coerced to `0`, and missing token/step/wall-clock counters are never inferred from cost or from other runs.
+- **Owner Learning Boundary:** This library is the reference implementation for task 9b/9g3 and does not replace the project owner's required handwritten exercise in 16c.
+
+---
+
+## 2. Panel Validation and Outcome Normalization (WP1)
+
+Given an `ExpectedPlan` with ordered task list $T = (t_1, \dots, t_n)$ and declared seed tuples $S_c = (s_{c,1}, \dots, s_{c,k_c})$ for each configuration $c \in C$, a complete panel must contain **exactly one** valid record for every expected cell:
+
+$$\mathcal{E} = \{ (c, t, s) \mid t \in T,\; c \in C,\; s \in S_c \}, \quad |\mathcal{E}| = n \sum_{c \in C} k_c$$
+
+### Scorer Status and Evidence Validity Matrix
+
+| `scorer_status` | Required `outcome` | Required `evidence_validity` | Additional Invariant | Effect on Headline Aggregation |
+|---|---|---|---|---|
+| `passed` | `solved` | `valid` | `execution_complete is True` | Included ($y_{c,t,r} = 1$) |
+| `failed` | `unsolved` | `valid` | `execution_complete is True` | Included ($y_{c,t,r} = 0$) |
+| `candidate_error` | `unsolved` | `valid` | `baseline_verified is True` and `execution_complete is True` | Included ($y_{c,t,r} = 0$) iff `baseline_verified=True`; otherwise **blocked** |
+| `invalid_evidence` | `undetermined` | `invalid` | — | **Blocked** (`audit.status = "blocked"`) |
+| `infrastructure_error` | `undetermined` | `unknown` | — | **Blocked** (`audit.status = "blocked"`) |
+
+Any missing cell, duplicate cell, unexpected cell, mixed split (`train` mixed with `held_out`), conflicting task `family_id`, or blocker finding sets `audit.status = "blocked"` and prevents all headline metric calculations. If all cells are valid for outcomes but one or more cells have `cost_nano_usd = null`, `audit.status` is `"cost_incomplete"` (`success_only_allowed = True`, `cost_comparison_allowed = False`).
+
+---
+
+## 3. Primary Estimands and Cost Semantics (WP2)
+
+Let $n = |T|$ be the number of tasks and $k_c = |S_c|$ be the declared repetition count for configuration $c$. For each task $t \in T$ and seed $r \in S_c$, let $y_{c,t,r} \in \{0, 1\}$ denote whether the run solved the task, and $\text{cost}_{c,t,r} \in \mathbb{Z}_{\ge 0}$ denote the measured cost in nano-USD.
+
+1. **Per-task pass rate and mean single-seed cost:**
+   $$p_{c,t} = \frac{1}{k_c} \sum_{r \in S_c} y_{c,t,r}, \qquad m_{c,t} = \frac{1}{k_c} \sum_{r \in S_c} \text{cost}_{c,t,r}$$
+
+2. **Equal-task-weighted $\text{pass@1}$:**
+   $$\text{pass@1}(c) = \frac{1}{n} \sum_{t \in T} p_{c,t}$$
+   Unequal seed counts $k_c$ refine the per-task estimate $p_{c,t}$ without overweighting tasks or configurations. This is $\text{pass@1}$ (expected success of one randomly chosen seed), not $\text{pass@}k$.
+
+3. **Expected solved tasks (single random seed per task):**
+   $$S_{\text{exp}}(c) = \sum_{t \in T} p_{c,t} = n \cdot \text{pass@1}(c)$$
+
+4. **Expected total cost of one random-seed run per task (`expected_total_cost_nanos`):**
+   $$C_{\text{exp}}(c) = \sum_{t \in T} m_{c,t}, \qquad \bar{m}(c) = \frac{1}{n} C_{\text{exp}}(c)$$
+
+5. **Expected cost per solved task (`expected_cost_per_solved_nanos`):**
+   $$\text{CPS}(c) = \begin{cases} \dfrac{C_{\text{exp}}(c)}{S_{\text{exp}}(c)} = \dfrac{\sum_{t \in T} m_{c,t}}{\sum_{t \in T} p_{c,t}} & \text{if } S_{\text{exp}}(c) > 0 \\[8pt] \text{UndefinedValue}(\texttt{"zero\_expected\_solves"}) & \text{if } S_{\text{exp}}(c) = 0 \end{cases}$$
+   Measured costs of failed runs remain in the numerator $C_{\text{exp}}(c)$.
+
+6. **Actual all-repetition spend (`actual_all_repetitions_spend_nanos`):**
+   $$C_{\text{actual}}(c) = \sum_{t \in T} \sum_{r \in S_c} \text{cost}_{c,t,r}$$
+   Reported separately as an exact integer; never divided by single-seed expected solves $S_{\text{exp}}(c)$.
+
+All intermediate calculations use Python `fractions.Fraction` and exact `int` nano-USD, completely independent of floating-point rounding or ambient `decimal` context.
+
+---
+
+## 4. Paired Task Bootstrap (WP3)
+
+- **Resampling unit:** Tasks $t \in \{0, \dots, n-1\}$.
+- **Default replicates:** $B = 10,000$ using an isolated `random.Random(seed)` instance.
+- **Pairing invariant:** In replicate $b \in \{1, \dots, B\}$, a single multiset of $n$ task indices $I^{(b)} = (i^{(b)}_1, \dots, i^{(b)}_n)$ is drawn uniformly with replacement from $\{0, \dots, n-1\}$. Every compared configuration (and future cascade policy) is evaluated on the **exact same** sampled task indices $I^{(b)}$, retaining all $k_c$ seed runs of each sampled task.
+- **Quantile convention (`sorted_empirical_nearest_rank_linear_endpoints`):** Given $B$ sorted exact `Fraction` draws $x_{(0)} \le x_{(1)} \le \dots \le x_{(B-1)}$ and quantile $q \in [0, 1]$ (where $q_{\text{low}} = (1-\alpha)/2$ and $q_{\text{high}} = 1 - (1-\alpha)/2$):
+  $$h = q (B - 1), \quad \ell = \lfloor h \rfloor, \quad u = \lceil h \rceil, \quad Q(q) = x_{(\ell)} + (h - \ell)\bigl(x_{(u)} - x_{(\ell)}\bigr)$$
+- **Zero-solve draw rule:** For ratio metrics ($\text{CPS}(c)$ and $\Delta \text{CPS}$), if any bootstrap replicate $b$ has zero expected solves ($\sum_{j=1}^n p_{c, i^{(b)}_j} = 0$), the replicate is counted in `zero_solve_draws` and `undefined_draws`, and the unconditional confidence interval endpoints (`lower`, `upper`) are returned as `UndefinedValue(reason="unconditional_interval_blocked_by_zero_solve_draws")`. Zero-solve draws are never silently discarded to fabricate a narrower conditional interval.
+
+---
+
+## 5. Sensitivity Analyses (WP4)
+
+### 5.1 Family-Cluster Bootstrap (`family_cluster_bootstrap`)
+- **Non-primary label:** `is_primary = False`, `estimand_label = "sensitivity_family_cluster_bootstrap_task_weighted_within_resampled_clusters"`.
+- **Resampling rule:** Let $F = (f_1, \dots, f_M)$ be the $M$ distinct `family_id` clusters. Each replicate draws $M$ families with replacement, includes all tasks belonging to each drawn family occurrence (retaining all seeds), and weights included task occurrences equally.
+- **Sample-size variation and total-cost scaling:** When family sizes $|T_f|$ vary, the resampled task count $n^{*(b)} = \sum_{m=1}^M |T_{f^{(b)}_m}|$ varies across draws. To keep total-cost intervals comparable to the original $n$-task benchmark rather than reflecting random cluster-size fluctuations, the estimator reports:
+  $$\hat{C}^{*(b)}_{\text{target-}n}(c) = n \cdot \bar{m}^{*(b)}(c) = \frac{n}{n^{*(b)}} \sum_{j=1}^{n^{*(b)}} m_{c, t^{(b)}_j}$$
+  alongside `min_resampled_tasks`, `max_resampled_tasks`, and `mean_resampled_tasks`.
+
+### 5.2 Seed-Position and Seed-Subset Sensitivity (`seed_sensitivity_analysis`)
+- Evaluates predeclared ordinal seed positions (`position_0`, `position_1`, ...) and explicit caller-supplied seed subsets with full task coverage.
+- When configurations have asymmetric seed lists (e.g., $S_A = (0, 1)$, $S_B = (0)$), cross-config single-seed comparisons are valid at `common_seed_positions` ($0 \dots \min_c k_c - 1$) or on `shared_exact_seeds` ($S_A \cap S_B$), whereas additional seeds in $S_A$ quantify within-config seed variance.
+
+---
+
+## 6. Cost-vs-Success Pareto Frontiers (WP5)
+
+`compute_frontier` supports two explicit cost axes (minimizing cost, maximizing $\text{pass@1}$):
+1. `cost_per_solved` (headline axis: $\text{CPS}(c)$ vs $\text{pass@1}(c)$)
+2. `mean_task_cost` (diagnostic axis: $\bar{m}(c)$ vs $\text{pass@1}(c)$)
+
+Configuration $A$ Pareto-dominates $B$ on cost axis $X$ iff both are defined and:
+$$(X_A \le X_B \text{ and } \text{pass@1}_A \ge \text{pass@1}_B) \quad \text{and} \quad (X_A < X_B \text{ or } \text{pass@1}_A > \text{pass@1}_B)$$
+
+- **Exact Ties:** Configurations with identical rational $(X, \text{pass@1})$ are all retained on the frontier if non-dominated and linked via a shared `tie_group_id` and `tied_with` peer tuple.
+- **Undefined Points:** Any configuration with `UndefinedValue` on the chosen cost axis (such as a zero-solve configuration on `cost_per_solved`) receives `status = "undefined_cost"`, `is_on_frontier = False`, and cannot dominate or be dominated by valid configurations.
+
+---
+
+## 7. Known Answers on Synthetic Fixtures
+
+1. **`valid_panel.json` (4 tasks, 1 seed each for A and B):**
+   - Config A: $\text{pass@1} = 1/2$, $C_{\text{exp}} = 6,000,000\text{ nanos}$, $\bar{m} = 1,500,000\text{ nanos}$, $\text{CPS} = 3,000,000\text{ nanos}$, $C_{\text{actual}} = 6,000,000\text{ nanos}$.
+   - Config B: $\text{pass@1} = 1/2$, $C_{\text{exp}} = 40,000,000\text{ nanos}$, $\bar{m} = 10,000,000\text{ nanos}$, $\text{CPS} = 20,000,000\text{ nanos}$, $C_{\text{actual}} = 40,000,000\text{ nanos}$.
+   - Frontier: `A` dominates `B` on both `cost_per_solved` and `mean_task_cost`.
+2. **`unequal_seed_panel.json` (1 task, A has seeds `[0, 1]`, B has seed `[0]`):**
+   - Config A: $\text{pass@1} = 1/2$, $C_{\text{exp}} = 3\text{ nanos}$, $\text{CPS} = 6\text{ nanos}$, $C_{\text{actual}} = 6\text{ nanos}$.
+   - Config B: $\text{pass@1} = 0$, $C_{\text{exp}} = 10\text{ nanos}$, $\text{CPS} = \text{UndefinedValue}(\texttt{"zero\_expected\_solves"})$, $C_{\text{actual}} = 10\text{ nanos}$.
+
+```
+
+---
+
+## FILE: docs/analysis-foundation-api.md
+
+```markdown
+# Dojo Statistics Foundation API & Batch B Integration Guide (WP1–WP5)
+
+## 1. Module Overview & Public Symbols
+
+Batch A delivers three pure standard-library modules under `dojo/bench/` with zero circular imports and explicit `__all__` exports:
+
+| Module | Primary Public Types & Functions |
+|---|---|
+| `dojo.bench.records` | `SCHEMA_VERSION`, `FOUNDATION_METHOD_VERSION`, `MAX_INPUT_BYTES`, `MAX_JSON_DEPTH`, `MAX_RECORDS`, `AnalysisInputError`, `UndefinedValue`, `EligibilityStatus`, `ExpectedPlan`, `NormalizedRecord`, `AuditFinding`, `PanelAudit`, `NormalizedEnvelope`, `loads_bounded_json`, `parse_analysis_envelope`, `parse_analysis_json`, `validate_panel`, `compute_expected_plan_hash`, `compute_input_sha256`, `format_fraction_Or_undef` |
+| `dojo.bench.stats` | `DEFAULT_BOOTSTRAP_REPLICATES`, `MAX_BOOTSTRAP_REPLICATES`, `MAX_BOOTSTRAP_WORKLOAD`, `QUANTILE_METHOD`, `TaskPoint`, `TaskSeries`, `SeriesPoint`, `SecondaryMetricSummary`, `ConfigMetrics`, `BootstrapInterval`, `SeriesBootstrapSummary`, `PairedDifferenceSummary`, `PairedBootstrapResult`, `FamilySeriesSummary`, `FamilyBootstrapResult`, `SeedSensitivityEntry`, `SeedSensitivityResult`, `evaluate_series_point`, `build_config_task_series`, `compute_config_metrics`, `compute_all_config_metrics`, `compute_empirical_quantile`, `paired_task_bootstrap`, `family_cluster_bootstrap`, `seed_sensitivity_analysis` |
+| `dojo.bench.frontier` | `COST_AXIS_COST_PER_SOLVED`, `COST_AXIS_MEAN_TASK_COST`, `VALID_COST_AXES`, `FrontierRow`, `FrontierTable`, `compute_frontier`, `compute_both_frontiers`, `compute_frontiers_from_envelope` |
+
+---
+
+## 2. Exact Function Signatures
+
+```python
+# dojo/bench/records.py
+def loads_bounded_json(raw: str | bytes) -> dict[str, Any]: ...
+def parse_analysis_envelope(data: Mapping[str, Any]) -> NormalizedEnvelope: ...
+def parse_analysis_json(raw: str | bytes) -> NormalizedEnvelope: ...
+def validate_panel(
+    expected_plan: ExpectedPlan,
+    records: Sequence[NormalizedRecord],
+    *,
+    dataset_id: str,
+    evidence_kind: str,
+) -> PanelAudit: ...
+def compute_expected_plan_hash(expected_plan: ExpectedPlan) -> str: ...
+def compute_input_sha256(
+    *,
+    schema_version: int,
+    dataset_id: str,
+    evidence_kind: str,
+    expected_plan: ExpectedPlan,
+    records: Sequence[NormalizedRecord],
+) -> str: ...
+def format_fraction_Or_undef(value: Fraction | UndefinedValue) -> dict[str, Any]: ...
+
+# dojo/bench/stats.py
+def evaluate_series_point(
+    series_id: str,
+    task_points: Sequence[TaskPoint],
+    *,
+    target_n_tasks: int | None = None,
+    include_actual_spend: bool = True,
+) -> SeriesPoint: ...
+def build_config_task_series(
+    envelope: NormalizedEnvelope,
+    config_id: str,
+    *,
+    seed_subset: Sequence[int] | None = None,
+    series_id: str | None = None,
+) -> TaskSeries: ...
+def compute_config_metrics(envelope: NormalizedEnvelope, config_id: str) -> ConfigMetrics: ...
+def compute_all_config_metrics(envelope: NormalizedEnvelope) -> dict[str, ConfigMetrics]: ...
+def paired_task_bootstrap(
+    series_list: Sequence[TaskSeries],
+    *,
+    replicates: int = 10_000,
+    seed: int = 17,
+    confidence_level: float | Fraction = Fraction(95, 100),
+    comparison_pairs: Sequence[tuple[str, str]] | None = None,
+    sampled_task_indices: Sequence[Sequence[int]] | None = None,
+) -> PairedBootstrapResult: ...
+def family_cluster_bootstrap(
+    series_list: Sequence[TaskSeries],
+    *,
+    replicates: int = 10_000,
+    seed: int = 17,
+    confidence_level: float | Fraction = Fraction(95, 100),
+    comparison_pairs: Sequence[tuple[str, str]] | None = None,
+    sampled_family_indices: Sequence[Sequence[int]] | None = None,
+) -> FamilyBootstrapResult: ...
+def seed_sensitivity_analysis(
+    envelope: NormalizedEnvelope,
+    *,
+    seed_positions: Sequence[int] | None = None,
+    seed_subsets_by_config: Mapping[str, Sequence[Sequence[int]]] | None = None,
+) -> SeedSensitivityResult: ...
+
+# dojo/bench/frontier.py
+def compute_frontier(
+    items: Sequence[SeriesPoint | ConfigMetrics],
+    *,
+    cost_axis: str = "cost_per_solved",
+) -> FrontierTable: ...
+def compute_both_frontiers(
+    items: Sequence[SeriesPoint | ConfigMetrics],
+) -> dict[str, FrontierTable]: ...
+def compute_frontiers_from_envelope(
+    envelope: NormalizedEnvelope,
+) -> dict[str, FrontierTable]: ...
+
+```
+
+---
+
+## 3. How Batch B (Cascades, Policies & Report Export) Reuses Batch A
+
+Batch A is intentionally structured around `TaskPoint`, `TaskSeries`, and `SeriesPoint` so Batch B (`dojo/cascade/simulate.py` and `dojo/bench/report.py`) can plug cold-restart cascades directly into the existing bootstrap, sensitivity, and frontier engines without duplicating math:
+
+1. **Cascade-to-`TaskSeries` Seam:** For each task $t$ in `envelope.expected_plan.tasks`, a cold-restart cascade $A \to B$ computes its exact analytical cross-product task success rate $p_{\text{cascade}, t}$ (`Fraction`) and task expected cost $m_{\text{cascade}, t}$ (`Fraction`) and constructs a `TaskPoint(task_id=t, family_id=..., seed_count=k_A * k_B, pass_rate=p_cascade_t, mean_cost_nanos=m_cascade_t, actual_all_seeds_cost_nanos=None)`.
+2. **Point Estimates:** Calling `evaluate_series_point("cascade_A_to_B", cascade_task_points, include_actual_spend=False)` returns a `SeriesPoint` with exact rational `pass_at_1`, `expected_total_cost_nanos`, and `expected_cost_per_solved_nanos`.
+3. **Paired Bootstrap & Sensitivity:** Passing `[series_A, series_B, series_cascade]` to `paired_task_bootstrap` or `family_cluster_bootstrap` resamples tasks (or families) using the **exact same task indices** across `A`, `B`, and `cascade`, automatically producing paired differences (`cascade - A`, `cascade - B`).
+4. **Pareto Frontiers:** Passing `[metrics_A.primary, metrics_B.primary, cascade_point]` to `compute_both_frontiers` places the cascade directly onto both cost-vs-success frontier tables alongside baseline configurations.
+
+---
+
+## 4. Executable Usage Example
+
+```python
+from fractions import Fraction
+from pathlib import Path
+
+from dojo.bench.frontier import COST_AXIS_COST_PER_SOLVED, compute_frontiers_from_envelope
+from dojo.bench.records import parse_analysis_json
+from dojo.bench.stats import (
+    build_config_task_series,
+    compute_all_config_metrics,
+    family_cluster_bootstrap,
+    paired_task_bootstrap,
+    seed_sensitivity_analysis,
+)
+
+raw = Path("tests/fixtures/analysis/valid_panel.json").read_bytes()
+envelope = parse_analysis_json(raw)
+assert envelope.audit.status == "valid"
+
+metrics = compute_all_config_metrics(envelope)
+assert metrics["A"].primary.pass_at_1 == Fraction(1, 2)
+assert metrics["A"].primary.expected_cost_per_solved_nanos == Fraction(3_000_000, 1)
+
+series_a = build_config_task_series(envelope, "A")
+series_b = build_config_task_series(envelope, "B")
+
+boot = paired_task_bootstrap([series_a, series_b], replicates=1000, seed=17)
+fam_boot = family_cluster_bootstrap([series_a, series_b], replicates=1000, seed=17)
+seed_sens = seed_sensitivity_analysis(envelope)
+frontiers = compute_frontiers_from_envelope(envelope)
+
+assert frontiers[COST_AXIS_COST_PER_SOLVED].frontier_series_ids == ("A",)
+
+```
+
+---
+
+## 5. What Is Deferred to Batch B
+
+* `dojo/cascade/policies.py` (WP6: observable-only policy AST, canonical hash, and train-only selection)
+* `dojo/cascade/simulate.py` (WP7: cold-restart cascade composition and trigger TP/FP/FN/TN confusion diagnostics)
+* `dojo/bench/report.py` (WP8: top-level JSON report export envelope)
+* `dojo/bench/analyze.py` (WP9: standalone `python -m dojo.bench.analyze` CLI)
+* `tests/test_cascade.py`, `tests/test_analysis_report.py`, `tests/test_analysis_cli.py` (WP10 Batch B test suites)
+
+```
+
+---
+
+## Verification Commands & Honest Execution Ledger[cite: 2]
+
+### Primary Workspace Verification Commands[cite: 2]
+
+Run these commands in the primary workspace after integrating the files above:
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/test_analysis_records.py tests/test_statistics.py -q --tb=short
+.venv\Scripts\ruff.exe check dojo/bench/records.py dojo/bench/stats.py dojo/bench/frontier.py tests/test_analysis_records.py tests/test_statistics.py
+.venv\Scripts\python.exe -m pytest -q --tb=short
+
+```
+
+### Honest Execution Ledger
+
+
+
+* **Executed in this chat environment:** `0` pytest suites, `0` ruff runs, `0` subprocesses (this web chat environment has no local shell, Python interpreter, or repository checkout).
+
+
+* **Statically verified against packet specifications:**
+* All imports, public symbols (`__all__`), type annotations, and function signatures across `dojo/bench/records.py`, `dojo/bench/stats.py`, `dojo/bench/frontier.py`, `tests/test_analysis_records.py`, `tests/test_statistics.py`, and `docs/analysis-foundation-api.md` match 1-to-1 with zero phantom helpers.
+
+
+* Fixture JSON files (`valid_panel.json`, `unequal_seed_panel.json`, `invalid_panel.json`) have their test-only `"expected"` annotation removed as required.
+
+
+* Hand-verified arithmetic matches every required known answer (`A` pass@1 = `1/2`, total cost = `6,000,000`, cost/solve = `3,000,000`; `B` pass@1 = `1/2`, total cost = `40,000,000`, cost/solve = `20,000,000`; unequal-seed `A` pass@1 = `1/2`, expected 1-seed total cost = `3`, actual all-repeat spend = `6`, cost/solve = `6`; `B` cost/solve = `UndefinedValue("zero_expected_solves")`).
+
+
+
+
+
+END OF BATCH A DELIVERY

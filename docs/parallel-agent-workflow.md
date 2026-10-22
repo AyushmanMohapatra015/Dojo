@@ -10,11 +10,16 @@ agents the same mutable task usually creates duplicate work and stale patches.
 Cache proposal v2 has been reviewed; see cache-review-assessment-v2.md. The
 primary workspace completed 5c and next owns 5d usage/result accounting. Agent 1
 owns 9g2 statistics/bootstrap/cascade reference code.
-Share ONLY docs/reviews/statistics-cascade-packet-v2.md for that assignment.
-It contains ten work packages, complete source/context and math, three synthetic
-fixtures/answers, explicit I/O and at least 17 source/test/fixture/doc deliveries.
-V1 remains a historical narrower snapshot; v2 supersedes it for the assignment.
-Return its response as docs/reviews/statistics-cascade-feedback-v2.txt.
+The owner reports ten tasks exceed Agent 1's capacity, so the active handoff is
+now docs/reviews/statistics-batch-a-packet-v1.md: exactly original WPs 1-5,
+complete relevant math/source/fixtures and a concrete public API delivery map.
+V1/v2 remain preserved historical snapshots; do not request all ten together.
+Agent 1 is named Argon. Return Batch A as
+docs/reviews/argon/statistics-batch-a-feedback-v1.txt. Existing assignment paths
+remain valid; verified copies and instructions are under docs/reviews/argon/.
+After primary review, build Batch B (original WPs 6-10) with the actual reviewed
+Batch A source/API attached. Do not send Batch B early or guess its imports.
+This retains every original task while limiting active implementation to five.
 Do not ask both agents to implement the same mutable modules in parallel.
 
 ## Agent 2: two independent document tasks (13j, 14k, 14l)
@@ -46,19 +51,32 @@ Paste with the packet:
 > explicitly. Do not write statistics/application code or claim unexecuted
 > checks. Finish with END OF AGENT 2 DELIVERY.
 
+Agent 2 returned three original Markdown files under docs/reviews/agent2/.
+They are reviewed in docs/reviews/agent2-review-assessment-v1.md, with an original
+source-hash manifest. The audit/storyboard planning deliverables are complete;
+the real demo/submission are not. Do not use the uncorrected original narration
+or missing-task claims without the assessment's dispositions.
+
+Agent 2's NEXT implementation assignment is the single attachment
+docs/reviews/agent2/agent2-explorer-packet-v1.md (10a1): exactly two tasks,
+static React/Vite/Recharts frontend code and its UI verification/integration
+handoff. This uses a temporary synthetic-only view model, independent of Argon's
+analysis API. No storage/provider imports or real data claims. Return complete
+code/tests/docs as docs/reviews/agent2/agent2-explorer-feedback-v1.txt; primary
+reviews before frontend acceptance. The supplied manifest distinguishes this
+assignment from the earlier documentation-only task.
+
 Agent 3 is Antigravity and remains unassigned until we choose a separate task
 and inspect its checkout/context. Do not grant it broad permissions just to
 prepare this web-agent assignment. Primary integration remains here.
 
 Paste with the new attachment:
 
-> Read the full v2 statistics/cascade packet through END OF REVIEW PACKET. Complete
-> ALL TEN work packages with the complete source/tests/fixtures/docs and shared
-> API required by its delivery manifest. Use supplied boundaries, exact formulas,
-> examples and defaults. Preserve all gates; do not edit cache/storage. Declare
-> execution status truthfully. If output needs multiple parts, give a manifest,
-> number every part and finish with END OF IMPLEMENTATION. Do not replace code
-> with a long design essay or silently omit unfinished work.
+> Replace the earlier ten-task request with this Batch A packet. Read through
+> END OF REVIEW PACKET and complete ONLY WP1-WP5 with every named source, test,
+> fixture and API/method document. Preserve useful existing work; do not implement
+> policies/cascades/report/CLI yet. Use the supplied boundaries and exact math,
+> mark unexecuted checks honestly and finish with END OF BATCH A DELIVERY.
 
 ## Previous cache assignment (historical instructions)
 

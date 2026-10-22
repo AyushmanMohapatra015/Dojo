@@ -1,0 +1,24 @@
+{
+    "schema_version":  1,
+    "review_date":  "2026-10-22",
+    "review_task":  "13k",
+    "assessment":  "docs/reviews/agent2-review-assessment-v1.md",
+    "originals_preserved":  true,
+    "files":  [
+                  {
+                      "path":  "docs/reviews/agent2/agent2-submission-audit-v1.md",
+                      "bytes":  20960,
+                      "sha256":  "af054bcbd9e3ca41c9fa5bf2eb06c57b4fb477a3ac017a2548da06c22d43436f"
+                  },
+                  {
+                      "path":  "docs/reviews/agent2/agent2-demo-storyboard-v1.md",
+                      "bytes":  11142,
+                      "sha256":  "959fc2ca3a0e363a5f47830e7f92107f0d3f25585991449ce245aee4c9f44e0b"
+                  },
+                  {
+                      "path":  "docs/reviews/agent2/agent2-integration-ledger-v1.md",
+                      "bytes":  2776,
+                      "sha256":  "9748e3a3c046c9f79fdb5e80b154062260c4490370f21dafbbf26d00588f233b"
+                  }
+              ]
+}

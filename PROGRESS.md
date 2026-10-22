@@ -1,5 +1,97 @@
 # Progress
 
+## Task 5d2 and Agent 2 frontend packet (10a1) - 2026-10-22
+
+- Added ResultStore with atomic synthetic result completion and immutable
+  private record/price/valuation history. Read/reuse reconstructs strict typed
+  records, verifies provenance/binary hashes/metrics and recomputes every cost.
+  New valuations preserve the original record and are not silently official.
+- Explicit schema v3 adds three immutable tables; exact prior v2 saved in
+  schema_v2.py. Existing v1/v2 stores refused without migration/reset. No
+  persistent project database or real spend ledger initialized.
+- Non-synthetic supplied data is stored only as unverified diagnostics; the
+  attempt is fenced uncertain and blocks automatic replay/new preparation.
+  No completed provider execution, canonical settled usage, score or dispatch
+  authority is fabricated. Trusted runner/ledger/provider integration remains
+  5e/6/8, so parent 5d remains PARTIAL despite completed offline persistence.
+- Legacy AttemptStore access validates detailed records too; explicit marker
+  prevents missing-record downgrade. Old synthetic API stays supported without
+  pretending it produced new metrics. Historical valuations bounded to 1000.
+- 32 new regressions cover synthetic/unknown/diagnostic round trips, immutable
+  history/revaluation, byte/metadata/cost corruption, wrong identity/ownership,
+  expiry, clock/future-price errors, rollback, v2 refusal, legacy cache bypass
+  and large patch/truncated UTF-8 trace. Final full suite: 911 passed in 42.68s;
+  Ruff passed. No provider calls, paid usage, Git writes or account actions.
+- Built Agent 2's single explorer packet (10a1), exactly two implementation
+  tasks (10a2/10a3), with existing dashboard README, reviewed corrections and
+  synthetic-only frontend view-model/fixture. Independent of Argon's APIs;
+  no frontend code adopted yet. Save returned code/tests/docs as
+  docs/reviews/agent2/agent2-explorer-feedback-v1.txt for primary review.
+- Next primary implementation: 5e, frozen-CLI-safe runner/command integration.
+  Final inventory found Argon's statistics-batch-a.txt and
+  statistics-batch-b-response.md. Both are unreviewed; next review checks actual
+  Batch A/B interface compatibility before code integration. No claims about
+  response quality/completion or external test execution made from filenames.
+
+## Argon folder and Batch B preparation (9g4) - 2026-10-22
+
+- Owner reports Agent 1/Argon's first-five-task response is available but not
+  saved in the workspace yet. Created docs/reviews/argon with response-save
+  instructions and a remaining-five-task scope (original WP6-WP10).
+- Copy relevant assignment snapshots with byte/hash verification; preserve all
+  original paths, immutable packets and Agent 2 files. No source moved/deleted.
+- Actual Batch B implementation packet must wait for reading/testing the saved
+  Batch A source and its actual API; scope alone is not a complete packet. No
+  math implementation accepted or task marked complete based on a verbal report.
+  Next: save response in Argon folder, review foundation, then attach reviewed
+  code/interfaces/fixtures in the new Batch B packet. Primary 5d2 remains next.
+
+## Agent 2 review (13k/14k/14l) and README corrections (14a1) - 2026-10-22
+
+- Read all three originals under docs/reviews/agent2 in full; preserved exact
+  files and recorded hashes in agent2-review-manifest-v1.json. Assessment at
+  docs/reviews/agent2-review-assessment-v1.md maps evidence/dispositions.
+- Accepted README drift findings; corrected active 63 tasks (37/26), met G1,
+  partial offline solver/store status, current 879-test checkpoint, rehearsal,
+  actual versus planned reservations and locked provider/runtime wording.
+  Fresh-checkout reproduction remains 14a, not completed by editing the README.
+- Resolved supposed missing live/CLI tasks to existing 6/8/5e; confirmed offline
+  credit ledger is implemented while real allowance/solver binding remain gated.
+  Rejected blanket ban on accurately scoped local caps or unnecessary frozen
+  packaging edits. Old construction results remain immutable historical evidence.
+- Storyboard original scenes sum to 172 seconds; corrected wording so visible
+  observations are distinct from self-report and held-out outcomes do not choose
+  a new winner. Rehearsal after filled values/edits remains 14e. Planning docs
+  delivered, no functioning demo/video or model results claimed.
+- Official rules reopened Oct 22; final handoff recheck remains 14h. Re-ran dojo
+  cost and verifier dry run: planned $0.01030144, reserved 0, attempted calls 0.
+  No new paid/live requests, full-suite rerun, publication or staging/commit/push.
+  Primary next stays 5d2; Agent 1 owns five-task Batch A (9g3), Agent 3 deferred.
+
+## Task 5d1 and Agent 1 five-task batches (9g3) - 2026-10-22
+
+- Adapted reviewed usage/valuation/artifact concepts into dojo/store/records.py.
+  Direct cost construction/replacement recomputes from bound usage and immutable
+  model/endpoint pricing snapshot; integer arithmetic/explicit aggregate rounding
+  avoids mutable precision. Unknown usage cannot become zero/provider-valued.
+- Added checked turn/command/timeout relationships, derived runtime signals,
+  configured identity/request/token limits, exact bounded diff and private UTF-8
+  trajectory prefix with retained/original identity. No evaluator outcome or
+  publication flag is introduced. docs/execution-records.md records limits.
+- 65 new offline regressions; full suite 879 passed in 41.54s. Ruff passed.
+  Existing v2 store/schema, frozen sources and Agent 1 math modules untouched.
+  No provider calls, persistent project DB, ledger mutation or paid usage.
+- Next primary task: 5d2 versioned persistence/read validation and append-only
+  valuation history. Parent 5d remains incomplete; live trusted runner/provider
+  integration still belongs to 5e/6/8 and remains gated.
+- Owner reports Agent 1 cannot handle ten tasks together. New immutable packet
+  statistics-batch-a-packet-v1.md assigns ONLY original WPs 1-5: records, metrics,
+  paired bootstrap, sensitivity and frontiers, with all context/fixtures/source.
+  Original v1/v2 preserved. Return statistics-batch-a-feedback-v1.txt; review its
+  complete code/API before building Batch B for original WPs 6-10. No work lost.
+- Agent 2 retains 14k/14l; Agent 3 deferred. No staging/commit/push or account
+  actions. Current results/tests are development evidence, not model benchmarks.
+
 ## Agent 2 context packet (13j, assignments 14k/14l) - 2026-10-22
 
 - Prepared one versioned, allowlisted Markdown packet: complete selected sources,

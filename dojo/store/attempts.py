@@ -94,6 +94,16 @@ class AttemptStore(RunStore):
             raise StoreError('Run provenance or state is inconsistent')
         if row['execution_state'] == 'completed':
             self._artifact(db, row, identity)
+        has_record = db.execute('SELECT 1 FROM execution_records WHERE run_id=?', (run_id,)).fetchone()
+        if bool(has_record) != (row['stop_reason'] in {
+                'synthetic_record_complete', 'unverified_result_recorded'}):
+            raise StoreError('Detailed result marker or record is missing')
+        if has_record:
+            # New detailed records must also be checked through the legacy cache
+            # entry point. Lazy import avoids a module-initialization cycle.
+            from dojo.store.results import ResultStore
+
+            ResultStore(self.path)._read(db, row, identity)
         return row, identity
 
     @staticmethod
@@ -260,17 +270,21 @@ class AttemptStore(RunStore):
             if (row['namespace'] != 'synthetic' or row['reservation_state'] != 'none'
                     or prompt_tokens + completion_tokens > identity.limits.token_ceiling):
                 raise StoreError('Only bounded synthetic completion is available')
-            db.execute("UPDATE runs SET execution_state='completed',finished_at_us=?,"
-                       "lease_expires_at_us=NULL,stop_reason='synthetic_complete' WHERE run_id=?",
-                       (stamp, claim.run_id))
-            db.execute('INSERT INTO artifacts(run_id,patch,patch_sha256,trajectory,trajectory_sha256) '
-                       'VALUES (?,?,?,?,?)', (claim.run_id, patch, sha256_bytes(patch), trajectory,
-                                             None if trajectory is None else sha256_bytes(trajectory)))
-            db.execute('INSERT INTO usage(run_id,namespace,basis,prompt_tokens,completion_tokens,'
-                       "provider_calls,cost_nano_usd) VALUES (?,'synthetic','synthetic',?,?,0,0)",
-                       (claim.run_id, prompt_tokens, completion_tokens))
-            db.execute('UPDATE run_context SET updated_at_us=? WHERE run_id=?', (stamp, claim.run_id))
-            self._event(db, row, 'completed', stamp)
+            self._finish_synthetic(db, row, stamp, patch, prompt_tokens, completion_tokens, trajectory)
+
+    def _finish_synthetic(self, db, row, stamp, patch, prompt_tokens, completion_tokens, trajectory):
+        run_id = row['run_id']
+        db.execute("UPDATE runs SET execution_state='completed',finished_at_us=?,"
+                   "lease_expires_at_us=NULL,stop_reason='synthetic_complete' WHERE run_id=?",
+                   (stamp, run_id))
+        db.execute('INSERT INTO artifacts(run_id,patch,patch_sha256,trajectory,trajectory_sha256) '
+                   'VALUES (?,?,?,?,?)', (run_id, patch, sha256_bytes(patch), trajectory,
+                                         None if trajectory is None else sha256_bytes(trajectory)))
+        db.execute('INSERT INTO usage(run_id,namespace,basis,prompt_tokens,completion_tokens,'
+                   "provider_calls,cost_nano_usd) VALUES (?,'synthetic','synthetic',?,?,0,0)",
+                   (run_id, prompt_tokens, completion_tokens))
+        db.execute('UPDATE run_context SET updated_at_us=? WHERE run_id=?', (stamp, run_id))
+        self._event(db, row, 'completed', stamp)
 
     def read_artifact(self, run_id):
         with self.transaction() as db:
