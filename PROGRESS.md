@@ -1,5 +1,338 @@
 # Progress
 
+## 2026-10-31: Argon explorer Part 2 handoff (13m1b)
+
+- Done: generated `docs/reviews/argon/explorer-export-part2-packet-v1.md` from 15 reviewed, exact-byte references (344,890 bytes); reserved eight new bundle/CLI/test/doc deliverables for 10i2–10i4. Existing Part 1 implementation remains accepted.
+- Next: owner sends only this packet to Argon; primary reviews returned complete files and independently tests/adapts them before task completion. Live model evaluation, trusted scorer/registration, frontend integration and demo remain separate.
+- Blockers: no Part 2 implementation response yet. This handoff makes no provider calls and spends no credit.
+
+## Interrupted Argon Part 1 reviewed, completed and integrated - 2026-10-31
+
+- 13m1a / 10i1a / 9f1a complete. Preserved original 98,441-byte reply, SHA-256
+  025681298fadf135f784584dd330c387df081a694d3416657f02c54308fca18e, plus
+  exact fragments/intake manifest. Exporter had syntax error; test file was only
+  an initial fragment. Remaining requested files were not delivered.
+- Reused/adapted supplied exporter rather than rewriting its projections.
+  Archived syntax-only probes confirmed permissive embedded sensitivity and
+  incorrect Pareto status acceptance. Corrected source/report/config/cascade/
+  frontier binding, nested output checks, bootstrap point/delta/version checks,
+  resource preflight, Unicode numeric grammar, DAG/cycle handling, canonical
+  duplicate rows and long derived series aliasing. Original response unchanged.
+- Completed missing bounded family module with accepted task-series/statistics
+  helpers, same hashes/aliases, exact retained-task arithmetic, uneven families,
+  global unknown-cost withholding, no-retained-task undefined values and no
+  retuning/bootstrap. Blocked panels cannot produce selected complete subsets.
+- Added two independent test modules, fictional six-cell panel/literal oracles,
+  full nested wire/limit/migration contract, review assessment and evidence ledger.
+  Two primary test setup mistakes fixed before acceptance; did not weaken checks.
+  81 targeted tests passed in 0.77s; full suite **1,280 passed in 51.82s**;
+  full dojo/tests Ruff and intake/probe helpers clean. Original agent tests were
+  incomplete; no claim they passed. No new tools/dependencies installed.
+- Verified all eight hashed deliverables against the final manifest. Pattern
+  scan of 26 pending backend/test files and selected response/docs found no
+  private-key/common long API-token/tenant-ID matches. This bounded scan does
+  not claim universal secret detection. Tracked patch whitespace checks pass.
+  Scoped .gitattributes preserves original response/archive bytes; the archived
+  reproduction helper pins its inspected source digest before execution.
+  Owner-only commands, including earlier uncommitted backend prerequisites, are
+  in docs/reviews/argon/explorer-export-git-checkpoint-v1.md.
+- Standalone view requires sensitivity=null and separate validated diagnostic;
+  success-only projection withholds all aggregate costs/frontier/cascade/bootstrap.
+  Bootstrap intervals are structurally checked/copied, not independently replayed
+  or authenticated. Digests/aliases/internal consistency never grant approval.
+- No real providers, billing, publication, frontend installation, Git writes or
+  frozen packet/manifest updates. Part 2 bundle/CLI/end-to-end reproduction and
+  v2 frontend adoption remain open. Do not regenerate Part 1 with Argon. Primary
+  provider/registration/scorer queue remains 8h5 / 5f / 7a / 4j1.
+
+## Agent 1 sequential explorer handoff (13m1) - 2026-10-31
+
+- Checked Rules, BUILD_SPEC, ACTION_PLAN, current queue, progress, existing
+  assignment/builder and source imports. Existing five-WP explorer assignment
+  has no received response at its recorded path; do not duplicate it if the
+  owner already has a response elsewhere. Provider Partners delivery is separate.
+- Prepared explorer-export-part1-packet-v1.md (338,810 bytes, 22 exact references,
+  SHA-256 6e6c23cb1b21591d2821d3a0e5a47ec7f1a393c8541c1c7f91c22d31fc19202d).
+  Part 1 is 10i1/9f1: pure multi-seed projection, family diagnostics, independent
+  fixture/oracles, concrete wire contract and manifest/verification ledger.
+  Nine complete deliverables, at least 25 meaningful behavioral cases requested;
+  no claim those agent deliverables or tests already exist.
+- Part 2 (10i2-10i4) is reserved until primary reviews Part 1; no premature
+  dependency packet or guessed APIs. Two-part guide includes exact owner prompt,
+  save path, ownership, source classifications and future bundle/CLI/test scope.
+  Old packets unchanged. Calendar explicitly describes independent continuation
+  after the hackathon; historical/frozen requirements are not rewritten.
+- Builder exact-source --check and Ruff pass; git diff --check exits 0 with
+  ordinary CRLF notices. Application code unchanged, so no application suite
+  rerun or new full-suite count claimed. No services, spending or Git writes.
+- Independent packet extraction matches all 22 embedded source byte sequences;
+  completion marker and builder syntax verified. Outbound checks found zero
+  matches for private-key blocks, common long API/GitHub token patterns, tenant
+  identifiers or the owner's GitHub handle. This bounded pattern scan is not
+  a universal secret detector; only the allowlisted source set was embedded.
+- Sandbox process startup failed again; approved escalated read/generation checks
+  worked. git status now independently confirms main...origin/main and the prior
+  uncommitted batch. Primary next remains 8h5 / 5f / 7a / 4j1; current live-credit,
+  scorer, registration, publication and owner-learning gates remain intact.
+
+## Non-submission/service terms research (14n) - 2026-10-30
+
+- Reviewed official hackathon rules/resources/FAQ, Builder terms, current Nebius
+  agreement and Token Factory supplemental/billing/legacy notices, plus Tavily
+  and LangSmith service terms. No published penalty/repayment condition found
+  solely for genuine development followed by non-submission. Distinguish that
+  inference from account-specific confirmation and ordinary billable obligations.
+- Saved sources, clause references, old-versus-current Token Factory notice,
+  direct promo form JavaScript limitation, private-offer/account unknowns and
+  optional unsent support wording in docs/non-submission-terms-review-2026-10-30.md.
+- Research only: no cancellation of project/goal, account access or changes,
+  emails, API calls, payment actions, Git writes or application/test changes.
+
+## Resume and interview deliverable (14m) - 2026-10-27
+
+- Researched MIT CAPD, UT Austin technical resume guidance and EngineeringResumes
+  wiki. Recommended concise action/product/purpose/evidence bullets rather than
+  a tool list or invented impact metrics; source links retained in the document.
+- Added docs/resume-and-interview.md with a copy-ready project entry, verified
+  63-task/two-repository scope and previously recorded 1,199-test result. The
+  entry has no phase language and avoids claiming measured model success/savings.
+- Added explicitly conditional completed NVIDIA/Nebius wording and measured
+  baseline/cascade template; actual evaluated count must replace construction
+  count where applicable. Included evidence map, short interview explanation,
+  eight technical questions and proposed acceptance priorities for the owner's
+  interview in approximately 15 days. No promise of completion or project rescope.
+- Docs only: no new test execution, package install, provider call, Git write,
+  public sharing or spending authorization. Source code and prior test evidence
+  unchanged. Review/provider/registration/UI and financial gates remain open.
+
+## Credit precision correction (6d1a / 6d1b) - 2026-10-22
+
+- Replaced context-sensitive nano-USD multiplication with isolated exact parsing
+  and bounded integer conversion. Floors balance/allowance; ceilings reservation/
+  usage. Rejects overlong inputs, unsupported policies and signed-I64 overflow.
+  Tiny exponents do not allocate huge powers. Status uses exact integer formatting.
+- 26 independent regressions include precision 1/2/28/80, altered exponent limits,
+  enabled traps/unchanged caller flags, rational known answers, actual temporary
+  SQLite rows, fractional-nano overrun persistence/blocking and no-refund allowance.
+  51 credit tests pass; full suite **1,199 passed in 44.82s**; Ruff clean.
+- Original provider snapshots untouched. Independent audit verifies 21 original
+  embedded hashes/sizes and reports only credits.py current-source drift. Original
+  low-precision probe now produces 122880, not 120000. Review adaptations documented
+  in provider-integration-intake-notes-v1.md; no application/trace adapter adopted.
+- No real ledger initialized, no provider calls, billing changes or Git writes.
+  Next 8h5: review returned PROVIDER PARTNERS V1, then adopt checked codecs/fake
+  accounting/local sanitized events. NVIDIA live probe still needs eligible current
+  credits/expiry, explicit financial limits and trusted runtime gates. Registered
+  grids additionally need Stage B/scorer approval. Hosted LangSmith remains separate
+  optional data-sharing/region/credit/billing decision after runtime works (12i3).
+
+## Argon next five-package handoff (13m / 10i / 9f1) - 2026-10-22
+
+- Owner reports PROVIDER PARTNERS V1 response complete; no review/adoption yet.
+  Next packet is independent: accurate multi-seed explorer v2 projection,
+  family influence diagnostics, fixed-file evidence bundle/verifier, offline
+  export command, integration tests/fixtures/migration/reproduction guidance.
+- Tracked every WP before preparation: 10i1, 9f1, 10i2, 10i3, 10i4. Five WPs
+  in two groups, fifteen complete requested files including manifest/ledger.
+  READY means prepared, not implemented. Primary retains financial correction
+  and trusted registration; Agent 2 frontend and Gravity reviews unchanged.
+- Packet has 22 full source/test/fixture/doc references, 339,996 bytes; SHA-256
+  3000411955835fb18f6f292955b0855215eeb0b3790e636e1f49b4d4d41b9f9d.
+  Original provider and frontend packets preserved. No source rewrite or service
+  activation. The current v1 frontend cannot represent multi-seed fractions:
+  this batch deliberately proposes a new v2 contract rather than rounding or
+  mislabeling seed rows as tasks. Actual UI migration/acceptance remains later.
+- Fixed cross-module signatures, independent unequal-seed arithmetic oracles,
+  strict aliases/known unknowns, bounded work/files, no-overwrite CLI and honest
+  continuation/verification instructions included. Owner launcher/return path
+  updated. Application baseline remains 1,173 passing tests; handoff work is docs
+  and a local packet builder, not implemented integration or benchmark evidence.
+- Packet --check verifies the exact embedded snapshot against all 22 current
+  references; helper Ruff, whitespace and final completion-marker checks pass.
+  No application tests rerun for this docs/helper-only checkpoint. 13m complete;
+  five implementation assignments remain READY pending owner handoff/response.
+
+## Offline registration draft (7a1 / 5f1 / 4j1) - 2026-10-22
+
+- Added RegistrationDraft with eleven mandatory named artifact SHA-256 bindings,
+  immutable storage, deterministic domain-separated fingerprint and fixed
+  cooperative/non-adversarial scorer scope. Missing, duplicate, malformed and
+  unsupported bindings/policies are rejected. Export mutation cannot alter draft.
+- Explicit error-policy version and decision table retain attributable candidate
+  errors as unsolved, block unresolved cells, and distinguish unknown costs from
+  zero. Cross-checked against existing candidate scorer and panel normalization;
+  no second receipt classifier or eligibility promotion was introduced.
+- Drafts always export unverified/unpublishable. No artifact loader, trusted
+  approval, execution-record verification or Stage B commit exists yet; 7a/5f
+  and scorer signoff remain open. Stage A and external-agent snapshots untouched.
+- 26 new draft tests; full application suite **1,173 passed in 47.56s**;
+  Ruff dojo/tests clean. No provider calls, ledger initialization or Git writes.
+- Core completion remains roughly 60–65%, a subjective planning estimate. Next:
+  trusted artifact/registration verification, credit precision correction (6d1),
+  followed by reviewed provider integration; live credit/expiry gates remain.
+
+## Argon packet integration-readiness audit (8h4/6d1) - 2026-10-22
+
+- Reused original packet, independently verified all 21 manifest hashes/sizes
+  and embedded contents, all 21 complete outer fences and end marker. Original
+  SHA-256 24007fbf854f9cd3ad5cb55052be2bc81b0f0f55f02c95719fa4f0486a330fda
+  unchanged. Confirmed five substantive WPs, twelve concrete code/test/doc files
+  plus manifest/ledger; primary implementation ownership remains disjoint.
+- Targeted addendum fixes public cross-module DTOs/functions, session state/error
+  matrix, I64/input limits, per-request overrun inside aggregate headroom,
+  zero-reservation policy and optional-code import independence. Added missing
+  _h/synthetic_metadata fixture excerpt; avoid cross-importing test modules and
+  incorrectly reusing identity JSON policy for general HTTP/Tavily responses.
+- Pure probe reproduced local CreditLedger.units under ambient Decimal precision
+  2: '0.00012288' USD converts to 120000 instead of 122880 nano-USD. Isolated
+  explicit precision 80 restores the expected value and caller context; fractional
+  nano controls and independent request-cost oracles pass. No ledger created.
+  This is our local helper issue, not an upstream service defect. FEEDBACK and
+  6d1 record the needed foundational correction before live adoption. Argon must
+  guard ledger calls and test actual temporary SQL amounts, not just calculations.
+- Created combined provider-partners-packet-v2.md (165,647 bytes) by preserving
+  v1 and adding only the clarification/fixture context; no implementation from
+  scratch, no extra WPs. Readiness assessment documents findings/limits. If v1
+  already started, owner sends only the addendum and preserves completed code.
+- Independent audit, v2 exact-byte --check and helper Ruff pass. Owner guide,
+  queue and scoped manual Git commands updated. No application source changes,
+  package installs, accounts, provider calls or Git writes. Full application
+  baseline remains the previously verified 1,147 tests; new adapters await Argon.
+
+## Bounded fast-track non-frontend handoffs (8h/13l11/14b2) - 2026-10-22
+
+- Created Argon provider-partners-packet-v1.md: 21 full source/test/config/doc
+  references, 150,790 bytes, five WPs in two groups. New-file-only provider wire/
+  usage codec, durable-credit fake session, bounded Tavily codec, aggregate trace
+  whitelist/local fake sink and temporary offline rehearsal. Exact API signatures,
+  missing/known usage, no retry/replay, unit oracles and evidence limitations
+  specified. SDK kwargs vs actual wire JSON separated; existing controller/store/
+  live flags/ledger never modified by proposal. Primary owns 5f/7a/4j1.
+- Agent 2 small-tasks-packet-v1.md: three compact references, 22,091 bytes,
+  <=1,200 output words total. Exactly 12j1 Toloka/Tendem public fit/offer research
+  and 14b1 updated claim-to-evidence gaps. No repeat frontend, broad audit, README
+  or storyboard drafting. Existing frontend acceptance handoff remains valid.
+- Gravity context-v3: four files, 35,934 bytes, exact source hashes/manifest and
+  complete named store-method excerpts. New ASSIGNMENT-3 asks only 13l9 summary/
+  execution boundary and 13l10 recovery review, <=1,400 words total. Updated
+  limited-folder launch instructions; prior contexts/reports preserved untouched.
+- prepare_fasttrack_handoffs.py enforces input budgets and exact-byte --check;
+  dynamic longer fences preserve nested Markdown. Prepared handoffs are READY,
+  not started or accepted implementations. Owner launchers/return paths in
+  docs/fasttrack-agent-guide-v1.md; no agent contacted or account activated.
+- Rechecked official public Nebius quickstart/API entry, Tavily Search and
+  LangSmith masking guidance; paraphrased constraints/links in integration-
+  research-2026-10-22.md. No actual parameter-forwarding/serving/billing evidence.
+  Mandatory NVIDIA/Nebius runtime stays first; partner integrations are optional
+  and require separate usage/data-sharing controls. No LangChain rewrite.
+- Asked for fresh promo amount/expiry before future live phase. Owner needed a
+  simpler explanation; clarified balance and expiry fields, including 'expiry not
+  shown'. No confirmed new account details, ledger allowance or live permission.
+- No application source changes, dependency installs, provider/partner API calls,
+  Git writes, deployments or service activation. Application baseline remains
+  1,147 tests; only handoff helper checks apply to this documentation/setup slice.
+
+## Connected offline runner, persistence and CLI (5e1-5e3) - 2026-10-22
+
+- dojo/bench/runner.py builds identity from settings, actual input bytes,
+  source/prompt/action/tool/docsearch policies, original-visible selectors and
+  reviewed profile/harness. Synthetic identity also binds all scripted replies
+  and sandbox outputs; image-shaped synthetic marker is explicitly not Docker.
+- Real approved train-task plan click_6de212151893 passed using guarded local
+  Git reads; no image/container/provider/DB claim. Repository namespace live is
+  an identity domain only: execution_available and live_enabled remain false.
+- Fixed fictional controller now claims a private ResultStore run, executes
+  outside DB transactions, reconciles request/turn/token/patch counters and
+  saves a detailed synthetic record. Completed reuse rechecks persisted records;
+  occupied/uncertain attempts never automatically replay. Caught ambiguity fences
+  uncertain, and fencing failure remains an explicit stop. No financial ledger
+  mutation or correctness/evaluator status is inferred from simulation finish.
+- python -m dojo.bench exposes init-store, plan, explicit --synthetic-demo bench,
+  status, cost and local private report. Live/implicit bench returns exit 3 before
+  opening a store. Outputs are exclusive, errors fixed/sanitized, private patches,
+  trajectories/messages/source absent from summaries. Unknown cost stays null;
+  supplied diagnostic valuation history remains unverified without latest-choice
+  promotion. Provider invoice/settlement and credit reconciliation stay unknown.
+- 52 new offline tests passed. Full suite: 1,147 passed in 44.27s; Ruff dojo/tests
+  clean. Actual process smoke used seven separate Python CLI processes: one
+  completed record, checked same-run reuse, status/cost/report and four fictional
+  turns/three canned commands. No host/task shell command was executed by bench.
+- Smoke initially hit Windows WinError 32 because the verification script's
+  SQLite context committed but did not close its connection. Fixed explicit
+  closing and success reporting after cleanup; rerun passed with temporary
+  artifacts removed. This was our new script's bug, not an upstream SQLite/Python
+  defect. The first failed fixture folder remains ignored for scoped cleanup.
+- docs/offline-runner.md and README explain commands, formats, refusal states,
+  metadata limitations and remaining gates. Construction CLI/packaging/four
+  frozen input files unchanged; no installs, provider calls or Git writes.
+- 5e parent remains PARTIAL: actual solver/scorer path 5e4 depends on 4j scope,
+  5f/7 trusted registration and 6/8 financial/live controls. Next offline work is
+  5f/7a/4j1, while Agent 2 can review the prepared frontend packet. The original
+  Oct 22-23 real-probe target is still conditional; no deadline guarantee.
+
+## Gravity v2 and Argon frontend intake (13l8/10a8) - 2026-10-22
+
+- Read both complete Gravity reports; verified all 16 context-v2 files/snapshot
+  ID and no current source drift. Primary assessment v2 records 13 corrections:
+  mixed solver/scorer trace, incorrect API/prefix, existing non-inheritable FD
+  and profile guards, disabled plugin autoload/packaging overlay restrictions,
+  collector structures, transport semantics and insufficient B1-B3 designs.
+  Useful coverage retained; 4j remains PARTIAL with 4j1-4j3 follow-ups.
+- Existing pure/mocked scorer/contract subset: 169 passed in 0.66s. These belong
+  to the 1,095-test baseline, not additional tests. No candidate payloads or
+  containers ran during this intake; no new exploit or scorer sign-off claimed.
+- Preserved Argon response (153,033 bytes) and Agent 2 baseline. Six returned
+  files plus nine unchanged baseline files archived separately; corrected nested
+  fence extraction is frontend-refinement-v2, 15 byte-verified files. First
+  extraction retained and explicitly superseded, never adopted. All nine
+  unchanged-file claims in the detailed handoff match baseline hashes/sizes.
+- Node v24.12.0 independent 20 checks passed, including all 90 evidence states
+  through full parser (9 accepted), 5,285 numbers against an independent rational
+  oracle, duplicate/rounding/Unicode/depth/refusal sentinels, denominator retention,
+  comparison blocking and actual pure null-last comparator.
+- F1-F4/F7 logic supported by limited probes; F8 inspected statically. F5 real
+  React/RTL/Vite/dependency/Recharts/browser/CSP/accessibility acceptance remains
+  unverified. F6 footer needs hosted-origin/HMR qualification. Inherited 200-row
+  reachability flagged for review. Dashboard remains scaffold; backend report
+  and frontend view-model are separate contracts.
+- Prepared Agent 2 frontend-acceptance-packet-v1.md with 19 exact references for
+  10a6: two review groups, revised source, contracts, findings and primary probes.
+  Owner shares it; no external agent contacted. Argon/Gravity can remain idle.
+- Main next implementation remains 5e; 10a6 may proceed independently. No
+  installs, deployments, account/provider/gate changes or Git writes.
+
+## Cascade/report/analysis CLI repaired and adopted (9g4e) - 2026-10-22
+
+- Preserved originals and adapted Argon B policies/simulate/report/analyze into
+  application code. Added explicit report_schema and a tiny visible-tests policy
+  fixture; long source IDs retain bounded deterministic derived series IDs.
+- B1-B6 addressed: corrected workload oracle with tiny cap/sentinel; reject
+  huge exponents before Fraction, bound saved integers and check numeric metadata;
+  validate full candidate membership/feasibility/objective/tie winner and artifact
+  consistency; combined metric/selection/cascade/bootstrap/family/pair/seed/output
+  guards; exact nested export schema instead of a blacklist. Unverified metadata
+  never grants publication or authenticates train/registration history.
+- CLI bounded MAX_INPUT_BYTES+1 reads, fixed sanitized error codes, explicit
+  policy modes/exit states and exclusive output creation exercised, including
+  growth/output races. Blocked audits do not invoke sampling; unknown costs and
+  zero-solve intervals retain explicit reasons. Frozen construction CLI untouched.
+- The interrupted four-file patch was checked on disk rather than reapplied
+  blindly: all edits present, py_compile passed and 26 adapted tests passed.
+  Further independent acceptance tests followed. Final suite: 1,095 passed in
+  55.75s; Ruff dojo/tests clean. 81 new tests = 26 adapted + 55 independent.
+- Actual standalone module smoke, using only fictional inputs, returned cascade
+  success 3/4, expected cost 26,000,000 nano-USD, evidence_kind synthetic and
+  publishable false. Output is temporary under .pytest_tmp, not a real-run result.
+  docs/offline-analysis.md and README record reproducible usage and limitations.
+- Rough core completion estimate 60-65% is judgment, not test-count arithmetic;
+  trusted runner/registration, approved real NVIDIA/Nebius evidence, accepted UI,
+  public demo/video/repository review and submission remain material work.
+- Detected new Gravity v2 outputs in its folder; left both untouched/un-staged.
+  Added primary intake 13l8 before using any recommendation or resolving 4j.
+- Next primary implementation is 5e. Argon frontend 10a4 and later Agent 2 review
+  10a6 remain separate. No paid/provider/Docker calls, account changes, package
+  installs, deployment or Git writes. Owner exercise 16c remains incomplete.
+
 ## Parallel next-work handoffs (10a7/13l7) - 2026-10-22
 
 - Primary remains owner of 9g4e cascade/report/CLI correction/integration, then
