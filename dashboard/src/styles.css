@@ -544,3 +544,5 @@ thead th {
 @media (max-width: 480px) {
   .dataset-provenance { margin-left: 0; flex-basis: 100%; }
 }
+
+.overview-step strong, .overview-step span { min-width: 0; overflow-wrap: anywhere; }

@@ -9,8 +9,7 @@ numbered workflow rows. No gradients, stock imagery, decorative animations or
 new dependencies. Applied task-focused visual simplification informed by NN/g:
 https://www.nngroup.com/articles/characteristics-minimalism/
 51 UI tests pass, including absence of banners/footer and retained provenance.
-Production build passes (existing chunk warning remains). Chromium responsive,
-keyboard/focus and large-text checks pass across four widths; visually inspected
+Production build passes (existing chunk warning remains). Initial Chromium checks caught narrow-screen large-text Overview overflow; added explicit workflow text wrapping. Other responsive and keyboard/focus checks passed. Final rebuilt Chromium checks pass, including 200% root text at 375px and 1440px with no page overflow. Visually inspected
 375px and 1440px screenshots. No provider calls or backend/evidence changes.
 
 
