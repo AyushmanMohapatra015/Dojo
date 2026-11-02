@@ -536,3 +536,20 @@ thead th {
     transition: none !important;
   }
 }
+
+/* Overview actions share the existing palette and keyboard focus treatment. */
+.overview-guide { list-style: none; padding: 0; display: grid; gap: 0.75rem; }
+.overview-guide li + li { margin-top: 0; }
+.overview-step {
+  width: 100%; text-align: left; font: inherit; color: var(--text);
+  background: var(--surface); border: 1px solid var(--soft-border);
+  border-left: 3px solid var(--accent); border-radius: 6px;
+  padding: 1rem; cursor: pointer; display: grid; gap: 0.25rem;
+}
+.overview-step strong { color: var(--accent); }
+.overview-step span { color: var(--muted); }
+.overview-step:hover { border-color: var(--accent); }
+@media (min-width: 900px) {
+  .overview-guide { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .overview-step { height: 100%; }
+}

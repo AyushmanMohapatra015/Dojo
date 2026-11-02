@@ -155,7 +155,7 @@ function SyntheticBanner({ bannerText }) {
       <span aria-hidden="true">{'\u26A0 '}</span>
       <strong>{bannerText || SYNTHETIC_BANNER_V2}</strong>
       <span className="banner-sub">
-        Offline synthetic benchmark arithmetic only. No live provider calls or verified registrations exist.
+        Sample results for exploring the evaluation workflow. No live model requests.
       </span>
     </div>
   );
@@ -193,10 +193,10 @@ function DatasetControls({
         <div className="dataset-details__body">
       <div className="controls">
         <button type="button" className="btn" onClick={onLoadDemoWithDiagnostic}>
-          Load bundled demo (explorer + family diagnostic)
+          Load complete sample dataset
         </button>
         <button type="button" className="btn btn-quiet" onClick={onResetDemo}>
-          Reset to bundled explorer view only
+          Reset results only
         </button>
         {hasBoundDiagnostic ? (
           <button type="button" className="btn btn-quiet" onClick={onClearDiagnostic} disabled={busy}>
@@ -235,7 +235,7 @@ function DatasetControls({
           />
           <p id={diagHintId} className="hint">
             Validates and binds a secondary <code>dojo-family-sensitivity-v2</code> file against the
-            currently loaded explorer view via <code>bindFamilyDiagnosticV2</code>.
+            currently loaded results. A mismatched file is rejected.
           </p>
         </div>
       </div>
@@ -312,7 +312,7 @@ function DatasetRestrictionBar({ derived }) {
 }
 
 
-function OverviewSection({ derived }) {
+function OverviewSection({ derived, onNavigate }) {
   const { scope } = derived;
   return (
     <section className="panel" aria-labelledby="overview-heading">
@@ -320,9 +320,9 @@ function OverviewSection({ derived }) {
       <p>Compare coding model configurations by the tasks they solve and what they cost.</p>
       <p>This synthetic example contains <strong>{scope.evaluatedTaskCount} evaluated tasks</strong> across <strong>{scope.declaredConfigCount} configurations</strong>. These are sample outcomes, not measured model performance.</p>
       <ul className="overview-guide">
-        <li><strong>Compare:</strong> compare success, cost and when a second model is used.</li>
-        <li><strong>Runs:</strong> filter attempts and inspect their outcomes.</li>
-        <li><strong>Method:</strong> understand uncertainty, evidence and limitations.</li>
+        <li><button type="button" className="overview-step" onClick={() => onNavigate('compare')}><strong>Compare configurations</strong><span>Explore success, cost and when a second model is used.</span></button></li>
+        <li><button type="button" className="overview-step" onClick={() => onNavigate('runs')}><strong>Inspect attempts</strong><span>Find a task and examine its recorded outcome.</span></button></li>
+        <li><button type="button" className="overview-step" onClick={() => onNavigate('method')}><strong>Understand the evidence</strong><span>Check uncertainty, dataset scope and limitations.</span></button></li>
       </ul>
       <p className="hint">Use Change dataset above to load a compatible local results file. Files are validated in your browser.</p>
     </section>
@@ -352,7 +352,7 @@ function ScopeAndProvenancePanel({ derived }) {
                 <h3 id={headingId}>
                   Configuration <code>{cfg.configId}</code>
                 </h3>
-                <span className={`badge ${statusBadgeClass}`}>{statusLabel}</span> </div> <p className="tag"> Declared seeds: <code>[{cfg.declaredSeeds.join(', ')}]</code> ({cfg.seedCount} seed {cfg.seedCount === 1 ? '' : 's'}) · Total declared runs: {cfg.totalRuns} </p> <dl className="facts compact"> <div> <dt>Pass@1 (equal-task mean)</dt> <dd>{cfg.display.passAt1Percent}</dd> </div> <div> <dt>Expected solved tasks (of {cfg.nTasks})</dt> <dd>{cfg.display.expectedSolvedTasks}</dd> </div> <div> <dt>Expected total cost (1-seed benchmark)</dt> <dd>{cfg.display.expectedTotalCostUsd}</dd> </div> <div> <dt>Mean task cost</dt> <dd>{cfg.display.meanTaskCostUsd}</dd> </div> <div> <dt>Expected cost per solved task</dt> <dd>{cfg.display.expectedCostPerSolvedUsd}</dd> </div> <div> <dt>Actual all-repetitions spend ({cfg.seedCount}x seeds)</dt> <dd>{cfg.display.actualAllRepetitionsSpendUsd}</dd> </div> <div> <dt>Observed seed runs</dt> <dd> {cfg.observedRuns} observed ({cfg.solvedRuns} solved, {cfg.unsolvedRuns} unsolved,{' '} {cfg.undeterminedRuns} undetermined, {cfg.missingCostRuns} missing cost) </dd> </div> </dl> </article> ); })} </div> </section> ); }  function FrontierTooltip({ active, payload }) { if (!active || !payload || payload.length === 0) return null; const pt = payload[0].payload; return ( <div className="tooltip"> <strong> <code>{pt.seriesId}</code> </strong>{' '} ({pt.status}) <div>Pass@1: {pt.display.passAt1Percent}</div> <div>Exact axis cost: {pt.display.costUsd}</div> </div> ); }  function FrontiersSection({ derived }) { const [axis, setAxis] = useState(COST_AXIS_COST_PER_SOLVED); const { scope, frontiers } = derived;  if (!frontiers) { return ( <section className="panel" aria-labelledby="frontiers-heading"> <h2 id="frontiers-heading">Pareto frontiers (two-axis exact comparison)</h2> <p className="empty"> Pareto frontiers are withheld because summary mode is <code>{scope.summaryMode}</code> (audit status: <code>{scope.auditStatus}</code>). </p> </section> ); }  const activeTable = frontiers[axis] || frontiers[COST_AXIS_COST_PER_SOLVED]; const plottableRows = activeTable.rows.filter( (r) => r.plottable && r.chartOnlyApprox && r.chartOnlyApprox.approxXUsd !== null && r.chartOnlyApprox.approxYPercent !== null, ); const unplottableRows = activeTable.rows.filter((r) => !r.plottable); const axisLabel = activeTable.costAxis === COST_AXIS_COST_PER_SOLVED ? 'Expected cost per solved task (headline axis)' : 'Mean task cost (secondary axis)';  return ( <section className="panel" aria-labelledby="frontiers-heading"> <h2 id="frontiers-heading">Pareto frontiers (two-axis exact comparison)</h2> <div className="controls" role="group" aria-label="Frontier cost axis selector"> <button type="button" className="btn" aria-pressed={activeTable.costAxis === COST_AXIS_COST_PER_SOLVED} onClick={() => setAxis(COST_AXIS_COST_PER_SOLVED)} > Headline axis: Expected cost per solved (cost_per_solved) </button> <button type="button" className="btn" aria-pressed={activeTable.costAxis === COST_AXIS_MEAN_TASK_COST} onClick={() => setAxis(COST_AXIS_MEAN_TASK_COST)} > Secondary axis: Mean task cost (mean_task_cost) </button> </div> <p className="hint"> Showing axis: <strong>{axisLabel}</strong> (<code>{activeTable.costAxis}</code>,{' '} {activeTable.isHeadlineAxis ? 'headline axis' : 'non-headline axis'}). Chart coordinates use{' '} <code>chartOnlyApprox</code> finite numbers strictly for visual placement; all dominance statuses, sorting, and table values use exact rational DTOs. </p>  <figure className="chart-figure"> <figcaption> <strong>Pass@1 vs. {axisLabel} (synthetic offline view).</strong> Non-dominated frontier series:{' '} <code>{activeTable.frontierSeriesIds.join(', ') || 'none'}</code>. </figcaption> {plottableRows.length > 0 ? ( <div className="chart-box" aria-hidden="true"> <ErrorBoundary fallback={ <p className="hint">The chart could not be drawn. The exact frontier table is shown below.</p> } > <ResponsiveContainer width="100%" height={320}> <ScatterChart margin={{ top: 16, right: 24, bottom: 36, left: 12 }} accessibilityLayer={false}> <CartesianGrid strokeDasharray="4 4" /> <XAxis type="number" dataKey="approxXUsd" name="Cost (USD)" domain={[0, 'auto']} tickFormatter={(v) => `$${v}`} /> <YAxis type="number" dataKey="approxYPercent" name="Pass@1 (%)" domain={[0, 100]} tickFormatter={(v) => `${v}%`}
+                <span className={`badge ${statusBadgeClass}`}>{statusLabel}</span> </div> <p className="tag"> Declared seeds: <code>[{cfg.declaredSeeds.join(', ')}]</code> ({cfg.seedCount} seed {cfg.seedCount === 1 ? '' : 's'}) · Total declared runs: {cfg.totalRuns} </p> <dl className="facts compact"> <div> <dt>Pass@1 (equal-task mean)</dt> <dd>{cfg.display.passAt1Percent}</dd> </div> <div> <dt>Expected solved tasks (of {cfg.nTasks})</dt> <dd>{cfg.display.expectedSolvedTasks}</dd> </div> <div> <dt>Expected total cost (1-seed benchmark)</dt> <dd>{cfg.display.expectedTotalCostUsd}</dd> </div> <div> <dt>Mean task cost</dt> <dd>{cfg.display.meanTaskCostUsd}</dd> </div> <div> <dt>Expected cost per solved task</dt> <dd>{cfg.display.expectedCostPerSolvedUsd}</dd> </div> <div> <dt>Actual all-repetitions spend ({cfg.seedCount}x seeds)</dt> <dd>{cfg.display.actualAllRepetitionsSpendUsd}</dd> </div> <div> <dt>Observed seed runs</dt> <dd> {cfg.observedRuns} observed ({cfg.solvedRuns} solved, {cfg.unsolvedRuns} unsolved,{' '} {cfg.undeterminedRuns} undetermined, {cfg.missingCostRuns} missing cost) </dd> </div> </dl> </article> ); })} </div> </section> ); }  function FrontierTooltip({ active, payload }) { if (!active || !payload || payload.length === 0) return null; const pt = payload[0].payload; return ( <div className="tooltip"> <strong> <code>{pt.seriesId}</code> </strong>{' '} ({pt.status}) <div>Pass@1: {pt.display.passAt1Percent}</div> <div>Exact axis cost: {pt.display.costUsd}</div> </div> ); }  function FrontiersSection({ derived }) { const [axis, setAxis] = useState(COST_AXIS_COST_PER_SOLVED); const { scope, frontiers } = derived;  if (!frontiers) { return ( <section className="panel" aria-labelledby="frontiers-heading"> <h2 id="frontiers-heading">Pareto frontiers</h2> <p className="empty"> Pareto frontiers are withheld because summary mode is <code>{scope.summaryMode}</code> (audit status: <code>{scope.auditStatus}</code>). </p> </section> ); }  const activeTable = frontiers[axis] || frontiers[COST_AXIS_COST_PER_SOLVED]; const plottableRows = activeTable.rows.filter( (r) => r.plottable && r.chartOnlyApprox && r.chartOnlyApprox.approxXUsd !== null && r.chartOnlyApprox.approxYPercent !== null, ); const unplottableRows = activeTable.rows.filter((r) => !r.plottable); const axisLabel = activeTable.costAxis === COST_AXIS_COST_PER_SOLVED ? 'Expected cost per solved task (headline axis)' : 'Mean task cost (secondary axis)';  return ( <section className="panel" aria-labelledby="frontiers-heading"> <h2 id="frontiers-heading">Pareto frontiers</h2> <div className="controls" role="group" aria-label="Frontier cost axis selector"> <button type="button" className="btn" aria-pressed={activeTable.costAxis === COST_AXIS_COST_PER_SOLVED} onClick={() => setAxis(COST_AXIS_COST_PER_SOLVED)} > Cost per solved task </button> <button type="button" className="btn" aria-pressed={activeTable.costAxis === COST_AXIS_MEAN_TASK_COST} onClick={() => setAxis(COST_AXIS_MEAN_TASK_COST)} > Mean task cost </button> </div> <p className="hint"> Showing <strong>{axisLabel}</strong>. Higher success and lower cost are better. The table uses exact values; chart positions are approximate. </p>  <figure className="chart-figure"> <figcaption> <strong>Pass@1 vs. {axisLabel} (synthetic offline view).</strong> Non-dominated frontier series:{' '} <code>{activeTable.frontierSeriesIds.join(', ') || 'none'}</code>. </figcaption> {plottableRows.length > 0 ? ( <div className="chart-box" aria-hidden="true"> <ErrorBoundary fallback={ <p className="hint">The chart could not be drawn. The exact frontier table is shown below.</p> } > <ResponsiveContainer width="100%" height={320}> <ScatterChart margin={{ top: 16, right: 24, bottom: 36, left: 12 }} accessibilityLayer={false}> <CartesianGrid strokeDasharray="4 4" /> <XAxis type="number" dataKey="approxXUsd" name="Cost (USD)" domain={[0, 'auto']} tickFormatter={(v) => `$${v}`} /> <YAxis type="number" dataKey="approxYPercent" name="Pass@1 (%)" domain={[0, 100]} tickFormatter={(v) => `${v}%`}
                   />
                   <Tooltip content={<FrontierTooltip />} />
                   <Legend verticalAlign="top" />
@@ -431,7 +431,7 @@ function ScopeAndProvenancePanel({ derived }) {
 ))}
 </tbody>
 </table>
-</div> {unplottableRows.length > 0 ? ( <p className="hint"> {unplottableRows.length} series cannot be plotted as finite coordinates on{' '} <code>{activeTable.costAxis}</code> and remain listed in the exact table above. </p> ) : null} </figure> </section> ); }  function BootstrapSection({ view, derived }) { const bootstrap = view && view.analysis ? view.analysis.bootstrap : null; const { scope } = derived;  if (!bootstrap) { return ( <section className="panel" aria-labelledby="bootstrap-heading"> <h2 id="bootstrap-heading">Empirical bootstrap uncertainty (from validated ViewV2)</h2> <p className="empty"> Bootstrap intervals are unavailable for this view (summary mode: <code>{scope.summaryMode}</code>). {scope.isCostIncomplete ? ' Success-only views withhold bootstrap intervals because report intervals can contain partial costs.' : ''} </p> </section> ); }  const seriesEntries = Object.values(bootstrap.series_summaries); const metricKeys = [ ['pass_at_1', 'Pass@1'], ['expected_total_cost_nano_usd', 'Expected total cost'], ['mean_task_cost_nano_usd', 'Mean task cost'], ['expected_cost_per_solved_nano_usd', 'Expected cost per solved'], ];  return ( <section className="panel" aria-labelledby="bootstrap-heading"> <h2 id="bootstrap-heading">Empirical bootstrap uncertainty (from validated ViewV2)</h2> <p className="hint"> Read directly from validated <code>ViewV2.analysis.bootstrap</code> (retained alongside{' '} <code>DerivedV2</code>). Method: <code>{bootstrap.method_version}</code> · Quantile:{' '} <code>{bootstrap.quantile_method}</code> · Confidence:{' '} <strong>{formatPercentV2(bootstrap.confidence_level, { places: 1 })}</strong> · Replicates:{' '} <strong>{bootstrap.replicates}</strong> · Seed:{' '} <code>{bootstrap.seed === null ? 'null' : bootstrap.seed}</code> · Tasks:{' '} <strong>{bootstrap.n_tasks}</strong>. Descriptive uncertainty over observed tasks only; never a hypothesis test or registration certificate. </p>  <div className="table-scroll" role="region" aria-label="Bootstrap series intervals" tabIndex={0}>
+</div> {unplottableRows.length > 0 ? ( <p className="hint"> {unplottableRows.length} series cannot be plotted as finite coordinates on{' '} <code>{activeTable.costAxis}</code> and remain listed in the exact table above. </p> ) : null} </figure> </section> ); }  function BootstrapSection({ view, derived }) { const bootstrap = view && view.analysis ? view.analysis.bootstrap : null; const { scope } = derived;  if (!bootstrap) { return ( <section className="panel" aria-labelledby="bootstrap-heading"> <h2 id="bootstrap-heading">Empirical bootstrap uncertainty</h2> <p className="empty"> Bootstrap intervals are unavailable for this view (summary mode: <code>{scope.summaryMode}</code>). {scope.isCostIncomplete ? ' Success-only views withhold bootstrap intervals because report intervals can contain partial costs.' : ''} </p> </section> ); }  const seriesEntries = Object.values(bootstrap.series_summaries); const metricKeys = [ ['pass_at_1', 'Pass@1'], ['expected_total_cost_nano_usd', 'Expected total cost'], ['mean_task_cost_nano_usd', 'Mean task cost'], ['expected_cost_per_solved_nano_usd', 'Expected cost per solved'], ];  return ( <section className="panel" aria-labelledby="bootstrap-heading"> <h2 id="bootstrap-heading">Empirical bootstrap uncertainty</h2> <p className="hint"> Intervals from the validated analysis report. Method: <code>{bootstrap.method_version}</code> · Quantile:{' '} <code>{bootstrap.quantile_method}</code> · Confidence:{' '} <strong>{formatPercentV2(bootstrap.confidence_level, { places: 1 })}</strong> · Replicates:{' '} <strong>{bootstrap.replicates}</strong> · Seed:{' '} <code>{bootstrap.seed === null ? 'null' : bootstrap.seed}</code> · Tasks:{' '} <strong>{bootstrap.n_tasks}</strong>. Descriptive uncertainty over observed tasks only; never a hypothesis test or registration certificate. </p>  <div className="table-scroll" role="region" aria-label="Bootstrap series intervals" tabIndex={0}>
 <table>
 <caption>Series bootstrap intervals (point estimate, lower, upper, draw accounting).</caption>
 <thead>
@@ -790,9 +790,9 @@ function RunDetailsSection({ derived, selectedRowKey, onSelectRowKey }) {
 
   return (
     <section className="panel" aria-labelledby="runs-heading">
-      <h2 id="runs-heading">Seed-level run details (selectRowsV2 pagination)</h2>
+      <h2 id="runs-heading">Seed-level run details</h2>
       <p className="hint">
-        Filtering, sorting, and paging inspect individual seed runs via <code>selectRowsV2</code> and never
+        Filtering, sorting, and paging inspect individual attempts and never
         alter configuration denominators ({derived.scope.evaluatedTaskCount} evaluated tasks). Null costs
         always sort last in both ascending and descending order.
       </p>
@@ -1004,7 +1004,7 @@ function RunDetailsSection({ derived, selectedRowKey, onSelectRowKey }) {
         </div>
 
         <aside className="panel detail" aria-labelledby="run-detail-heading">
-          <h3 id="run-detail-heading" ref={detailsHeadingRef} tabIndex={-1}>Selected run details (sanitized v2 fields)</h3>
+          <h3 id="run-detail-heading" ref={detailsHeadingRef} tabIndex={-1}>Selected run details</h3>
           {!selectedEntry ? (
             <p className="empty">Select “Details” on any seed run row to inspect its record.</p>
           ) : (
@@ -1501,7 +1501,7 @@ function ExplorerApp() {
       />
       <div id="explorer-content">
         <div className="explorer-view" hidden={activeView !== 'overview'}>
-          <OverviewSection derived={state.derived} />
+          <OverviewSection derived={state.derived} onNavigate={setActiveView} />
         </div>
         <div className="explorer-view" hidden={activeView !== 'compare'}>
           <h2 className="view-heading">Compare</h2>
@@ -1541,7 +1541,7 @@ export default function App() {
       <SyntheticBanner bannerText={SYNTHETIC_BANNER_V2} />
       <header className="app-header">
         <div className="title-block">
-          <h1>Dojo results explorer (v2)</h1>
+          <h1>Dojo results explorer</h1>
           <p>
             Explore task success, costs and individual coding attempts.
           </p>

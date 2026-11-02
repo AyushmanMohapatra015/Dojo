@@ -81,7 +81,7 @@ try {
     await press(' ', 'Space', 32);
     const disclosureOpened = await evaluate("document.querySelector('.dataset-details').open");
     await press('Tab', 'Tab', 9);
-    const datasetControlReached = await evaluate("document.activeElement.textContent.trim().startsWith('Load bundled demo')");
+    const datasetControlReached = await evaluate("document.activeElement.textContent.trim().startsWith('Load complete sample dataset')");
     await evaluate("document.querySelector('.dataset-details__summary').focus()");
     await press(' ', 'Space', 32);
     const disclosureClosed = await evaluate("!document.querySelector('.dataset-details').open");

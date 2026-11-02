@@ -1,5 +1,17 @@
 # Progress
 
+## Demo interface polish (14j7)
+
+Removed version/internal selector/DTO wording from main headings, simplified
+axis and dataset buttons, and added responsive actionable Overview cards.
+Kept synthetic disclosure, exact arithmetic and eligibility safeguards intact.
+UI suite: 50 passed plus one obsolete-copy assertion, corrected and affected
+case rerun passed (51 covered). Actual Chromium passed all four views at
+320/375/768/1440px, focus return, keyboard navigation and large-text checks.
+Production build and static bundle audit pass; existing ~698kB JS chunk warning
+remains. No live call, paid service unlock or runtime source modification.
+
+
 ## Demo-path preparation (14j6)
 
 Added scripts.prepare_demo to replace error-prone manual artifact preparation.

@@ -102,7 +102,7 @@ describe('1. Bundled v2 synthetic demo, persistent banner, and unequal-seeds ora
 
     expect(screen.getByRole('note', { name: 'Data status' })).toHaveTextContent(SYNTHETIC_BANNER_V2);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      'Dojo results explorer (v2)',
+      'Dojo results explorer',
     );
 
     // Scope panel is in the Method view
@@ -146,7 +146,7 @@ describe('1. Bundled v2 synthetic demo, persistent banner, and unequal-seeds ora
 
     // Reset to explorer view only clears diagnostic
     await openDatasetDisclosure(user);
-    await user.click(screen.getByRole('button', { name: /Reset to bundled explorer view only/i }));
+    await user.click(screen.getByRole('button', { name: /Reset results only/i }));
     expect(screen.getByRole('status')).toHaveTextContent('paired diagnostic cleared');
     expect(screen.getByRole('region', { name: /^Leave-one-family-out sensitivity diagnostic/i })).toHaveTextContent(
       'No paired family diagnostic',
@@ -155,7 +155,7 @@ describe('1. Bundled v2 synthetic demo, persistent banner, and unequal-seeds ora
     // Reload bundled demo with diagnostic
     await openDatasetDisclosure(user);
     await user.click(
-      screen.getByRole('button', { name: /Load bundled demo \(explorer \+ family diagnostic\)/i }),
+      screen.getByRole('button', { name: /Load complete sample dataset/i }),
     );
     expect(screen.getByRole('region', { name: /^Leave-one-family-out sensitivity diagnostic/i })).toHaveTextContent(
       '-25.0% (-1/4)',
@@ -197,7 +197,7 @@ describe('2. Upload race/cancellation protection, size bounds, and view-change d
       // User clicks Reset before the slow FileReader finishes
       await openDatasetDisclosure(user);
       await user.click(
-        screen.getByRole('button', { name: /Reset to bundled explorer view only/i }),
+        screen.getByRole('button', { name: /Reset results only/i }),
       );
       expect(screen.getByRole('status')).toHaveTextContent(
         'Loaded: Bundled synthetic v2 explorer view',
@@ -402,9 +402,9 @@ describe('4. Cost-incomplete, audit-blocked, zero-solved, large-exact-cost, and 
     const frontierPanel = screen.getByRole('region', { name: /Pareto frontiers/i });
     expect(frontierPanel).toHaveTextContent('cost_per_solved');
     await user.click(
-      screen.getByRole('button', { name: /Secondary axis: Mean task cost \(mean_task_cost\)/i }),
+      screen.getByRole('button', { name: /^Mean task cost$/i }),
     );
-    expect(frontierPanel).toHaveTextContent('non-headline axis');
+    expect(frontierPanel).toHaveTextContent('secondary axis');
 
     // Bootstrap section is in Method view
     await selectView(user, 'Method');
@@ -432,7 +432,7 @@ describe('4. Cost-incomplete, audit-blocked, zero-solved, large-exact-cost, and 
 
     // Switching to mean_task_cost plots the series
     await user.click(
-      screen.getByRole('button', { name: /Secondary axis: Mean task cost \(mean_task_cost\)/i }),
+      screen.getByRole('button', { name: /^Mean task cost$/i }),
     );
     expect(frontierPanel).not.toHaveTextContent('No plottable series on axis');
   });
@@ -557,11 +557,11 @@ describe('6. ErrorBoundary recovery and zero external network calls', () => {
       render(<App />);
       await openDatasetDisclosure(user);
       await user.click(
-        screen.getByRole('button', { name: /Reset to bundled explorer view only/i }),
+        screen.getByRole('button', { name: /Reset results only/i }),
       );
       await openDatasetDisclosure(user);
       await user.click(
-        screen.getByRole('button', { name: /Load bundled demo \(explorer \+ family diagnostic\)/i }),
+        screen.getByRole('button', { name: /Load complete sample dataset/i }),
       );
       expect(fetchStub).not.toHaveBeenCalled();
       expect(wsStub).not.toHaveBeenCalled();
@@ -654,7 +654,7 @@ describe('7. View switching: visibility, state preservation, and restriction per
     expect(screen.getByRole('button', { name: 'Previous page' })).toBeEnabled();
     expect(screen.getByRole('complementary', { name: /Selected run details/i })).toHaveTextContent(rowKey);
     await openDatasetDisclosure(user);
-    await user.click(screen.getByRole('button', { name: /Reset to bundled explorer view only/i }));
+    await user.click(screen.getByRole('button', { name: /Reset results only/i }));
     expect(screen.getByLabelText('Configuration filter')).toHaveValue('*');
     expect(screen.getByRole('button', { name: 'Previous page' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Close details' })).toBeNull();
@@ -687,5 +687,23 @@ describe('7. View switching: visibility, state preservation, and restriction per
     await openDatasetDisclosure(user);
     expect(explorerInput()).toBeInTheDocument();
     expect(diagnosticInput()).toBeInTheDocument();
+  });
+});
+
+
+describe('Overview workflow actions', () => {
+  it('opens each destination through the overview cards', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    for (const [action, destination] of [
+      ['Compare configurations', 'Compare'],
+      ['Inspect attempts', 'Runs'],
+      ['Understand the evidence', 'Method'],
+    ]) {
+      await selectView(user, 'Overview');
+      await user.click(screen.getByRole('button', { name: new RegExp(action) }));
+      const nav = screen.getByRole('navigation', { name: 'Results views' });
+      expect(within(nav).getByRole('button', { name: destination })).toHaveAttribute('aria-current', 'page');
+    }
   });
 });

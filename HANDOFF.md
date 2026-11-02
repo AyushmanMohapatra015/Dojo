@@ -522,6 +522,14 @@ Open **Change dataset** and explain:
 - Files are read locally in the browser by the current implementation. This
   statement is not a privacy promise about hypothetical future integrations.
 
+The demo interface now uses shorter headings: version tags and internal selector/
+DTO names have been removed from the main reading flow. In **Change dataset**,
+**Load complete sample dataset** restores the bundled results plus diagnostic;
+**Reset results only** restores the bundled explorer without its diagnostic.
+The Compare axis buttons are **Cost per solved task** and **Mean task cost**.
+The Overview action cards open their corresponding views directly. All data
+validation and synthetic-evidence restrictions remain in place.
+
 #### C3. Overview: "What am I looking at?"
 
 This is the starting orientation and guide to Compare, Runs and Method. Use it
