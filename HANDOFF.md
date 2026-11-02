@@ -397,19 +397,229 @@ Expected: readiness stays false/locked. Preflight checks metadata but does not
 approve the candidate grid. A changed-source checkpoint may refuse; do not
 rewrite it to make the demo green. Fix/version the mismatch beforehand.
 
-### C. Opening story and website (3–4 minutes)
+### C. Interview story and guided website tour (6-8 minutes)
 
-Say: “Dojo measures coding-agent reliability and cost on repository-derived
-tasks. Today I am showing the working local evaluation pipeline and synthetic
-comparison interface. Genuine model benchmark measurements are the next stage.”
+#### C1. The problem, audience and intended value
 
-1. Overview: explain the evaluated task/config counts, distinct from the 63-task
-   construction inventory. Keep the synthetic/evidence label visible.
-2. Compare: show success/cost values and frontier table. These are sample values.
-3. Runs: filter a configuration/outcome, choose Details, demonstrate focus and
-   closing, then switch views and show preserved state.
-4. Method: show scope, uncertainty and limitations. Do not call it adversarially
-   secure or claim a benchmark result from visible-test success alone.
+**30-second introduction you can say:**
+
+> Developers choosing a coding model need to know whether it fixes their own
+> repository's problems, and what that reliability costs. General benchmark
+> scores and a convincing answer do not establish that. Dojo builds repair tasks
+> from repository history, separates agent execution from final scoring, and
+> provides cost-versus-success analysis. Today I will show working local execution
+> with scripted replies and a synthetic results explorer. Real coding-model
+> measurements are still pending.
+
+The primary audience is coding-agent developers, ML/platform engineers and teams
+choosing configurations for their own repositories. An ordinary developer could
+use its reports, but the current setup is a developer tool requiring Python,
+Git and Docker, not a finished one-click consumer application.
+
+A concrete decision it aims to support: "Should we use configuration A for every
+repair, configuration B, or try A first and escalate on a predefined signal?"
+The result can be a tradeoff; Dojo must not assume that a cheaper route preserves
+success. Its intended value is more defensible model selection and traceable
+failures. No measured savings, adoption or production impact exists yet.
+
+Explain the three levels of scope:
+
+- **L1, repository benchmark:** construct validated repair tasks, execute bounded
+  coding attempts, score final patches and compare cost with correctness.
+- **L2, offline cascade:** use existing runs to estimate a fixed cheap-first,
+  fresh-start escalation policy, without spending on a second experiment merely
+  to compute that estimate. Offline composition is implemented on synthetic data;
+  it is not a deployed live router or a measured production saving.
+- **L3, optional receipted notes:** evaluate whether proposed agent instructions
+  help using controlled replay. This is unfinished stretch scope; do not demo it
+  as a delivered feature or claim fine-tuning.
+
+Dojo is not currently a general chatbot, model-training service, autonomous
+production repair service or universal measure of software correctness. Passing
+its tests establishes only the tested contract under the stated scoring scope.
+
+#### C2. Before clicking: explain the page-wide controls
+
+Keep the **synthetic data banner** visible. It identifies the evidence you are
+showing, not an error to dismiss. Starting the website or switching tabs sends
+no model request. This browser is a results viewer; it does not launch benchmark
+jobs or expose the backend as a public service.
+
+Open **Change dataset** and explain:
+
+- The explorer JSON supplies validated results and analysis for the display.
+- A matching family-diagnostic JSON adds a secondary sensitivity view. Load the
+  explorer first; loading a new explorer clears the old diagnostic. Mismatched
+  or invalid inputs are rejected rather than silently combined.
+- Bundled-demo/reset controls provide a known sample and a recovery route.
+- Files are read locally in the browser by the current implementation. This
+  statement is not a privacy promise about hypothetical future integrations.
+
+#### C3. Overview: "What am I looking at?"
+
+This is the starting orientation and guide to Compare, Runs and Method. Use it
+to explain the workflow before discussing numbers. Dataset identity/status is
+shown in the surrounding controls; the detailed provenance and denominator
+fields are in **Method**, not an Overview performance leaderboard.
+
+Say: "First I establish which dataset is loaded. Then I compare configurations,
+inspect individual evidence, and check how the conclusions were calculated."
+
+#### C4. Compare: "Which configuration offers the tradeoff I want?"
+
+A **configuration** is a declared experimental setup, not necessarily a different
+model: model choice, prompting, limits or other settings can distinguish setups.
+A **seed** identifies a repeated sampled attempt. Repeats help reveal variability;
+more repeats must not make one task count as more important than another.
+
+**Configuration summary metrics**:
+
+| Screen field | Explain it in plain language |
+|---|---|
+| Pass@1 (equal-task mean) | Average each task's observed single-attempt success across its declared seeds, then give every task equal weight. It is not best-of-many success and not a production guarantee. |
+| Expected solved tasks | Pass@1 multiplied by evaluated task count; an average can be fractional, unlike a literal count of successful individual runs. |
+| Expected total cost (1-seed benchmark) | Sum the per-task average costs: the expected cost of one attempt on every task. |
+| Mean task cost | Expected total cost divided by evaluated task count. |
+| Expected cost per solved task | Expected total cost divided by expected solved tasks, including spending on failures. Undefined when expected solves are zero. |
+| Actual all-repetitions spend | Sum of recorded costs across all declared repeated runs. For this synthetic dataset, the costs are fictional; this is not an invoice. |
+| Observed seed runs | Coverage and outcome counts. Missing/undetermined evidence must not quietly disappear from the evaluation. |
+
+**Small arithmetic example, illustrative only:** four equally weighted tasks
+have success rates 1, 1, 0, 0. Pass@1 is 50%, expected solves are 2. If expected
+total cost is $0.04, mean task cost is $0.01 and cost per solved task is $0.02.
+These numbers explain definitions; they are not Dojo's measured model results.
+
+**Pareto frontiers**: each point is a configuration or available cascade series.
+The vertical axis is success; the horizontal axis is the selected cost measure.
+Higher success and lower cost are desirable. A point is dominated when another
+has at least as much success for no more cost, with at least one strict advantage.
+A frontier is a set of tradeoffs, not a universal winner. Switch between cost per
+solved task and mean task cost: the meaning, and potentially the frontier, changes.
+The exact table drives comparisons; approximate chart coordinates only place dots.
+A zero-solve series may remain in the table without a finite cost-per-solved dot.
+
+**Frozen cold-restart cascade comparison**: show the base-to-escalate route,
+policy hash, expected success/cost and escalation comparison when the loaded
+fixture includes them. "Frozen" means the policy is fixed for this analysis;
+it is not selected after seeing held-out scoring answers. "Cold restart" means
+the second configuration starts a fresh attempt, not a continuation of the first
+transcript. Triggering must use allowed execution-time observations, not the
+final scorer's answer. Offline analysis makes no new model calls. If absent,
+show the explicit unavailable state or load the checked-in cascade pair in F.
+
+Missing cost is not zero cost. The interface withholds affected cost comparisons
+and, where required, aggregate conclusions instead of inventing a number. It may
+still show eligible success information. Describe warnings rather than hiding them.
+
+#### C5. Runs: "What happened on a particular task?"
+
+**Per-task seed-aggregated summary matrix** groups a task/configuration pair
+across its declared seeds. It explains which tasks drive a configuration's mean.
+**Seed-level run details** show individual attempts, with filters, pagination
+and a sanitized Details panel. Filter one configuration/outcome, select a row,
+open and close Details, then show that navigation preserves your current view.
+Filtering changes the displayed rows, not the primary benchmark denominator.
+
+Explain these distinctions while pointing at available fields:
+
+- **Solved / unsolved / undetermined** describes what the recorded evidence
+  supports; undetermined is not a secretly removed failure or a success.
+- **Visible tests** are feedback the solver can see. Their passing does not
+  establish that the independent final scorer accepts the patch.
+- **Candidate error** can be attributed to the candidate only when the required
+  baseline health is established. Infrastructure failures are separate.
+- **Unknown cost** means accounting evidence is incomplete. In the execution
+  design, ambiguity stops progress; the UI must not replace it with $0.
+
+Do not promise raw prompts, secrets or full private transcripts in Details.
+It intentionally exposes sanitized result fields. Use the terminal segment D
+for real local scoring behavior and segment E for persistent ownership/reuse.
+
+#### C6. Method: "Why should I trust the interpretation?"
+
+| Section | What to point at and say |
+|---|---|
+| Scope, provenance and audit status | Show evidence kind, eligibility, real-provider-call count, audit/summary mode, configuration seeds and input/plan identifiers. A hash identifies bytes; it is not proof that execution was trustworthy or approved. |
+| Evaluated panel tasks (denominator) | The tasks actually declared in this loaded comparison. Distinguish this from the informational construction inventory of 63 tasks, split 37 train / 26 held out. Constructed does not mean model-evaluated. |
+| Empirical bootstrap uncertainty | Resampling describes variation over observed tasks under the recorded method. Show the confidence level, replicate count and interval, not only a point estimate. Paired differences compare configurations on the same task panel. Small demo replicate counts illustrate the mechanism, not strong scientific evidence. |
+| Leave-one-family-out sensitivity diagnostic | Exclude one family for a secondary diagnostic and inspect how results move. This asks whether one related task group drives the finding; it does not redefine the primary panel or certify generalization. It requires the matching diagnostic file. |
+| Method, scope and dataset limitations | State the dataset/scoring assumptions, evidence restrictions and synthetic status. A confidence interval is not a security guarantee, registration approval or proof of performance on unseen repositories. |
+
+Do not turn an interval overlapping zero into a claim of "equal performance".
+Do not read a sensitivity diagnostic as permission to remove inconvenient tasks.
+
+#### C7. Architecture explanation (60 seconds)
+
+Describe the flow in order:
+
+```text
+Git repair history -> validated fail-before/pass-after tasks -> declared plan
+-> owned, bounded attempt -> Docker solver proposes a patch
+-> separate scoring path restores protected tests and evaluates the patch
+-> private evidence + SQLite outcome/accounting
+-> offline statistics/cascade analysis -> validated JSON export -> React explorer
+```
+
+Task construction checks that the earlier revision fails the relevant contract
+and the repaired revision passes. The baseline matters: a broken environment
+must not be counted as the model's coding mistake. Separation reduces obvious
+test-edit shortcuts, but the current scorer has a **cooperative threat model**;
+Docker isolation does not establish adversarially tamper-proof scoring.
+
+Explain technology choices as responsibilities: Python coordinates execution
+and analysis; Git supplies repair history; Docker separates local execution;
+SQLite persists ownership/results/accounting; exact integer nano-dollar and
+rational arithmetic avoids floating-point decision errors; React displays
+validated exports. The website is not querying a hosted database in this demo.
+
+NVIDIA Nemotron on Nebius Token Factory is the intended genuine inference path.
+One historical Nano arithmetic request verifies limited connectivity only.
+The current local coding demo uses scripted replies; an actual coding-model
+transport still needs its runtime, financial and evidence gates completed.
+Sponsor credits do not establish a working service integration. Segment G lists
+what Tavily, LangSmith, Toloka and Tendem actually do or do not do today.
+
+#### C8. Likely interview questions and defensible answers
+
+| Question | Answer to practice |
+|---|---|
+| Why not use a public coding leaderboard? | It is useful context, but may not represent a team's repository, task distribution or deployment cost. Dojo aims to evaluate a declared local workload and expose the assumptions. |
+| How is this different from a coding agent? | The core product is evaluation and model-selection evidence. A bounded coding controller is part of the measurement pipeline, not a claim to outperform general coding agents. |
+| What is the hardest engineering problem? | Keeping trustworthy scoring, attempt identity and cost accounting aligned when execution fails or restarts. Show a concrete test-tampering, baseline-error or timeout example; explain what it proves and what it does not. |
+| Why keep persistent ownership/cache records? | A completed matching result can be reused; ambiguous or interrupted attempts must not silently replay and potentially spend again. Identity must bind relevant inputs and runtime sources. |
+| Does the spending cap guarantee no card charge? | No. Nebius has no provider hard cap. Local controls can limit admitted requests but cannot guarantee provider billing behavior; unknown accounting stops execution and live coding calls remain gated. |
+| What proves it works? | Validated task construction, actual scripted local Docker solver/scorer cases, exact-analysis known answers and checked export/UI behavior. Real coding-model effectiveness and savings are not yet measured. |
+| What did you personally build? | State your actual implementation, review, integration and testing contributions. AI agents assisted development; do not claim manually writing every module or understanding code you cannot explain. Walk through one boundary you reviewed in detail. |
+| Does this support other models? | The comparison concept uses configurations and is not inherently Nemotron-only. Another provider still needs a tested adapter, compatible usage/cost semantics and safety controls. Arbitrary provider plug-and-play is not delivered. |
+| Can a model cheat or memorize tasks? | Test restoration and input boundaries address specific shortcuts, not all attacks. Public-history contamination remains possible; historical tasks and limited tests are not universal correctness evidence. |
+| Can it scale? | It is a local toolkit today. Parallel execution would require careful ownership, budget admission, isolation and operational limits. Do not claim measured throughput or a production multi-tenant service. |
+| What would you do next? | Resolve scorer scope/provenance and genuine transport/token/accounting gates; run a small authorized registered panel, then report real held-out results. Continue manual accessibility and clean-machine reproduction work. |
+| What is its business value? | Intended value is reducing guesswork when selecting coding configurations and making failures/costs inspectable. Savings, paying users and adoption remain hypotheses until measured. |
+
+#### C9. Your evidence card and closing statement
+
+Keep these distinctions on a private note card:
+
+- **63 constructed tasks**, 37 train / 26 held out; not 63 measured Nemotron repairs.
+- **12 passing local matrix cases**, scripted replies across two scoring profiles;
+  not a model accuracy benchmark.
+- **One historical Nano arithmetic probe**, 38 input / 4 output tokens; no coding
+  quality conclusion follows from it.
+- Website metrics are **synthetic fixture results**, not real savings or invoices.
+- Current APIs/services: describe the actual status table in A, not future plans
+  as completed integrations. No deployment is needed for local screen sharing.
+
+Suggested closing:
+
+> The local pipeline demonstrates task construction, bounded execution, separate
+> scoring, persistent accounting and a results explorer. The next evidence milestone
+> is an authorized real-model coding panel. I would judge success by a reproducible
+> cost-versus-correctness comparison, not by the number of integrations.
+
+Before the interview, practice explaining one task from failing baseline to
+scored patch, one chart point from exact data to its label, and one uncertain
+attempt from send to refusal. If you cannot explain a detail, say what you have
+verified and offer to inspect the implementation; do not invent an answer.
 
 ### D. Actual local execution, still zero provider calls (4–6 minutes)
 

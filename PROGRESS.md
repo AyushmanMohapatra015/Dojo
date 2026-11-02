@@ -1,5 +1,14 @@
 # Progress
 
+## Interview walkthrough expansion (14j4)
+
+Expanded Demo-Thursaday with problem, audience, L1/L2/L3 scope, exact website
+view/section meanings, metric definitions and illustrative arithmetic, architecture,
+limitations, interview Q&A and evidence-backed speaking notes. Checked section
+placement and labels against dashboard/src/App.jsx. No application logic changed,
+no paid call ran and no new service capability is claimed.
+
+
 ## Continuation and Thursday demonstration handoff (14j1/14j2)
 
 Prepared HANDOFF.md with every unfinished action-plan row, dependency-specific
