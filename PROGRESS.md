@@ -1,5 +1,13 @@
 # Progress
 
+## Thursday readiness helper (14j5)
+
+Added scripts/demo_readiness.py and presenter preparation/fallback checklist.
+All nine bounded checks passed: Node, Vite presence, five readable fixtures,
+Docker Linux engine and local Dojo HTTP response. Ruff passes. No installs,
+container starts, credentials or paid requests. These are preliminary checks,
+not full execution acceptance or live-call approval.
+
 ## Interview walkthrough expansion (14j4)
 
 Expanded Demo-Thursaday with problem, audience, L1/L2/L3 scope, exact website

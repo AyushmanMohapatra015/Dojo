@@ -432,6 +432,7 @@ export/verify smoke pass. No real providers or frontend/deployment acceptance.
 | 14j1 | DONE | Prepare continuation handoff with every unfinished numbered action-plan row, instructions/dependencies and latest checkpoint. |
 | 14j2 | DONE | Prepare final Demo-Thursaday section for Nov 5 local demo, exact commands, service status, fallback and gated API-call preparation. |
 | 14j3 | DONE | Owner explicitly authorizes cumulative private GitHub checkpoint: audit candidates, stage/commit/push without force, verify remote state. Preserve ignored credentials/runtime evidence and report any blocker. |
+| 14j5 | DONE | Add zero-provider-call Thursday readiness checks and concise presenter checklist; bounded local checks only, no installs or live unlock. |
 | 14j4 | DONE | Expand Demo-Thursaday with problem/audience/scope, actual website section and metric explanations, architecture, interview questions and evidence-backed speaking notes. |
 | 14k | DONE | Agent 2 audit delivered and reviewed at 13k; accepted README fixes at 14a1, missing-context claims mapped to existing IDs. Reviewed planning deliverable only: real runtime, README reproduction and submission remain incomplete. |
 | 14l | DONE | Agent 2 proposed storyboard/checklists reviewed: original scene sum 172s, synthetic/live labels and fallback retained. Assessment corrects visible-test, cost and held-out winner-selection wording. Recording/re-timing/upload remain 14e/14f; no deployment authorized. |

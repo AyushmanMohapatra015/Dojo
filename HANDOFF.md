@@ -339,6 +339,35 @@ addresses refer to their own computers; do not send them this URL as a public
 demo link. Allow 15–20 minutes for the full technical walkthrough or select the
 short version below. Rehearse once beforehand with new output paths.
 
+### Before the audience arrives: readiness and presenter checklist
+
+Run from the project root after starting the website:
+
+```powershell
+.venv\Scripts\python.exe -m scripts.demo_readiness
+```
+
+Exit 0 means the preliminary checks passed; exit 2 lists recovery steps. This
+checks Node, Vite dependency presence, demo JSON readability, the Docker Linux
+engine and the Dojo page on loopback. It does not install anything, start a
+container, inspect credentials, validate full fixture semantics or approve live
+requests. A healthy engine alone does not establish that required images exist;
+rehearse the actual Docker commands in D before Thursday.
+
+- **Day before:** rehearse B-F once with fresh output paths; verify the actual
+  local fix completes. Keep sanitized result notes as a fallback. Test screen
+  sharing and font size on the display you will use.
+- **15 minutes before:** start Docker Desktop and the website, run readiness,
+  open the bundled example, and keep HANDOFF.md open privately at section C.
+- **Before sharing:** close key/payment pages, notifications and private raw
+  evidence. Share the browser window rather than the entire desktop when possible.
+- **During:** explain synthetic data first, tour Overview/Compare/Runs/Method,
+  then show one prepared local execution. Use the full technical commands only
+  when time permits. Do not troubleshoot billing or authentication on stage.
+- **If something fails:** name the failed component, use section I's fallback,
+  and continue explaining the evidence. Saved output is saved evidence, not a
+  new live execution. No blind retries or unapproved paid calls.
+
 ### A. What you can honestly show
 
 | Component/service | Show on Thursday | Current limit |
