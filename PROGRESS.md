@@ -1,5 +1,17 @@
 # Progress
 
+## Security remediation checkpoint (14j10, partial)
+
+Upgraded Vitest to 5.0.5 and regenerated npm lock without install scripts;
+npm audit reports zero vulnerabilities. All 43 data and 51 UI checks pass;
+production build passes. Node requirement updated; existing Node 24.12.0 compatible.
+Enabled and verified GitHub vulnerability alerts and automatic security fixes;
+added weekly npm/uv update proposals and SECURITY.md. Secret scanning request
+rejected as unavailable (422); private branch protection plan-limited (403).
+No visibility, collaborator or authentication scope changes. Comprehensive
+Python/image/application audit and unavailable platform protections remain open.
+
+
 ## Banner-free workspace refinement (14j9)
 
 Removed the duplicated top and footer banners as requested. Retained compact

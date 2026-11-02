@@ -77,7 +77,7 @@ validate a separately reviewed, dependency-compatible repository commit.
 
 ## View the website
 
-Requires Node.js 20.19+ and npm. From the repository root:
+Requires Node.js 24 LTS (or a version matching dashboard/package.json engines) and npm. From the repository root:
 
 ```powershell
 npm.cmd --prefix .\dashboard ci

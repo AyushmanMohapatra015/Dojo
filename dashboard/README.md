@@ -19,7 +19,7 @@ at 320/375/768/1440 CSS px. See
 [current frontend acceptance](../docs/frontend-acceptance-2026-11-02.md) for
 the measured scope and remaining manual accessibility/browser work.
 
-From this directory, use Node 20.19+ and run:
+From this directory, use Node 24 LTS (or a version matching package.json engines) and run:
 
 ```powershell
 npm ci --ignore-scripts --no-audit --no-fund

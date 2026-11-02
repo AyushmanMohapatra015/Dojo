@@ -1,7 +1,7 @@
 {
   "snapshot_date": "2026-11-02",
-  "action_plan_sha256": "e1d5e465d7d689de0be573eea0727dbdd04f5f2b4266a39bdd0a6f70156cdffd",
-  "open_task_count": 116,
+  "action_plan_sha256": "05530e8ccb4ae27c0e13be43bd340e754edf3040246179ac49a1a3297153c197",
+  "open_task_count": 117,
   "tasks": [
     {
       "id": "1d",
@@ -735,6 +735,13 @@
       "id": "14j",
       "status": "PARTIAL",
       "task": "Handoff inventory and judge-access maintenance without continuing paid inference.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "14j10",
+      "status": "PARTIAL",
+      "task": "Remediate dependency audit findings and enable available private-repository security protections; preserve privacy and verify frontend compatibility, report plan/permission limitations.",
       "guide": "3. Product, setup and release",
       "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
     },
