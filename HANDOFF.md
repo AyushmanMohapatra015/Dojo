@@ -339,6 +339,44 @@ addresses refer to their own computers; do not send them this URL as a public
 demo link. Allow 15–20 minutes for the full technical walkthrough or select the
 short version below. Rehearse once beforehand with new output paths.
 
+### Recommended: prepare the working demo in one command
+
+From `D:\NVIDIA X NEBIUS`, with Docker Desktop running:
+
+```powershell
+.venv\Scripts\python.exe -m scripts.prepare_demo --rehearse-docker
+```
+
+This is the recommended preparation route, not a paid model run. It creates a
+fresh ignored `data/runtime/demo-pack-...` folder, generates and verifies the
+browser-upload bundle, runs synthetic analysis and offline ownership/partner
+examples, then executes an actual local source fix and a protected-test-tampering
+case using scripted replies. All seven steps must pass; it stops on failure.
+Each child command has a 120-second limit. Failed folders remain intact, with
+`complete=false`; never present a partial pack as a passing rehearsal. Inspect
+cleanup if a local subprocess is interrupted; a host timeout is not a cleanup
+certificate. No model API is called and no missing images are downloaded by
+this preparation helper itself; underlying Docker prerequisites still apply.
+
+The printed folder contains `START-HERE.txt`, `preparation.json`, per-step logs,
+and `explorer-bundle`. Open **Change dataset** on the website and select that
+folder's `explorer-bundle/explorer.json`, then its matching
+`family-diagnostic.json`. This gives you a verified upload pair without manually
+running or mistyping the export commands. It is the two-task example, not the
+separate four-task cascade example in F. Logs are fallback rehearsal evidence;
+showing them does not constitute a fresh live execution. Keep the whole folder
+private, especially `private-evidence`.
+
+If you only want offline exports/service examples and Docker is unavailable:
+
+```powershell
+.venv\Scripts\python.exe -m scripts.prepare_demo
+```
+
+That mode does **not** rehearse actual Docker scoring. Do not silently substitute
+it for a failed Docker presentation. The longer commands in D-F remain available
+for showing the pipeline step by step during the talk.
+
 ### Before the audience arrives: readiness and presenter checklist
 
 Run from the project root after starting the website:

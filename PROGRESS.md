@@ -1,5 +1,16 @@
 # Progress
 
+## Demo-path preparation (14j6)
+
+Added scripts.prepare_demo to replace error-prone manual artifact preparation.
+Fresh ignored folders, exclusive logs, bounded children, stop-on-failure and
+complete/incomplete status preserve evidence. Actual seven-step rehearsal passed:
+export/verify, analysis, ownership, offline partners, Docker source fix and
+protected-test tampering. Independently checked fix passed and tampering failed,
+with cleanup_checked=true for both. Ruff passes. Zero provider calls. Updated
+HANDOFF.md with exact one-command route and upload instructions; no live unlock.
+
+
 ## Thursday readiness helper (14j5)
 
 Added scripts/demo_readiness.py and presenter preparation/fallback checklist.
