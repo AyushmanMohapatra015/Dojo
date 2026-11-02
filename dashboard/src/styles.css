@@ -121,24 +121,7 @@ code {
   margin: 0 auto;
 }
 
-.banner {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--warn-bg);
-  color: var(--warn-text);
-  border-bottom: 4px solid var(--warn-border);
-  padding: 0.6rem 1rem;
-  font-size: 1.02rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.75rem;
-  align-items: baseline;
-}
 
-.banner-sub {
-  font-size: 0.9rem;
-}
 
 .banner-state {
   border-radius: 6px;
@@ -492,12 +475,6 @@ thead th {
   overflow-wrap: anywhere;
 }
 
-.app-footer {
-  padding: 1rem;
-  border-top: 4px solid var(--warn-border);
-  background: var(--warn-bg);
-  color: var(--warn-text);
-}
 
 @media (max-width: 900px) {
   .split {
@@ -537,25 +514,33 @@ thead th {
   }
 }
 
-/* Overview actions share the existing palette and keyboard focus treatment. */
-.overview-guide { list-style: none; padding: 0; display: grid; gap: 0.75rem; }
+/* A compact workspace: type, separators and alignment carry the hierarchy. */
+.workspace-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; }
+.title-block .workspace-label { margin-bottom: 0.6rem; color: var(--muted); }
+.title-block { padding: 1.75rem 1rem 1.25rem; }
+.title-block h1 { font-size: clamp(1.65rem, 3vw, 2.15rem); letter-spacing: -0.025em; }
+.dataset-status-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.875rem; }
+.dataset-kind { font-weight: 600; color: var(--text); }
+.dataset-provenance { margin-left: auto; }
+.dataset-details { margin-bottom: 0.5rem; }
+.dataset-details__body .field { flex: 1 1 18rem; }
+.overview-guide { list-style: none; padding: 0; margin-top: 1.5rem; counter-reset: workflow; }
+.overview-guide li { border-top: 1px solid var(--soft-border); counter-increment: workflow; }
+.overview-guide li:last-child { border-bottom: 1px solid var(--soft-border); }
 .overview-guide li + li { margin-top: 0; }
 .overview-step {
   width: 100%; text-align: left; font: inherit; color: var(--text);
-  background: var(--surface); border: 1px solid var(--soft-border);
-  border-left: 3px solid var(--accent); border-radius: 6px;
-  padding: 1rem; cursor: pointer; display: grid; gap: 0.25rem;
+  background: transparent; border: 0; border-radius: 0; padding: 1rem 0.5rem;
+  cursor: pointer; display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 0.2rem 0.75rem;
 }
+.overview-step::before { content: '0' counter(workflow); grid-row: span 2; color: var(--muted); font-size: 0.85rem; padding-top: 0.15rem; }
 .overview-step strong { color: var(--accent); }
 .overview-step span { color: var(--muted); }
-.overview-step:hover { border-color: var(--accent); }
+.overview-step:hover { background: var(--bg); }
 @media (min-width: 900px) {
-  .overview-guide { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .overview-step { height: 100%; }
+  .overview-step { grid-template-columns: 2rem minmax(12rem, 0.8fr) minmax(0, 1.2fr); align-items: baseline; }
+  .overview-step::before { grid-row: auto; }
 }
-
-/* Compact disclosure leaves more space for results without hiding evidence status. */
-.banner { border-bottom-width: 2px; font-size: 0.95rem; }
-.title-block { padding-top: 1.25rem; padding-bottom: 1rem; }
-.dataset-details { margin-bottom: 0.5rem; }
-.dataset-details__body .field { flex: 1 1 18rem; }
+@media (max-width: 480px) {
+  .dataset-provenance { margin-left: 0; flex-basis: 100%; }
+}

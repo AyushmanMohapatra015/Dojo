@@ -339,8 +339,8 @@ addresses refer to their own computers; do not send them this URL as a public
 demo link. Allow 15–20 minutes for the full technical walkthrough or select the
 short version below. Rehearse once beforehand with new output paths.
 
-Website: **http://127.0.0.1:5173/** on this PC. The compact top disclosure
-reads **Synthetic sample results - no live model calls**. In Change dataset,
+Website: **http://127.0.0.1:5173/** on this PC. The repeated top and bottom banners have been removed. A compact **Sample data**
+status near the dataset controls retains provenance, with audit details in Method. In Change dataset,
 select **1. Upload results JSON**, then **2. Upload matching family diagnostic
 (optional)**. The help text names the files in your demo pack. Shorter labels
 do not change synthetic-only eligibility, validation or the audit information
@@ -514,8 +514,8 @@ its tests establishes only the tested contract under the stated scoring scope.
 
 #### C2. Before clicking: explain the page-wide controls
 
-Keep the **synthetic data banner** visible. It identifies the evidence you are
-showing, not an error to dismiss. Starting the website or switching tabs sends
+Point out the compact **Sample data** dataset status. It identifies the evidence
+you are showing, not an error to dismiss. Starting the website or switching tabs sends
 no model request. This browser is a results viewer; it does not launch benchmark
 jobs or expose the backend as a public service.
 

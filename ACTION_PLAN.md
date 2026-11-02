@@ -432,6 +432,7 @@ export/verify smoke pass. No real providers or frontend/deployment acceptance.
 | 14j1 | DONE | Prepare continuation handoff with every unfinished numbered action-plan row, instructions/dependencies and latest checkpoint. |
 | 14j2 | DONE | Prepare final Demo-Thursaday section for Nov 5 local demo, exact commands, service status, fallback and gated API-call preparation. |
 | 14j3 | DONE | Owner explicitly authorizes cumulative private GitHub checkpoint: audit candidates, stage/commit/push without force, verify remote state. Preserve ignored credentials/runtime evidence and report any blocker. |
+| 14j9 | DONE | Remove duplicate top/footer synthetic banners per owner request; retain compact dataset provenance and refine restrained task-focused layout, navigation and workflow rows with UI/browser verification. |
 | 14j8 | DONE | Refine compact synthetic disclosure and dataset upload guidance for presentation; preserve validation, audit visibility and responsive accessibility. |
 | 14j7 | DONE | Polish demo UI wording and actionable overview navigation; verify upload/recovery, responsive browser behavior and built bundle without changing evidence eligibility. |
 | 14j6 | DONE | Prepare a fresh zero-provider demo pack with verified explorer uploads, offline service outputs and optional bounded actual Docker fix/tamper rehearsal; preserve incomplete evidence and refuse silent fallback. |

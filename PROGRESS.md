@@ -1,5 +1,19 @@
 # Progress
 
+## Banner-free workspace refinement (14j9)
+
+Removed the duplicated top and footer banners as requested. Retained compact
+sample-data provenance near dataset controls and all audit/missing-cost behavior.
+Added restrained header hierarchy and replaced repeated Overview cards with
+numbered workflow rows. No gradients, stock imagery, decorative animations or
+new dependencies. Applied task-focused visual simplification informed by NN/g:
+https://www.nngroup.com/articles/characteristics-minimalism/
+51 UI tests pass, including absence of banners/footer and retained provenance.
+Production build passes (existing chunk warning remains). Chromium responsive,
+keyboard/focus and large-text checks pass across four widths; visually inspected
+375px and 1440px screenshots. No provider calls or backend/evidence changes.
+
+
 ## Compact disclosure and upload flow (14j8)
 
 Verified local website responds. Numbered upload controls now name the demo-pack

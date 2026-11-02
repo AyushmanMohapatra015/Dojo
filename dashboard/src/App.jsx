@@ -25,7 +25,6 @@ import {
   validateExplorerV2,
 } from './v2/data.mjs';
 import {
-  SYNTHETIC_BANNER_V2,
   deriveExplorerV2,
   selectRowsV2,
 } from './v2/derive.mjs';
@@ -149,18 +148,6 @@ export class ErrorBoundary extends Component {
   }
 }
 
-function SyntheticBanner({ bannerText }) {
-  return (
-    <div className="banner" role="note" aria-label="Data status">
-      <span aria-hidden="true">{'\u26A0 '}</span>
-      <strong>{bannerText || SYNTHETIC_BANNER_V2}</strong>
-      <span className="banner-sub">
-        Illustrative data, not measured model performance.
-      </span>
-    </div>
-  );
-}
-
 function DatasetControls({
   sourceLabel,
   diagnosticLabel,
@@ -280,7 +267,7 @@ function DatasetRestrictionBar({ derived }) {
   const { scope } = derived;
   return (
     <section className="dataset-restriction-bar" aria-label="Current dataset status">
-      <p className="dataset-status-summary">Synthetic example &middot; {scope.evaluatedTaskCount} evaluated tasks &middot; {scope.declaredConfigCount} configurations. Unverified offline data; no live provider calls.</p>
+      <p className="dataset-status-summary"><span className="dataset-kind">Sample data</span><span>{scope.evaluatedTaskCount} evaluated tasks &middot; {scope.declaredConfigCount} configurations</span><span className="dataset-provenance">Unverified &middot; No live provider calls</span></p>
       {scope.isBlocked ? (
         <div
           className="banner-state banner-blocked"
@@ -1535,9 +1522,9 @@ export default function App() {
       <a className="skip-link" href="#main">
         Skip to results
       </a>
-      <SyntheticBanner bannerText={SYNTHETIC_BANNER_V2} />
       <header className="app-header">
         <div className="title-block">
+          <p className="workspace-label">DOJO / EVALUATION WORKSPACE</p>
           <h1>Dojo results explorer</h1>
           <p>
             Explore task success, costs and individual coding attempts.
@@ -1549,10 +1536,7 @@ export default function App() {
           <ExplorerApp />
         </ErrorBoundary>
       </main>
-      <footer className="app-footer">
-        <strong>{SYNTHETIC_BANNER_V2}.</strong> Uploaded files are validated locally in your browser and never
-        sent to external services.
-      </footer>
+
     </div>
   );
 }

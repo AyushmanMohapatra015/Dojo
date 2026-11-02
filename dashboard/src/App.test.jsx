@@ -4,7 +4,6 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import App, { ErrorBoundary } from './App.jsx';
-import { SYNTHETIC_BANNER_V2 } from './v2/derive.mjs';
 import { LIMITS_V2, formatAlias } from './v2/data.mjs';
 import bundledExplorer from './fixtures/synthetic-v2.explorer.json';
 import bundledDiagnostic from './fixtures/synthetic-v2.family-diagnostic.json';
@@ -95,12 +94,15 @@ describe('Runs recovery and keyboard navigation', () => {
   });
 });
 
-describe('1. Bundled v2 synthetic demo, persistent banner, and unequal-seeds oracles', () => {
-  it('renders the persistent SYNTHETIC_BANNER_V2, construction inventory (63=37+26), and unequal-seeds metrics', async () => {
+describe('1. Bundled sample provenance and unequal-seeds oracles', () => {
+  it('renders compact sample provenance, construction inventory (63=37+26), and unequal-seeds metrics', async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(screen.getByRole('note', { name: 'Data status' })).toHaveTextContent(SYNTHETIC_BANNER_V2);
+    expect(screen.queryByRole('note', { name: 'Data status' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Current dataset status' })).toHaveTextContent('Sample data');
+    expect(screen.getByRole('region', { name: 'Current dataset status' })).toHaveTextContent('No live provider calls');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       'Dojo results explorer',
     );
