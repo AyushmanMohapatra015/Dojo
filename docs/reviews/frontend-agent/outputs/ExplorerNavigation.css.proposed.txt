@@ -1,0 +1,103 @@
+/*
+ * ExplorerNavigation.css
+ * Scoped to .dojo-explorer-nav — no global selectors.
+ * Relies on design tokens from styles.css with fallbacks.
+ */
+
+.dojo-explorer-nav {
+  background: var(--surface, #ffffff);
+  border-bottom: 1px solid var(--soft-border, #c5ccd9);
+  padding: 0 1rem;
+}
+
+.dojo-explorer-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.dojo-explorer-nav__item {
+  display: flex;
+}
+
+.dojo-explorer-nav__btn {
+  /* Reset */
+  appearance: none;
+  background: none;
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  cursor: pointer;
+
+  /* Typography & spacing */
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--muted, #3d4657);
+  padding: 0.75rem 1rem;
+  min-height: 44px;
+
+  /* Bottom-border used as the active indicator track */
+  border-bottom: 3px solid transparent;
+
+  /* Separation between tabs */
+  border-right: 1px solid transparent;
+
+  /* Prevent text reflow when weight changes on active */
+  position: relative;
+}
+
+.dojo-explorer-nav__btn:hover {
+  color: var(--text, #1a1f2b);
+  background: var(--bg, #f4f5f8);
+}
+
+/* Active state: color + weight + underline (border) — three distinct cues */
+.dojo-explorer-nav__btn--active {
+  color: var(--accent, #1a45ad);
+  font-weight: 700;
+  border-bottom-color: var(--accent, #1a45ad);
+  background: none;
+  cursor: default;
+}
+
+/* Focus ring — must not be clipped by parent overflow */
+.dojo-explorer-nav__btn:focus-visible {
+  outline: 3px solid var(--accent, #1a45ad);
+  outline-offset: -3px;
+  border-radius: 3px;
+}
+
+/* Reflow at 320 px: wrap and give each button full row width */
+@media (max-width: 480px) {
+  .dojo-explorer-nav {
+    padding: 0 0.5rem;
+  }
+
+  .dojo-explorer-nav__list {
+    flex-direction: column;
+  }
+
+  .dojo-explorer-nav__btn {
+    width: 100%;
+    text-align: left;
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    padding: 0.75rem 0.75rem;
+  }
+
+  .dojo-explorer-nav__btn--active {
+    border-left-color: var(--accent, #1a45ad);
+    border-bottom: none;
+  }
+}
+
+/* Respect reduced-motion: suppress any transitions */
+@media (prefers-reduced-motion: reduce) {
+  .dojo-explorer-nav__btn {
+    transition: none !important;
+  }
+}

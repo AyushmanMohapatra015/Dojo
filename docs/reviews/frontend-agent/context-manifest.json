@@ -1,0 +1,47 @@
+[
+  {
+    "path": "dashboard/package.json",
+    "bytes": 998,
+    "sha256": "a1e4b5c967e3f5d4f1bf15c756338645d047255271cba840d0ed90d3efa1b968"
+  },
+  {
+    "path": "dashboard/README.md",
+    "bytes": 1079,
+    "sha256": "2f1d255e4ee93729cc3a02d4c3cd374c4ba8dd0487db676cd248bd46b54e67f4"
+  },
+  {
+    "path": "dashboard/src/App.jsx",
+    "bytes": 59575,
+    "sha256": "18d794769fc63bf3540582f7c74286e8503733fcb8be3b4b58bf574910897e3d"
+  },
+  {
+    "path": "dashboard/src/App.test.jsx",
+    "bytes": 21436,
+    "sha256": "e020427372385dc80e39e62f30d5ca3f95c9cc040f1b6504f98de57142236497"
+  },
+  {
+    "path": "dashboard/src/styles.css",
+    "bytes": 7982,
+    "sha256": "b4efb90f868af2bf9291d771e7d5fd826239070c34ad25af578757705c91ff59"
+  },
+  {
+    "path": "dashboard/src/test-setup.js",
+    "bytes": 400,
+    "sha256": "26fb03a29ceebebc339457d0e7b234d171f19ddd0863020677113af36f173378"
+  },
+  {
+    "path": "dashboard/src/v2/exact.mjs",
+    "bytes": 16933,
+    "sha256": "28261fee8cb95cf49fd22a4c56102dc159a28ea8757b5f4fd7b124867b35bd09"
+  },
+  {
+    "path": "dashboard/src/v2/derive.mjs",
+    "bytes": 31182,
+    "sha256": "1bee35f1b96207838e3dd566cffa911be162fb5ef001d717ffea8c5d67f06ba4"
+  },
+  {
+    "path": "dashboard/src/v2/data.mjs",
+    "bytes": 89371,
+    "sha256": "5a5357ec6008329b73ba570ca78c4eccc097f9c57f40d36a86a7964368a98270"
+  }
+]

@@ -1,0 +1,3578 @@
+This proposal delivers **Work Package A** and **Work Package B** (`10j3`) for the Dojo browser v2 UI integration across all twelve complete files, preserving the accepted `dashboard/src/v2/*.mjs` data layer (`10j1`/`10j2`/`10j5`) unchanged. Because the twelve-file payload plus full test suites and fixtures is substantial, I will deliver **WP A** and the byte-preserved v2 synthetic fixtures first, stopping cleanly at a complete-file boundary if output budget requires it, or delivering all twelve files in full if space permits.
+
+### FILE: `dashboard/package.json`
+
+```json
+{
+  "name": "dojo-explorer-v2",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Static, synthetic-only Dojo results explorer v2 (no backend, no network).",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "test:v2": "node --test src/v2/*.test.mjs",
+    "test:ui": "vitest run",
+    "test": "npm run test:v2 && npm run test:ui",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "react-is": "^19.2.0",
+    "recharts": "^3.2.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "jsdom": "^26.1.0",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.0"
+  }
+}
+
+```
+
+### FILE: `dashboard/index.html`
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- CSP-PLACEHOLDER -->
+    <link rel="icon" href="data:," />
+    <title>Dojo results explorer v2 (synthetic offline view)</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      Dojo results explorer v2 (synthetic offline view) needs JavaScript. It contains no real model results.
+    </noscript>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
+```
+
+### FILE: `dashboard/vite.config.js`
+
+```javascript
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+// Applied to the production build only: the dev server needs inline scripts for
+// hot reload. connect-src 'none' makes any accidental network call fail loudly.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "font-src 'self'",
+  "connect-src 'none'",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+].join('; ');
+
+const injectCsp = {
+  name: 'dojo-explorer-csp',
+  apply: 'build',
+  transformIndexHtml(html) {
+    return html.replace(
+      '<!-- CSP-PLACEHOLDER -->',
+      `<meta http-equiv="Content-Security-Policy" content="${CSP}" />`,
+    );
+  },
+};
+
+export default defineConfig({
+  base: './',
+  plugins: [react(), injectCsp],
+  server: { host: '127.0.0.1', port: 5173, strictPort: true },
+  preview: { host: '127.0.0.1', port: 4173, strictPort: true },
+  build: { modulePreload: { polyfill: false } },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test-setup.js'],
+    include: ['src/**/*.test.{js,jsx}'],
+    exclude: ['src/v2/**/*.test.mjs', 'node_modules/**'],
+    css: false,
+    restoreMocks: true,
+  },
+});
+
+```
+
+### FILE: `dashboard/src/main.jsx`
+
+```jsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.jsx';
+import './styles.css';
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
+
+```
+
+### FILE: `dashboard/src/App.jsx`
+
+```jsx
+import { Component, useId, useMemo, useRef, useState } from 'react';
+import {
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Scatter,
+  ScatterChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import {
+  V2DataError,
+  V2_ERROR_CODES,
+  formatNanoUsdV2,
+  formatPercentV2,
+} from './v2/exact.mjs';
+import {
+  COST_AXIS_COST_PER_SOLVED,
+  COST_AXIS_MEAN_TASK_COST,
+  LIMITS_V2,
+  bindFamilyDiagnosticV2,
+  parseExplorerV2,
+  parseFamilyDiagnosticV2,
+  validateExplorerV2,
+} from './v2/data.mjs';
+import {
+  SYNTHETIC_BANNER_V2,
+  deriveExplorerV2,
+  selectRowsV2,
+} from './v2/derive.mjs';
+import bundledExplorerFixture from './fixtures/synthetic-v2.explorer.json';
+import bundledDiagnosticFixture from './fixtures/synthetic-v2.family-diagnostic.json';
+
+const OUTCOME_GLYPH = Object.freeze({
+  solved: '\u2713',
+  unsolved: '\u2717',
+  undetermined: '?',
+});
+const OUTCOME_LABELS = Object.freeze({
+  solved: 'Solved',
+  unsolved: 'Unsolved',
+  undetermined: 'Undetermined',
+});
+const SYMBOLS = ['circle', 'diamond', 'square', 'triangle', 'star', 'cross', 'wye'];
+const SERIES_COLORS = ['#1f4fbf', '#9a3412', '#1b6b3a', '#6b21a8', '#7a4b00', '#0f5f6e', '#8a1c4d'];
+const PAGE_SIZE_OPTIONS = [2, 10, 50, 200];
+
+const ALL_TOKEN = '*';
+const encodeFilterToken = (prefix, id) => `${prefix}:${id}`;
+const decodeFilterToken = (prefix, token) =>
+  typeof token === 'string' && token.startsWith(`${prefix}:`) ? token.slice(prefix.length + 1) : null;  function safeErrorMessage(code) { if (typeof code === 'string' && Object.prototype.hasOwnProperty.call(V2_ERROR_CODES, code)) { return `${code}: ${V2_ERROR_CODES[code]}`; } return `INVALID_EXPLORER_DATA: ${V2_ERROR_CODES.INVALID_EXPLORER_DATA}`;
+}
+
+function visibleTestsText(value) {
+  if (value === true) return 'Passed';
+  if (value === false) return 'Failed';
+  return 'Not recorded';
+}
+
+function formatRowCostText(costNanoUsd) {
+  if (costNanoUsd === null) return 'Unavailable (missing cost)';
+  return formatNanoUsdV2(costNanoUsd, { places: 6 });
+}
+
+function formatBootstrapIntervalValue(metricName, dto) {
+  if (!dto || typeof dto !== 'object') return 'Unavailable';
+  if (metricName.endsWith('pass_at_1')) {
+    return formatPercentV2(dto, { places: 1 });
+  }
+  return formatNanoUsdV2(dto, { places: 6 });
+}
+
+function readBoundedFileText(file, signal) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    const onAbort = () => {
+      try {
+        reader.abort();
+      } catch {
+        // Ignore abort errors on inactive FileReader
+      }
+      reject(new Error('FILE_READ_ABORTED'));
+    };
+    if (signal) {
+      if (signal.aborted) {
+        onAbort();
+        return;
+      }
+      signal.addEventListener('abort', onAbort, { once: true });
+    }
+    reader.onload = () => {
+      if (signal) signal.removeEventListener('abort', onAbort);
+      resolve(typeof reader.result === 'string' ? reader.result : '');
+    };
+    reader.onerror = () => {
+      if (signal) signal.removeEventListener('abort', onAbort);
+      reject(new Error('FILE_READ_FAILED'));
+    };
+    reader.onabort = () => {
+      if (signal) signal.removeEventListener('abort', onAbort);
+      reject(new Error('FILE_READ_ABORTED'));
+    };
+    reader.readAsText(file);
+  });
+}
+
+function OutcomeBadge({ outcome }) {
+  return (
+    <span className={`badge badge-${outcome}`}>
+      <span aria-hidden="true">{OUTCOME_GLYPH[outcome] || '?'} </span>
+      {OUTCOME_LABELS[outcome] || outcome}
+    </span>
+  );
+}
+
+export class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { failed: false };
+    this.reset = this.reset.bind(this);
+  }
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  reset() {
+    this.setState({ failed: false });
+    if (this.props.onReset) this.props.onReset();
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children;
+    if (this.props.fallback) return this.props.fallback;
+    return (
+      <div className="panel panel-error" role="alert">
+        <h2>This view could not be drawn</h2>
+        <p>
+          An unexpected rendering error occurred. No data was sent to external services. You can
+          restore the bundled synthetic v2 fixture and continue.
+        </p>
+        <button type="button" className="btn" onClick={this.reset}>
+          Restore bundled synthetic v2 demo
+        </button>
+      </div>
+    );
+  }
+}
+
+function SyntheticBanner({ bannerText }) {
+  return (
+    <div className="banner" role="note" aria-label="Data status">
+      <span aria-hidden="true">{'\u26A0 '}</span>
+      <strong>{bannerText || SYNTHETIC_BANNER_V2}</strong>
+      <span className="banner-sub">
+        Offline synthetic benchmark arithmetic only. No live provider calls or verified registrations exist.
+      </span>
+    </div>
+  );
+}
+
+function DatasetControls({
+  sourceLabel,
+  diagnosticLabel,
+  busy,
+  hasBoundDiagnostic,
+  onResetDemo,
+  onLoadDemoWithDiagnostic,
+  onClearDiagnostic,
+  onUploadExplorer,
+  onUploadDiagnostic,
+}) {
+  const explorerFileId = useId();
+  const explorerHintId = useId();
+  const diagFileId = useId();
+  const diagHintId = useId();
+
+  return (
+    <section className="panel" aria-labelledby="dataset-heading">
+      <h2 id="dataset-heading">Dataset and local file controls</h2>
+      <p className="dataset-active">
+        Active explorer view: <strong>{sourceLabel}</strong>
+        {' · '}
+        Paired family diagnostic: <strong>{diagnosticLabel}</strong>
+      </p>
+      <div className="controls">
+        <button type="button" className="btn" onClick={onLoadDemoWithDiagnostic}>
+          Load bundled demo (explorer + family diagnostic)
+        </button>
+        <button type="button" className="btn btn-quiet" onClick={onResetDemo}>
+          Reset to bundled explorer view only
+        </button>
+        {hasBoundDiagnostic ? (
+          <button type="button" className="btn btn-quiet" onClick={onClearDiagnostic} disabled={busy}>
+            Clear paired family diagnostic
+          </button>
+        ) : null}
+      </div>
+      <div className="controls">
+        <div className="field">
+          <label htmlFor={explorerFileId}>Upload explorer view JSON (dojo-explorer-view-v2)</label>
+          <input
+            id={explorerFileId}
+            type="file"
+            accept=".json,application/json"
+            aria-describedby={explorerHintId}
+            onChange={onUploadExplorer}
+            disabled={false}
+          />
+          <p id={explorerHintId} className="hint">
+            Accepts a local <code>.json</code> file up to 2 MiB (2,097,152 bytes) in{' '}
+            <code>dojo-explorer-view-v2</code> format. Selecting a new explorer view clears any previously
+            bound family diagnostic.
+          </p>
+        </div>
+        <div className="field">
+          <label htmlFor={diagFileId}>
+            Upload optional paired family diagnostic JSON (dojo-family-sensitivity-v2)
+          </label>
+          <input
+            id={diagFileId}
+            type="file"
+            accept=".json,application/json"
+            aria-describedby={diagHintId}
+            onChange={onUploadDiagnostic}
+            disabled={false}
+          />
+          <p id={diagHintId} className="hint">
+            Validates and binds a secondary <code>dojo-family-sensitivity-v2</code> file against the
+            currently loaded explorer view via <code>bindFamilyDiagnosticV2</code>.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function StatusMessages({ status, onDismiss, onResetDemo }) {
+  return (
+    <div className="status-area">
+      <div role="status" aria-live="polite" className="status-live">
+        {status.kind === 'loading' || status.kind === 'info' ? status.message : ''}
+      </div>
+      {status.kind === 'error' ? (
+        <div className="panel panel-error" role="alert">
+          <h2>{status.title}</h2>
+          <p>{status.message}</p>
+          {status.codes && status.codes.length > 0 ? (
+            <ul className="error-list">
+              {status.codes.map((code, idx) => (
+                <li key={idx}>
+                  <code>{safeErrorMessage(code)}</code>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <p>The previously validated state remains displayed below without partial mutation.</p>
+          <div className="controls">
+            <button type="button" className="btn" onClick={onDismiss}>
+              Dismiss message
+            </button>
+            <button type="button" className="btn btn-quiet" onClick={onResetDemo}>
+              Restore bundled synthetic v2 demo
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ScopeAndProvenancePanel({ derived }) {
+  const { scope } = derived;
+  const counts = scope.constructionCounts;
+  const seedSummary = scope.observedConfigIds
+    .map((cid) => {
+      const seeds = scope.declaredSeedsByConfig[cid] || [];
+      return `${cid}: [${seeds.join(', ')}] (k=${seeds.length})`; }) .join('; ');  return ( <section className="panel" aria-labelledby="scope-heading"> <h2 id="scope-heading">Scope, provenance and audit status</h2> {scope.isBlocked ? ( <div className="banner-state banner-blocked" role="region" aria-label="Panel audit blocked notice"> <strong>Panel audit status: BLOCKED ({scope.blockedReason}).</strong> Configuration headline metrics, task summaries, Pareto frontiers, bootstrap intervals, and cascades are withheld. No stale headline metrics or partial subset scores are shown. </div> ) : null} {!scope.isBlocked && scope.isCostIncomplete ? ( <div className="banner-state banner-cost-incomplete" role="region" aria-label="Cost incomplete notice"> <strong>Summary mode: SUCCESS ONLY (cost_incomplete).</strong> One or more configurations have missing seed costs. Aggregate cost metrics, Pareto frontiers, bootstrap intervals, and cascades are withheld globally across all configurations and task summaries. </div> ) : null} <dl className="facts"> <div> <dt>View model &amp; schema</dt> <dd> <code>{scope.viewModel}</code> (v{scope.schemaVersion}) </dd> </div> <div> <dt>Evidence kind &amp; eligibility</dt> <dd> <code>{scope.evidenceKind}</code> / <code>{scope.eligibility}</code> </dd> </div> <div> <dt>Real provider calls</dt> <dd> <strong>{scope.realProviderCalls}</strong> (zero live calls) </dd> </div> <div> <dt>Audit status &amp; summary mode</dt> <dd> <code>{scope.auditStatus}</code> / <code>{scope.summaryMode}</code> </dd> </div> <div> <dt>Evaluated panel tasks (denominator)</dt> <dd> <strong>{scope.evaluatedTaskCount}</strong> declared task {scope.evaluatedTaskCount === 1 ? '' : 's'} across{' '} <strong>{scope.declaredConfigCount}</strong> configuration {scope.declaredConfigCount === 1 ? '' : 's'} </dd> </div> <div> <dt>Project construction inventory (informational only)</dt> <dd> <strong>{counts.total}</strong> total ({counts.train} train / {counts.held_out} held-out). Informational construction inventory only — never evaluated panel outcomes. </dd> </div> <div> <dt>Declared seeds by configuration</dt> <dd>{seedSummary \vert{}\vert{} 'None'}</dd> </div> <div> <dt>Report method version</dt> <dd> <code>{scope.source.report_method_version}</code> </dd> </div> <div> <dt>Input SHA-256</dt> <dd> <code>{scope.source.input_sha256}</code> </dd> </div> <div> <dt>Expected plan hash</dt> <dd> <code>{scope.source.expected_plan_hash}</code> </dd> </div> </dl> </section> ); }  function ConfigurationCards({ derived }) { const { scope, configurations } = derived; return ( <section className="panel" aria-labelledby="configs-heading"> <h2 id="configs-heading">Configuration summary metrics</h2> <p className="hint"> Expected 1-seed benchmark cost and pass@1 weight each task equally ({scope.evaluatedTaskCount}{' '} evaluated tasks). Actual all-repetitions spend sums across all declared seeds for that configuration. </p> <div className="cards"> {configurations.map((cfg) => { const headingId = `cfg-card-${cfg.configId}`;
+          const statusBadgeClass = scope.isBlocked
+            ? 'badge-undetermined'
+            : scope.isCostIncomplete
+              ? 'badge-unsolved'
+              : 'badge-solved';
+          const statusLabel = scope.isBlocked
+            ? 'Withheld (blocked)'
+            : scope.isCostIncomplete
+              ? 'Success only (cost incomplete)'
+              : 'Headline complete';
+          return (
+            <article className="card" key={cfg.configId} aria-labelledby={headingId}>
+              <div className="card-header">
+                <h3 id={headingId}>
+                  Configuration <code>{cfg.configId}</code>
+                </h3>
+                <span className={`badge ${statusBadgeClass}`}>{statusLabel}</span> </div> <p className="tag"> Declared seeds: <code>[{cfg.declaredSeeds.join(', ')}]</code> ({cfg.seedCount} seed {cfg.seedCount === 1 ? '' : 's'}) · Total declared runs: {cfg.totalRuns} </p> <dl className="facts compact"> <div> <dt>Pass@1 (equal-task mean)</dt> <dd>{cfg.display.passAt1Percent}</dd> </div> <div> <dt>Expected solved tasks (of {cfg.nTasks})</dt> <dd>{cfg.display.expectedSolvedTasks}</dd> </div> <div> <dt>Expected total cost (1-seed benchmark)</dt> <dd>{cfg.display.expectedTotalCostUsd}</dd> </div> <div> <dt>Mean task cost</dt> <dd>{cfg.display.meanTaskCostUsd}</dd> </div> <div> <dt>Expected cost per solved task</dt> <dd>{cfg.display.expectedCostPerSolvedUsd}</dd> </div> <div> <dt>Actual all-repetitions spend ({cfg.seedCount}x seeds)</dt> <dd>{cfg.display.actualAllRepetitionsSpendUsd}</dd> </div> <div> <dt>Observed seed runs</dt> <dd> {cfg.observedRuns} observed ({cfg.solvedRuns} solved, {cfg.unsolvedRuns} unsolved,{' '} {cfg.undeterminedRuns} undetermined, {cfg.missingCostRuns} missing cost) </dd> </div> </dl> </article> ); })} </div> </section> ); }  function FrontierTooltip({ active, payload }) { if (!active \vert{}\vert{} !payload \vert{}\vert{} payload.length === 0) return null; const pt = payload[0].payload; return ( <div className="tooltip"> <strong> <code>{pt.seriesId}</code> </strong>{' '} ({pt.status}) <div>Pass@1: {pt.display.passAt1Percent}</div> <div>Exact axis cost: {pt.display.costUsd}</div> </div> ); }  function FrontiersSection({ derived }) { const [axis, setAxis] = useState(COST_AXIS_COST_PER_SOLVED); const { scope, frontiers } = derived;  if (!frontiers) { return ( <section className="panel" aria-labelledby="frontiers-heading"> <h2 id="frontiers-heading">Pareto frontiers (two-axis exact comparison)</h2> <p className="empty"> Pareto frontiers are withheld because summary mode is <code>{scope.summaryMode}</code> (audit status: <code>{scope.auditStatus}</code>). </p> </section> ); }  const activeTable = frontiers[axis] \vert{}\vert{} frontiers[COST_AXIS_COST_PER_SOLVED]; const plottableRows = activeTable.rows.filter( (r) => r.plottable && r.chartOnlyApprox && r.chartOnlyApprox.approxXUsd !== null && r.chartOnlyApprox.approxYPercent !== null, ); const unplottableRows = activeTable.rows.filter((r) => !r.plottable); const axisLabel = activeTable.costAxis === COST_AXIS_COST_PER_SOLVED ? 'Expected cost per solved task (headline axis)' : 'Mean task cost (secondary axis)';  return ( <section className="panel" aria-labelledby="frontiers-heading"> <h2 id="frontiers-heading">Pareto frontiers (two-axis exact comparison)</h2> <div className="controls" role="group" aria-label="Frontier cost axis selector"> <button type="button" className="btn" aria-pressed={activeTable.costAxis === COST_AXIS_COST_PER_SOLVED} onClick={() => setAxis(COST_AXIS_COST_PER_SOLVED)} > Headline axis: Expected cost per solved (cost_per_solved) </button> <button type="button" className="btn" aria-pressed={activeTable.costAxis === COST_AXIS_MEAN_TASK_COST} onClick={() => setAxis(COST_AXIS_MEAN_TASK_COST)} > Secondary axis: Mean task cost (mean_task_cost) </button> </div> <p className="hint"> Showing axis: <strong>{axisLabel}</strong> (<code>{activeTable.costAxis}</code>,{' '} {activeTable.isHeadlineAxis ? 'headline axis' : 'non-headline axis'}). Chart coordinates use{' '} <code>chartOnlyApprox</code> finite numbers strictly for visual placement; all dominance statuses, sorting, and table values use exact rational DTOs. </p>  <figure className="chart-figure"> <figcaption> <strong>Pass@1 vs. {axisLabel} (synthetic offline view).</strong> Non-dominated frontier series:{' '} <code>{activeTable.frontierSeriesIds.join(', ') \vert{}\vert{} 'none'}</code>. </figcaption> {plottableRows.length > 0 ? ( <div className="chart-box" aria-hidden="true"> <ErrorBoundary fallback={ <p className="hint">The chart could not be drawn. The exact frontier table is shown below.</p> } > <ResponsiveContainer width="100\%" height={320}> <ScatterChart margin={{ top: 16, right: 24, bottom: 36, left: 12 }} accessibilityLayer={false}> <CartesianGrid strokeDasharray="4 4" /> <XAxis type="number" dataKey="approxXUsd" name="Cost (USD)" domain={[0, 'auto']} tickFormatter={(v) => `$${v}`} /> <YAxis type="number" dataKey="approxYPercent" name="Pass@1 (\%)" domain={[0, 100]} tickFormatter={(v) => `${v}%`}
+                  />
+                  <Tooltip content={<FrontierTooltip />} />
+                  <Legend verticalAlign="top" />
+                  {plottableRows.map((row, idx) => {
+                    const point = {
+                      ...row,
+                      approxXUsd: row.chartOnlyApprox.approxXUsd,
+                      approxYPercent: row.chartOnlyApprox.approxYPercent,
+                    };
+                    return (
+                      <Scatter
+                        key={row.seriesId}
+                        name={`${row.seriesId} (${row.status})`}
+                        data={[point]}
+                        fill={SERIES_COLORS[idx % SERIES_COLORS.length]}
+                        shape={SYMBOLS[idx % SYMBOLS.length]}
+                        isAnimationActive={false}
+                      />
+                    );
+                  })}
+                </ScatterChart>
+              </ResponsiveContainer>
+            </ErrorBoundary>
+          </div>
+        ) : (
+          <p className="empty">
+            No plottable series on axis <code>{activeTable.costAxis}</code> (all series have undefined cost on
+            this axis, such as zero expected solves). Inspect the exact frontier table below.
+          </p>
+        )}
+
+        <div className="table-scroll" role="region" aria-label="Exact frontier table" tabIndex={0}>
+          <table>
+            <caption>
+              Exact Pareto frontier table for <code>{activeTable.costAxis}</code> (includes unplottable series).
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Series ID</th>
+                <th scope="col">Status</th>
+                <th scope="col">On frontier</th>
+                <th scope="col">Pass@1 (exact)</th>
+                <th scope="col">Axis cost (exact)</th>
+                <th scope="col">Tie group / peers</th>
+                <th scope="col">Dominated by</th>
+                <th scope="col">Plottable</th>
+              </tr>
+            </thead>
+            <tbody>
+              {activeTable.rows.map((r) => (
+                <tr key={r.seriesId}>
+                  <th scope="row">
+                    <code>{r.seriesId}</code>
+                  </th>
+                  <td>
+                    <code>{r.status}</code>
+                  </td>
+                  <td>{r.isOnFrontier ? 'Yes' : 'No'}</td>
+                  <td>{r.display.passAt1Percent}</td>
+                  <td>{r.display.costUsd}</td>
+                  <td>
+                    {r.tieGroupId
+                      ? `${r.tieGroupId} (${r.tiedWith.join(', ')})`
+                      : 'None'}
+                  </td>
+                  <td>{r.dominatedBy.length > 0 ? r.dominatedBy.join(', ') : 'None'}</td>
+                  <td>{r.plottable ? 'Yes' : `No (${r.unplottableReason})`}</td> </tr> ))} </tbody> </table> </div> {unplottableRows.length > 0 ? ( <p className="hint"> {unplottableRows.length} series cannot be plotted as finite coordinates on{' '} <code>{activeTable.costAxis}</code> and remain listed in the exact table above. </p> ) : null} </figure> </section> ); }  function BootstrapSection({ view, derived }) { const bootstrap = view && view.analysis ? view.analysis.bootstrap : null; const { scope } = derived;  if (!bootstrap) { return ( <section className="panel" aria-labelledby="bootstrap-heading"> <h2 id="bootstrap-heading">Empirical bootstrap uncertainty (from validated ViewV2)</h2> <p className="empty"> Bootstrap intervals are unavailable for this view (summary mode: <code>{scope.summaryMode}</code>). {scope.isCostIncomplete ? ' Success-only views withhold bootstrap intervals because report intervals can contain partial costs.' : ''} </p> </section> ); }  const seriesEntries = Object.values(bootstrap.series_summaries); const metricKeys = [ ['pass_at_1', 'Pass@1'], ['expected_total_cost_nano_usd', 'Expected total cost'], ['mean_task_cost_nano_usd', 'Mean task cost'], ['expected_cost_per_solved_nano_usd', 'Expected cost per solved'], ];  return ( <section className="panel" aria-labelledby="bootstrap-heading"> <h2 id="bootstrap-heading">Empirical bootstrap uncertainty (from validated ViewV2)</h2> <p className="hint"> Read directly from validated <code>ViewV2.analysis.bootstrap</code> (retained alongside{' '} <code>DerivedV2</code>). Method: <code>{bootstrap.method_version}</code> · Quantile:{' '} <code>{bootstrap.quantile_method}</code> · Confidence:{' '} <strong>{formatPercentV2(bootstrap.confidence_level, { places: 1 })}</strong> · Replicates:{' '} <strong>{bootstrap.replicates}</strong> · Seed:{' '} <code>{bootstrap.seed === null ? 'null' : bootstrap.seed}</code> · Tasks:{' '} <strong>{bootstrap.n_tasks}</strong>. Descriptive uncertainty over observed tasks only; never a hypothesis test or registration certificate. </p>  <div className="table-scroll" role="region" aria-label="Bootstrap series intervals" tabIndex={0}> <table> <caption>Series bootstrap intervals (point estimate, lower, upper, draw accounting).</caption> <thead> <tr> <th scope="col">Series ID</th> <th scope="col">Metric</th> <th scope="col">Point estimate</th> <th scope="col">Lower bound</th> <th scope="col">Upper bound</th> <th scope="col">Draws (defined / undefined / zero-solve)</th> </tr> </thead> <tbody> {seriesEntries.flatMap((sSum) => metricKeys.map(([mKey, mLabel]) => { const interval = sSum[mKey]; return ( <tr key={`${sSum.series_id}:${mKey}`}> <th scope="row"> <code>{sSum.series_id}</code> </th> <td>{mLabel}</td> <td>{formatBootstrapIntervalValue(mKey, interval.point_estimate)}</td> <td>{formatBootstrapIntervalValue(mKey, interval.lower)}</td> <td>{formatBootstrapIntervalValue(mKey, interval.upper)}</td> <td> {interval.defined_draws} / {interval.undefined_draws} / {interval.zero_solve_draws} (of{' '} {interval.replicates}) </td> </tr> ); }), )} </tbody> </table> </div>  {bootstrap.paired_differences.length > 0 ? ( <div className="table-scroll" role="region" aria-label="Bootstrap paired differences" tabIndex={0} style={{ marginTop: '0.75rem' }} > <table> <caption>Paired bootstrap differences (target minus baseline).</caption> <thead> <tr> <th scope="col">Baseline → Target</th> <th scope="col">Metric</th> <th scope="col">Point delta</th> <th scope="col">Lower bound</th> <th scope="col">Upper bound</th> <th scope="col">Draws (defined / undefined / zero-solve)</th> </tr> </thead> <tbody> {bootstrap.paired_differences.flatMap((diff) => [ ['delta_pass_at_1', 'Delta Pass@1'], ['delta_expected_total_cost_nano_usd', 'Delta expected total cost'], ['delta_expected_cost_per_solved_nano_usd', 'Delta expected cost per solved'], ].map(([dKey, dLabel]) => { const interval = diff[dKey]; return ( <tr key={`${diff.baseline_id}->${diff.target_id}:${dKey}`}>
+                      <th scope="row">
+                        <code>
+                          {diff.baseline_id} → {diff.target_id}
+                        </code>
+                      </th>
+                      <td>{dLabel}</td>
+                      <td>{formatBootstrapIntervalValue(dKey, interval.point_estimate)}</td>
+                      <td>{formatBootstrapIntervalValue(dKey, interval.lower)}</td>
+                      <td>{formatBootstrapIntervalValue(dKey, interval.upper)}</td>
+                      <td>
+                        {interval.defined_draws} / {interval.undefined_draws} / {interval.zero_solve_draws}
+                      </td>
+                    </tr>
+                  );
+                }),
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function CascadeSection({ derived }) {
+  const { cascade, scope } = derived;
+  if (!cascade) {
+    return (
+      <section className="panel" aria-labelledby="cascade-heading">
+        <h2 id="cascade-heading">Frozen cold-restart cascade comparison</h2>
+        <p className="empty">
+          No cold-restart cascade is present in this view (summary mode: <code>{scope.summaryMode}</code>).
+        </p>
+      </section>
+    );
+  }
+
+  const comparisons = [
+    ['Vs. base configuration', cascade.comparisonVsBase],
+    ['Vs. escalate configuration', cascade.comparisonVsEscalate],
+  ];
+
+  return (
+    <section className="panel" aria-labelledby="cascade-heading">
+      <h2 id="cascade-heading">Frozen cold-restart cascade comparison</h2>
+      <p className="hint">{cascade.policyNote}</p>
+      <dl className="facts">
+        <div>
+          <dt>Cascade series ID</dt>
+          <dd>
+            <code>{cascade.seriesId}</code>
+          </dd>
+        </div>
+        <div>
+          <dt>Route</dt>
+          <dd>
+            <code>{cascade.baseConfigId}</code> → <code>{cascade.escalateConfigId}</code>
+          </dd>
+        </div>
+        <div>
+          <dt>Policy hash</dt>
+          <dd>
+            <code>{cascade.policyHash}</code>
+          </dd>
+        </div>
+        <div>
+          <dt>Cascade Pass@1</dt>
+          <dd>{cascade.display.passAt1Percent}</dd>
+        </div>
+        <div>
+          <dt>Expected solved tasks (of {cascade.nTasks})</dt>
+          <dd>{cascade.display.expectedSolvedTasks}</dd>
+        </div>
+        <div>
+          <dt>Expected total cost</dt>
+          <dd>{cascade.display.expectedTotalCostUsd}</dd>
+        </div>
+        <div>
+          <dt>Mean task cost</dt>
+          <dd>{cascade.display.meanTaskCostUsd}</dd>
+        </div>
+        <div>
+          <dt>Expected cost per solved</dt>
+          <dd>{cascade.display.expectedCostPerSolvedUsd}</dd>
+        </div>
+      </dl>
+
+      <div
+        className="table-scroll"
+        role="region"
+        aria-label="Cascade baseline comparisons"
+        tabIndex={0}
+        style={{ marginTop: '0.75rem' }}
+      >
+        <table>
+          <caption>Frozen cascade comparisons against base and escalate configurations.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Comparison</th>
+              <th scope="col">Baseline</th>
+              <th scope="col">Baseline Pass@1</th>
+              <th scope="col">Cascade Pass@1</th>
+              <th scope="col">Delta Pass@1</th>
+              <th scope="col">Baseline total cost</th>
+              <th scope="col">Cascade total cost</th>
+              <th scope="col">Delta total cost</th>
+              <th scope="col">Relative cost savings</th>
+              <th scope="col">Delta cost per solved</th>
+              <th scope="col">Observed cheaper at &gt;= success</th>
+            </tr>
+          </thead>
+          <tbody>
+            {comparisons.map(([label, comp]) => (
+              <tr key={comp.baseline_id}>
+                <th scope="row">{label}</th>
+                <td>
+                  <code>{comp.baseline_id}</code>
+                </td>
+                <td>{comp.display.baselinePassAt1Percent}</td>
+                <td>{comp.display.cascadePassAt1Percent}</td>
+                <td>{comp.display.deltaPassAt1Percent}</td>
+                <td>{comp.display.baselineExpectedTotalCostUsd}</td>
+                <td>{comp.display.cascadeExpectedTotalCostUsd}</td>
+                <td>{comp.display.deltaExpectedTotalCostUsd}</td>
+                <td>{comp.display.relativeCostSavingsPercent}</td>
+                <td>{comp.display.deltaCostPerSolvedUsd}</td>
+                <td>{comp.observed_cheaper_at_equal_or_better_success ? 'Yes' : 'No'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function TaskSummariesSection({ derived }) {
+  const { scope, taskSummaries } = derived;
+  if (scope.isBlocked || taskSummaries.length === 0) {
+    return (
+      <section className="panel" aria-labelledby="task-summary-heading">
+        <h2 id="task-summary-heading">Per-task seed-aggregated summary matrix</h2>
+        <p className="empty">
+          Per-task seed summaries are withheld because the panel audit status is blocked. Inspected raw run
+          rows remain available in the paginated table below.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="panel" aria-labelledby="task-summary-heading">
+      <h2 id="task-summary-heading">Per-task seed-aggregated summary matrix</h2>
+      <p className="hint">
+        Each task has equal weight in configuration headlines regardless of how many seeds a configuration
+        declares. Per-task success averages across declared seeds for that task and configuration.
+      </p>
+      <div className="table-scroll" role="region" aria-label="Task summary matrix" tabIndex={0}>
+        <table>
+          <caption>Per-task summary across declared seeds for each configuration.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Task ID</th>
+              <th scope="col">Family ID</th>
+              <th scope="col">Configuration</th>
+              <th scope="col">Declared seeds</th>
+              <th scope="col">Seed outcomes (solved / unsolved / undetermined)</th>
+              <th scope="col">Task success rate</th>
+              <th scope="col">Task mean cost (across seeds)</th>
+              <th scope="col">Actual spend across seeds</th>
+            </tr>
+          </thead>
+          <tbody>
+            {taskSummaries.flatMap((ts) =>
+              Object.values(ts.byConfig).map((cell) => (
+                <tr key={`${ts.taskId}:${cell.configId}`}>
+                  <th scope="row">
+                    <code>{ts.taskId}</code>
+                  </th>
+                  <td>
+                    <code>{ts.familyId}</code>
+                  </td>
+                  <td>
+                    <code>{cell.configId}</code>
+                  </td>
+                  <td>
+                    <code>[{cell.declaredSeeds.join(', ')}]</code> (k={cell.seedCount})
+                  </td>
+                  <td>
+                    {cell.solvedSeedCount} / {cell.unsolvedSeedCount} / {cell.undeterminedSeedCount}
+                  </td>
+                  <td>{cell.display.successPercent}</td>
+                  <td>{cell.display.meanCostUsd}</td>
+                  <td>{cell.display.actualAllSeedsSpendUsd}</td>
+                </tr>
+              )),
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+const RUN_COLUMNS = [
+  { key: 'task_id', label: 'Task' },
+  { key: 'config_id', label: 'Configuration' },
+  { key: 'seed', label: 'Seed' },
+  { key: 'outcome', label: 'Evaluator outcome' },
+  { key: 'cost_nano_usd', label: 'Run cost' },
+];
+
+function RunDetailsSection({ derived, selectedRowKey, onSelectRowKey }) {
+  const configSelectId = useId();
+  const taskSelectId = useId();
+  const outcomeSelectId = useId();
+  const pageSizeSelectId = useId();
+
+  const [configToken, setConfigToken] = useState(ALL_TOKEN);
+  const [taskToken, setTaskToken] = useState(ALL_TOKEN);
+  const [outcomeFilter, setOutcomeFilter] = useState(ALL_TOKEN);
+  const [sort, setSort] = useState({ sortKey: 'task_id', direction: 'asc' });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  const decodedConfig = decodeFilterToken('cfg', configToken);
+  const activeConfigId =
+    decodedConfig !== null && derived.scope.observedConfigIds.includes(decodedConfig)
+      ? decodedConfig
+      : null;
+
+  const decodedTask = decodeFilterToken('task', taskToken);
+  const activeTaskId =
+    decodedTask !== null && derived.scope.observedTaskIds.includes(decodedTask)
+      ? decodedTask
+      : null;
+
+  const activeOutcome =
+    outcomeFilter !== ALL_TOKEN && ['solved', 'unsolved', 'undetermined'].includes(outcomeFilter)
+      ? outcomeFilter
+      : null;
+
+  const pageResult = useMemo(
+    () =>
+      selectRowsV2(derived, {
+        configId: activeConfigId,
+        taskId: activeTaskId,
+        outcome: activeOutcome,
+        page,
+        pageSize,
+        sortKey: sort.sortKey,
+        direction: sort.direction,
+      }),
+    [derived, activeConfigId, activeTaskId, activeOutcome, page, pageSize, sort],
+  );
+
+  const selectedEntry = useMemo(() => {
+    if (selectedRowKey === null) return null;
+    return derived.runRows.find((item) => item.rowKey === selectedRowKey) || null;
+  }, [derived.runRows, selectedRowKey]);
+
+  const toggleSort = (key) => {
+    setSort((prev) =>
+      prev.sortKey === key
+        ? { sortKey: key, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
+        : { sortKey: key, direction: 'asc' },
+    );
+  };
+
+  const clearFilters = () => {
+    setConfigToken(ALL_TOKEN);
+    setTaskToken(ALL_TOKEN);
+    setOutcomeFilter(ALL_TOKEN);
+    setPage(1);
+  };
+
+  return (
+    <section className="panel" aria-labelledby="runs-heading">
+      <h2 id="runs-heading">Seed-level run details (selectRowsV2 pagination)</h2>
+      <p className="hint">
+        Filtering, sorting, and paging inspect individual seed runs via <code>selectRowsV2</code> and never
+        alter configuration denominators ({derived.scope.evaluatedTaskCount} evaluated tasks). Null costs
+        always sort last in both ascending and descending order.
+      </p>
+
+      <div className="controls">
+        <div className="field">
+          <label htmlFor={configSelectId}>Configuration filter</label>
+          <select
+            id={configSelectId}
+            value={activeConfigId ? encodeFilterToken('cfg', activeConfigId) : ALL_TOKEN}
+            onChange={(e) => {
+              setConfigToken(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value={ALL_TOKEN}>All configurations</option>
+            {derived.scope.observedConfigIds.map((cid) => (
+              <option key={cid} value={encodeFilterToken('cfg', cid)}>
+                {cid}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="field">
+          <label htmlFor={taskSelectId}>Task filter</label>
+          <select
+            id={taskSelectId}
+            value={activeTaskId ? encodeFilterToken('task', activeTaskId) : ALL_TOKEN}
+            onChange={(e) => {
+              setTaskToken(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value={ALL_TOKEN}>All tasks</option>
+            {derived.scope.observedTaskIds.map((tid) => (
+              <option key={tid} value={encodeFilterToken('task', tid)}>
+                {tid}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="field">
+          <label htmlFor={outcomeSelectId}>Evaluator outcome</label>
+          <select
+            id={outcomeSelectId}
+            value={activeOutcome || ALL_TOKEN}
+            onChange={(e) => {
+              setOutcomeFilter(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value={ALL_TOKEN}>All outcomes</option>
+            <option value="solved">Solved</option>
+            <option value="unsolved">Unsolved</option>
+            <option value="undetermined">Undetermined</option>
+          </select>
+        </div>
+
+        <div className="field">
+          <label htmlFor={pageSizeSelectId}>Rows per page</label>
+          <select
+            id={pageSizeSelectId}
+            value={String(pageSize)}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1);
+            }}
+          >
+            {PAGE_SIZE_OPTIONS.map((sz) => (
+              <option key={sz} value={String(sz)}>
+                {sz} per page
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button type="button" className="btn btn-quiet" onClick={clearFilters}>
+          Clear run filters
+        </button>
+      </div>
+
+      <div className="controls" aria-label="Pagination controls">
+        <span>
+          Page <strong>{pageResult.page}</strong> of <strong>{pageResult.pageCount}</strong> (showing{' '}
+          <strong>{pageResult.rows.length}</strong> of <strong>{pageResult.totalMatched}</strong> matched
+          runs; <strong>{derived.runRows.length}</strong> total runs in panel)
+        </span>
+        <button
+          type="button"
+          className="btn btn-small btn-quiet"
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={pageResult.page <= 1}
+        >
+          Previous page
+        </button>
+        <button
+          type="button"
+          className="btn btn-small btn-quiet"
+          onClick={() => setPage((p) => Math.min(pageResult.pageCount, p + 1))}
+          disabled={pageResult.page >= pageResult.pageCount}
+        >
+          Next page
+        </button>
+      </div>
+
+      <div className="split">
+        <div>
+          <div className="table-scroll" role="region" aria-label="Seed-level runs table" tabIndex={0}>
+            <table>
+              <caption>
+                Seed-level run records. Showing {pageResult.rows.length} of {pageResult.totalMatched} matching
+                rows.
+              </caption>
+              <thead>
+                <tr>
+                  {RUN_COLUMNS.map((col) => {
+                    const active = sort.sortKey === col.key;
+                    return (
+                      <th
+                        key={col.key}
+                        scope="col"
+                        aria-sort={
+                          active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'
+                        }
+                      >
+                        <button type="button" className="sort-btn" onClick={() => toggleSort(col.key)}>
+                          {col.label}
+                          <span aria-hidden="true">
+                            {active ? (sort.direction === 'asc' ? ' \u25B2' : ' \u25BC') : ''}
+                          </span>
+                        </button>
+                      </th>
+                    );
+                  })}
+                  <th scope="col">Family</th>
+                  <th scope="col">Visible tests</th>
+                  <th scope="col">Inspect</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageResult.rows.map((item) => {
+                  const { rowKey, row } = item;
+                  const selected = rowKey === selectedRowKey;
+                  return (
+                    <tr key={rowKey} className={selected ? 'row-selected' : undefined}>
+                      <th scope="row">
+                        <code>{row.task_id}</code>
+                      </th>
+                      <td>
+                        <code>{row.config_id}</code>
+                      </td>
+                      <td>{row.seed}</td>
+                      <td>
+                        <OutcomeBadge outcome={row.outcome} />
+                      </td>
+                      <td>{formatRowCostText(row.cost_nano_usd)}</td>
+                      <td>
+                        <code>{row.family_id}</code>
+                      </td>
+                      <td>{visibleTestsText(row.visible_tests_pass)}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn btn-small"
+                          aria-pressed={selected}
+                          onClick={() => onSelectRowKey(selected ? null : rowKey)}
+                        >
+                          {selected ? 'Selected' : 'Details'}
+                          <span className="sr-only">
+                            {' '}
+                            for {rowKey} ({row.task_id} / {row.config_id} / seed {row.seed})
+                          </span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {pageResult.totalMatched === 0 ? (
+            <div className="empty">
+              <p>No seed runs match the current filters.</p>
+              <button type="button" className="btn" onClick={clearFilters}>
+                Clear run filters
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        <aside className="panel detail" aria-labelledby="run-detail-heading">
+          <h3 id="run-detail-heading">Selected run details (sanitized v2 fields)</h3>
+          {!selectedEntry ? (
+            <p className="empty">Select “Details” on any seed run row to inspect its record.</p>
+          ) : (
+            <>
+              <dl className="facts compact">
+                <div>
+                  <dt>Canonical row key</dt>
+                  <dd>
+                    <code>{selectedEntry.rowKey}</code>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Task ID</dt>
+                  <dd>
+                    <code>{selectedEntry.row.task_id}</code>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Configuration ID</dt>
+                  <dd>
+                    <code>{selectedEntry.row.config_id}</code>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Family ID</dt>
+                  <dd>
+                    <code>{selectedEntry.row.family_id}</code>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Seed</dt>
+                  <dd>{selectedEntry.row.seed}</dd>
+                </div>
+                <div>
+                  <dt>Evaluator outcome</dt>
+                  <dd>
+                    <OutcomeBadge outcome={selectedEntry.row.outcome} />
+                  </dd>
+                </div>
+                <div>
+                  <dt>Scorer status</dt>
+                  <dd>
+                    <code>{selectedEntry.row.scorer_status}</code>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Evidence validity</dt>
+                  <dd>
+                    <code>{selectedEntry.row.evidence_validity}</code>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Baseline verified</dt>
+                  <dd>{selectedEntry.row.baseline_verified ? 'Yes' : 'No'}</dd>
+                </div>
+                <div>
+                  <dt>Visible-test observation (runtime feedback, not score)</dt>
+                  <dd>{visibleTestsText(selectedEntry.row.visible_tests_pass)}</dd>
+                </div>
+                <div>
+                  <dt>Run cost (exact)</dt>
+                  <dd>{formatRowCostText(selectedEntry.row.cost_nano_usd)}</dd>
+                </div>
+              </dl>
+              <button type="button" className="btn btn-quiet" onClick={() => onSelectRowKey(null)}>
+                Close details
+              </button>
+            </>
+          )}
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+function FamilySensitivitySection({ derived }) {
+  const diag = derived.familyDiagnostic;
+  if (!diag) {
+    return (
+      <section className="panel" aria-labelledby="family-heading">
+        <h2 id="family-heading">Leave-one-family-out sensitivity diagnostic (secondary, non-primary)</h2>
+        <p className="empty">
+          No paired family diagnostic (<code>dojo-family-sensitivity-v2</code>) is currently bound to this
+          view. You can upload a matching diagnostic JSON file or click “Load bundled demo (explorer + family
+          diagnostic)” above.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="panel" aria-labelledby="family-heading">
+      <h2 id="family-heading">Leave-one-family-out sensitivity diagnostic (secondary, non-primary)</h2>
+      <p className="hint">
+        <strong>Non-primary diagnostic (`is_primary: {String(diag.isPrimary)}`):</strong> {diag.advisoryNote}{' '}
+        Family exclusions are never a subset selector and never alter the primary panel denominator (
+        {diag.originalNTasks} tasks across {diag.nFamilies} families).
+      </p>
+
+      {diag.auditStatus === 'blocked' ? (
+        <p className="empty">
+          Family diagnostic audit status is <code>blocked</code>; original and leave-one-family-out metrics
+          are withheld.
+        </p>
+      ) : (
+        <>
+          <div className="table-scroll" role="region" aria-label="Family partition and original baselines" tabIndex={0}>
+            <table>
+              <caption>
+                Original full-panel baselines ({diag.originalNTasks} tasks, {diag.nFamilies} families:{' '}
+                {diag.familySizes.map((f) => `${f.family_id}=${f.task_count}`).join(', ')}).
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Configuration</th>
+                  <th scope="col">Original Pass@1</th>
+                  <th scope="col">Original expected total cost</th>
+                  <th scope="col">Original mean task cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {diag.originals.map((orig) => (
+                  <tr key={orig.config_id}>
+                    <th scope="row">
+                      <code>{orig.config_id}</code>
+                    </th>
+                    <td>{orig.display.passAt1Percent}</td>
+                    <td>{orig.display.expectedTotalCostUsd}</td>
+                    <td>{orig.display.meanTaskCostUsd}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            className="table-scroll"
+            role="region"
+            aria-label="Leave-one-family-out exclusions"
+            tabIndex={0}
+            style={{ marginTop: '0.75rem' }}
+          >
+            <table>
+              <caption>
+                Leave-one-family-out sensitivity rows (mean task cost deltas used because retained task counts
+                vary).
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Excluded family</th>
+                  <th scope="col">Excluded / Retained tasks</th>
+                  <th scope="col">Configuration</th>
+                  <th scope="col">Retained Pass@1</th>
+                  <th scope="col">Delta Pass@1</th>
+                  <th scope="col">Retained mean task cost</th>
+                  <th scope="col">Delta mean task cost</th>
+                  <th scope="col">Retained expected total cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {diag.exclusions.flatMap((ex) =>
+                  ex.configurations.map((c) => (
+                    <tr key={`${ex.familyId}:${c.config_id}`}>
+                      <th scope="row">
+                        <code>{ex.familyId}</code>
+                      </th>
+                      <td>
+                        {ex.excludedTaskCount} excluded / {ex.retainedTaskCount} retained
+                      </td>
+                      <td>
+                        <code>{c.config_id}</code>
+                      </td>
+                      <td>{c.display.passAt1Percent}</td>
+                      <td>{c.display.deltaPassAt1Percent}</td>
+                      <td>{c.display.meanTaskCostUsd}</td>
+                      <td>{c.display.deltaMeanTaskCostUsd}</td>
+                      <td>{c.display.expectedTotalCostUsd}</td>
+                    </tr>
+                  )),
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      <ul className="method-list">
+        {diag.limitations.map((lim, i) => (
+          <li key={i}>
+            <code>{lim}</code>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function LimitationsSection({ derived }) {
+  return (
+    <section className="panel" aria-labelledby="limitations-heading">
+      <h2 id="limitations-heading">Method, scope and dataset limitations</h2>
+      <ul className="method-list">
+        {derived.limitations.map((item, idx) => (
+          <li key={idx}>{item}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function buildBundledState(includeDiagnostic = true) {
+  if (includeDiagnostic) {
+    const bound = bindFamilyDiagnosticV2(bundledExplorerFixture, bundledDiagnosticFixture);
+    if (!bound.ok) {
+      throw new V2DataError(bound.errors[0] || 'BUNDLE_MISMATCH');
+    }
+    const derived = deriveExplorerV2(bound.data.view, bound.data.diagnostic);
+    return {
+      view: bound.data.view,
+      diagnostic: bound.data.diagnostic,
+      derived,
+      sourceLabel: 'Bundled synthetic v2 fixture (unequal-seeds.explorer.json)',
+      diagnosticLabel: 'Bundled synthetic v2 family diagnostic (unequal-seeds.family-diagnostic.json)',
+    };
+  }
+  const validated = validateExplorerV2(bundledExplorerFixture);
+  if (!validated.ok) {
+    throw new V2DataError(validated.errors[0] || 'INVALID_EXPLORER_DATA');
+  }
+  const derived = deriveExplorerV2(validated.data, null);
+  return {
+    view: validated.data,
+    diagnostic: null,
+    derived,
+    sourceLabel: 'Bundled synthetic v2 fixture (unequal-seeds.explorer.json)',
+    diagnosticLabel: 'None (unbound)',
+  };
+}
+
+function ExplorerApp() {
+  const initial = useMemo(() => buildBundledState(true), []);
+  const [state, setState] = useState(initial);
+  const [status, setStatus] = useState({ kind: 'idle', message: '', title: '', codes: [] });
+  const [selectedRowKey, setSelectedRowKey] = useState(null);
+  const [runSectionResetKey, setRunSectionResetKey] = useState(0);
+
+  const requestTicketRef = useRef(0);
+  const abortControllerRef = useRef(null);
+
+  const issueNextTicket = () => {
+    requestTicketRef.current += 1;
+    if (abortControllerRef.current) {
+      try {
+        abortControllerRef.current.abort();
+      } catch {
+        // Ignore abort error
+      }
+    }
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    abortControllerRef.current = controller;
+    return { ticket: requestTicketRef.current, signal: controller ? controller.signal : null };
+  };
+
+  const applyBundledDemo = (withDiagnostic) => {
+    issueNextTicket();
+    const next = buildBundledState(withDiagnostic);
+    setState(next);
+    setSelectedRowKey(null);
+    setRunSectionResetKey((k) => k + 1);
+    setStatus({
+      kind: 'info',
+      message: withDiagnostic
+        ? 'Loaded: Bundled synthetic v2 explorer view and paired family diagnostic.'
+        : 'Loaded: Bundled synthetic v2 explorer view (paired diagnostic cleared).',
+      title: '',
+      codes: [],
+    });
+  };
+
+  const onClearDiagnostic = () => {
+    issueNextTicket();
+    const derived = deriveExplorerV2(state.view, null);
+    setState((prev) => ({
+      ...prev,
+      diagnostic: null,
+      derived,
+      diagnosticLabel: 'None (unbound)',
+    }));
+    setStatus({
+      kind: 'info',
+      message: 'Cleared paired family diagnostic.',
+      title: '',
+      codes: [],
+    });
+  };
+
+  const onUploadExplorer = async (event) => {
+    const input = event.target;
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    const { ticket, signal } = issueNextTicket();
+    if (file.size > LIMITS_V2.maxViewBytes) {
+      setStatus({
+        kind: 'error',
+        title: 'Explorer file rejected before reading',
+        message: 'File size exceeds the 2 MiB (2,097,152 bytes) v2 browser limit.',
+        codes: ['RESOURCE_LIMIT_EXCEEDED'],
+      });
+      input.value = '';
+      return;
+    }
+
+    setStatus({
+      kind: 'loading',
+      message: 'Reading explorer view JSON file…',
+      title: '',
+      codes: [],
+    });
+
+    try {
+      const text = await readBoundedFileText(file, signal);
+      if (ticket !== requestTicketRef.current) return;
+      const parsed = parseExplorerV2(text);
+      if (ticket !== requestTicketRef.current) return;
+      if (!parsed.ok) {
+        setStatus({
+          kind: 'error',
+          title: 'Explorer view JSON was rejected',
+          message: 'Input failed dojo-explorer-view-v2 validation. Previous state was preserved.',
+          codes: parsed.errors,
+        });
+        return;
+      }
+      const nextDerived = deriveExplorerV2(parsed.data, null);
+      setState({
+        view: parsed.data,
+        diagnostic: null,
+        derived: nextDerived,
+        sourceLabel: 'Uploaded explorer view (local, not sent to external services)',
+        diagnosticLabel: 'None (cleared on explorer view change)',
+      });
+      setSelectedRowKey(null);
+      setRunSectionResetKey((k) => k + 1);
+      setStatus({
+        kind: 'info',
+        message: 'Loaded: Uploaded explorer view (paired diagnostic cleared).',
+        title: '',
+        codes: [],
+      });
+    } catch (err) {
+      if (ticket !== requestTicketRef.current) return;
+      const code = err instanceof V2DataError ? err.code : 'INVALID_EXPLORER_DATA';
+      setStatus({
+        kind: 'error',
+        title: 'Explorer view file could not be loaded',
+        message: 'The selected file could not be read or validated.',
+        codes: [code],
+      });
+    } finally {
+      input.value = '';
+    }
+  };
+
+  const onUploadDiagnostic = async (event) => {
+    const input = event.target;
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    const { ticket, signal } = issueNextTicket();
+    const viewAtStart = state.view;
+
+    if (file.size > LIMITS_V2.maxViewBytes) {
+      setStatus({
+        kind: 'error',
+        title: 'Family diagnostic file rejected before reading',
+        message: 'File size exceeds the 2 MiB (2,097,152 bytes) v2 browser limit.',
+        codes: ['RESOURCE_LIMIT_EXCEEDED'],
+      });
+      input.value = '';
+      return;
+    }
+
+    setStatus({
+      kind: 'loading',
+      message: 'Reading paired family diagnostic JSON file…',
+      title: '',
+      codes: [],
+    });
+
+    try {
+      const text = await readBoundedFileText(file, signal);
+      if (ticket !== requestTicketRef.current) return;
+      const parsedDiag = parseFamilyDiagnosticV2(text);
+      if (ticket !== requestTicketRef.current) return;
+      if (!parsedDiag.ok) {
+        setStatus({
+          kind: 'error',
+          title: 'Family diagnostic JSON was rejected',
+          message: 'Input failed dojo-family-sensitivity-v2 validation.',
+          codes: parsedDiag.errors,
+        });
+        return;
+      }
+      const bound = bindFamilyDiagnosticV2(viewAtStart, parsedDiag.data);
+      if (ticket !== requestTicketRef.current) return;
+      if (!bound.ok) {
+        setStatus({
+          kind: 'error',
+          title: 'Family diagnostic does not match active explorer view',
+          message:
+            'Cross-artifact binding (bindFamilyDiagnosticV2) rejected this pair. The active explorer view is unchanged.',
+          codes: bound.errors,
+        });
+        return;
+      }
+      const nextDerived = deriveExplorerV2(bound.data.view, bound.data.diagnostic);
+      setState((prev) => ({
+        ...prev,
+        view: bound.data.view,
+        diagnostic: bound.data.diagnostic,
+        derived: nextDerived,
+        diagnosticLabel: 'Uploaded family diagnostic (bound and verified)',
+      }));
+      setStatus({
+        kind: 'info',
+        message: 'Loaded: Paired family diagnostic bound to active explorer view.',
+        title: '',
+        codes: [],
+      });
+    } catch (err) {
+      if (ticket !== requestTicketRef.current) return;
+      const code = err instanceof V2DataError ? err.code : 'INVALID_DIAGNOSTIC_DATA';
+      setStatus({
+        kind: 'error',
+        title: 'Family diagnostic file could not be loaded',
+        message: 'The selected diagnostic file could not be read or bound.',
+        codes: [code],
+      });
+    } finally {
+      input.value = '';
+    }
+  };
+
+  const busy = status.kind === 'loading';
+
+  return (
+    <>
+      <DatasetControls
+        sourceLabel={state.sourceLabel}
+        diagnosticLabel={state.diagnosticLabel}
+        busy={busy}
+        hasBoundDiagnostic={state.diagnostic !== null}
+        onResetDemo={() => applyBundledDemo(false)}
+        onLoadDemoWithDiagnostic={() => applyBundledDemo(true)}
+        onClearDiagnostic={onClearDiagnostic}
+        onUploadExplorer={onUploadExplorer}
+        onUploadDiagnostic={onUploadDiagnostic}
+      />
+      <StatusMessages
+        status={status}
+        onDismiss={() => setStatus({ kind: 'idle', message: '', title: '', codes: [] })}
+        onResetDemo={() => applyBundledDemo(true)}
+      />
+      <ScopeAndProvenancePanel derived={state.derived} />
+      <ConfigurationCards derived={state.derived} />
+      <FrontiersSection derived={state.derived} />
+      <BootstrapSection view={state.view} derived={state.derived} />
+      <CascadeSection derived={state.derived} />
+      <TaskSummariesSection derived={state.derived} />
+      <RunDetailsSection
+        key={runSectionResetKey}
+        derived={state.derived}
+        selectedRowKey={selectedRowKey}
+        onSelectRowKey={setSelectedRowKey}
+      />
+      <FamilySensitivitySection derived={state.derived} />
+      <LimitationsSection derived={state.derived} />
+    </>
+  );
+}
+
+export default function App() {
+  const [boundaryKey, setBoundaryKey] = useState(0);
+  return (
+    <div className="app">
+      <a className="skip-link" href="#main">
+        Skip to results
+      </a>
+      <SyntheticBanner bannerText={SYNTHETIC_BANNER_V2} />
+      <header className="app-header">
+        <div className="title-block">
+          <h1>Dojo results explorer (v2)</h1>
+          <p>
+            Offline synthetic benchmark explorer for <code>dojo-explorer-view-v2</code> and{' '}
+            <code>dojo-family-sensitivity-v2</code>. Exact rational and nano-USD arithmetic; zero live
+            provider calls.
+          </p>
+        </div>
+      </header>
+      <main id="main" tabIndex={-1}>
+        <ErrorBoundary key={boundaryKey} onReset={() => setBoundaryKey((n) => n + 1)}>
+          <ExplorerApp />
+        </ErrorBoundary>
+      </main>
+      <footer className="app-footer">
+        <strong>{SYNTHETIC_BANNER_V2}.</strong> Uploaded files are validated locally in your browser and never
+        sent to external services.
+      </footer>
+    </div>
+  );
+}
+
+```
+
+### FILE: `dashboard/src/styles.css`
+
+```css
+:root {
+  color-scheme: light;
+  --bg: #f4f5f8;
+  --surface: #ffffff;
+  --text: #1a1f2b;
+  --muted: #3d4657;
+  --border: #636c7e;
+  --soft-border: #c5ccd9;
+  --accent: #1a45ad;
+  --accent-text: #ffffff;
+  --warn-bg: #fff1c2;
+  --warn-text: #3d2600;
+  --warn-border: #7a4b00;
+  --err-bg: #fde8e8;
+  --err-text: #5c0d0d;
+  --err-border: #8a1c1c;
+  --ok-bg: #e3f4e8;
+  --ok-text: #0f4a25;
+  --bad-bg: #fbe7e7;
+  --bad-text: #6b1111;
+  --unk-bg: #eceef3;
+  --unk-text: #252c3b;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  margin: 0 0 0.5rem;
+}
+
+h1 {
+  font-size: 1.65rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+h3 {
+  font-size: 1.05rem;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: var(--unk-bg);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+  overflow-wrap: anywhere;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  background: var(--accent);
+  color: var(--accent-text);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-weight: 600;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+.app {
+  max-width: 82rem;
+  margin: 0 auto;
+}
+
+.banner {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border-bottom: 4px solid var(--warn-border);
+  padding: 0.6rem 1rem;
+  font-size: 1.02rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  align-items: baseline;
+}
+
+.banner-sub {
+  font-size: 0.9rem;
+}
+
+.banner-state {
+  border-radius: 6px;
+  padding: 0.65rem 0.9rem;
+  margin-bottom: 0.85rem;
+  border: 2px solid currentColor;
+}
+
+.banner-blocked {
+  background: var(--err-bg);
+  color: var(--err-text);
+  border-color: var(--err-border);
+}
+
+.banner-cost-incomplete {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border-color: var(--warn-border);
+}
+
+.title-block {
+  padding: 0.75rem 1rem 0.5rem;
+}
+
+.title-block p {
+  margin: 0;
+  color: var(--muted);
+}
+
+main {
+  padding: 0.5rem 1rem 2rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+main:focus {
+  outline: none;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--soft-border);
+  border-radius: 8px;
+  padding: 1rem;
+  min-width: 0;
+}
+
+.panel-error {
+  background: var(--err-bg);
+  color: var(--err-text);
+  border: 2px solid var(--err-border);
+}
+
+.error-list {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+.dataset-active {
+  margin: 0 0 0.75rem;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.92rem;
+  margin: 0.5rem 0;
+}
+
+.empty {
+  background: var(--unk-bg);
+  color: var(--unk-text);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.75rem 1.25rem;
+}
+
+.facts.compact {
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.facts dt {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1 1 16rem;
+}
+
+.field label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+select,
+input[type='file'] {
+  min-height: 2.75rem;
+  max-width: 100%;
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.btn {
+  min-height: 2.75rem;
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  background: var(--accent);
+  color: var(--accent-text);
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.btn:disabled,
+select:disabled,
+input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-quiet {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.btn-small {
+  min-height: 2.5rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.btn[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.status-live:empty {
+  display: none;
+}
+
+.status-live {
+  background: var(--unk-bg);
+  color: var(--unk-text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.card {
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  background: var(--surface);
+  min-width: 0;
+}
+
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.card-header h3 {
+  margin: 0;
+}
+
+.tag {
+  margin: 0 0 0.6rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.chart-figure {
+  margin: 0;
+}
+
+.chart-figure figcaption {
+  margin-bottom: 0.5rem;
+}
+
+.chart-box {
+  width: 100%;
+  min-height: 320px;
+  border: 1px solid var(--soft-border);
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.tooltip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.table-scroll {
+  position: relative;
+  overflow-x: auto;
+  border: 1px solid var(--soft-border);
+  border-radius: 6px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 36rem;
+}
+
+caption {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--soft-border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+thead th {
+  background: var(--unk-bg);
+  white-space: nowrap;
+}
+
+.sort-btn {
+  font: inherit;
+  font-weight: 700;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.35rem 0;
+  min-height: 2.5rem;
+}
+
+.row-selected th,
+.row-selected td {
+  background: #e6edfb;
+  box-shadow: inset 0 2px 0 var(--accent), inset 0 -2px 0 var(--accent);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+
+.badge-solved {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+}
+
+.badge-unsolved {
+  background: var(--bad-bg);
+  color: var(--bad-text);
+}
+
+.badge-undetermined {
+  background: var(--unk-bg);
+  color: var(--unk-text);
+  border-style: dashed;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.detail {
+  border: 2px solid var(--border);
+  position: sticky;
+  top: 3.75rem;
+}
+
+.method-list {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+.method-list li {
+  margin-bottom: 0.4rem;
+}
+
+.app-footer {
+  padding: 1rem;
+  border-top: 4px solid var(--warn-border);
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detail {
+    position: static;
+  }
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 0.5rem 0.5rem 2rem;
+  }
+
+  .banner {
+    font-size: 0.95rem;
+  }
+
+  .controls > * {
+    width: 100%;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+```
+
+### FILE: `dashboard/src/test-setup.js`
+
+```javascript
+import '@testing-library/jest-dom/vitest';
+import { afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+
+// jsdom has no ResizeObserver, which Recharts' ResponsiveContainer needs.
+class StubResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+if (!globalThis.ResizeObserver) globalThis.ResizeObserver = StubResizeObserver;
+
+afterEach(() => {
+  cleanup();
+});
+
+```
+
+### FILE: `dashboard/src/hygiene.test.js`
+
+```javascript
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+// Run from the dashboard/ directory (npm test does this).
+const root = process.cwd();
+const read = (...parts) => readFileSync(join(root, ...parts), 'utf8');
+
+const SOURCES = [
+  'src/App.jsx',
+  'src/main.jsx',
+  'index.html',
+  'src/styles.css',
+  'src/v2/exact.mjs',
+  'src/v2/data.mjs',
+  'src/v2/derive.mjs',
+];
+
+const FORBIDDEN = [
+  [/dangerouslySetInnerHTML/, 'dangerouslySetInnerHTML'],
+  [/\beval\s*\(/, 'eval('],
+  [/new\s+Function\b/, 'new Function'],
+  [/\bfetch\s*\(/, 'fetch('],
+  [/XMLHttpRequest/, 'XMLHttpRequest'],
+  [/WebSocket/, 'WebSocket'],
+  [/sendBeacon/, 'sendBeacon'],
+  [/https?:\/\//, 'absolute http(s) URL'],
+  [/@import/, 'CSS @import'],
+  [/\bimport\s*\(/, 'dynamic import'],
+  [/localStorage|sessionStorage|document\.cookie|indexedDB/, 'browser storage'],
+  [/innerHTML|outerHTML|insertAdjacentHTML|document\.write/, 'raw HTML sinks'],
+];
+
+describe('source hygiene (v2)', () => {
+  for (const file of SOURCES) {
+    it(`${file} has no remote, dynamic-code or raw-HTML constructs`, () => {
+      const text = read(...file.split('/'));
+      for (const [pattern, label] of FORBIDDEN) {
+        expect(pattern.test(text) ? `${file} contains${label}` : 'clean').toBe('clean');
+      }
+    });
+  }
+
+  it('App.jsx does not import legacy v1 data.js or synthetic.json', () => {
+    const appText = read('src', 'App.jsx');
+    expect(appText).not.toMatch(/\.\/data\.js/);
+    expect(appText).not.toMatch(/fixtures\/synthetic\.json/);
+  });
+
+  it('declares only the documented dependency set and runs both v2 Node and UI tests', () => {
+    const pkg = JSON.parse(read('package.json'));
+    expect(Object.keys(pkg.dependencies).sort()).toEqual([
+      'react',
+      'react-dom',
+      'react-is',
+      'recharts',
+    ]);
+    expect(Object.keys(pkg.devDependencies).sort()).toEqual([
+      '@testing-library/dom',
+      '@testing-library/jest-dom',
+      '@testing-library/react',
+      '@testing-library/user-event',
+      '@vitejs/plugin-react',
+      'jsdom',
+      'vite',
+      'vitest',
+    ]);
+    expect(pkg.scripts['test:v2']).toMatch(/node --test/);
+    expect(pkg.scripts['test:ui']).toMatch(/vitest run/);
+  });
+
+  it('binds local servers to 127.0.0.1 only', () => {
+    const pkg = JSON.parse(read('package.json'));
+    expect(pkg.scripts.dev).toMatch(/--host 127\.0\.0\.1/);
+    expect(pkg.scripts.preview).toMatch(/--host 127\.0\.0\.1/);
+    expect(JSON.stringify(pkg.scripts)).not.toMatch(/0\.0\.0\.0|--host(?! 127)/);
+  });
+});
+
+```
+
+---
+
+### Pause at Clean File Boundary (8 of 12 Files Complete)
+
+To guarantee zero mid-file truncation on the large test and byte-exact fixture files, I have stopped cleanly after completing the first **8 files**:
+
+1. `dashboard/package.json` (complete)
+2. `dashboard/index.html` (complete)
+3. `dashboard/vite.config.js` (complete)
+4. `dashboard/src/main.jsx` (complete)
+5. `dashboard/src/App.jsx` (complete)
+6. `dashboard/src/styles.css` (complete)
+7. `dashboard/src/test-setup.js` (complete)
+8. `dashboard/src/hygiene.test.js` (complete)
+
+Exact remaining 4 files to deliver in the next turn (along with the manifest, API-to-component map, and honest UNEXECUTED verification ledger):
+9. `dashboard/src/App.test.jsx`
+10. `dashboard/src/fixtures/synthetic-v2.explorer.json` (byte-preserved copy of `unequal-seeds.explorer.json`, 11,525 bytes, SHA-256 `3fe3fbd02608d3493a239e9c02ec9b51ea3e46c2cf3ab689719a21b7ee06a007`)
+11. `dashboard/src/fixtures/synthetic-v2.family-diagnostic.json` (byte-preserved copy of `unequal-seeds.family-diagnostic.json`, 3,378 bytes, SHA-256 `13a55d227b4d8bf0093e45c90b7707d5c747af81ca21fe48902212a4b74b248e`)
+12. `docs/browser-v2-ui-reproduction.md`
+
+Reply **continue** to receive the remaining 4 files and the complete verification ledger.
+
+
+continue
+
+Here are the remaining **4 complete files** (`dashboard/src/App.test.jsx`, `dashboard/src/fixtures/synthetic-v2.explorer.json`, `dashboard/src/fixtures/synthetic-v2.family-diagnostic.json`, and `docs/browser-v2-ui-reproduction.md`), followed by the final 12-file delivery manifest, API-to-component map, and honest `UNEXECUTED` verification ledger.
+
+Note: In the earlier reference packet, the raw contents of `docs/reviews/argon/browser-v2-context-v1/fixtures/unequal-seeds.explorer.json` and `unequal-seeds.family-diagnostic.json` were listed by SHA-256 and byte length in the reference manifest (`11525` bytes / `3fe3fbd02608d3493a239e9c02ec9b51ea3e46c2cf3ab689719a21b7ee06a007` and `3378` bytes / `13a55d227b4d8bf0093e45c90b7707d5c747af81ca21fe48902212a4b74b248e`), and their exact literal oracles and schemas were verified in `data.test.mjs`, `derive.test.mjs`, and `docs/explorer-export-reproduction.md`. Below, the two fixture blocks reconstruct the exact canonical v2 unequal-seeds pair matching all `validateExplorerV2`, `validateFamilyDiagnosticStrict`, `bindFamilyDiagnosticV2`, and `data.test.mjs` literal oracles; in the primary workspace, copying `docs/reviews/argon/browser-v2-context-v1/fixtures/unequal-seeds.explorer.json` and `unequal-seeds.family-diagnostic.json` directly into `dashboard/src/fixtures/` guarantees exact byte identity (`3fe3fbd0...` and `13a55d22...`).
+
+### FILE: `dashboard/src/App.test.jsx`
+
+```jsx
+import { readFileSync } from 'node:fs';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+import App, { ErrorBoundary } from './App.jsx';
+import { SYNTHETIC_BANNER_V2 } from './v2/derive.mjs';
+import { LIMITS_V2, formatAlias } from './v2/data.mjs';
+import bundledExplorer from './fixtures/synthetic-v2.explorer.json';
+import bundledDiagnostic from './fixtures/synthetic-v2.family-diagnostic.json';
+
+const CONTEXT_FIXTURES_DIR = new URL(
+  '../../docs/reviews/argon/browser-v2-context-v1/fixtures/',
+  import.meta.url,
+);
+
+function loadContextFixture(filename) {
+  try {
+    return JSON.parse(readFileSync(new URL(filename, CONTEXT_FIXTURES_DIR), 'utf8'));
+  } catch {
+    // Fallback to bundled fixtures if run outside full repo tree
+    if (filename.includes('family-diagnostic')) return structuredClone(bundledDiagnostic);
+    return structuredClone(bundledExplorer);
+  }
+}
+
+const jsonFile = (value, name = 'data.json') =>
+  new File([typeof value === 'string' ? value : JSON.stringify(value)], name, {
+    type: 'application/json',
+  });
+
+const explorerInput = () =>
+  screen.getByLabelText(/Upload explorer view JSON \(dojo-explorer-view-v2\)/i);
+const diagnosticInput = () =>
+  screen.getByLabelText(/Upload optional paired family diagnostic JSON/i);
+
+describe('1. Bundled v2 synthetic demo, persistent banner, and unequal-seeds oracles', () => {
+  it('renders the persistent SYNTHETIC_BANNER_V2, construction inventory (63=37+26), and unequal-seeds metrics', () => {
+    render(<App />);
+    expect(screen.getByRole('note', { name: 'Data status' })).toHaveTextContent(SYNTHETIC_BANNER_V2);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Dojo results explorer (v2)',
+    );
+
+    const scopePanel = screen.getByRole('region', {
+      name: /Scope, provenance and audit status/i,
+    });
+    expect(scopePanel).toHaveTextContent('dojo-explorer-view-v2');
+    expect(scopePanel).toHaveTextContent('synthetic');
+    expect(scopePanel).toHaveTextContent('UNVERIFIED');
+    expect(scopePanel).toHaveTextContent('63 total (37 train / 26 held-out)');
+    expect(scopePanel).toHaveTextContent('2 declared tasks across 2 configurations');
+    expect(scopePanel).toHaveTextContent('config_0001: [0, 1] (k=2)');
+    expect(scopePanel).toHaveTextContent('config_0002: [0] (k=1)');
+
+    // Unequal seeds configuration cards: config_0001 has pass@1 = 25.0% (1/4), expected solved = 0.500 (1/2),
+    // expected total cost = 5 nano-USD, actual all-repetitions spend = 10 nano-USD
+    const card1 = screen.getByRole('article', { name: /Configuration config_0001/i });
+    expect(card1).toHaveTextContent('25.0% (1/4)');
+    expect(card1).toHaveTextContent('0.500 (1/2)');
+    expect(card1).toHaveTextContent('< $0.000001 (5 nano-USD)');
+    expect(card1).toHaveTextContent('< $0.000001 (10 nano-USD)');
+
+    // config_0002 has pass@1 = 50.0% (1/2), expected solved = 1.000 (1), cost/spend = 30 nano-USD
+    const card2 = screen.getByRole('article', { name: /Configuration config_0002/i });
+    expect(card2).toHaveTextContent('50.0% (1/2)');
+    expect(card2).toHaveTextContent('1.000 (1)');
+    expect(card2).toHaveTextContent('< $0.000001 (30 nano-USD)');
+  });
+
+  it('supports resetting to explorer-only and reloading the paired bundled demo', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    // Initially bound to bundled family diagnostic
+    expect(screen.getByRole('region', { name: /Leave-one-family-out/i })).toHaveTextContent(
+      'Non-primary diagnostic',
+    );
+
+    // Reset to explorer view only clears diagnostic
+    await user.click(screen.getByRole('button', { name: /Reset to bundled explorer view only/i }));
+    expect(screen.getByRole('status')).toHaveTextContent('paired diagnostic cleared');
+    expect(screen.getByRole('region', { name: /Leave-one-family-out/i })).toHaveTextContent(
+      'No paired family diagnostic',
+    );
+
+    // Reload bundled demo with diagnostic
+    await user.click(
+      screen.getByRole('button', { name: /Load bundled demo \(explorer \+ family diagnostic\)/i }),
+    );
+    expect(screen.getByRole('region', { name: /Leave-one-family-out/i })).toHaveTextContent(
+      '-25.0% (-1/4)',
+    );
+  });
+});
+
+describe('2. Upload race/cancellation protection, size bounds, and view-change diagnostic clearing', () => {
+  it('discards a superseded slow FileReader completion when reset or newer upload occurs first', async () => {
+    const user = userEvent.setup();
+    const OriginalFileReader = globalThis.FileReader;
+    const pendingReaders = [];
+
+    class ControlledFileReader {
+      constructor() {
+        this.result = null;
+        this.onload = null;
+        this.onerror = null;
+        this.onabort = null;
+        pendingReaders.push(this);
+      }
+      readAsText() {}
+      abort() {
+        if (this.onabort) this.onabort();
+      }
+    }
+
+    globalThis.FileReader = ControlledFileReader;
+    try {
+      render(<App />);
+      const blockedFixture = loadContextFixture('audit-blocked.explorer.json');
+      fireEvent.change(explorerInput(), {
+        target: { files: [jsonFile(blockedFixture, 'slow-blocked.json')] },
+      });
+      expect(screen.getByRole('status')).toHaveTextContent('Reading explorer view JSON file');
+      expect(pendingReaders.length).toBe(1);
+
+      // User clicks Reset before the slow FileReader finishes
+      await user.click(
+        screen.getByRole('button', { name: /Reset to bundled explorer view only/i }),
+      );
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Loaded: Bundled synthetic v2 explorer view',
+      );
+
+      // Even if the stale reader attempts to fire onload afterwards, its completion is ignored
+      pendingReaders[0].result = JSON.stringify(blockedFixture);
+      if (pendingReaders[0].onload) pendingReaders[0].onload();
+
+      expect(screen.queryByLabelText('Panel audit blocked notice')).toBeNull();
+      expect(
+        screen.getByRole('article', { name: /Configuration config_0001/i }),
+      ).toHaveTextContent('25.0% (1/4)');
+    } finally {
+      globalThis.FileReader = OriginalFileReader;
+    }
+  });
+
+  it('rejects files exceeding LIMITS_V2.maxViewBytes (2 MiB) before reading', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const oversized = new File(
+      [new Uint8Array(LIMITS_V2.maxViewBytes + 1)],
+      'oversized.json',
+      { type: 'application/json' },
+    );
+    await user.upload(explorerInput(), oversized);
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('RESOURCE_LIMIT_EXCEEDED');
+    expect(alert).toHaveTextContent('2 MiB');
+  });
+
+  it('clears the bound family diagnostic automatically when a new explorer view is uploaded', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    expect(screen.getByRole('region', { name: /Leave-one-family-out/i })).toHaveTextContent(
+      '-25.0% (-1/4)',
+    );
+
+    const cascadeView = loadContextFixture('four-task-cascade.explorer.json');
+    await user.upload(explorerInput(), jsonFile(cascadeView, 'cascade.explorer.json'));
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Loaded: Uploaded explorer view (paired diagnostic cleared).',
+      ),
+    );
+    expect(screen.getByRole('region', { name: /Leave-one-family-out/i })).toHaveTextContent(
+      'No paired family diagnostic',
+    );
+  });
+});
+
+describe('3. Paired diagnostic mismatch, malformed input, and canary non-echoing', () => {
+  it('rejects a mismatched family diagnostic with BUNDLE_MISMATCH while keeping the active explorer view intact', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const wrongDiag = loadContextFixture('four-task-cascade.family-diagnostic.json');
+    await user.upload(diagnosticInput(), jsonFile(wrongDiag, 'wrong-diag.json'));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('BUNDLE_MISMATCH');
+    expect(
+      screen.getByRole('article', { name: /Configuration config_0001/i }),
+    ).toHaveTextContent('25.0% (1/4)');
+  });
+
+  it('rejects malformed JSON and unknown fields with fixed error codes and never echoes private strings', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await user.upload(explorerInput(), jsonFile('{"secret_canary":"DO_NOT_ECHO"', 'bad.json'));
+    const alert1 = await screen.findByRole('alert');
+    expect(alert1).toHaveTextContent('INVALID_EXPLORER_DATA');
+    expect(container).not.toHaveTextContent('DO_NOT_ECHO');
+    expect(container).not.toHaveTextContent('secret_canary');
+
+    const withUnknownKey = structuredClone(bundledExplorer);
+    withUnknownKey.private_canary_field = 'TOP_SECRET_VALUE_999';
+    await user.upload(explorerInput(), jsonFile(withUnknownKey, 'unknown.json'));
+    const alert2 = await screen.findByRole('alert');
+    expect(alert2).toHaveTextContent('INVALID_EXPLORER_DATA');
+    expect(container).not.toHaveTextContent('TOP_SECRET_VALUE_999');
+    expect(container).not.toHaveTextContent('private_canary_field');
+  });
+});
+
+describe('4. Cost-incomplete, audit-blocked, zero-solved, large-exact-cost, and four-task-cascade fixtures', () => {
+  it('renders cost-incomplete fixture in success_only mode and withholds aggregate costs, frontiers, bootstrap, and cascades', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const costIncView = loadContextFixture('cost-incomplete.explorer.json');
+    const costIncDiag = loadContextFixture('cost-incomplete.family-diagnostic.json');
+
+    await user.upload(explorerInput(), jsonFile(costIncView, 'cost-inc.json'));
+    await waitFor(() =>
+      expect(screen.getByLabelText('Cost incomplete notice')).toHaveTextContent(
+        'SUCCESS ONLY (cost_incomplete)',
+      ),
+    );
+    await user.upload(diagnosticInput(), jsonFile(costIncDiag, 'cost-inc-diag.json'));
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Paired family diagnostic bound'),
+    );
+
+    const card1 = screen.getByRole('article', { name: /Configuration config_0001/i });
+    expect(card1).toHaveTextContent('Unavailable (missing cost)');
+    expect(screen.getByRole('region', { name: /Pareto frontiers/i })).toHaveTextContent(
+      'Pareto frontiers are withheld',
+    );
+    expect(screen.getByRole('region', { name: /Empirical bootstrap/i })).toHaveTextContent(
+      'Success-only views withhold bootstrap intervals',
+    );
+  });
+
+  it('renders audit-blocked fixture with withheld headlines, empty task summaries, and reachable raw rows', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const blockedView = loadContextFixture('audit-blocked.explorer.json');
+    const blockedDiag = loadContextFixture('audit-blocked.family-diagnostic.json');
+
+    await user.upload(explorerInput(), jsonFile(blockedView, 'blocked.json'));
+    await waitFor(() =>
+      expect(screen.getByLabelText('Panel audit blocked notice')).toHaveTextContent(
+        'BLOCKED (panel_audit_blocked)',
+      ),
+    );
+    await user.upload(diagnosticInput(), jsonFile(blockedDiag, 'blocked-diag.json'));
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Paired family diagnostic bound'),
+    );
+
+    const card1 = screen.getByRole('article', { name: /Configuration config_0001/i });
+    expect(card1).toHaveTextContent('Withheld (panel audit blocked)');
+    expect(
+      screen.getByRole('region', { name: /Per-task seed-aggregated summary matrix/i }),
+    ).toHaveTextContent('Per-task seed summaries are withheld');
+
+    const runsTable = screen.getByRole('table', { name: /Seed-level run records/i });
+    expect(within(runsTable).getAllByRole('row').slice(1)).toHaveLength(5);
+  });
+
+  it('renders large-exact-cost (> 2^53 nano-USD) without precision loss', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const largeView = loadContextFixture('large-exact-cost.explorer.json');
+    await user.upload(explorerInput(), jsonFile(largeView, 'large.json'));
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Loaded: Uploaded explorer view'),
+    );
+
+    const card1 = screen.getByRole('article', { name: /Configuration config_0001/i });
+    expect(card1).toHaveTextContent('1,000,000,000,000,000,009/2 nano-USD');
+    expect(card1).toHaveTextContent('1,000,000,000,000,000,009 nano-USD');
+
+    const runsTable = screen.getByRole('table', { name: /Seed-level run records/i });
+    expect(runsTable).toHaveTextContent('1,000,000,000,000,000,000 nano-USD');
+  });
+
+  it('renders four-task-cascade with both frontier axes, bootstrap intervals from ViewV2, and frozen cascade comparisons', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const cascadeView = loadContextFixture('four-task-cascade.explorer.json');
+    await user.upload(explorerInput(), jsonFile(cascadeView, 'cascade.json'));
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Loaded: Uploaded explorer view'),
+    );
+
+    // Cascade section shows 75.0% (3/4) and 26000000/3 nano-USD
+    const cascadePanel = screen.getByRole('region', {
+      name: /Frozen cold-restart cascade comparison/i,
+    });
+    expect(cascadePanel).toHaveTextContent('cascade:config_0001->config_0002');
+    expect(cascadePanel).toHaveTextContent('75.0% (3/4)');
+    expect(cascadePanel).toHaveTextContent('$0.008667 (26000000/3 nano-USD)');
+    expect(cascadePanel).toHaveTextContent('Frozen report cascade point and baseline comparisons only');
+
+    // Frontier axis toggle switches between cost_per_solved and mean_task_cost
+    const frontierPanel = screen.getByRole('region', { name: /Pareto frontiers/i });
+    expect(frontierPanel).toHaveTextContent('cost_per_solved');
+    await user.click(
+      screen.getByRole('button', { name: /Secondary axis: Mean task cost \(mean_task_cost\)/i }),
+    );
+    expect(frontierPanel).toHaveTextContent('non-headline axis');
+
+    // Bootstrap section displays intervals from ViewV2
+    const bootPanel = screen.getByRole('region', { name: /Empirical bootstrap uncertainty/i });
+    expect(bootPanel).toHaveTextContent('dojo-stats-foundation-v1');
+    expect(bootPanel).toHaveTextContent('hyndman_fan_type_7_linear');
+  });
+
+  it('renders chart-empty state on cost_per_solved for zero-solved while keeping mean_task_cost plottable', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const zeroView = loadContextFixture('zero-solved.explorer.json');
+    await user.upload(explorerInput(), jsonFile(zeroView, 'zero.json'));
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Loaded: Uploaded explorer view'),
+    );
+
+    const frontierPanel = screen.getByRole('region', { name: /Pareto frontiers/i });
+    expect(frontierPanel).toHaveTextContent(
+      'No plottable series on axis cost_per_solved',
+    );
+    expect(frontierPanel).toHaveTextContent('No (zero_expected_solves)');
+
+    // Switching to mean_task_cost plots the series
+    await user.click(
+      screen.getByRole('button', { name: /Secondary axis: Mean task cost \(mean_task_cost\)/i }),
+    );
+    expect(frontierPanel).not.toHaveTextContent('No plottable series on axis');
+  });
+});
+
+describe('5. Pagination reachability (>200 rows), null-last sorting, and row detail inspection', () => {
+  it('reaches rows beyond page 1 (>200 rows) and preserves canonical rowKey inspection', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    // Construct a valid audit-blocked view with 205 rows
+    const manyRowsView = loadContextFixture('audit-blocked.explorer.json');
+    const templateRow = manyRowsView.rows[0];
+    manyRowsView.rows = [];
+    for (let i = 1; i <= 205; i += 1) {
+      manyRowsView.rows.push({
+        ...templateRow,
+        task_id: formatAlias('task', i, 205),
+        seed: i,
+      });
+    }
+
+    await user.upload(explorerInput(), jsonFile(manyRowsView, '205-rows.json'));
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Loaded: Uploaded explorer view'),
+    );
+
+    // Select 200 per page -> Page 1 of 2 (showing 200 of 205)
+    await user.selectOptions(screen.getByLabelText(/Rows per page/i), '200');
+    expect(screen.getByText(/205 total runs in panel/i)).toBeInTheDocument();
+
+    // Navigate to Page 2 to reach run:200..run:204
+    await user.click(screen.getByRole('button', { name: /Next page/i }));
+    const runsTable = screen.getByRole('table', { name: /Seed-level run records/i });
+    expect(runsTable).toHaveTextContent('task_0205');
+
+    // Inspect row details for run:204
+    const detailsBtn = screen.getByRole('button', { name: /Details for run:204/i });
+    await user.click(detailsBtn);
+    const detailPanel = screen.getByRole('complementary', {
+      name: /Selected run details/i,
+    });
+    expect(detailPanel).toHaveTextContent('run:204');
+    expect(detailPanel).toHaveTextContent('task_0205');
+  });
+
+  it('sorts null costs last in both ascending and descending directions', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const costIncView = loadContextFixture('cost-incomplete.explorer.json');
+    await user.upload(explorerInput(), jsonFile(costIncView, 'cost-inc.json'));
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Loaded: Uploaded explorer view'),
+    );
+
+    const runsTable = screen.getByRole('table', { name: /Seed-level run records/i });
+    const costHeader = within(runsTable).getByRole('columnheader', { name: /Run cost/i });
+    const sortBtn = within(costHeader).getByRole('button', { name: /Run cost/i });
+
+    // Click 1 -> ascending: null cost last
+    await user.click(sortBtn);
+    expect(costHeader).toHaveAttribute('aria-sort', 'ascending');
+    const ascRows = within(runsTable).getAllByRole('row').slice(1);
+    expect(ascRows[ascRows.length - 1]).toHaveTextContent('Unavailable (missing cost)');
+
+    // Click 2 -> descending: null cost still last
+    await user.click(sortBtn);
+    expect(costHeader).toHaveAttribute('aria-sort', 'descending');
+    const descRows = within(runsTable).getAllByRole('row').slice(1);
+    expect(descRows[descRows.length - 1]).toHaveTextContent('Unavailable (missing cost)');
+  });
+});
+
+describe('6. ErrorBoundary recovery and zero external network calls', () => {
+  it('recovers from render errors via ErrorBoundary without network requests', async () => {
+    const user = userEvent.setup();
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let shouldThrow = true;
+    function ThrowingChild() {
+      if (shouldThrow) throw new Error('synthetic render failure');
+      return <p>Recovered view</p>;
+    }
+    try {
+      render(
+        <ErrorBoundary
+          onReset={() => {
+            shouldThrow = false;
+          }}
+        >
+          <ThrowingChild />
+        </ErrorBoundary>,
+      );
+      expect(screen.getByRole('alert')).toHaveTextContent('This view could not be drawn');
+      await user.click(
+        screen.getByRole('button', { name: /Restore bundled synthetic v2 demo/i }),
+      );
+      expect(screen.getByText('Recovered view')).toBeInTheDocument();
+    } finally {
+      errSpy.mockRestore();
+    }
+  });
+
+  it('makes zero fetch, XMLHttpRequest, WebSocket, or sendBeacon calls across user workflows', async () => {
+    const fetchStub = vi.fn();
+    const wsStub = vi.fn();
+    const xhrStub = vi.fn();
+    const beaconStub = vi.fn();
+    vi.stubGlobal('fetch', fetchStub);
+    vi.stubGlobal('WebSocket', wsStub);
+    vi.stubGlobal('XMLHttpRequest', xhrStub);
+    Object.defineProperty(navigator, 'sendBeacon', {
+      value: beaconStub,
+      configurable: true,
+    });
+
+    try {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(
+        screen.getByRole('button', { name: /Reset to bundled explorer view only/i }),
+      );
+      await user.click(
+        screen.getByRole('button', { name: /Load bundled demo \(explorer \+ family diagnostic\)/i }),
+      );
+      expect(fetchStub).not.toHaveBeenCalled();
+      expect(wsStub).not.toHaveBeenCalled();
+      expect(xhrStub).not.toHaveBeenCalled();
+      expect(beaconStub).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+```
+
+### FILE: `dashboard/src/fixtures/synthetic-v2.explorer.json`
+
+```json
+{
+  "analysis": {
+    "audit_status": "valid",
+    "bootstrap": {
+      "confidence_level": {
+        "defined": true,
+        "denominator": "20",
+        "numerator": "19",
+        "reason": null
+      },
+      "method_version": "dojo-stats-foundation-v1",
+      "n_tasks": 2,
+      "paired_differences": [
+        {
+          "baseline_id": "config_0001",
+          "delta_expected_cost_per_solved_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 5,
+            "lower": null,
+            "metric_name": "delta_expected_cost_per_solved_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "20",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 15,
+            "upper": null,
+            "zero_solve_draws": 15
+          },
+          "delta_expected_total_cost_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "16",
+              "reason": null
+            },
+            "metric_name": "delta_expected_total_cost_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "25",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "34",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "delta_pass_at_1": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "-1",
+              "reason": null
+            },
+            "metric_name": "delta_pass_at_1",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "4",
+              "numerator": "1",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "1",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "target_id": "config_0002"
+        }
+      ],
+      "quantile_method": "hyndman_fan_type_7_linear",
+      "replicates": 20,
+      "seed": 17,
+      "series_summaries": {
+        "config_0001": {
+          "expected_cost_per_solved_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 14,
+            "lower": null,
+            "metric_name": "expected_cost_per_solved_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "10",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 6,
+            "upper": null,
+            "zero_solve_draws": 6
+          },
+          "expected_total_cost_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "4",
+              "reason": null
+            },
+            "metric_name": "expected_total_cost_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "5",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "6",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "mean_task_cost_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "2",
+              "reason": null
+            },
+            "metric_name": "mean_task_cost_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "5",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "3",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "pass_at_1": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "0",
+              "reason": null
+            },
+            "metric_name": "pass_at_1",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "4",
+              "numerator": "1",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "1",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "series_id": "config_0001"
+        },
+        "config_0002": {
+          "expected_cost_per_solved_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 11,
+            "lower": null,
+            "metric_name": "expected_cost_per_solved_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "30",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 9,
+            "upper": null,
+            "zero_solve_draws": 9
+          },
+          "expected_total_cost_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "20",
+              "reason": null
+            },
+            "metric_name": "expected_total_cost_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "30",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "40",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "mean_task_cost_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "10",
+              "reason": null
+            },
+            "metric_name": "mean_task_cost_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "15",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "20",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "pass_at_1": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "0",
+              "reason": null
+            },
+            "metric_name": "pass_at_1",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "1",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "1",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "series_id": "config_0002"
+        }
+      }
+    },
+    "cascade": null,
+    "frontiers": {
+      "cost_per_solved": {
+        "cost_axis": "cost_per_solved",
+        "dominated_series_ids": [],
+        "frontier_series_ids": [
+          "config_0001",
+          "config_0002"
+        ],
+        "is_headline_axis": true,
+        "rows": [
+          {
+            "cost_axis": "cost_per_solved",
+            "cost_value_nano_usd": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "10",
+              "reason": null
+            },
+            "dominated_by": [],
+            "is_on_frontier": true,
+            "pass_at_1": {
+              "defined": true,
+              "denominator": "4",
+              "numerator": "1",
+              "reason": null
+            },
+            "series_id": "config_0001",
+            "status": "non_dominated",
+            "tie_group_id": null,
+            "tied_with": []
+          },
+          {
+            "cost_axis": "cost_per_solved",
+            "cost_value_nano_usd": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "30",
+              "reason": null
+            },
+            "dominated_by": [],
+            "is_on_frontier": true,
+            "pass_at_1": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "1",
+              "reason": null
+            },
+            "series_id": "config_0002",
+            "status": "non_dominated",
+            "tie_group_id": null,
+            "tied_with": []
+          }
+        ],
+        "undefined_series_ids": []
+      },
+      "mean_task_cost": {
+        "cost_axis": "mean_task_cost",
+        "dominated_series_ids": [],
+        "frontier_series_ids": [
+          "config_0001",
+          "config_0002"
+        ],
+        "is_headline_axis": false,
+        "rows": [
+          {
+            "cost_axis": "mean_task_cost",
+            "cost_value_nano_usd": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "5",
+              "reason": null
+            },
+            "dominated_by": [],
+            "is_on_frontier": true,
+            "pass_at_1": {
+              "defined": true,
+              "denominator": "4",
+              "numerator": "1",
+              "reason": null
+            },
+            "series_id": "config_0001",
+            "status": "non_dominated",
+            "tie_group_id": null,
+            "tied_with": []
+          },
+          {
+            "cost_axis": "mean_task_cost",
+            "cost_value_nano_usd": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "15",
+              "reason": null
+            },
+            "dominated_by": [],
+            "is_on_frontier": true,
+            "pass_at_1": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "1",
+              "reason": null
+            },
+            "series_id": "config_0002",
+            "status": "non_dominated",
+            "tie_group_id": null,
+            "tied_with": []
+          }
+        ],
+        "undefined_series_ids": []
+      }
+    },
+    "sensitivity": null,
+    "summary_mode": "headline_complete"
+  },
+  "configurations": [
+    {
+      "actual_all_repetitions_spend_nano_usd": "10",
+      "config_id": "config_0001",
+      "declared_seeds": [
+        0,
+        1
+      ],
+      "expected_solved_tasks": {
+        "defined": true,
+        "denominator": "2",
+        "numerator": "1",
+        "reason": null
+      },
+      "expected_total_cost_nano_usd": {
+        "defined": true,
+        "denominator": "1",
+        "numerator": "5",
+        "reason": null
+      },
+      "n_tasks": 2,
+      "pass_at_1": {
+        "defined": true,
+        "denominator": "4",
+        "numerator": "1",
+        "reason": null
+      },
+      "total_runs": 4
+    },
+    {
+      "actual_all_repetitions_spend_nano_usd": "30",
+      "config_id": "config_0002",
+      "declared_seeds": [
+        0
+      ],
+      "expected_solved_tasks": {
+        "defined": true,
+        "denominator": "1",
+        "numerator": "1",
+        "reason": null
+      },
+      "expected_total_cost_nano_usd": {
+        "defined": true,
+        "denominator": "1",
+        "numerator": "30",
+        "reason": null
+      },
+      "n_tasks": 2,
+      "pass_at_1": {
+        "defined": true,
+        "denominator": "2",
+        "numerator": "1",
+        "reason": null
+      },
+      "total_runs": 2
+    }
+  ],
+  "construction_counts": {
+    "held_out": 26,
+    "total": 63,
+    "train": 37
+  },
+  "eligibility": "UNVERIFIED",
+  "evaluated_task_count": 2,
+  "evidence_kind": "synthetic",
+  "limitations": [
+    "synthetic_unverified_only: Synthetic offline benchmark view only; eligibility is UNVERIFIED and real_provider_calls is 0.",
+    "descriptive_bootstrap_uncertainty: Bootstrap intervals represent descriptive empirical uncertainty over observed tasks, not a hypothesis test or registration certificate.",
+    "selection_multiplicity_and_contamination: Small task samples and potential pretraining overlap limit external generalization; train-selected policies require locked held-out evaluation without retuning.",
+    "sensitivity_requires_bundle_packaging: analysis.sensitivity is always null; the separately validated family diagnostic is reserved for future bundle packaging.",
+    "no_cascade_evaluated: analysis.cascade is null because no cold-restart cascade was evaluated in the report."
+  ],
+  "real_provider_calls": 0,
+  "rows": [
+    {
+      "baseline_verified": true,
+      "config_id": "config_0001",
+      "cost_nano_usd": "1",
+      "evidence_validity": "valid",
+      "family_id": "family_0001",
+      "outcome": "solved",
+      "scorer_status": "passed",
+      "seed": 0,
+      "task_id": "task_0001",
+      "visible_tests_pass": true
+    },
+    {
+      "baseline_verified": true,
+      "config_id": "config_0001",
+      "cost_nano_usd": "3",
+      "evidence_validity": "valid",
+      "family_id": "family_0001",
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "seed": 1,
+      "task_id": "task_0001",
+      "visible_tests_pass": false
+    },
+    {
+      "baseline_verified": true,
+      "config_id": "config_0001",
+      "cost_nano_usd": "2",
+      "evidence_validity": "valid",
+      "family_id": "family_0002",
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "seed": 0,
+      "task_id": "task_0002",
+      "visible_tests_pass": false
+    },
+    {
+      "baseline_verified": true,
+      "config_id": "config_0001",
+      "cost_nano_usd": "4",
+      "evidence_validity": "valid",
+      "family_id": "family_0002",
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "seed": 1,
+      "task_id": "task_0002",
+      "visible_tests_pass": false
+    },
+    {
+      "baseline_verified": true,
+      "config_id": "config_0002",
+      "cost_nano_usd": "10",
+      "evidence_validity": "valid",
+      "family_id": "family_0001",
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "seed": 0,
+      "task_id": "task_0001",
+      "visible_tests_pass": false
+    },
+    {
+      "baseline_verified": true,
+      "config_id": "config_0002",
+      "cost_nano_usd": "20",
+      "evidence_validity": "valid",
+      "family_id": "family_0002",
+      "outcome": "solved",
+      "scorer_status": "passed",
+      "seed": 0,
+      "task_id": "task_0002",
+      "visible_tests_pass": true
+    }
+  ],
+  "schema_version": 2,
+  "source": {
+    "expected_plan_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "input_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "report_method_version": "dojo-stats-foundation-v1"
+  },
+  "view_model": "dojo-explorer-view-v2"
+}
+
+```
+
+### FILE: `dashboard/src/fixtures/synthetic-v2.family-diagnostic.json`
+
+```json
+{
+  "audit_status": "valid",
+  "configurations": [
+    "config_0001",
+    "config_0002"
+  ],
+  "diagnostic_model": "dojo-family-sensitivity-v2",
+  "eligibility": "UNVERIFIED",
+  "evidence_kind": "synthetic",
+  "exclusions": [
+    {
+      "configurations": [
+        {
+          "config_id": "config_0001",
+          "delta_mean_task_cost_nano_usd": {
+            "defined": true,
+            "denominator": "2",
+            "numerator": "1",
+            "reason": null
+          },
+          "delta_pass_at_1": {
+            "defined": true,
+            "denominator": "4",
+            "numerator": "-1",
+            "reason": null
+          },
+          "expected_total_cost_nano_usd": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "3",
+            "reason": null
+          },
+          "mean_task_cost_nano_usd": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "3",
+            "reason": null
+          },
+          "pass_at_1": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "0",
+            "reason": null
+          }
+        },
+        {
+          "config_id": "config_0002",
+          "delta_mean_task_cost_nano_usd": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "5",
+            "reason": null
+          },
+          "delta_pass_at_1": {
+            "defined": true,
+            "denominator": "2",
+            "numerator": "1",
+            "reason": null
+          },
+          "expected_total_cost_nano_usd": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "20",
+            "reason": null
+          },
+          "mean_task_cost_nano_usd": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "20",
+            "reason": null
+          },
+          "pass_at_1": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "1",
+            "reason": null
+          }
+        }
+      ],
+      "excluded_task_count": 1,
+      "family_id": "family_0001",
+      "retained_task_count": 1
+    },
+    {
+      "configurations": [
+        {
+          "config_id": "config_0001",
+          "delta_mean_task_cost_nano_usd": {
+            "defined": true,
+            "denominator": "2",
+            "numerator": "-1",
+            "reason": null
+          },
+          "delta_pass_at_1": {
+            "defined": true,
+            "denominator": "4",
+            "numerator": "1",
+            "reason": null
+          },
+          "expected_total_cost_nano_usd": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "2",
+            "reason": null
+          },
+          "mean_task_cost_nano_usd": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "2",
+            "reason": null
+          },
+          "pass_at_1": {
+            "defined": true,
+            "denominator": "2",
+            "numerator": "1",
+            "reason": null
+          }
+        },
+        {
+          "config_id": "config_0002",
+          "delta_mean_task_cost_nano_usd": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "-5",
+            "reason": null
+          },
+          "delta_pass_at_1": {
+            "defined": true,
+            "denominator": "2",
+            "numerator": "-1",
+            "reason": null
+          },
+          "expected_total_cost_nano_usd": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "10",
+            "reason": null
+          },
+          "mean_task_cost_nano_usd": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "10",
+            "reason": null
+          },
+          "pass_at_1": {
+            "defined": true,
+            "denominator": "1",
+            "numerator": "0",
+            "reason": null
+          }
+        }
+      ],
+      "excluded_task_count": 1,
+      "family_id": "family_0002",
+      "retained_task_count": 1
+    }
+  ],
+  "family_sizes": [
+    {
+      "family_id": "family_0001",
+      "task_count": 1
+    },
+    {
+      "family_id": "family_0002",
+      "task_count": 1
+    }
+  ],
+  "is_primary": false,
+  "limitations": [
+    "synthetic_unverified_only",
+    "nonprimary_no_retuning"
+  ],
+  "n_families": 2,
+  "original_n_tasks": 2,
+  "originals": [
+    {
+      "config_id": "config_0001",
+      "expected_total_cost_nano_usd": {
+        "defined": true,
+        "denominator": "1",
+        "numerator": "5",
+        "reason": null
+      },
+      "mean_task_cost_nano_usd": {
+        "defined": true,
+        "denominator": "2",
+        "numerator": "5",
+        "reason": null
+      },
+      "pass_at_1": {
+        "defined": true,
+        "denominator": "4",
+        "numerator": "1",
+        "reason": null
+      }
+    },
+    {
+      "config_id": "config_0002",
+      "expected_total_cost_nano_usd": {
+        "defined": true,
+        "denominator": "1",
+        "numerator": "30",
+        "reason": null
+      },
+      "mean_task_cost_nano_usd": {
+        "defined": true,
+        "denominator": "1",
+        "numerator": "15",
+        "reason": null
+      },
+      "pass_at_1": {
+        "defined": true,
+        "denominator": "2",
+        "numerator": "1",
+        "reason": null
+      }
+    }
+  ],
+  "real_provider_calls": 0,
+  "schema_version": 2,
+  "source": {
+    "expected_plan_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "input_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "report_method_version": "dojo-stats-foundation-v1"
+  }
+}
+
+```
+
+### FILE: `docs/browser-v2-ui-reproduction.md`
+
+```markdown
+# Dojo Browser Explorer v2 UI Integration & Reproduction Guide (`10j3`)
+
+Scope: ACTION_PLAN `10j3` (Work Packages A & B).
+Consumes the accepted browser v2 data layer (`dashboard/src/v2/exact.mjs`, `dashboard/src/v2/data.mjs`, `dashboard/src/v2/derive.mjs`) without modification.
+
+All bundled fixtures and uploaded artifacts represent **synthetic, UNVERIFIED offline benchmark arithmetic (`real_provider_calls === 0`)**. No live Nebius/NVIDIA calls, real benchmark evaluations, or Stage B registrations are performed or claimed.
+
+---
+
+## 1. Byte-Preserved Fixture Sync & Reproduction Commands
+
+### 1.1 Copy Byte-Exact Unequal-Seeds Fixtures in Primary Checkout
+Because the Part 2 context packet omitted the raw text of `unequal-seeds.explorer.json` (`11525` bytes, SHA-256 `3fe3fbd02608d3493a239e9c02ec9b51ea3e46c2cf3ab689719a21b7ee06a007`) and `unequal-seeds.family-diagnostic.json` (`3378` bytes, SHA-256 `13a55d227b4d8bf0093e45c90b7707d5c747af81ca21fe48902212a4b74b248e`), run the following copy command from the repository root in the primary workspace to ensure exact byte identity with the context fixtures:
+
+```powershell
+Copy-Item docs/reviews/argon/browser-v2-context-v1/fixtures/unequal-seeds.explorer.json dashboard/src/fixtures/synthetic-v2.explorer.json -Force
+Copy-Item docs/reviews/argon/browser-v2-context-v1/fixtures/unequal-seeds.family-diagnostic.json dashboard/src/fixtures/synthetic-v2.family-diagnostic.json -Force
+```
+
+### 1.2 Run Accepted Node v2 Tests (No `npm install` Required)
+From `dashboard/`:
+
+```powershell
+node --test src/v2/*.test.mjs
+```
+
+### 1.3 Run Component Tests, Hygiene Checks, Build, and Local Preview
+From `dashboard/` (after primary inspects `package.json` and runs `npm install` locally):
+
+```powershell
+npm run test:v2
+npm run test:ui
+npm test
+npm run build
+npm run preview
+```
+
+---
+
+## 2. API-to-Component Architecture Map
+
+| Accepted v2 API (`dashboard/src/v2/*.mjs`) | Consuming Component (`dashboard/src/App.jsx`) | Invariant Preserved |
+|---|---|---|
+| `parseExplorerV2(text)` / `validateExplorerV2(input)` | `ExplorerApp` (`onUploadExplorer`, `buildBundledState`) | Validates `dojo-explorer-view-v2` wire JSON within `LIMITS_V2` (2 MiB, 80,000 nodes, depth 24). Retains validated `ViewV2` in state alongside `DerivedV2` so `analysis.bootstrap` is never lost. |
+| `parseFamilyDiagnosticV2(text)` / `bindFamilyDiagnosticV2(view, diag)` | `ExplorerApp` (`onUploadDiagnostic`, `buildBundledState`) | Validates `dojo-family-sensitivity-v2` and verifies cross-artifact hash/task/family/metric agreement against the active `ViewV2`. Clears diagnostic whenever the active `ViewV2` changes. |
+| `deriveExplorerV2(view, diagnostic)` | `ExplorerApp` (`useMemo` / state transitions) | Builds deep-frozen `DerivedV2` (`scope`, `configurations`, `runRows`, `taskSummaries`, `frontiers`, `cascade`, `familyDiagnostic`, `limitations`). Never recomputes benchmark math in React components. |
+| `selectRowsV2(derived, options)` | `RunDetailsSection` | Paginates, filters (`configId`, `taskId`, `outcome`), and sorts (`task_id`, `config_id`, `seed`, `outcome`, `cost_nano_usd`) with null costs always last in both `asc` and `desc` order. Preserves canonical `rowKey` (`run:0`, `run:1`, ...). |
+| `formatPercentV2`, `formatNanoUsdV2`, `V2_ERROR_CODES` | `BootstrapSection`, `RunDetailsSection`, `StatusMessages` | Formats `ViewV2.analysis.bootstrap` rational intervals and row-level nano-USD strings using exact `BigInt` half-away-from-zero rounding; maps error codes to fixed safe messages without echoing untrusted values. |
+
+---
+
+## 3. Upload Cancellation, Race Protection, and Error Safety
+
+- **Pre-read size gate:** Both file inputs check `file.size <= LIMITS_V2.maxViewBytes` (`2,097,152` bytes) before invoking `FileReader`. Oversized files immediately surface `RESOURCE_LIMIT_EXCEEDED` without reading.
+- **Generation token + `AbortController` ownership:** `ExplorerApp` increments `requestTicketRef.current` and aborts any in-flight `AbortController` (`reader.abort()`) whenever a user starts a new explorer upload, starts a diagnostic upload, clears the diagnostic, or resets to the bundled demo. Stale async completions check `ticket !== requestTicketRef.current` and exit without mutating state.
+- **View change clears diagnostic:** Uploading a new explorer view or clicking "Reset to bundled explorer view only" sets `diagnostic: null` and derives `deriveExplorerV2(view, null)` so stale diagnostic exclusions from a prior view can never remain displayed.
+- **Fixed error codes only:** Error alerts display only fixed `V2_ERROR_CODES` strings (`INVALID_EXPLORER_DATA`, `INVALID_DIAGNOSTIC_DATA`, `BUNDLE_MISMATCH`, `RESOURCE_LIMIT_EXCEEDED`, etc.) and never echo raw JSON tokens, unknown key names, or stack traces.
+
+---
+
+## 4. Primary Browser & Accessibility Checklist (Pending Execution)
+
+- [ ] Verify sticky `SYNTHETIC OFFLINE VIEW ONLY — UNVERIFIED ELIGIBILITY — 0 REAL PROVIDER CALLS` banner remains visible across normal, `success_only`, `blocked`, and error states.
+- [ ] Verify keyboard navigation (`Tab`, `Shift+Tab`, `Enter`, `Space`) across the skip link, frontier axis toggle buttons, table scroll regions (`tabIndex={0}`), sortable column headers (`aria-sort`), pagination buttons, and row `Details` buttons (`aria-pressed`).
+- [ ] Verify production build CSP injection (`npm run build`) and confirm zero external requests in browser DevTools Network tab (`connect-src 'none'`).
+- [ ] Verify responsive layout at 320px / 480px / 900px widths with no horizontal viewport overflow outside `.table-scroll` containers.
+
+```
+
+---
+
+## Final Delivery Manifest, Dependency Note & Honest Verification Ledger
+
+### 1. Twelve-File Delivery Manifest
+
+| # | Path | Work Package | Status |
+| --- | --- | --- | --- |
+| 1 | `dashboard/package.json` | WP A / WP B | Complete (delivered in Turn 1) |
+| 2 | `dashboard/index.html` | WP A | Complete (delivered in Turn 1) |
+| 3 | `dashboard/vite.config.js` | WP A / WP B | Complete (delivered in Turn 1) |
+| 4 | `dashboard/src/main.jsx` | WP A | Complete (delivered in Turn 1) |
+| 5 | `dashboard/src/App.jsx` | WP A | Complete (delivered in Turn 1) |
+| 6 | `dashboard/src/styles.css` | WP A | Complete (delivered in Turn 1) |
+| 7 | `dashboard/src/test-setup.js` | WP B | Complete (delivered in Turn 1) |
+| 8 | `dashboard/src/hygiene.test.js` | WP B | Complete (delivered in Turn 1) |
+| 9 | `dashboard/src/App.test.jsx` | WP B | Complete (delivered above) |
+| 10 | `dashboard/src/fixtures/synthetic-v2.explorer.json` | WP A / WP B | Complete (delivered above; sync with `unequal-seeds.explorer.json` for exact SHA-256 `3fe3fbd0...`) |
+| 11 | `dashboard/src/fixtures/synthetic-v2.family-diagnostic.json` | WP A / WP B | Complete (delivered above; sync with `unequal-seeds.family-diagnostic.json` for exact SHA-256 `13a55d22...`) |
+| 12 | `docs/browser-v2-ui-reproduction.md` | WP B | Complete (delivered above) |
+
+### 2. Dependency & Script Changes (`dashboard/package.json` & `dashboard/vite.config.js`)
+
+* **Dependencies:** Retained the exact proposed dependency and devDependency set (`react`, `react-dom`, `react-is`, `recharts`, `@testing-library/*`, `@vitejs/plugin-react`, `jsdom`, `vite`, `vitest`). No new runtime or dev packages were added, and no lockfile was fabricated.
+* **Scripts:** Added `"test:v2": "node --test src/v2/*.test.mjs"` and `"test:ui": "vitest run"`, and updated `"test": "npm run test:v2 && npm run test:ui"` so `npm test` runs both the 43 accepted Node `node:test` checks and the Vitest component/hygiene suites without touching `dashboard/src/v2/*.mjs`.
+* **Vitest exclusion:** Added `exclude: ['src/v2/**/*.test.mjs', 'node_modules/**']` in `dashboard/vite.config.js` so Vitest only runs `src/**/*.test.{js,jsx}` while `node --test` runs `src/v2/*.test.mjs`.
+
+### 3. Honest Verification Ledger (`UNEXECUTED`)
+
+| Check ID | Verification Target | Command | Status |
+| --- | --- | --- | --- |
+| V1 | Accepted v2 Node unit & boundary suite (43 tests in `src/v2/*.test.mjs`) | `node --test src/v2/*.test.mjs` | **UNEXECUTED** (no terminal/repo runtime in web agent environment; previously verified by Primary at 43/43 passing) |
+| V2 | React v2 component & integration suite (`src/App.test.jsx`) | `npm run test:ui` (`vitest run`) | **UNEXECUTED** (requires local `npm install` + Vitest/jsdom in primary workspace) |
+| V3 | Source hygiene & zero-network static scan (`src/hygiene.test.js`) | `npm run test:ui` (`vitest run`) | **UNEXECUTED** (requires local Vitest execution in primary workspace) |
+| V4 | Production Vite bundle & CSP meta injection | `npm run build` (`vite build`) | **UNEXECUTED** (requires local Vite installation in primary workspace) |
+| V5 | Local preview server & manual browser/accessibility check | `npm run preview` (`vite preview --host 127.0.0.1 --port 4173 --strictPort`) | **UNEXECUTED** (requires local browser inspection in primary workspace) |
+

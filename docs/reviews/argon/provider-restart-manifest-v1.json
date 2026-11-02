@@ -1,0 +1,132 @@
+{
+  "task": "8h6",
+  "live_calls": 0,
+  "part2_requires_reviewed_part1_supplement": true,
+  "sources": [
+    {
+      "path": "docs/reviews/fasttrack-context-v1.md",
+      "bytes": 3598,
+      "sha256": "eee7f387a8a34975b769203216ba5eaf32c831825ab2b9acd824e52cb205ac83"
+    },
+    {
+      "path": "docs/integration-research-2026-10-22.md",
+      "bytes": 2499,
+      "sha256": "6a72d1a0798059ffbec40e1c8efbeaf1667c4ebef3af4c0e5c9172ee67850a0a"
+    },
+    {
+      "path": "configs/models.yaml",
+      "bytes": 1414,
+      "sha256": "2f1db2482670ef16d82ada92a544d9906395bbd62269adc8ee6e15bd3abbe369"
+    },
+    {
+      "path": "pyproject.toml",
+      "bytes": 826,
+      "sha256": "620268cd067067b6f4fbf391c2e39fedcd547a277e95930b45c5bcc20a38d850"
+    },
+    {
+      "path": "dojo/solve/contracts.py",
+      "bytes": 5505,
+      "sha256": "2a503a69d35f9f963e7bace73551c6a40ea42e59bcb130086885afee8b5a9b9a"
+    },
+    {
+      "path": "dojo/solve/agent.py",
+      "bytes": 8702,
+      "sha256": "875fa5e42a5e4150068ff8930113a2ed9b9cf017c6b6905bb7afdde08cf307f2"
+    },
+    {
+      "path": "dojo/solve/configured.py",
+      "bytes": 3170,
+      "sha256": "8d66b8155c3f8a234a80aa3dc78b1af75b3a72560315f430032138b1a17fccf0"
+    },
+    {
+      "path": "dojo/solve/run_settings.py",
+      "bytes": 4281,
+      "sha256": "6f3d072a28b1d7091e4a7861d5edd607c23d7aeb4fe2aba5aaf5f4546ea6cf94"
+    },
+    {
+      "path": "dojo/solve/model.py",
+      "bytes": 2281,
+      "sha256": "deacbacb8d7921eaac545e68981010d870e34efa8d84a12e1fbc75667d83d201"
+    },
+    {
+      "path": "dojo/solve/sandbox.py",
+      "bytes": 2751,
+      "sha256": "c4f2f59b64b8ba4cfd9bdace4fb972586696c06c1e958bcbd4138292c3f4fbe9"
+    },
+    {
+      "path": "dojo/store/credits.py",
+      "bytes": 10637,
+      "sha256": "11d44ece7e5f5704c5f1434afa3397c60b367a44ca7c8de13b205b3fafa9f9d6"
+    },
+    {
+      "path": "dojo/store/records.py",
+      "bytes": 13287,
+      "sha256": "1d9e8dcaa67a2c8c6d2e474856e4380403c003e2d8a713313bc1ef939d4dcf15"
+    },
+    {
+      "path": "dojo/store/identity.py",
+      "bytes": 26481,
+      "sha256": "42acc8f7cddad1b81aa4c4d7f8e58d7a27fa914440f41348f6b69329ad4bd9c3"
+    },
+    {
+      "path": "dojo/store/schema_v1.py",
+      "bytes": 8184,
+      "sha256": "81618419321e36fc97f171dcdb9298c3bfbab3606620d1ed040f9c639b04436a"
+    },
+    {
+      "path": "dojo/store/schema_v2.py",
+      "bytes": 2166,
+      "sha256": "b676b74c7de608d519cc38bb357951a0776c0033d35b8fa19e72dc4592e7beb6"
+    },
+    {
+      "path": "dojo/store/schemas.py",
+      "bytes": 2318,
+      "sha256": "d54eb307a4739df8bc942e9f0a2269738a4eeea7c5516ab64790dc50c6fb5027"
+    },
+    {
+      "path": "tests/test_credits.py",
+      "bytes": 5965,
+      "sha256": "ec4037b36deb4478b5fcc3787bd39795bfdd86e5a61065c4ce06964e5ec429bc"
+    },
+    {
+      "path": "tests/test_execution_records.py",
+      "bytes": 11170,
+      "sha256": "fff8ef4ee35a1fc83584d72de7c833a544554818518423cb45e4f3fd1694c645"
+    },
+    {
+      "path": "tests/test_configured_solver.py",
+      "bytes": 10100,
+      "sha256": "27aff05fc3a26fe5b51c47d128d6ae83aa1814a50d55e723deabb79ffbccc994"
+    },
+    {
+      "path": "docs/promotional-credit-safety.md",
+      "bytes": 4134,
+      "sha256": "17f4f7279c0e1571b331a8196be6d9bd9c6cbb00c8c2069760835eeb34d6d95e"
+    },
+    {
+      "path": "docs/execution-records.md",
+      "bytes": 5934,
+      "sha256": "2fc449b3e59e2cbed86298ec161723641f03c489feb0c70fbf65903e8484b740"
+    },
+    {
+      "path": "tests/test_credit_precision.py",
+      "bytes": 5978,
+      "sha256": "b72b208a4ad68f0533c6e5364b756d1ce5389b8c1ce721365fe1b815b347ca90"
+    },
+    {
+      "path": "docs/reviews/argon/provider-integration-intake-notes-v1.md",
+      "bytes": 3895,
+      "sha256": "66d06314a889fd1bb9e898a47c02403db9dae81cb4cf10f8363cc2617accd908"
+    }
+  ],
+  "packets": {
+    "provider-restart-part1-packet-v1.md": {
+      "bytes": 177568,
+      "sha256": "cfc49f15a907c203da84a702d9ce463073f95c4bbae9bc77e9bbef1d37c17f68"
+    },
+    "provider-restart-part2-packet-v1.md": {
+      "bytes": 177654,
+      "sha256": "fcae6dff517b70c26f752f55daec034af520a615f1d9d2396b06e7e8277d9045"
+    }
+  }
+}

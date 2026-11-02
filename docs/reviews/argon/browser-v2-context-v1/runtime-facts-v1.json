@@ -1,0 +1,22 @@
+{
+  "FOUNDATION_METHOD_VERSION": "dojo-stats-foundation-v1",
+  "MAX_COST_NANO_USD": "1000000000000000000",
+  "MAX_COUNT_VALUE": "1000000000000",
+  "QUANTILE_METHOD": "hyndman_fan_type_7_linear",
+  "actual_dashboard_files": [
+    "dashboard/README.md"
+  ],
+  "browser_react_build_acceptance": "UNEXECUTED",
+  "git_head_at_preparation": "c671e05094c1036fd3034b84f04d4e6b17c31c8d",
+  "observed_primary_node": "v24.12.0",
+  "observed_primary_python": "3.12.7",
+  "prepared_date": "2026-10-31",
+  "primary_offline_suite": {
+    "passed": 1338,
+    "seconds": 66.62,
+    "skipped": 1
+  },
+  "proposal_package_versions_are_not_a_lockfile": true,
+  "real_provider_calls": 0,
+  "working_tree_includes_uncommitted_sources": true
+}

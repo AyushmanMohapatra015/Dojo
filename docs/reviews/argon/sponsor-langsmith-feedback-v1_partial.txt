@@ -1,0 +1,791 @@
+"""Optional, disabled-by-default hosted LangSmith export of synthetic aggregates.
+
+Design contract (see docs/sponsor-langsmith-proposal-v1.md):
+
+* Only an exact, revalidated ``TraceEvent`` can be exported. The existing
+  ``build_run_operations`` mapping is reused and then compared field-for-field
+  with an independently rebuilt allowlisted payload, so codec drift is refused.
+* No LangSmith SDK, no environment reads, no clock reads, no global tracing.
+  HTTP is behind an injected ``Transport``; this module performs no I/O except
+  its own local SQLite ledger.
+* Admission is durable and fail-closed: the event slot and every HTTP attempt
+  are committed to the ledger BEFORE anything is sent. Retries do not exist.
+  POST is sent at most once per run; PATCH only once automatically plus an
+  explicit, separately authorized ``resume_patch``.
+* Every outward-facing string (receipt reasons, ledger text) comes from fixed
+  enums. Exception messages, response bodies, headers and URLs are never stored
+  or returned.
+* A local cap is not an account-wide hard spending cap. Deleting the ledger
+  file defeats it; the append-only triggers only catch accidental edits.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+import sqlite3
+from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from pathlib import Path
+from collections.abc import Iterator
+from typing import Any, Protocol
+
+from dojo.providers.langsmith_account import EndpointSelection, ExportAuthorization
+from dojo.providers.langsmith_codec import build_run_operations
+from dojo.providers.trace_events import TraceEvent
+
+ADAPTER_ID = "dojo-langsmith-export-v1"
+MAX_REQUEST_BYTES = 4_096
+LEDGER_SCHEMA_VERSION = 1
+
+STATE_RESERVED = "reserved"
+STATE_POST_SENDING = "post_sending"
+STATE_POST_ACCEPTED = "post_accepted"
+STATE_POST_REJECTED = "post_rejected"
+STATE_POST_UNKNOWN = "post_unknown"
+STATE_PATCH_SENDING = "patch_sending"
+STATE_PATCH_ACCEPTED = "patch_accepted"
+STATE_PATCH_REJECTED = "patch_rejected"
+STATE_PATCH_UNKNOWN = "patch_unknown"
+
+RUN_STATES = frozenset(
+    {
+        STATE_RESERVED,
+        STATE_POST_SENDING,
+        STATE_POST_ACCEPTED,
+        STATE_POST_REJECTED,
+        STATE_POST_UNKNOWN,
+        STATE_PATCH_SENDING,
+        STATE_PATCH_ACCEPTED,
+        STATE_PATCH_REJECTED,
+        STATE_PATCH_UNKNOWN,
+    }
+)
+# A receipt never reports an in-flight state; those only exist inside the ledger.
+RECEIPT_STATES = (RUN_STATES - {STATE_POST_SENDING, STATE_PATCH_SENDING}) | {
+    "disabled",
+    "refused",
+}
+
+# Fixed, sanitized reason codes; nothing else may appear in receipts/ledger.
+REASONS = frozenset(
+    {
+        "none",
+        "disabled",
+        "http_202",
+        "http_rejected",
+        "rate_limited",
+        "http_conflict",
+        "http_unexpected_status",
+        "timeout",
+        "network_error",
+        "bad_transport_result",
+        "interrupted",
+        "preflight_failed",
+        "duplicate_event",
+        "duplicate_run",
+        "event_cap_reached",
+        "attempt_cap_reached",
+        "not_resumable",
+        "payload_mismatch",
+    }
+)
+
+_PATCH_ELIGIBLE = frozenset({STATE_POST_ACCEPTED, STATE_PATCH_UNKNOWN, STATE_PATCH_REJECTED})
+_POST_REJECT_STATUSES = frozenset({400, 403, 422})
+_PATCH_REJECT_STATUSES = frozenset({400, 403, 404, 422})
+
+_RUN_ID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")
+_DIGEST_RE = re.compile(r"[0-9a-f]{64}")
+
+_BASE_METADATA = {"evidence_kind": "synthetic", "payload_scope": "aggregate-only-v1"}
+_POST_KEYS = frozenset(
+    {"id", "name", "run_type", "inputs", "start_time", "session_name", "extra"}
+)
+
+
+# --------------------------------------------------------------------------
+# Transport contract (concrete HTTPS transport lives in langsmith_transport)
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class TransportRequest:
+    method: str
+    path: str
+    body: bytes
+    timeout_s: float
+
+    def __post_init__(self) -> None:
+        if type(self.method) is not str or self.method not in {"POST", "PATCH"}:
+            raise ValueError("Unsupported transport method")
+        if type(self.path) is not str or re.fullmatch(r"/[A-Za-z0-9/_.-]{1,120}", self.path) is None:
+            raise ValueError("Invalid transport path")
+        if type(self.body) is not bytes or not (2 <= len(self.body) <= MAX_REQUEST_BYTES):
+            raise ValueError("Transport body must be bounded bytes")
+        if type(self.timeout_s) is not float or not (0.0 < self.timeout_s <= 10.0):
+            raise ValueError("Invalid transport timeout")
+
+
+@dataclass(frozen=True)
+class TransportResult:
+    """Outcome of one send. Carries an integer status only: never a body."""
+
+    outcome: str
+    status: int | None = None
+
+    def __post_init__(self) -> None:
+        if type(self.outcome) is not str or self.outcome not in {
+            "response",
+            "timeout",
+            "network_error",
+        }:
+            raise ValueError("Invalid transport outcome")
+        if self.outcome == "response":
+            if type(self.status) is not int or not (100 <= self.status <= 599):
+                raise ValueError("Response outcome requires an HTTP status")
+        elif self.status is not None:
+            raise ValueError("Non-response outcome cannot carry a status")
+
+
+class Transport(Protocol):
+    """One request per ``send``; no retries, redirects or body reads allowed."""
+
+    @property
+    def endpoint(self) -> EndpointSelection: ...
+
+    def preflight(self) -> None:
+        """Validate local configuration without any network I/O; raise on failure."""
+
+    def send(self, request: TransportRequest) -> TransportResult: ...
+
+
+# --------------------------------------------------------------------------
+# Payload construction and verification (pure)
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class PreparedExport:
+    run_id: str
+    event_digest: str
+    ops_digest: str
+    post_body: bytes
+    patch_body: bytes
+
+
+def _json_bytes(value: Any) -> bytes:
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False
+    ).encode("ascii")
+
+
+def _parse_aware(text: Any) -> datetime:
+    if type(text) is not str:
+        raise ValueError("Codec timestamp must be text")
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        raise ValueError("Codec timestamp is invalid") from None
+    if parsed.tzinfo is None:
+        raise ValueError("Codec timestamp must be timezone-aware")
+    return parsed
+
+
+def prepare_export(
+    event: TraceEvent, started_at: datetime, authorization: ExportAuthorization
+) -> PreparedExport:
+    """Rebuild and verify the exact wire payloads; raise ValueError/TypeError on any drift.
+
+    ``started_at`` must be a genuine timezone-aware host timestamp supplied by the
+    caller. This function never reads a clock and never invents durations: the
+    span length is the synthetic event's own ``elapsed_us`` field.
+    """
+    if type(event) is not TraceEvent:
+        raise TypeError("Exact aggregate TraceEvent required")
+    if type(authorization) is not ExportAuthorization:
+        raise TypeError("Exact ExportAuthorization required")
+    checked = TraceEvent.from_dict(event.to_dict())  # full revalidation
+    raw = build_run_operations(checked, started_at)
+    if type(raw) is not tuple or len(raw) != 2:
+        raise ValueError("Codec output shape changed")
+    post_raw, patch_raw = raw
+    for op, method in ((post_raw, "POST"), (patch_raw, "PATCH")):
+        if type(op) is not dict or set(op) != {"method", "path", "body"}:
+            raise ValueError("Codec operation shape changed")
+        if op["method"] != method or type(op["body"]) is not dict:
+            raise ValueError("Codec operation shape changed")
+    post_codec, patch_codec = post_raw["body"], patch_raw["body"]
+
+    run_id = post_codec.get("id")
+    if type(run_id) is not str or _RUN_ID_RE.fullmatch(run_id) is None:
+        raise ValueError("Codec run id is not a lowercase UUID4")
+    if post_raw["path"] != "/runs" or patch_raw["path"] != "/runs/" + run_id:
+        raise ValueError("Codec paths changed")
+
+    start = _parse_aware(post_codec.get("start_time"))
+    end = _parse_aware(patch_codec.get("end_time"))
+    if end - start != timedelta(microseconds=checked.elapsed_us):
+        raise ValueError("Codec duration differs from the event elapsed_us")
+
+    outputs = {
+        key: str(value) if type(value) is int else value
+        for key, value in checked.to_dict().items()
+    }
+    post_body = {
+        "id": run_id,
+        "name": "dojo-" + checked.stage,
+        "run_type": "chain",
+        "inputs": {},
+        "start_time": post_codec["start_time"],
+        "session_name": authorization.project_name,
+        "tags": [
+            "dojo-synthetic",
+            "stage-" + checked.stage,
+            "status-" + checked.status,
+        ],
+        "extra": {
+            "metadata": {
+                **_BASE_METADATA,
+                "adapter": ADAPTER_ID,
+                "duration_basis": "synthetic-event-elapsed_us",
+                "start_time_basis": "caller-supplied-host-timestamp",
+            }
+        },
+    }
+    patch_body = {"outputs": outputs, "end_time": patch_codec["end_time"]}
+
+    # Drift guard: whatever the codec emits must match the allowlisted contract.
+    if set(post_codec) != _POST_KEYS:
+        raise ValueError("Codec create body keys changed")
+    for key in ("id", "name", "run_type", "inputs", "start_time"):
+        if post_codec[key] != post_body[key]:
+            raise ValueError("Codec create body drifted from the export contract")
+    if post_codec["extra"] != {"metadata": _BASE_METADATA}:
+        raise ValueError("Codec metadata drifted from the export contract")
+    if patch_codec != patch_body:
+        raise ValueError("Codec update body drifted from the export contract")
+
+    post_bytes, patch_bytes = _json_bytes(post_body), _json_bytes(patch_body)
+    if len(post_bytes) > MAX_REQUEST_BYTES or len(patch_bytes) > MAX_REQUEST_BYTES:
+        raise ValueError("Export payload exceeds bound")
+    event_digest = hashlib.sha256(
+        b"dojo-langsmith-event-v1\0" + checked.to_json_bytes()
+    ).hexdigest()
+    ops_digest = hashlib.sha256(post_bytes + b"\0" + patch_bytes).hexdigest()
+    return PreparedExport(run_id, event_digest, ops_digest, post_bytes, patch_bytes)
+
+
+def classify_response(step: str, result: Any) -> tuple[str, str, int | None]:
+    """Map one transport result to (run state, reason, status). Never raises."""
+    post = step == "post"
+    unknown = STATE_POST_UNKNOWN if post else STATE_PATCH_UNKNOWN
+    if type(result) is not TransportResult:
+        return unknown, "bad_transport_result", None
+    if result.outcome == "timeout":
+        return unknown, "timeout", None
+    if result.outcome == "network_error":
+        return unknown, "network_error", None
+    status = result.status
+    if status == 202:
+        return (STATE_POST_ACCEPTED if post else STATE_PATCH_ACCEPTED), "http_202", 202
+    rejected = STATE_POST_REJECTED if post else STATE_PATCH_REJECTED
+    if status == 429:
+        return rejected, "rate_limited", status
+    if status in (_POST_REJECT_STATUSES if post else _PATCH_REJECT_STATUSES):
+        return rejected, "http_rejected", status
+    if status == 409:
+        return unknown, "http_conflict", status
+    return unknown, "http_unexpected_status", status
+
+
+# --------------------------------------------------------------------------
+# Durable local admission ledger
+# --------------------------------------------------------------------------
+
+
+class LedgerError(Exception):
+    """Ledger failure. Messages are fixed strings; sqlite text is never exposed."""
+
+
+_STATE_LIST = ",".join("'" + s + "'" for s in sorted(RUN_STATES))
+_REASON_LIST = ",".join("'" + s + "'" for s in sorted(REASONS))
+
+_SCHEMA = (
+    """CREATE TABLE authorization (
+        singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+        authorization_id TEXT NOT NULL,
+        region TEXT NOT NULL,
+        runs_path TEXT NOT NULL,
+        project_name TEXT NOT NULL,
+        max_events INTEGER NOT NULL,
+        max_attempts INTEGER NOT NULL,
+        timeout_s TEXT NOT NULL
+    )""",
+    f"""CREATE TABLE export_runs (
+        run_id TEXT PRIMARY KEY,
+        event_digest TEXT NOT NULL UNIQUE,
+        ops_digest TEXT NOT NULL,
+        state TEXT NOT NULL CHECK (state IN ({_STATE_LIST})),
+        reason TEXT NOT NULL CHECK (reason IN ({_REASON_LIST})),
+        post_attempts INTEGER NOT NULL DEFAULT 0 CHECK (post_attempts BETWEEN 0 AND 1),
+        patch_attempts INTEGER NOT NULL DEFAULT 0 CHECK (patch_attempts BETWEEN 0 AND 2),
+        post_status INTEGER,
+        patch_status INTEGER
+    )""",
+    "CREATE TRIGGER no_delete_runs BEFORE DELETE ON export_runs "
+    "BEGIN SELECT RAISE(ABORT, 'append-only'); END",
+    "CREATE TRIGGER no_delete_authorization BEFORE DELETE ON authorization "
+    "BEGIN SELECT RAISE(ABORT, 'append-only'); END",
+    "CREATE TRIGGER no_update_authorization BEFORE UPDATE ON authorization "
+    "BEGIN SELECT RAISE(ABORT, 'append-only'); END",
+    "CREATE TRIGGER no_update_identity "
+    "BEFORE UPDATE OF run_id, event_digest, ops_digest ON export_runs "
+    "BEGIN SELECT RAISE(ABORT, 'append-only'); END",
+)
+
+
+class ExportLedger:
+    """SQLite ledger binding one file to exactly one ExportAuthorization.
+
+    No reset, delete or cap-raising API exists. Re-opening with any different
+    authorization raises LedgerError. Rows stuck in a ``*_sending`` state (a
+    crash during a send) are converted to ``*_unknown`` on open, because the
+    request may have reached the service; they are never replayed.
+    """
+
+    def __init__(self, path: Path, authorization: ExportAuthorization) -> None:
+        if not isinstance(path, Path) or path.name in {"", ":memory:"}:
+            raise ValueError("A durable file Path is required (no in-memory ledger)")
+        if not path.parent.is_dir() or path.is_dir():
+            raise ValueError("Ledger parent directory must exist and path must be a file")
+        if type(authorization) is not ExportAuthorization:
+            raise TypeError("Exact ExportAuthorization required")
+        self._auth = authorization
+        self._conn: sqlite3.Connection | None = None
+        try:
+            self._conn = sqlite3.connect(str(path), timeout=5.0, isolation_level=None)
+            self._conn.execute("PRAGMA synchronous=FULL")
+        except sqlite3.Error:
+            self._discard()
+            raise LedgerError("ledger unavailable") from None
+        try:
+            with self._tx() as conn:
+                tables = conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                ).fetchall()
+                if not tables:
+                    self._create(conn)
+                else:
+                    self._verify(conn)
+                conn.execute(
+                    "UPDATE export_runs SET state=?, reason='interrupted' WHERE state=?",
+                    (STATE_POST_UNKNOWN, STATE_POST_SENDING),
+                )
+                conn.execute(
+                    "UPDATE export_runs SET state=?, reason='interrupted' WHERE state=?",
+                    (STATE_PATCH_UNKNOWN, STATE_PATCH_SENDING),
+                )
+        except BaseException:
+            self._discard()
+            raise
+
+    @property
+    def authorization(self) -> ExportAuthorization:
+        return self._auth
+
+    def __enter__(self) -> ExportLedger:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.close()
+
+    def __repr__(self) -> str:
+        return "ExportLedger()"
+
+    def close(self) -> None:
+        self._discard()
+
+    def _discard(self) -> None:
+        conn, self._conn = self._conn, None
+        if conn is not None:
+            try:
+                conn.close()
+            except sqlite3.Error:
+                pass
+
+    @contextmanager
+    def _tx(self) -> Iterator[sqlite3.Connection]:
+        conn = self._conn
+        if conn is None:
+            raise LedgerError("ledger closed")
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            try:
+                yield conn
+                conn.execute("COMMIT")
+            except BaseException:
+                try:
+                    conn.execute("ROLLBACK")
+                except sqlite3.Error:
+                    pass
+                raise
+        except sqlite3.Error:
+            raise LedgerError("ledger operation failed") from None
+
+    def _create(self, conn: sqlite3.Connection) -> None:
+        for statement in _SCHEMA:
+            conn.execute(statement)
+        record = self._auth.as_record()
+        conn.execute(
+            "INSERT INTO authorization VALUES (1, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                record["authorization_id"],
+                record["region"],
+                record["runs_path"],
+                record["project_name"],
+                record["max_events"],
+                record["max_attempts"],
+                record["timeout_s"],
+            ),
+        )
+        conn.execute(f"PRAGMA user_version={LEDGER_SCHEMA_VERSION}")
+
+    def _verify(self, conn: sqlite3.Connection) -> None:
+        if conn.execute("PRAGMA user_version").fetchone()[0] != LEDGER_SCHEMA_VERSION:
+            raise LedgerError("ledger schema mismatch")
+        row = conn.execute(
+            "SELECT authorization_id, region, runs_path, project_name, max_events, "
+            "max_attempts, timeout_s FROM authorization WHERE singleton=1"
+        ).fetchone()
+        record = self._auth.as_record()
+        expected = (
+            record["authorization_id"],
+            record["region"],
+            record["runs_path"],
+            record["project_name"],
+            record["max_events"],
+            record["max_attempts"],
+            record["timeout_s"],
+        )
+        if row is None or tuple(row) != expected:
+            raise LedgerError("ledger is bound to a different authorization")
+
+    @staticmethod
+    def _attempts_used(conn: sqlite3.Connection) -> int:
+        value = conn.execute(
+            "SELECT COALESCE(SUM(post_attempts + patch_attempts), 0) FROM export_runs"
+        ).fetchone()[0]
+        return int(value)
+
+    def totals(self) -> tuple[int, int]:
+        """Return (events_used, attempts_used)."""
+        with self._tx() as conn:
+            events = int(conn.execute("SELECT COUNT(*) FROM export_runs").fetchone()[0])
+            return events, self._attempts_used(conn)
+
+    def row(self, run_id: str) -> dict[str, Any] | None:
+        with self._tx() as conn:
+            found = conn.execute(
+                "SELECT run_id, event_digest, ops_digest, state, reason, post_attempts, "
+                "patch_attempts, post_status, patch_status FROM export_runs WHERE run_id=?",
+                (run_id,),
+            ).fetchone()
+        if found is None:
+            return None
+        keys = (
+            "run_id",
+            "event_digest",
+            "ops_digest",
+            "state",
+            "reason",
+            "post_attempts",
+            "patch_attempts",
+            "post_status",
+            "patch_status",
+        )
+        return dict(zip(keys, found, strict=True))
+
+    def admit(self, run_id: str, event_digest: str, ops_digest: str) -> str | None:
+        """Reserve the single event slot. Return a refusal reason, or None if admitted."""
+        if type(run_id) is not str or _RUN_ID_RE.fullmatch(run_id) is None:
+            raise ValueError("Invalid run id")
+        if type(event_digest) is not str or _DIGEST_RE.fullmatch(event_digest) is None:
+            raise ValueError("Invalid event digest")
+        if type(ops_digest) is not str or _DIGEST_RE.fullmatch(ops_digest) is None:
+            raise ValueError("Invalid operations digest")
+        with self._tx() as conn:
+            if conn.execute(
+                "SELECT 1 FROM export_runs WHERE event_digest=?", (event_digest,)
+            ).fetchone():
+                return "duplicate_event"
+            if conn.execute("SELECT 1 FROM export_runs WHERE run_id=?", (run_id,)).fetchone():
+                return "duplicate_run"
+            used = int(conn.execute("SELECT COUNT(*) FROM export_runs").fetchone()[0])
+            if used >= self._auth.max_events:
+                return "event_cap_reached"
+            conn.execute(
+                "INSERT INTO export_runs (run_id, event_digest, ops_digest, state, reason) "
+                "VALUES (?, ?, ?, ?, 'none')",
+                (run_id, event_digest, ops_digest, STATE_RESERVED),
+            )
+            return None
+
+    def begin_send(self, run_id: str, step: str) -> str | None:
+        """Consume one attempt BEFORE sending. Return a refusal reason, or None."""
+        if step not in {"post", "patch"}:
+            raise ValueError("Unknown send step")
+        with self._tx() as conn:
+            found = conn.execute(
+                "SELECT state, post_attempts, patch_attempts FROM export_runs WHERE run_id=?",
+                (run_id,),
+            ).fetchone()
+            if found is None:
+                return "not_resumable"
+            state, post_attempts, patch_attempts = found
+            if step == "post":
+                if state != STATE_RESERVED or post_attempts != 0:
+                    return "not_resumable"
+            elif state not in _PATCH_ELIGIBLE:
+                return "not_resumable"
+            if self._attempts_used(conn) >= self._auth.max_attempts:
+                return "attempt_cap_reached"
+            if step == "post":
+                conn.execute(
+                    "UPDATE export_runs SET state=?, post_attempts=1 WHERE run_id=?",
+                    (STATE_POST_SENDING, run_id),
+                )
+            else:
+                conn.execute(
+                    "UPDATE export_runs SET state=?, patch_attempts=? WHERE run_id=?",
+                    (STATE_PATCH_SENDING, patch_attempts + 1, run_id),
+                )
+            return None
+
+    def finish_send(
+        self, run_id: str, step: str, state: str, reason: str, status: int | None
+    ) -> None:
+        if state not in RUN_STATES or reason not in REASONS:
+            raise ValueError("Unknown state or reason")
+        if status is not None and (type(status) is not int or not (100 <= status <= 599)):
+            raise ValueError("Invalid status")
+        sending = STATE_POST_SENDING if step == "post" else STATE_PATCH_SENDING
+        with self._tx() as conn:
+            found = conn.execute(
+                "SELECT state FROM export_runs WHERE run_id=?", (run_id,)
+            ).fetchone()
+            if found is None or found[0] != sending:
+                raise LedgerError("ledger state conflict")
+            if step == "post":
+                conn.execute(
+                    "UPDATE export_runs SET state=?, reason=?, post_status=? WHERE run_id=?",
+                    (state, reason, status, run_id),
+                )
+            else:
+                conn.execute(
+                    "UPDATE export_runs SET state=?, reason=?, patch_status=? WHERE run_id=?",
+                    (state, reason, status, run_id),
+                )
+
+
+# --------------------------------------------------------------------------
+# Exporter
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ExportReceipt:
+    """Local, sanitized outcome. Contains no payload text and no service text."""
+
+    state: str
+    reason: str
+    run_id: str | None
+    post_status: int | None
+    patch_status: int | None
+    attempts_used: int
+    attempts_remaining: int
+
+    def __post_init__(self) -> None:
+        if type(self.state) is not str or self.state not in RECEIPT_STATES:
+            raise ValueError("Invalid receipt state")
+        if type(self.reason) is not str or self.reason not in REASONS:
+            raise ValueError("Invalid receipt reason")
+        if self.run_id is not None and (
+            type(self.run_id) is not str or _RUN_ID_RE.fullmatch(self.run_id) is None
+        ):
+            raise ValueError("Invalid receipt run id")
+        for name in ("post_status", "patch_status"):
+            value = getattr(self, name)
+            if value is not None and (type(value) is not int or not (100 <= value <= 599)):
+                raise ValueError("Invalid receipt status")
+        for name in ("attempts_used", "attempts_remaining"):
+            value = getattr(self, name)
+            if type(value) is not int or value < 0:
+                raise ValueError("Invalid receipt counter")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "attempts_remaining": self.attempts_remaining,
+            "attempts_used": self.attempts_used,
+            "patch_status": self.patch_status,
+            "post_status": self.post_status,
+            "reason": self.reason,
+            "run_id": self.run_id,
+            "state": self.state,
+        }
+
+
+class LangSmithExporter:
+    """Disabled-by-default exporter. One event per call; no retries, ever."""
+
+    def __init__(
+        self,
+        *,
+        enabled: bool = False,
+        ledger: ExportLedger | None = None,
+        transport: Transport | None = None,
+    ) -> None:
+        if type(self) is not LangSmithExporter:
+            raise TypeError("LangSmithExporter subclasses are not permitted")
+        if type(enabled) is not bool:
+            raise TypeError("enabled must be an exact bool")
+        self._enabled = enabled
+        self._ledger: ExportLedger | None = None
+        self._transport: Transport | None = None
+        if enabled:
+            if type(ledger) is not ExportLedger or transport is None:
+                raise ValueError("Enabled exporter requires a ledger and a transport")
+            if transport.endpoint != ledger.authorization.endpoint:
+                raise ValueError("Transport endpoint differs from the authorized endpoint")
+            self._ledger, self._transport = ledger, transport
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+    def __repr__(self) -> str:
+        return f"LangSmithExporter(enabled={self._enabled})"
+
+    def export_event(self, event: TraceEvent, started_at: datetime) -> ExportReceipt:
+        """POST then PATCH one synthetic event, each at most once."""
+        if not self._enabled:
+            return ExportReceipt("disabled", "disabled", None, None, None, 0, 0)
+        ledger, authorization = self._require()
+        prepared = prepare_export(event, started_at, authorization)
+        refusal = self._preflight()
+        if refusal is not None:
+            return self._refused(refusal, None)
+        refusal = ledger.admit(prepared.run_id, prepared.event_digest, prepared.ops_digest)
+        if refusal is not None:
+            return self._refused(refusal, None)
+        refusal = self._send_step(prepared, "post")
+        if refusal is not None:
+            return self._receipt_for(prepared.run_id, refusal)
+        found = ledger.row(prepared.run_id)
+        if found is None or found["state"] != STATE_POST_ACCEPTED:
+            return self._receipt_for(prepared.run_id)
+        refusal = self._send_step(prepared, "patch")
+        return self._receipt_for(prepared.run_id, refusal)
+
+    def resume_patch(self, event: TraceEvent, started_at: datetime) -> ExportReceipt:
+        """Explicitly re-send only the PATCH for an already-POSTed run.
+
+        Never sends a POST. Requires the identical event and timestamp (checked by
+        digest) and a remaining attempt in the owner-approved budget.
+        """
+        if not self._enabled:
+            return ExportReceipt("disabled", "disabled", None, None, None, 0, 0)
+        ledger, authorization = self._require()
+        prepared = prepare_export(event, started_at, authorization)
+        found = ledger.row(prepared.run_id)
+        if found is None:
+            return self._refused("not_resumable", None)
+        if found["ops_digest"] != prepared.ops_digest:
+            return self._refused("payload_mismatch", None)
+        refusal = self._preflight()
+        if refusal is not None:
+            return self._refused(refusal, None)
+        refusal = self._send_step(prepared, "patch")
+        return self._receipt_for(prepared.run_id, refusal)
+
+    # -- internals ---------------------------------------------------------
+
+    def _require(self) -> tuple[ExportLedger, ExportAuthorization]:
+        if self._ledger is None or self._transport is None:
+            raise LedgerError("exporter is not configured")
+        return self._ledger, self._ledger.authorization
+
+    def _wire(self) -> Transport:
+        if self._transport is None:
+            raise LedgerError("exporter is not configured")
+        return self._transport
+
+    def _preflight(self) -> str | None:
+        transport = self._wire()
+        try:
+            transport.preflight()
+        except Exception:
+            return "preflight_failed"
+        return None
+
+    def _send_step(self, prepared: PreparedExport, step: str) -> str | None:
+        """Send one request. Return a refusal reason if nothing was sent, else None."""
+        ledger, authorization = self._require()
+        transport = self._wire()
+        refusal = ledger.begin_send(prepared.run_id, step)
+        if refusal is not None:
+            return refusal
+        runs_path = authorization.endpoint.runs_path
+        if step == "post":
+            request = TransportRequest(
+                "POST", runs_path, prepared.post_body, authorization.timeout_s
+            )
+        else:
+            request = TransportRequest(
+                "PATCH",
+                runs_path + "/" + prepared.run_id,
+                prepared.patch_body,
+                authorization.timeout_s,
+            )
+        raised = False
+        result: Any = None
+        try:
+            result = transport.send(request)
+        except Exception:
+            # The request may have left the host. Exception text is discarded.
+            raised = True
+        if raised:
+            state = STATE_POST_UNKNOWN if step == "post" else STATE_PATCH_UNKNOWN
+            outcome = (state, "network_error", None)
+        else:
+            outcome = classify_response(step, result)
+        ledger.finish_send(prepared.run_id, step, *outcome)
+        return None
+
+    def _receipt_for(self, run_id: str, refusal: str | None = None) -> ExportReceipt:
+        ledger, authorization = self._require()
+        found = ledger.row(run_id)
+        _, used = ledger.totals()
+        remaining = max(authorization.max_attempts - used, 0)
+        if found is None:
+            return ExportReceipt("refused", "not_resumable", None, None, None, used, remaining)
+        state = found["state"]
+        if state in {STATE_POST_SENDING, STATE_PATCH_SENDING}:
+            raise LedgerError("ledger state conflict")
+        return ExportReceipt(
+            state,
+            refusal if refusal is not None else found["reason"],
+            run_id,
+            found["post_status"],
+            found["patch_status"],
+            used,
+            remaining,
+        )
+
+    def _refused(self, reason: str, run_id: str | None) -> ExportReceipt:
+        ledger, authorization = self._require()
+        _, used = ledger.totals()
+        remaining = max(authorization.max_attempts - used, 0)
+        return ExportReceipt("refused", reason, run_id, None, None, used, remaining)

@@ -1,0 +1,228 @@
+--- a/dashboard/src/App.jsx
++++ b/dashboard/src/App.jsx
+@@ -30,6 +30,7 @@
+ } from './v2/derive.mjs';
++import ExplorerNavigation from './components/ExplorerNavigation.jsx';
+ import bundledExplorerFixture from './fixtures/synthetic-v2.explorer.json';
+ import bundledDiagnosticFixture from './fixtures/synthetic-v2.family-diagnostic.json';
+ 
+@@ -179,11 +180,20 @@ function DatasetControls({
+   return (
+-    <section className="panel" aria-labelledby="dataset-heading">
+-      <h2 id="dataset-heading">Dataset and local file controls</h2>
+-      <p className="dataset-active">
+-        Active explorer view: <strong>{sourceLabel}</strong>
+-        {' · '}
+-        Paired family diagnostic: <strong>{diagnosticLabel}</strong>
+-      </p>
+-      <div className="controls">
++    <div className="dataset-controls-wrapper">
++      <p className="dataset-status-line">
++        <strong>{sourceLabel}</strong>
++        {diagnosticLabel && diagnosticLabel !== 'None (unbound)' ? (
++          <span className="dataset-status-line__diag">
++            {' · '}
++            {diagnosticLabel}
++          </span>
++        ) : null}
++      </p>
++      <details className="panel dataset-details">
++        <summary className="dataset-details__summary">Change dataset</summary>
++        <div className="dataset-details__body">
++      <div className="controls">
+         <button type="button" className="btn" onClick={onLoadDemoWithDiagnostic}>
+           Load bundled demo (explorer + family diagnostic)
+         </button>
+@@ -234,7 +244,9 @@ function DatasetControls({
+       </div>
+-    </section>
++        </div>
++      </details>
++    </div>
+   );
+ }
+ 
+@@ -270,6 +280,64 @@ function SyntheticBanner({ bannerText }) {
+ }
+ 
++function DatasetRestrictionBar({ derived }) {
++  const { scope } = derived;
++  if (!scope.isBlocked && !scope.isCostIncomplete) return null;
++  return (
++    <div className="dataset-restriction-bar">
++      {scope.isBlocked ? (
++        <div
++          className="banner-state banner-blocked"
++          role="region"
++          aria-label="Panel audit blocked notice"
++        >
++          <strong>Panel audit status: BLOCKED ({scope.blockedReason}).</strong>{' '}
++          Configuration headline metrics, task summaries, Pareto frontiers, bootstrap intervals, and
++          cascades are withheld. No stale headline metrics or partial subset scores are shown.
++        </div>
++      ) : null}
++      {!scope.isBlocked && scope.isCostIncomplete ? (
++        <div
++          className="banner-state banner-cost-incomplete"
++          role="region"
++          aria-label="Cost incomplete notice"
++        >
++          <strong>Summary mode: SUCCESS ONLY (cost_incomplete).</strong>{' '}
++          One or more configurations have missing seed costs. Aggregate cost metrics, Pareto
++          frontiers, bootstrap intervals, and cascades are withheld globally across all
++          configurations and task summaries.
++        </div>
++      ) : null}
++    </div>
++  );
++}
++
++function OverviewSection({ derived }) {
++  const { scope } = derived;
++  return (
++    <section className="panel" aria-labelledby="overview-heading">
++      <h2 id="overview-heading">Overview</h2>
++      <p>
++        This synthetic offline explorer contains{' '}
++        <strong>
++          {scope.evaluatedTaskCount}{' '}
++          {scope.evaluatedTaskCount === 1 ? 'evaluated task' : 'evaluated tasks'}
++        </strong>{' '}
++        across{' '}
++        <strong>
++          {scope.declaredConfigCount}{' '}
++          {scope.declaredConfigCount === 1 ? 'configuration' : 'configurations'}
++        </strong>
++        {'. '}Evidence kind: <code>{scope.evidenceKind}</code>. Eligibility:{' '}
++        <code>{scope.eligibility}</code>. Audit status: <code>{scope.auditStatus}</code>.
++      </p>
++      <p className="hint">
++        Construction inventory ({scope.constructionCounts.total} total tasks) is informational only
++        and does not equal the evaluated denominator. Synthetic data only — no live provider calls
++        or verified registrations.
++      </p>
++      <p>
++        Use <strong>Compare</strong> to inspect Pareto frontiers, cost metrics and cascade
++        comparisons. Use <strong>Runs</strong> to filter and inspect individual seed-level run
++        records. Use <strong>Method</strong> for bootstrap uncertainty intervals, family
++        sensitivity, and full scope and limitation details.
++      </p>
++    </section>
++  );
++}
++
+ function ScopeAndProvenancePanel({ derived }) {
+ 
+@@ -1185,6 +1247,7 @@ function LimitationsSection({ derived }) {
+ function ExplorerApp() {
+   const initial = useMemo(() => buildBundledState(true), []);
+   const [state, setState] = useState(initial);
++  const [activeView, setActiveView] = useState('overview');
+   const [status, setStatus] = useState({ kind: 'idle', message: '', title: '', codes: [] });
+   const [selectedRowKey, setSelectedRowKey] = useState(null);
+   const [runSectionResetKey, setRunSectionResetKey] = useState(0);
+@@ -1390,27 +1453,63 @@ function ExplorerApp() {
+   const busy = status.kind === 'loading';
+ 
+   return (
+-    <>
+-      <DatasetControls
+-        sourceLabel={state.sourceLabel}
+-        diagnosticLabel={state.diagnosticLabel}
+-        busy={busy}
+-        hasBoundDiagnostic={state.diagnostic !== null}
+-        onResetDemo={() => applyBundledDemo(false)}
+-        onLoadDemoWithDiagnostic={() => applyBundledDemo(true)}
+-        onClearDiagnostic={onClearDiagnostic}
+-        onUploadExplorer={onUploadExplorer}
+-        onUploadDiagnostic={onUploadDiagnostic}
+-      />
+-      <StatusMessages
+-        status={status}
+-        onDismiss={() => setStatus({ kind: 'idle', message: '', title: '', codes: [] })}
+-        onResetDemo={() => applyBundledDemo(true)}
+-      />
+-      <ScopeAndProvenancePanel derived={state.derived} />
+-      <ConfigurationCards derived={state.derived} />
+-      <FrontiersSection derived={state.derived} />
+-      <BootstrapSection view={state.view} derived={state.derived} />
+-      <CascadeSection derived={state.derived} />
+-      <TaskSummariesSection derived={state.derived} />
+-      <RunDetailsSection
+-        key={runSectionResetKey}
+-        derived={state.derived}
+-        selectedRowKey={selectedRowKey}
+-        onSelectRowKey={setSelectedRowKey}
+-      />
+-      <FamilySensitivitySection derived={state.derived} />
+-      <LimitationsSection derived={state.derived} />
+-    </>
++    <>
++      <DatasetControls
++        sourceLabel={state.sourceLabel}
++        diagnosticLabel={state.diagnosticLabel}
++        busy={busy}
++        hasBoundDiagnostic={state.diagnostic !== null}
++        onResetDemo={() => applyBundledDemo(false)}
++        onLoadDemoWithDiagnostic={() => applyBundledDemo(true)}
++        onClearDiagnostic={onClearDiagnostic}
++        onUploadExplorer={onUploadExplorer}
++        onUploadDiagnostic={onUploadDiagnostic}
++      />
++      <StatusMessages
++        status={status}
++        onDismiss={() => setStatus({ kind: 'idle', message: '', title: '', codes: [] })}
++        onResetDemo={() => applyBundledDemo(true)}
++      />
++      <DatasetRestrictionBar derived={state.derived} />
++      <ExplorerNavigation
++        activeView={activeView}
++        onViewChange={setActiveView}
++        contentId="explorer-content"
++      />
++      <div id="explorer-content">
++        <div hidden={activeView !== 'overview'}>
++          <OverviewSection derived={state.derived} />
++        </div>
++        <div hidden={activeView !== 'compare'}>
++          <ConfigurationCards derived={state.derived} />
++          <FrontiersSection derived={state.derived} />
++          <CascadeSection derived={state.derived} />
++        </div>
++        <div hidden={activeView !== 'runs'}>
++          <TaskSummariesSection derived={state.derived} />
++          <RunDetailsSection
++            key={runSectionResetKey}
++            derived={state.derived}
++            selectedRowKey={selectedRowKey}
++            onSelectRowKey={setSelectedRowKey}
++          />
++        </div>
++        <div hidden={activeView !== 'method'}>
++          <ScopeAndProvenancePanel derived={state.derived} />
++          <BootstrapSection view={state.view} derived={state.derived} />
++          <FamilySensitivitySection derived={state.derived} />
++          <LimitationsSection derived={state.derived} />
++        </div>
++      </div>
++    </>
+   );
+ }
+ 
+@@ -1430,7 +1519,7 @@ export default function App() {
+       <SyntheticBanner bannerText={SYNTHETIC_BANNER_V2} />
+       <header className="app-header">
+         <div className="title-block">
+           <h1>Dojo results explorer (v2)</h1>
+           <p>
+             Offline synthetic benchmark explorer for <code>dojo-explorer-view-v2</code> and{' '}
+             <code>dojo-family-sensitivity-v2</code>. Exact rational and nano-USD arithmetic; zero live
+             provider calls.
+           </p>
+         </div>
+       </header>
+-      <main id="main" tabIndex={-1}>
++      <main id="main" tabIndex={-1}>
+         <ErrorBoundary key={boundaryKey} onReset={() => setBoundaryKey((n) => n + 1)}>
+           <ExplorerApp />
+         </ErrorBoundary>

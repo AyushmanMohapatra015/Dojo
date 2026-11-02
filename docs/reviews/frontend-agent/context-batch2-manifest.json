@@ -1,0 +1,122 @@
+[
+  {
+    "path": "dashboard/package.json",
+    "bytes": 998,
+    "sha256": "a1e4b5c967e3f5d4f1bf15c756338645d047255271cba840d0ed90d3efa1b968"
+  },
+  {
+    "path": "dashboard/README.md",
+    "bytes": 1079,
+    "sha256": "2f1d255e4ee93729cc3a02d4c3cd374c4ba8dd0487db676cd248bd46b54e67f4"
+  },
+  {
+    "path": "dashboard/src/App.jsx",
+    "bytes": 59575,
+    "sha256": "18d794769fc63bf3540582f7c74286e8503733fcb8be3b4b58bf574910897e3d"
+  },
+  {
+    "path": "dashboard/src/App.test.jsx",
+    "bytes": 21436,
+    "sha256": "e020427372385dc80e39e62f30d5ca3f95c9cc040f1b6504f98de57142236497"
+  },
+  {
+    "path": "dashboard/src/styles.css",
+    "bytes": 7982,
+    "sha256": "b4efb90f868af2bf9291d771e7d5fd826239070c34ad25af578757705c91ff59"
+  },
+  {
+    "path": "dashboard/src/test-setup.js",
+    "bytes": 400,
+    "sha256": "26fb03a29ceebebc339457d0e7b234d171f19ddd0863020677113af36f173378"
+  },
+  {
+    "path": "dashboard/src/v2/exact.mjs",
+    "bytes": 16933,
+    "sha256": "28261fee8cb95cf49fd22a4c56102dc159a28ea8757b5f4fd7b124867b35bd09"
+  },
+  {
+    "path": "dashboard/src/v2/derive.mjs",
+    "bytes": 31182,
+    "sha256": "1bee35f1b96207838e3dd566cffa911be162fb5ef001d717ffea8c5d67f06ba4"
+  },
+  {
+    "path": "dashboard/src/v2/data.mjs",
+    "bytes": 89371,
+    "sha256": "5a5357ec6008329b73ba570ca78c4eccc097f9c57f40d36a86a7964368a98270"
+  },
+  {
+    "path": "dashboard/src/components/ExplorerNavigation.jsx",
+    "bytes": 1226,
+    "sha256": "9db8f7c5c48410a975a227789451bd25ac63ef40ef67b980aff4d441964a6c6c"
+  },
+  {
+    "path": "dashboard/src/components/ExplorerNavigation.css",
+    "bytes": 1188,
+    "sha256": "c98ac4a49b4526c3ee5f927dfc32a46b19ce70ee54ac97f81d979dfb77cdbd0e"
+  },
+  {
+    "path": "dashboard/src/components/ExplorerNavigation.test.jsx",
+    "bytes": 7849,
+    "sha256": "f4026f8f74f47850809c77f9438939aeefe84c0d811b50a0008bcc85148a35da"
+  },
+  {
+    "path": "dashboard/src/hygiene.test.js",
+    "bytes": 2678,
+    "sha256": "edebb64a84726c0d287f80b6044296321031036b7d213f9052e508becdd467c0"
+  },
+  {
+    "path": "dashboard/vite.config.js",
+    "bytes": 1225,
+    "sha256": "0e2cba9886e4603e416d40af635c293d583bc671a4d3c10c944f16957ee49dea"
+  },
+  {
+    "path": "dashboard/src/fixtures/synthetic-v2.explorer.json",
+    "bytes": 11525,
+    "sha256": "3fe3fbd02608d3493a239e9c02ec9b51ea3e46c2cf3ab689719a21b7ee06a007"
+  },
+  {
+    "path": "dashboard/src/fixtures/synthetic-v2.family-diagnostic.json",
+    "bytes": 3378,
+    "sha256": "13a55d227b4d8bf0093e45c90b7707d5c747af81ca21fe48902212a4b74b248e"
+  },
+  {
+    "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/audit-blocked.explorer.json",
+    "bytes": 3429,
+    "sha256": "72f9875d2abeffe94980d45fdf250288485bd8acc0a3173e7a89fa0ea374e829"
+  },
+  {
+    "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/audit-blocked.family-diagnostic.json",
+    "bytes": 641,
+    "sha256": "b45e0afbfb6e7840bb56d6e8c73eda03d33455744db58b1a4b2113ff58456f8a"
+  },
+  {
+    "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/cost-incomplete.explorer.json",
+    "bytes": 3884,
+    "sha256": "30e19f6d09cd26b49dadfd0f9f7c778e75d913b13fa0eade6caa02f59636272a"
+  },
+  {
+    "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/cost-incomplete.family-diagnostic.json",
+    "bytes": 3757,
+    "sha256": "cf4fb70028db77c0b9c9c46e53d48f46fe343494153bb766ec4bc7d5f38e6acd"
+  },
+  {
+    "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/four-task-cascade.explorer.json",
+    "bytes": 21497,
+    "sha256": "8753222df0a5c8aeb70ef2996b8dbbdeb8c9c2b19ec039532e9cb494233b55bb"
+  },
+  {
+    "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/four-task-cascade.family-diagnostic.json",
+    "bytes": 5688,
+    "sha256": "82ada6736ce78473fa0b8589bbb4dfd908e76510b4898e480d9a7084fc790b6f"
+  },
+  {
+    "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/large-exact-cost.explorer.json",
+    "bytes": 11771,
+    "sha256": "2568357d61d3018c94aea619333b75993f3ae466110979846275da555c4f6b3b"
+  },
+  {
+    "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/zero-solved.explorer.json",
+    "bytes": 11642,
+    "sha256": "89684810f5c4d8e82b473a62f3296c9521bd6db14667ab368d45d524e4b2caca"
+  }
+]

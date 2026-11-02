@@ -1,0 +1,229 @@
+{
+  "packet_bytes": 481371,
+  "packet_sha256": "7e18911af0024bfbcf13ebe3b9159a2141d2b76af953d2746e20485375aa75d3",
+  "references": [
+    {
+      "bytes": 16066,
+      "path": "docs/reviews/argon/browser-v2-part1-assignment-v1.md",
+      "role": "ASSIGNMENT",
+      "sha256": "4832d771c812c49259876f15d15b4db630cac8c77e3ce0a3ef0cf41b60cf4159"
+    },
+    {
+      "bytes": 14768,
+      "path": "docs/explorer-v2-contract.md",
+      "role": "ACCEPTED backend contract/implementation/test",
+      "sha256": "fde6df8e166b351597eb8c3b98303b1317de5b9dc89ad94f5e94ebcdbd2f8b54"
+    },
+    {
+      "bytes": 11927,
+      "path": "docs/explorer-export-reproduction.md",
+      "role": "ACCEPTED backend contract/implementation/test",
+      "sha256": "a01c4df8f678eb7d14eb6aa35fb52461bb19898409ea64f726a22341790e5c27"
+    },
+    {
+      "bytes": 5798,
+      "path": "docs/reviews/argon/explorer-export-part1-primary-assessment-v1.md",
+      "role": "ACCEPTED backend contract/implementation/test",
+      "sha256": "7783266a19474a88762b4880efb957b95cb43cdcd4026aac056e3bb92a9aa84e"
+    },
+    {
+      "bytes": 5362,
+      "path": "docs/reviews/argon/explorer-export-part2-primary-assessment-v1.md",
+      "role": "ACCEPTED backend contract/implementation/test",
+      "sha256": "e0c6d621506489fc61c4fd16e39a794e3b64bf9b82ab964a8928f3968af3cf95"
+    },
+    {
+      "bytes": 101099,
+      "path": "dojo/bench/explorer_export.py",
+      "role": "ACCEPTED backend contract/implementation/test",
+      "sha256": "fc77f72fd3184f079b6d30729b41ade7b196651950db7aab30375688ba01a80b"
+    },
+    {
+      "bytes": 13086,
+      "path": "dojo/bench/sensitivity_diagnostics.py",
+      "role": "ACCEPTED backend contract/implementation/test",
+      "sha256": "c4007093e39203d2d83344bd6b177418698ec226984313326a9e2b1bab672311"
+    },
+    {
+      "bytes": 37105,
+      "path": "dojo/bench/evidence_bundle.py",
+      "role": "ACCEPTED backend contract/implementation/test",
+      "sha256": "1a4a55572853dc9e4efa8f714501576fee17b2b165e70c7f7a2db44310258a96"
+    },
+    {
+      "bytes": 12972,
+      "path": "tests/test_explorer_export.py",
+      "role": "ACCEPTED backend contract/implementation/test",
+      "sha256": "13923a4b597f76a7fbd419007ba1e33f0d4926b8e9fa081051e2819379710497"
+    },
+    {
+      "bytes": 6430,
+      "path": "tests/test_sensitivity_diagnostics.py",
+      "role": "ACCEPTED backend contract/implementation/test",
+      "sha256": "4eff782dd6f786bc8eb17990e35dac15bfa117d9443fe1deb4a78075842408c2"
+    },
+    {
+      "bytes": 11878,
+      "path": "tests/test_evidence_bundle_boundary.py",
+      "role": "ACCEPTED backend contract/implementation/test",
+      "sha256": "a11e723cdba24d4fe7be8fb1cef2f5b5f730530d28f7a114e3a7b685f6da7ecd"
+    },
+    {
+      "bytes": 740,
+      "path": "tests/fixtures/explorer_v2/expected_oracles.json",
+      "role": "ACCEPTED backend contract/implementation/test",
+      "sha256": "6d2bd96747b6e48078da9ed9162959656a863c95b25b42f647a8e57fcdb2ebfb"
+    },
+    {
+      "bytes": 6177,
+      "path": "docs/reviews/argon/frontend-primary-assessment-v1.md",
+      "role": "REVIEW/CONSTRAINT; historical IDs overridden by current assignment",
+      "sha256": "4bede14fb7674ebc70656ed64725adb571676b42865a1eb4e525deeb4da482b1"
+    },
+    {
+      "bytes": 7313,
+      "path": "docs/agent-handoff-quality.md",
+      "role": "REVIEW/CONSTRAINT; historical IDs overridden by current assignment",
+      "sha256": "7fd0b93ae1671e36bdd0e934c40dfd2f6b3566813146ff4716eca6ab0f296218"
+    },
+    {
+      "bytes": 6878,
+      "path": "scripts/review_argon_frontend.mjs",
+      "role": "REVIEW/CONSTRAINT; historical IDs overridden by current assignment",
+      "sha256": "59da0a163cbb52523cb0519651d2d79782840f16d911562275823adbd833c928"
+    },
+    {
+      "bytes": 3374,
+      "path": "docs/reviews/argon/proposals/frontend-refinement-v2/intake-manifest.json",
+      "role": "ARCHIVED PROPOSAL identity; selected files embedded",
+      "sha256": "82e8404a7de7354423b71dec0b3d896c939cd9ed6455a674b967caa5cbe39a33"
+    },
+    {
+      "bytes": 911,
+      "path": "docs/reviews/argon/proposals/frontend-refinement-v2/dashboard/package.json",
+      "role": "ARCHIVED v1 PROPOSAL; reuse only",
+      "sha256": "21530a28dfd16cac245c9c5c88aaba1b1b8b24f8b4bbbb2e64079482af9fad80"
+    },
+    {
+      "bytes": 35947,
+      "path": "docs/reviews/argon/proposals/frontend-refinement-v2/dashboard/src/App.jsx",
+      "role": "ARCHIVED v1 PROPOSAL; reuse only",
+      "sha256": "e6b9bbd6ef38b0dbe30a90cbdee873e04da5641e38244a2008d3655ce5671b50"
+    },
+    {
+      "bytes": 33339,
+      "path": "docs/reviews/argon/proposals/frontend-refinement-v2/dashboard/src/data.js",
+      "role": "ARCHIVED v1 PROPOSAL; reuse only",
+      "sha256": "23cbd4419be46b9aed35dd271a12015dcfeffd511c20d124848e7668fa52ca65"
+    },
+    {
+      "bytes": 30214,
+      "path": "docs/reviews/argon/proposals/frontend-refinement-v2/dashboard/src/data.test.js",
+      "role": "ARCHIVED v1 PROPOSAL; reuse only",
+      "sha256": "ae658b9b83613eec3f437cd9d7e00c081913b5542d30dfbb525cbfd62db559fe"
+    },
+    {
+      "bytes": 3558,
+      "path": "docs/reviews/argon/proposals/frontend-refinement-v2/dashboard/src/fixtures/synthetic.json",
+      "role": "ARCHIVED v1 PROPOSAL; reuse only",
+      "sha256": "1dea71231a4e61f5e1775b32428d4fcfdc9a52fb6f28f59e73dddf290918c8c1"
+    },
+    {
+      "bytes": 4944,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixture-index-v1.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "b26f412372ad571e904cb4f8ab073bbf28bb8848f26f9ce65057ea5fed6a04bd"
+    },
+    {
+      "bytes": 3429,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/audit-blocked.explorer.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "72f9875d2abeffe94980d45fdf250288485bd8acc0a3173e7a89fa0ea374e829"
+    },
+    {
+      "bytes": 641,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/audit-blocked.family-diagnostic.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "b45e0afbfb6e7840bb56d6e8c73eda03d33455744db58b1a4b2113ff58456f8a"
+    },
+    {
+      "bytes": 3884,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/cost-incomplete.explorer.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "30e19f6d09cd26b49dadfd0f9f7c778e75d913b13fa0eade6caa02f59636272a"
+    },
+    {
+      "bytes": 3757,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/cost-incomplete.family-diagnostic.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "cf4fb70028db77c0b9c9c46e53d48f46fe343494153bb766ec4bc7d5f38e6acd"
+    },
+    {
+      "bytes": 21497,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/four-task-cascade.explorer.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "8753222df0a5c8aeb70ef2996b8dbbdeb8c9c2b19ec039532e9cb494233b55bb"
+    },
+    {
+      "bytes": 5688,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/four-task-cascade.family-diagnostic.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "82ada6736ce78473fa0b8589bbb4dfd908e76510b4898e480d9a7084fc790b6f"
+    },
+    {
+      "bytes": 11771,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/large-exact-cost.explorer.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "2568357d61d3018c94aea619333b75993f3ae466110979846275da555c4f6b3b"
+    },
+    {
+      "bytes": 3484,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/large-exact-cost.family-diagnostic.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "11ce57632b82be3706a6b28ab21001ab983f6d2320d6e22b0c9a1ae38b60427e"
+    },
+    {
+      "bytes": 11525,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/one-family.explorer.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "8c33a94e268fe794837d40ab946bbf33fcb719fad5c08c39f97c43d46a5eda3c"
+    },
+    {
+      "bytes": 2468,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/one-family.family-diagnostic.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "457d549688e1211639cc838e2a969a09812f1e2bc8d6c70a790f2af99ffa58ee"
+    },
+    {
+      "bytes": 11525,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/unequal-seeds.explorer.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "3fe3fbd02608d3493a239e9c02ec9b51ea3e46c2cf3ab689719a21b7ee06a007"
+    },
+    {
+      "bytes": 3378,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/unequal-seeds.family-diagnostic.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "13a55d227b4d8bf0093e45c90b7707d5c747af81ca21fe48902212a4b74b248e"
+    },
+    {
+      "bytes": 11642,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/zero-solved.explorer.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "89684810f5c4d8e82b473a62f3296c9521bd6db14667ab368d45d524e4b2caca"
+    },
+    {
+      "bytes": 3376,
+      "path": "docs/reviews/argon/browser-v2-context-v1/fixtures/zero-solved.family-diagnostic.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "a0d174197aeab29b3a4fe686776cb8ec1632d14dea28a27ded5365aed26ed21e"
+    },
+    {
+      "bytes": 721,
+      "path": "docs/reviews/argon/browser-v2-context-v1/runtime-facts-v1.json",
+      "role": "GENERATED accepted-backend fictional fixture/context",
+      "sha256": "8df10f77e471445699d1f449be6790e6516707d81bc6aa290744a1d4320ff9c7"
+    }
+  ],
+  "scope": "Argon browser-v2 Part 1 exact-source handoff"
+}

@@ -1,19 +1,32 @@
 # DOJO
 
+Continuation and local Thursday demo: [HANDOFF.md](HANDOFF.md). It includes every unfinished action-plan row and the final **Demo-Thursaday** walkthrough.
+
+
 Dojo is a development-stage toolkit for comparing coding-model configurations
 using a repository's bug-fix history. It constructs fail-before/pass-after tasks
 and separates bounded coding-agent execution from final-patch scoring. Measured
 cost/success comparisons and offline model escalation are planned outputs.
 
-**Checkpoint, 2026-10-22:** construction, scripted solver/Docker development
-execution and scoring, private attempt ownership, and offline result-validation
-components have test evidence. Immutable result/valuation history is stored
-and checked offline. The full offline suite passed **1,014 tests**.
-No real model requests have run; no model success rates or savings are measured.
+**Checkpoint, 2026-11-02:** task construction, scripted local Docker execution
+and scoring, private attempt ownership, offline analysis, and a synthetic React
+explorer are implemented. The repeatable local acceptance matrix passes twelve
+cases across both scoring profiles, including fixes, candidate errors, protected
+test edits, timeouts, and visible-test/scorer disagreement. See
+[local acceptance](docs/local-runtime-acceptance.md). One supervised Nano
+arithmetic request previously succeeded; no genuine coding-model success rates
+or savings have been measured. General live execution remains locked.
 The [offline statistics foundation](docs/statistics-foundation.md) now validates
 panels and computes exact metrics, bootstrap intervals and frontier tables on
-fictional inputs. Cascade/report/CLI integration, the end-to-end benchmark workflow
-and results explorer remain pending.
+fictional inputs. [Offline cascade/report analysis](docs/offline-analysis.md) now
+supports train-only policy selection, saved-policy evaluation and bounded JSON
+export through `python -m dojo.bench.analyze`. Trusted end-to-end benchmark
+integration remains pending. The results explorer currently shows synthetic
+examples only. The separate
+[offline runner workflow](docs/offline-runner.md) now builds host metadata,
+persists/reuses a fictional controller run and exposes local status/cost/report
+commands via `python -m dojo.bench`. Repository tasks can be planned read-only;
+their actual provider/scorer execution remains gated.
 Optional repository-guidance verification (L3) remains gated stretch work.
 [BUILD_SPEC.md](BUILD_SPEC.md) defines the design;
 [ACTION_PLAN.md](ACTION_PLAN.md) and [PROGRESS.md](PROGRESS.md) track delivery.
@@ -42,6 +55,9 @@ versioned; original split locks and construction artifacts are preserved.
 ## Setup
 
 Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+Python 3.12.7 is the verified local setup; see the
+[isolated dependency check](docs/isolated-setup-check.md) for reproduction scope
+and offline-cache limitations.
 From the repository root:
 
 ```console
@@ -54,10 +70,36 @@ uv run ruff check .
 
 On this Windows workspace, uv is installed at `.venv\Scripts\uv.exe`.
 The optional `solver` and `analysis` extras are declared for later integrations
-and are not required for the offline rehearsals below. No real model jobs have
-run. `mine-validate-demo` runs the practice fixture in local Docker;
+and are not required for the offline rehearsals below. The historical arithmetic
+probe does not authorize another request. `mine-validate-demo` runs the practice fixture in local Docker;
 `mine-validate` can
 validate a separately reviewed, dependency-compatible repository commit.
+
+## View the website
+
+Requires Node.js 20.19+ and npm. From the repository root:
+
+```powershell
+npm.cmd --prefix .\dashboard ci
+npm.cmd --prefix .\dashboard run dev
+```
+
+Open `http://127.0.0.1:5173/` and keep the terminal open. If dependencies are
+already installed, skip `ci`. The website contains synthetic examples and
+supports Overview, Compare, Runs and Method views; it does not launch paid runs.
+After Python and website setup, Windows users can also run
+`.\start-dashboard.cmd` from the project root. It reuses an existing Dojo
+server or starts one in the foreground. The local address works on this PC
+while the server is running; it is not a deployed website. See
+[local preview troubleshooting](docs/local-preview.md).
+For a production build and local artifact check, see
+[the dashboard bundle audit](docs/dashboard-bundle-audit.md).
+
+The source checkout is the supported full workflow. A wheel contains Python
+modules and license metadata, but excludes benchmark data, configs, dashboard,
+review packets and runtime databases. Installed CLI smoke checks therefore use
+explicit checkout paths; they do not establish a fresh-machine setup. See
+[current wheel reproduction](docs/release-wheel-check-v2.md).
 
 ## Offline rehearsal
 
@@ -75,7 +117,65 @@ with `live_enabled=false`; it is not a spend reservation or serving verification
 Neither command makes a provider request. First-time dependency setup above
 requires network access; fresh-checkout reproduction remains a submission check.
 
+For the connected controller/store rehearsal, start with a new private DB path:
+
+```powershell
+.venv\Scripts\python.exe -m dojo.bench init-store --store data/offline-demo.sqlite3
+.venv\Scripts\python.exe -m dojo.bench bench --synthetic-demo --store data/offline-demo.sqlite3
+.venv\Scripts\python.exe -m dojo.bench bench --synthetic-demo --store data/offline-demo.sqlite3
+```
+
+The second bench call reuses the checked saved run. This script executes no
+commands, containers or models; its completed state is not a solved benchmark.
+See [the workflow guide](docs/offline-runner.md) for read-only approved-task
+planning, private reports, unknown costs, refusal states and cache limitations.
+
 ## Provider verification (live inference locked)
+
+The [Stage B metadata preflight](docs/stage-b-artifact-preflight.md) now checks
+eleven artifact files, the full candidate panel and pinned workspace metadata.
+It reports remaining blockers and grants no execution or registration approval:
+
+```powershell
+.venv\Scripts\python.exe -m dojo.bench.registration_preflight check --directory data/development/stage-b-preflight-v5
+```
+
+The [offline provider/partner adapters](docs/provider-partner-adapters.md) now
+decode bounded Nemotron-shaped responses, exercise durable fake spending checks,
+decode canned documentation search, and produce allowlisted local trace events.
+Run the temporary rehearsal from the repository root:
+
+```powershell
+.venv\Scripts\python.exe scripts/partner_adapters_demo.py
+```
+
+It reports synthetic evidence and zero provider/partner API calls. Known usage
+completes; unknown usage blocks further fake sessions after reopening the ledger.
+Hosted LangSmith, Tavily requests and genuine Nemotron coding runs remain pending.
+
+The separate [adaptive provider rehearsal](docs/adaptive-provider-rehearsal.md)
+now builds each request from the previous action's bounded feedback, reserves
+the whole fictional run and blocks restart after uncertain accounting:
+
+```powershell
+.venv\Scripts\python.exe scripts/adaptive_provider_demo.py
+```
+
+This uses a scripted wire transport and fake sandbox. Its prompt-unit estimator
+is explicitly fictional; actual tokenization remains unverified and the
+standalone entry point is intentionally unbound.
+
+The separate [owned coordinator](docs/owned-adaptive-bindings.md) now links a
+fictional reservation to a run owner and writes each fake dispatch intent in a
+new v4 store. Its demo also shows restart refusing the same attempt:
+
+```powershell
+.venv\Scripts\python.exe scripts/owned_provider_demo.py
+```
+
+Existing v3 stores are preserved. This path creates no completed benchmark/cache
+record and enables no live requests. Standalone rehearsal remains unbound;
+the owned entry point reports its explicit offline binding scope.
 
 **Live inference is currently locked under the owner's zero-out-of-pocket rule.**
 An API key, per-run cap or local ledger cannot unlock it. The owner accepts
@@ -139,8 +239,8 @@ and thinking output can exhaust the small completion cap.
 ## How NVIDIA Nemotron and Nebius Token Factory are used
 
 The implemented, locked verifier targets OpenAI-compatible host-side inference
-on Token Factory for Nano, Lightning, Super and Ultra. It has sent no real model
-requests; NVIDIA-on-Nebius runtime use remains undemonstrated. IDs and configured
+on Token Factory for Nano, Lightning, Super and Ultra. One supervised Nano
+arithmetic probe succeeded; genuine coding-model evaluation remains pending. IDs and configured
 prices were obtained from
 the [public catalog](https://tokenfactory.nebius.com/model-catalog.md) and its
 [machine-readable source](https://tokenfactory.nebius.com/api/public/models_info).
@@ -149,21 +249,35 @@ Account access and actual serving locations remain pending live verification.
 Public endpoints do not guarantee a stable processing region; see the
 [official endpoint policy](https://docs.tokenfactory.nebius.com/public-serverless).
 
-The planned solver uses Token Factory on the host and bash in offline, non-root
-Docker containers. Tavily docsearch, model benchmarking, offline cascade analysis,
-and optional receipt gating are future work. Tavily and LangSmith tracing are
-not active. No runtime integration is claimed
-as verified until a successful live run is recorded in [PROGRESS.md](PROGRESS.md).
+The planned live solver uses Token Factory on the host and bash in offline,
+non-root Docker containers. Scripted local execution and offline cascade analysis
+work today; genuine model benchmarking, Tavily docsearch and optional receipt
+gating remain unfinished. Hosted Tavily and LangSmith tracing are not active.
+The arithmetic probe does not establish coding-task performance. See
+[PROGRESS.md](PROGRESS.md) for measured evidence and remaining gates.
 
 ## Project layout
+
+The offline analysis now includes a reviewed synthetic-only explorer projection
+and family influence API. See the [explorer v2 contract](docs/explorer-v2-contract.md)
+for exact multi-seed metrics and verification. The reviewed bundle/export command
+is available via `python -m dojo.bench.export_cli`; see the
+[export and verification guide](docs/explorer-export-reproduction.md).
+The local [React dashboard](docs/browser-v2-ui-reproduction.md) now displays
+synthetic v2 fixtures with exact arithmetic, seed-aware summaries, paginated
+runs, frontiers, bootstrap intervals and family diagnostics. Forty-three Node
+data tests and 26 React/hygiene tests pass; production build and localhost
+static serving work. Manual browser/accessibility and real-result acceptance
+remain open. Fictional fixtures are not model results.
 
 `dojo/` contains the CLI, verifier/model configuration, construction (`mine`),
 scripted solver (`solve`), separate evaluator (`eval`) and private store (`store`).
 `configs/` holds model metadata and proposed solver defaults. `scripts/` holds
 entry points and development utilities. `tests/` contains offline regressions;
 passing them does not establish production security or NVIDIA runtime operation.
-`docker/` supports pinned local development execution. `dashboard/` remains a
-scaffold. `data/` preserves construction artifacts; no model evaluation has run.
+`docker/` supports pinned local development execution. `dashboard/` contains the
+local synthetic React explorer. `data/` preserves
+construction artifacts; no model evaluation has run.
 
 Private result contracts are described in [execution records](docs/execution-records.md)
 and [run-store schema](docs/run-store-schema.md). Trusted runner/provider

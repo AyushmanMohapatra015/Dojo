@@ -1,0 +1,52 @@
+# Argon Browser Explorer v2 — Part 1 Verification Ledger (`10j1` / `10j2`)
+
+Prepared: `2026-10-31` under `10j0`.
+Execution status in this web agent: **UNEXECUTED** (no shell, Node runtime, or local filesystem access is available in this agent environment).
+
+## 1. Proposed Primary Reproduction Command
+
+After extracting the nine delivered files into the repository working tree, run from the repository root:
+
+```powershell
+node --test dashboard/src/v2/exact.test.mjs dashboard/src/v2/data.test.mjs dashboard/src/v2/derive.test.mjs
+```
+
+## 2. Claim-to-Test Verification Ledger
+
+All 22 top-level `it(...)` blocks (covering >45 substantive behavioral assertions across `exact.test.mjs`, `data.test.mjs`, and `derive.test.mjs`) are mapped below.
+
+| Claim ID | Claim Summary | Test File & Case | Execution Status |
+|---|---|---|---|
+| C1 | Canonical defined/undefined/signed rational DTO parsing | `dashboard/src/v2/exact.test.mjs` (#1) | UNEXECUTED |
+| C2 | Pre-`BigInt` rejection of unreduced, `01`, `-0`, exponent, >96-char, and unknown-reason DTOs | `dashboard/src/v2/exact.test.mjs` (#2) | UNEXECUTED |
+| C3 | Exact `BigInt` rational comparison beyond `2^53 - 1` and `null` for undefined | `dashboard/src/v2/exact.test.mjs` (#3) | UNEXECUTED |
+| C4 | Half-away-from-zero decimal & percent formatting with exact fraction labels | `dashboard/src/v2/exact.test.mjs` (#4) | UNEXECUTED |
+| C5 | Nano-USD formatting with `< $0.000001` threshold for tiny positive amounts vs `$0.000000` for zero | `dashboard/src/v2/exact.test.mjs` (#5) | UNEXECUTED |
+| C6 | All 7 generated fixture pairs (`unequal-seeds`, `cost-incomplete`, `audit-blocked`, `zero-solved`, `one-family`, `large-exact-cost`, `four-task-cascade`) parse, validate, and bind | `dashboard/src/v2/data.test.mjs` (#6) | UNEXECUTED |
+| C7 | Independent literal oracle agreement for `unequal-seeds`, `large-exact-cost`, and `four-task-cascade` | `dashboard/src/v2/data.test.mjs` (#7) | UNEXECUTED |
+| C8 | Edge fixture invariants (`zero_expected_solves`, `no_retained_tasks`, `success_only` withholding, `blocked` empty exclusions) | `dashboard/src/v2/data.test.mjs` (#8) | UNEXECUTED |
+| C9 | Raw JSON scanner rejects float (`2.0`), exponent (`2e0`, `1e999999`), `-0`, `NaN`, and >96-char number tokens before `JSON.parse` | `dashboard/src/v2/data.test.mjs` (#9) | UNEXECUTED |
+| C10 | Raw JSON scanner rejects top-level, nested, and Unicode-escaped duplicate keys (`\u0076`) at all depths | `dashboard/src/v2/data.test.mjs` (#10) | UNEXECUTED |
+| C11 | Lone UTF-16 surrogates rejected; paired non-BMP surrogates decoded properly | `dashboard/src/v2/data.test.mjs` (#11) | UNEXECUTED |
+| C12 | Real evidence flags, non-null `sensitivity`, unknown keys, and boolean counts rejected with fixed error codes and zero canary leakage | `dashboard/src/v2/data.test.mjs` (#12) | UNEXECUTED |
+| C13 | Forged config metrics, self-consistent false Pareto dominance, bootstrap point mismatches, and cascade delta tampering rejected | `dashboard/src/v2/data.test.mjs` (#13) | UNEXECUTED |
+| C14 | Standalone-valid explorer and diagnostic with swapped task-family assignments rejected by `bindFamilyDiagnosticV2` | `dashboard/src/v2/data.test.mjs` (#14) | UNEXECUTED |
+| C15 | Shared acyclic DAG objects accepted; cycles, sparse arrays, and depth > 24 rejected | `dashboard/src/v2/data.test.mjs` (#15) | UNEXECUTED |
+| C16 | `deriveExplorerV2` produces exact top-level shape and unequal-seed `taskSummaries` without inflating task denominator | `dashboard/src/v2/derive.test.mjs` (#16) | UNEXECUTED |
+| C17 | `cost_incomplete` source withholds aggregate `taskSummaries` costs globally even for locally cost-complete groups | `dashboard/src/v2/derive.test.mjs` (#17) | UNEXECUTED |
+| C18 | `blocked` audit leaves `taskSummaries` empty while retaining all `runRows` with disambiguated `run:<ordinal>` keys | `dashboard/src/v2/derive.test.mjs` (#18) | UNEXECUTED |
+| C19 | `frontiers` exposes both axes with labeled chart-only finite approximations and marks zero-solved unplottable | `dashboard/src/v2/derive.test.mjs` (#19) | UNEXECUTED |
+| C20 | `selectRowsV2` sorts `null` costs LAST in both `asc` and `desc` directions and compares `BigInt` costs with ordinal tie-breaking | `dashboard/src/v2/derive.test.mjs` (#20) | UNEXECUTED |
+| C21 | `selectRowsV2` reaches >200 rows across pages, clamps excessive pages, and handles empty matches | `dashboard/src/v2/derive.test.mjs` (#21) | UNEXECUTED |
+| C22 | `selectRowsV2` rejects unknown/invalid options and mutated/reconstructed `DerivedV2` inputs with `V2DataError` | `dashboard/src/v2/derive.test.mjs` (#22) | UNEXECUTED |
+
+## 3. Deliberate Deviations & Known Limitations
+
+- **Deliberate Deviations**: None. All exported function names, parameter signatures, error codes, resource limits (`LIMITS_V2`), and schema invariants match the assignment specification and the accepted Python validators (`explorer_export.py`, `sensitivity_diagnostics.py`, `evidence_bundle.py`).
+- **What Static/Node Tests Cannot Establish**: Passing pure-JS Node tests does not establish React component rendering, Vite bundling, npm dependency resolution, CSP compliance, or browser accessibility. Those belong to Part 2 (`10j3`/`10j4`).
+
+## 4. Part 2 Acceptance Risks to Track
+
+1. **No `BigInt` in React State / JSON Serialization**: `DerivedV2` and `PageV2` intentionally keep all public DTOs as JSON-safe strings/booleans/numbers so React state or dev-tools serialization never encounters a raw `BigInt`. Part 2 components must consume `DerivedV2` / `PageV2` rather than holding `parseRationalV2` outputs in React state.
+2. **Chart Coordinate Overflow**: Extremely large synthetic costs near `10^18` nano-USD (`$10^9` USD) remain finite in IEEE-754 `Number`, but Recharts axis tick formatting in Part 2 should use compact notation or fall back to the exact accessible table when domain ratios are extreme.
+

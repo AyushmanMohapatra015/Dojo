@@ -7,12 +7,14 @@ an interrupted pending run blocks subsequent runs. No keys or payloads are store
 import sqlite3
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
-from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal, InvalidOperation
+from decimal import ROUND_CEILING, ROUND_FLOOR, Context, Decimal, InvalidOperation
 from pathlib import Path
 from uuid import uuid4
 
 DEFAULT_LEDGER = Path("data/spend.sqlite3")
-SCALE = Decimal(1_000_000_000)
+SCALE = 1_000_000_000
+MAX_AMOUNT_TEXT = 128
+MAX_UNITS = 2**63 - 1
 MAX_AGE = timedelta(hours=1)
 EXPIRY_MARGIN = timedelta(days=1)
 
@@ -22,16 +24,48 @@ class CreditError(ValueError):
 
 
 def units(value: object, *, allow_zero: bool = False, rounding=ROUND_CEILING) -> int:
+    """Convert exactly, without ambient Decimal arithmetic or large powers.
+
+    Balances/allowances round down; reservations/usage round up. Only those two
+    accounting policies are supported. Parsing context is isolated as well.
+    """
+    if type(allow_zero) is not bool or rounding not in (ROUND_CEILING, ROUND_FLOOR):
+        raise CreditError("Invalid credit rounding policy")
     try:
-        amount = Decimal(str(value))
+        text = str(value)
+        if len(text) > MAX_AMOUNT_TEXT:
+            raise CreditError("Credit amount text too large")
+        amount = Decimal(text, context=Context())
         if not amount.is_finite() or amount < 0 or (amount == 0 and not allow_zero):
             raise CreditError("Invalid credit amount")
-        result = int((amount * SCALE).to_integral_value(rounding=rounding))
-        if result > 2**63 - 1 or (result == 0 and not allow_zero):
+        _, digits, exponent = amount.as_tuple()
+        coefficient = int(''.join(str(digit) for digit in digits))
+        shift = exponent + 9
+        if coefficient == 0:
+            result = 0
+        elif shift >= 0:
+            if len(digits) + shift > 19:
+                raise CreditError("Credit amount too large")
+            result = coefficient * 10**shift
+        else:
+            # Tiny positive amounts need no huge 10**(-exponent) allocation.
+            if -shift >= len(digits):
+                result, remainder = 0, coefficient
+            else:
+                result, remainder = divmod(coefficient, 10**(-shift))
+            if remainder and rounding == ROUND_CEILING:
+                result += 1
+        if result > MAX_UNITS or (result == 0 and not allow_zero):
             raise CreditError("Credit amount too large")
         return result
     except (InvalidOperation, OverflowError, TypeError) as exc:
         raise CreditError("Invalid credit amount") from exc
+
+
+def _usd_text(amount: int) -> str:
+    """Format integer nano-USD without lossy Decimal division."""
+    whole, fractional = divmod(amount, SCALE)
+    return str(whole) if not fractional else f'{whole}.{fractional:09d}'.rstrip('0')
 
 
 def timestamp(value: datetime) -> datetime:
@@ -46,11 +80,14 @@ class CreditLedger:
 
     def initialize(
         self, *, balance_usd: object, reserve_usd: object, allowance_usd: object,
-        expires_at: datetime, exclusive_use: bool, now: datetime | None = None,
+        expires_at: datetime | None, exclusive_use: bool, now: datetime | None = None,
+        owner_authorized_unknown_expiry: bool = False,
     ) -> None:
         """Create once from owner-confirmed account information; never overwrite."""
         now = timestamp(now if now is not None else datetime.now(UTC))
-        expiry = timestamp(expires_at)
+        if type(owner_authorized_unknown_expiry) is not bool:
+            raise CreditError("Invalid expiry authorization")
+        expiry = timestamp(expires_at) if expires_at is not None else None
         balance = units(balance_usd, rounding=ROUND_FLOOR)
         reserve = units(reserve_usd)
         allowance = units(allowance_usd, rounding=ROUND_FLOOR)
@@ -60,7 +97,9 @@ class CreditLedger:
             raise CreditError("Reserve must be at least $1 and 10% of balance")
         if allowance > units("1") or allowance + reserve > balance:
             raise CreditError("Initial allowance must fit credits/reserve and be at most $1")
-        if expiry - EXPIRY_MARGIN <= now:
+        if expiry is None and (not owner_authorized_unknown_expiry or allowance > units("0.01")):
+            raise CreditError("Unknown expiry requires explicit one-cent probe authorization")
+        if expiry is not None and expiry - EXPIRY_MARGIN <= now:
             raise CreditError("Credits must remain valid beyond the expiry safety margin")
         self.path.parent.mkdir(parents=True, exist_ok=True)
         # A failed initialization leaves an unusable file; it cannot reset accounting.
@@ -83,8 +122,10 @@ class CreditLedger:
                     usage INTEGER CHECK(usage>=0)
                 );
             """)
-            db.execute("INSERT INTO policy VALUES (1,1,?,?,?,?,?,0)",
-                       (balance, reserve, allowance, now.isoformat(), expiry.isoformat()))
+            db.execute("INSERT INTO policy VALUES (1,?,?,?,?,?,?,0)",
+                       (1 if expiry is not None else 2, balance, reserve, allowance,
+                        now.isoformat(), expiry.isoformat() if expiry is not None
+                        else "unknown-owner-authorized-one-cent-probe"))
 
     @contextmanager
     def _transaction(self):
@@ -106,11 +147,17 @@ class CreditLedger:
 
     def _policy(self, db, now: datetime):
         row = db.execute("SELECT * FROM policy WHERE id=1").fetchone()
-        if row is None or row["version"] != 1 or row["blocked"]:
+        if row is None or row["version"] not in (1, 2) or row["blocked"]:
             raise CreditError("Credit ledger is blocked or unsupported")
         try:
             observed = timestamp(datetime.fromisoformat(row["observed_at"]))
-            expiry = timestamp(datetime.fromisoformat(row["expires_at"]))
+            if row["version"] == 2:
+                if (row["expires_at"] != "unknown-owner-authorized-one-cent-probe"
+                        or row["allowance"] > units("0.01")):
+                    raise CreditError("Invalid one-probe expiry exception")
+                expiry = None
+            else:
+                expiry = timestamp(datetime.fromisoformat(row["expires_at"]))
             if (row["balance"] <= 0 or row["reserve"] < max(units("1"),
                                                           (row["balance"] + 9) // 10)
                     or row["allowance"] <= 0 or row["allowance"] > units("1")
@@ -120,7 +167,7 @@ class CreditLedger:
             raise CreditError("Invalid credit policy") from exc
         if now < observed or now - observed >= MAX_AGE:
             raise CreditError("Balance observation is stale or in the future")
-        if now >= expiry - EXPIRY_MARGIN:
+        if expiry is not None and now >= expiry - EXPIRY_MARGIN:
             raise CreditError("Promotional credits are too close to expiry")
         return row
 
@@ -170,10 +217,10 @@ class CreditLedger:
             unfinished = db.execute(
                 "SELECT COUNT(*) FROM reservations WHERE state!='completed'",
             ).fetchone()[0]
-            return {"allowance_usd": str(Decimal(policy["allowance"]) / SCALE),
-                    "reserved_usd": str(Decimal(total) / SCALE),
-                    "remaining_allowance_usd": str(Decimal(policy["allowance"] - total) / SCALE),
-                    "safety_reserve_usd": str(Decimal(policy["reserve"]) / SCALE),
+            return {"allowance_usd": _usd_text(policy["allowance"]),
+                    "reserved_usd": _usd_text(total),
+                    "remaining_allowance_usd": _usd_text(policy["allowance"] - total),
+                    "safety_reserve_usd": _usd_text(policy["reserve"]),
                     "expires_at": policy["expires_at"], "observed_at": policy["observed_at"],
                     "unfinished_runs": unfinished,
                     "can_reserve": unfinished == 0 and total < policy["allowance"],

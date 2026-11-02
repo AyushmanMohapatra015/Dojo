@@ -1,0 +1,4758 @@
+### Argon Browser Explorer v2 (Part 1 of 2: 10j1 / 10j2) — Design & API Map
+
+This delivery completes **Group A (`10j1`)** and **Group B (`10j2`)** for the Dojo synthetic browser explorer v2 (`dojo-explorer-view-v2` and `dojo-family-sensitivity-v2`). All production modules (`exact.mjs`, `data.mjs`, `derive.mjs`) are zero-dependency ECMAScript modules compatible with Node `>=20.19.0` and modern browsers. No React components, build scripts, or existing v1 files are modified. All execution checks are marked **UNEXECUTED** because no shell environment is available in this review agent.
+
+#### Module Responsibilities & Dependency Direction
+
+1. **`dashboard/src/v2/exact.mjs`** (imports nothing):
+
+
+* Exports `V2DataError(code)` with a frozen safe message map and fixed error codes (`INVALID_RATIONAL_DTO`, `NEGATIVE_RATIONAL_FORBIDDEN`, `INVALID_NANO_USD`, `INVALID_FORMAT_OPTIONS`, `INVALID_EXPLORER_DATA`, `INVALID_DIAGNOSTIC_DATA`, `BUNDLE_MISMATCH`, `INVALID_DERIVED_MODEL`, `INVALID_SELECT_OPTIONS`, `RESOURCE_LIMIT_EXCEEDED`).
+
+
+* Validates exact v2 rational DTOs (`{ defined, numerator, denominator, reason }`) with 96-char and 320-bit bounds checked before `BigInt` expansion, canonical signed/positive integer grammar, and Euclidean GCD reduction check (`gcd(|num|, den) === 1n`).
+
+
+* Formats rationals (`formatRationalV2`), percentages (`formatPercentV2`), and nano-USD strings/DTOs (`formatNanoUsdV2`) using pure `BigInt` arithmetic and half-away-from-zero rounding (`places` in `0..6`), appending exact fraction labels alongside rounded decimals and displaying `< $...` thresholds for positive amounts below the smallest displayed USD unit.
+
+
+
+
+2. **`dashboard/src/v2/data.mjs`** (imports `./exact.mjs`):
+
+
+* Exports `LIMITS_V2`, `parseExplorerV2(text)`, `validateExplorerV2(input)`, `parseFamilyDiagnosticV2(text)`, and `bindFamilyDiagnosticV2(view, diagnostic)`.
+
+
+* Pre-scans raw JSON text (UTF-8 `<= 2 MiB`, depth `<= 24`, visited nodes `<= 80,000`) to reject lone surrogates, float/exponent/`-0` tokens, and duplicate decoded object keys (including Unicode-escaped equivalents) at every depth before `JSON.parse`.
+
+
+* Enforces the accepted Python validators (`dojo/bench/explorer_export.py`, `dojo/bench/sensitivity_diagnostics.py`, `dojo/bench/evidence_bundle.py`), including preflight workload bounds (`<= 2,000,000`), row-level 90-state evidence matrix, per-config task-weighted metric recomputation, Pareto frontier dominance/tie recomputation, cascade scaling/comparison bindings, bootstrap interval/difference bindings, and cross-file leave-one-family-out exclusion recomputation.
+
+
+
+
+3. **`dashboard/src/v2/derive.mjs`** (imports `./exact.mjs` and `./data.mjs`):
+
+
+* Exports `deriveExplorerV2(view, diagnostic = null)` returning a deep-frozen `DerivedV2` read model (`{ scope, configurations, runRows, taskSummaries, frontiers, cascade, familyDiagnostic, limitations }`) and `selectRowsV2(derived, options = {})` returning `PageV2` (`{ rows, totalMatched, page, pageCount, pageSize }`).
+
+
+* Preserves `run:<ordinal>` stable keys across all rows (including blocked duplicates), withholds `taskSummaries` when `audit_status === 'blocked'`, withholds aggregate task costs globally when `audit_status === 'cost_incomplete'`, derives finite chart-only approximations (`approxXUsd`, `approxYPercent`) strictly after validation, and sorts `null` costs last in both `asc` and `desc` directions.
+
+
+
+
+
+---
+
+## FILE: dashboard/src/v2/exact.mjs
+
+```javascript
+// Pure exact rational and nano-USD arithmetic and formatting for dojo-explorer-view-v2.
+// Dependency-free ECMAScript module; never uses Number for rounding or comparison.
+
+export const MAX_INT_STRING_CHARS = 96;
+export const MAX_INT_BITS = 320;
+export const MAX_COST_NANO_USD = 1000000000000000000n; // 10^18
+export const MAX_COUNT_VALUE = 1000000000; // 10^9
+export const NANO_PER_USD = 1000000000n; // 10^9
+
+export const ALLOWED_UNDEFINED_REASONS = Object.freeze([
+  'missing_cost_nano_usd',
+  'zero_expected_solves',
+  'panel_blocked',
+  'no_retained_tasks',
+  'unconditional_interval_blocked_by_zero_solve_draws',
+  'undefined_bootstrap_draws_present',
+  'zero_escalations',
+  'zero_a_failures',
+  'zero_baseline_cost',
+]);
+
+const UNDEFINED_REASON_SET = new Set(ALLOWED_UNDEFINED_REASONS);
+
+export const UNDEFINED_REASON_LABELS = Object.freeze({
+  missing_cost_nano_usd: 'Unavailable (missing cost)',
+  zero_expected_solves: 'Undefined (0 expected solves)',
+  panel_blocked: 'Withheld (panel audit blocked)',
+  no_retained_tasks: 'Undefined (0 retained tasks)',
+  unconditional_interval_blocked_by_zero_solve_draws: 'Undefined (zero-solve bootstrap draws)',
+  undefined_bootstrap_draws_present: 'Undefined (undefined bootstrap draws)',
+  zero_escalations: 'Undefined (0 escalations)',
+  zero_a_failures: 'Undefined (0 base failures)',
+  zero_baseline_cost: 'Undefined (0 baseline cost)',
+});
+
+export const V2_ERROR_CODES = Object.freeze({
+  INVALID_RATIONAL_DTO: 'Invalid or non-canonical v2 rational DTO.',
+  NEGATIVE_RATIONAL_FORBIDDEN: 'Negative rational value is not permitted for this metric.',
+  INVALID_NANO_USD: 'Invalid nano-USD integer string or DTO.',
+  INVALID_FORMAT_OPTIONS: 'Invalid formatting options; places must be an integer in 0..6.',
+  INVALID_EXPLORER_DATA: 'Input failed dojo-explorer-view-v2 validation.',
+  INVALID_DIAGNOSTIC_DATA: 'Input failed dojo-family-sensitivity-v2 validation.',
+  BUNDLE_MISMATCH: 'Explorer view and family diagnostic failed cross-artifact consistency.',
+  INVALID_DERIVED_MODEL: 'Invalid or mutated DerivedV2 read model.',
+  INVALID_SELECT_OPTIONS: 'Invalid row selection, filter, sort, or pagination options.',
+  RESOURCE_LIMIT_EXCEEDED: 'Input exceeds v2 browser resource or workload limits.',
+});
+
+export class V2DataError extends Error {
+  constructor(code = 'INVALID_EXPLORER_DATA') {
+    const safeCode = Object.prototype.hasOwnProperty.call(V2_ERROR_CODES, code)
+      ? code
+      : 'INVALID_EXPLORER_DATA';
+    super(V2_ERROR_CODES[safeCode]);
+    this.name = 'V2DataError';
+    this.code = safeCode;
+    Object.freeze(this);
+  }
+}
+
+const SIGNED_INT_RE = /^(?:0|-?[1-9][0-9]*)$/;
+const POSITIVE_INT_RE = /^[1-9][0-9]*$/;
+const NONNEGATIVE_INT_RE = /^(?:0|[1-9][0-9]*)$/;
+
+// 2^320 - 1 has 97 decimal digits, but we also enforce exact bit length <= 320.
+const MAX_320_BIT_UINT = (1n << 320n) - 1n;
+
+export function isPlainObject(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+export function hasExactKeys(obj, expectedKeys) {
+  if (!isPlainObject(obj)) return false;
+  if (Object.getOwnPropertySymbols(obj).length > 0) return false;
+  const keys = Object.keys(obj);
+  if (keys.length !== expectedKeys.length) return false;
+  for (let i = 0; i < expectedKeys.length; i += 1) {
+    const k = expectedKeys[i];
+    if (!Object.prototype.hasOwnProperty.call(obj, k)) return false;
+    const desc = Object.getOwnPropertyDescriptor(obj, k);
+    if (!desc || !Object.prototype.hasOwnProperty.call(desc, 'value')) return false;
+  }
+  return true;
+}
+
+export function isCleanAsciiOrUtf16String(value, maxLen = 1024, allowEmpty = false) {
+  if (typeof value !== 'string') return false;
+  if (!allowEmpty && value.length === 0) return false;
+  if (value.length > maxLen) return false;
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code < 32 || code === 127) return false;
+    if (code >= 0xd800 && code <= 0xdbff) {
+      if (i + 1 >= value.length) return false;
+      const next = value.charCodeAt(i + 1);
+      if (next < 0xdc00 || next > 0xdfff) return false;
+      i += 1;
+    } else if (code >= 0xdc00 && code <= 0xdfff) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function gcdBigInt(a, b) {
+  let x = a < 0n ? -a : a;
+  let y = b < 0n ? -b : b;
+  while (y !== 0n) {
+    const r = x % y;
+    x = y;
+    y = r;
+  }
+  return x;
+}
+
+export function parseBoundedSignedBigInt(str, { allowNegative = true } = {}) {
+  if (typeof str !== 'string' || str.length === 0 || str.length > MAX_INT_STRING_CHARS) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!SIGNED_INT_RE.test(str)) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!allowNegative && str.charCodeAt(0) === 45) {
+    throw new V2DataError('NEGATIVE_RATIONAL_FORBIDDEN');
+  }
+  const val = BigInt(str);
+  const absVal = val < 0n ? -val : val;
+  if (absVal > MAX_320_BIT_UINT) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  return val;
+}
+
+export function parseBoundedPositiveBigInt(str) {
+  if (typeof str !== 'string' || str.length === 0 || str.length > MAX_INT_STRING_CHARS) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!POSITIVE_INT_RE.test(str)) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  const val = BigInt(str);
+  if (val > MAX_320_BIT_UINT) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  return val;
+}
+
+export function parseNanoUsdString(value, { allowNull = true, checkMaxCost = false } = {}) {
+  if (value === null) {
+    if (allowNull) return null;
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+  if (typeof value !== 'string' || value.length === 0 || value.length > MAX_INT_STRING_CHARS) {
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+  if (!NONNEGATIVE_INT_RE.test(value)) {
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+  const parsed = BigInt(value);
+  if (parsed > MAX_320_BIT_UINT) {
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+  if (checkMaxCost && parsed > MAX_COST_NANO_USD) {
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+  return parsed;
+}
+
+const RATIONAL_KEYS = Object.freeze(['defined', 'numerator', 'denominator', 'reason']);
+
+export function parseRationalV2(dto, { allowNegative = false } = {}) {
+  if (typeof allowNegative !== 'boolean') {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!hasExactKeys(dto, RATIONAL_KEYS)) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  const { defined, numerator, denominator, reason } = dto;
+  if (typeof defined !== 'boolean') {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!defined) {
+    if (numerator !== null || denominator !== null) {
+      throw new V2DataError('INVALID_RATIONAL_DTO');
+    }
+    if (typeof reason !== 'string' || !UNDEFINED_REASON_SET.has(reason)) {
+      throw new V2DataError('INVALID_RATIONAL_DTO');
+    }
+    return null;
+  }
+  if (reason !== null) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  const num = parseBoundedSignedBigInt(numerator, { allowNegative });
+  const den = parseBoundedPositiveBigInt(denominator);
+  if (gcdBigInt(num, den) !== 1n) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  return { numerator: num, denominator: den };
+}
+
+export function makeDefinedRationalDto(numerator, denominator, { allowNegative = false } = {}) {
+  if (typeof numerator !== 'bigint' || typeof denominator !== 'bigint' || denominator <= 0n) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!allowNegative && numerator < 0n) {
+    throw new V2DataError('NEGATIVE_RATIONAL_FORBIDDEN');
+  }
+  const divisor = gcdBigInt(numerator, denominator);
+  const redNum = numerator / divisor;
+  const redDen = denominator / divisor;
+  const absNum = redNum < 0n ? -redNum : redNum;
+  if (absNum > MAX_320_BIT_UINT || redDen > MAX_320_BIT_UINT) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  const numStr = redNum.toString(10);
+  const denStr = redDen.toString(10);
+  if (numStr.length > MAX_INT_STRING_CHARS || denStr.length > MAX_INT_STRING_CHARS) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  return {
+    defined: true,
+    numerator: numStr,
+    denominator: denStr,
+    reason: null,
+  };
+}
+
+export function makeUndefinedRationalDto(reason) {
+  if (typeof reason !== 'string' || !UNDEFINED_REASON_SET.has(reason)) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  return {
+    defined: false,
+    numerator: null,
+    denominator: null,
+    reason,
+  };
+}
+
+export function addRationals(a, b) {
+  const num = a.numerator * b.denominator + b.numerator * a.denominator;
+  const den = a.denominator * b.denominator;
+  const g = gcdBigInt(num, den);
+  return { numerator: num / g, denominator: den / g };
+}
+
+export function subRationals(a, b) {
+  const num = a.numerator * b.denominator - b.numerator * a.denominator;
+  const den = a.denominator * b.denominator;
+  const g = gcdBigInt(num, den);
+  return { numerator: num / g, denominator: den / g };
+}
+
+export function mulRationals(a, b) {
+  const num = a.numerator * b.numerator;
+  const den = a.denominator * b.denominator;
+  const g = gcdBigInt(num, den);
+  return { numerator: num / g, denominator: den / g };
+}
+
+export function divRationals(a, b) {
+  if (b.numerator === 0n) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  const sign = b.numerator < 0n ? -1n : 1n;
+  const num = a.numerator * b.denominator * sign;
+  const den = a.denominator * (b.numerator < 0n ? -b.numerator : b.numerator);
+  const g = gcdBigInt(num, den);
+  return { numerator: num / g, denominator: den / g };
+}
+
+export function equalsRational(a, b) {
+  if (a === null || b === null) return a === b;
+  return a.numerator === b.numerator && a.denominator === b.denominator;
+}
+
+export function compareParsedRationals(a, b) {
+  if (a === null || b === null) return null;
+  const lhs = a.numerator * b.denominator;
+  const rhs = b.numerator * a.denominator;
+  if (lhs < rhs) return -1;
+  if (lhs > rhs) return 1;
+  return 0;
+}
+
+export function compareRationalV2(left, right) {
+  const a = parseRationalV2(left, { allowNegative: true });
+  const b = parseRationalV2(right, { allowNegative: true });
+  return compareParsedRationals(a, b);
+}
+
+function validatePlaces(places) {
+  if (typeof places !== 'number' || !Number.isInteger(places) || places < 0 || places > 6) {
+    throw new V2DataError('INVALID_FORMAT_OPTIONS');
+  }
+  return places;
+}
+
+function formatGroupedDigits(digitsStr) {
+  let out = '';
+  const len = digitsStr.length;
+  for (let i = 0; i < len; i += 1) {
+    if (i > 0 && (len - i) % 3 === 0) {
+      out += ',';
+    }
+    out += digitsStr[i];
+  }
+  return out;
+}
+
+// Half-away-from-zero rounding on non-negative BigInt numerator/denominator at 10^places scale.
+function roundAbsRationalScaled(absNum, den, places) {
+  const scale = 10n ** BigInt(places);
+  const scaledNumerator = absNum * scale;
+  const quotient = scaledNumerator / den;
+  const remainder = scaledNumerator % den;
+  const rounded = remainder * 2n >= den ? quotient + 1n : quotient;
+  const intPart = rounded / scale;
+  const fracPart = places > 0 ? (rounded % scale).toString(10).padStart(places, '0') : '';
+  return {
+    rounded,
+    scale,
+    intText: formatGroupedDigits(intPart.toString(10)),
+    fracText: fracPart,
+  };
+}
+
+export function formatUndefinedReasonV2(reason) {
+  if (typeof reason === 'string' && Object.prototype.hasOwnProperty.call(UNDEFINED_REASON_LABELS, reason)) {
+    return UNDEFINED_REASON_LABELS[reason];
+  }
+  return 'Undefined';
+}
+
+export function formatRationalV2(dto, options = {}) {
+  if (!isPlainObject(options)) {
+    throw new V2DataError('INVALID_FORMAT_OPTIONS');
+  }
+  const places = validatePlaces(options.places === undefined ? 3 : options.places);
+  const parsed = parseRationalV2(dto, { allowNegative: true });
+  if (parsed === null) {
+    return formatUndefinedReasonV2(dto.reason);
+  }
+  const { numerator, denominator } = parsed;
+  const isNeg = numerator < 0n;
+  const absNum = isNeg ? -numerator : numerator;
+  const sign = isNeg ? '-' : '';
+  const { intText, fracText } = roundAbsRationalScaled(absNum, denominator, places);
+  const decText = places > 0 ? `${sign}${intText}.${fracText}` : `${sign}${intText}`;
+  const exactFraction = denominator === 1n
+    ? `${numerator.toString(10)}`
+    : `${numerator.toString(10)}/${denominator.toString(10)}`;
+  return `${decText} (${exactFraction})`;
+}
+
+export function formatPercentV2(dto, options = {}) {
+  if (!isPlainObject(options)) {
+    throw new V2DataError('INVALID_FORMAT_OPTIONS');
+  }
+  const places = validatePlaces(options.places === undefined ? 1 : options.places);
+  const parsed = parseRationalV2(dto, { allowNegative: true });
+  if (parsed === null) {
+    return formatUndefinedReasonV2(dto.reason);
+  }
+  const { numerator, denominator } = parsed;
+  const isNeg = numerator < 0n;
+  const absNum = (isNeg ? -numerator : numerator) * 100n;
+  const sign = isNeg ? '-' : '';
+  const { intText, fracText } = roundAbsRationalScaled(absNum, denominator, places);
+  const decText = places > 0 ? `${sign}${intText}.${fracText}%` : `${sign}${intText}%`;
+  const exactFraction = `${numerator.toString(10)}/${denominator.toString(10)}`;
+  return `${decText} (${exactFraction})`;
+}
+
+export function formatNanoUsdV2(dto, options = {}) {
+  if (!isPlainObject(options)) {
+    throw new V2DataError('INVALID_FORMAT_OPTIONS');
+  }
+  const places = validatePlaces(options.places === undefined ? 6 : options.places);
+
+  let numerator;
+  let denominator;
+  let exactNanoLabel;
+
+  if (typeof dto === 'string') {
+    const nano = parseNanoUsdString(dto, { allowNull: false });
+    numerator = nano;
+    denominator = 1n;
+    exactNanoLabel = `${formatGroupedDigits(nano.toString(10))} nano-USD`;
+  } else if (isPlainObject(dto)) {
+    const parsed = parseRationalV2(dto, { allowNegative: true });
+    if (parsed === null) {
+      return formatUndefinedReasonV2(dto.reason);
+    }
+    numerator = parsed.numerator;
+    denominator = parsed.denominator;
+    exactNanoLabel = denominator === 1n
+      ? `${numerator < 0n ? '-' : ''}${formatGroupedDigits((numerator < 0n ? -numerator : numerator).toString(10))} nano-USD`
+      : `${numerator.toString(10)}/${denominator.toString(10)} nano-USD`;
+  } else {
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+
+  const isNeg = numerator < 0n;
+  const absNum = isNeg ? -numerator : numerator;
+  const usdDenominator = denominator * NANO_PER_USD;
+  const scale = 10n ** BigInt(places);
+
+  // Positive non-zero amount strictly below 1 displayed USD unit (10^-places USD)
+  if (!isNeg && absNum > 0n && absNum * scale < usdDenominator) {
+    const thresholdText = places === 0 ? '$1' : `$0.${'0'.repeat(places - 1)}1`;
+    return `< ${thresholdText} (${exactNanoLabel})`;
+  }
+
+  const { rounded, intText, fracText } = roundAbsRationalScaled(absNum, usdDenominator, places);
+  const sign = isNeg && (rounded > 0n || absNum > 0n) ? '-' : '';
+  const usdText = places > 0 ? `${sign}$${intText}.${fracText}` : `${sign}$${intText}`;
+  return `${usdText} (${exactNanoLabel})`;
+}
+
+// Chart-only finite Number approximation derived strictly AFTER validation.
+// Never used for arithmetic, dominance, sorting, or eligibility.
+export function approximateRationalToNumber(parsed, multiplier = 1n, divisor = 1n) {
+  if (parsed === null) return null;
+  const num = parsed.numerator * multiplier;
+  const den = parsed.denominator * divisor;
+  if (den <= 0n) return null;
+  const isNeg = num < 0n;
+  const absNum = isNeg ? -num : num;
+  // Scale by 10^12 in BigInt to maintain high precision before converting to finite IEEE-754 Number
+  const precisionScale = 1000000000000n;
+  const scaled = (absNum * precisionScale) / den;
+  const approx = Number(scaled) / 1e12;
+  if (!Number.isFinite(approx)) return null;
+  return isNeg ? -approx : approx;
+}
+
+```
+
+## FILE: dashboard/src/v2/exact.test.mjs
+
+```javascript
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  V2DataError,
+  compareRationalV2,
+  formatNanoUsdV2,
+  formatPercentV2,
+  formatRationalV2,
+  parseRationalV2,
+} from './exact.mjs';
+
+describe('exact.mjs — rational DTO parsing and comparison', () => {
+  it('1. parses canonical defined and undefined rational DTOs accurately', () => {
+    const r = parseRationalV2({
+      defined: true,
+      numerator: '26000000',
+      denominator: '3',
+      reason: null,
+    });
+    assert.deepEqual(r, { numerator: 26000000n, denominator: 3n });
+
+    const u = parseRationalV2({
+      defined: false,
+      numerator: null,
+      denominator: null,
+      reason: 'zero_expected_solves',
+    });
+    assert.equal(u, null);
+
+    const neg = parseRationalV2(
+      { defined: true, numerator: '-1', denominator: '4', reason: null },
+      { allowNegative: true },
+    );
+    assert.deepEqual(neg, { numerator: -1n, denominator: 4n });
+  });
+
+  it('2. rejects non-canonical, unreduced, negative-when-forbidden, and oversized rationals before BigInt overflow', () => {
+    const invalidDtos = [
+      { defined: true, numerator: '01', denominator: '1', reason: null },
+      { defined: true, numerator: '-0', denominator: '1', reason: null },
+      { defined: true, numerator: '2', denominator: '4', reason: null },
+      { defined: true, numerator: '1', denominator: '0', reason: null },
+      { defined: true, numerator: '1', denominator: '-2', reason: null },
+      { defined: true, numerator: '1e5', denominator: '1', reason: null },
+      { defined: true, numerator: '9'.repeat(97), denominator: '1', reason: null },
+      { defined: false, numerator: '0', denominator: null, reason: 'panel_blocked' },
+      { defined: false, numerator: null, denominator: null, reason: 'not_an_allowed_reason' },
+      { defined: true, numerator: '1', denominator: '2', reason: null, extra: 1 },
+    ];
+
+    for (const dto of invalidDtos) {
+      assert.throws(
+        () => parseRationalV2(dto, { allowNegative: true }),
+        (err) => err instanceof V2DataError && err.code === 'INVALID_RATIONAL_DTO',
+      );
+    }
+
+    assert.throws(
+      () => parseRationalV2({ defined: true, numerator: '-1', denominator: '2', reason: null }),
+      (err) => err instanceof V2DataError && err.code === 'NEGATIVE_RATIONAL_FORBIDDEN',
+    );
+  });
+
+  it('3. compares exact rationals beyond Number.MAX_SAFE_INTEGER and returns null for undefined', () => {
+    const a = { defined: true, numerator: '1000000000000000009', denominator: '2', reason: null };
+    const b = { defined: true, numerator: '1000000000000000008', denominator: '2', reason: null };
+    const u = { defined: false, numerator: null, denominator: null, reason: 'missing_cost_nano_usd' };
+
+    assert.equal(compareRationalV2(a, b), 1);
+    assert.equal(compareRationalV2(b, a), -1);
+    assert.equal(compareRationalV2(a, a), 0);
+    assert.equal(compareRationalV2(a, u), null);
+    assert.equal(compareRationalV2(u, b), null);
+  });
+
+  it('4. formats rationals and percentages with half-away-from-zero rounding and exact fraction labels', () => {
+    // 1/8 = 0.125 -> at 2 places rounds half-away-from-zero to 0.13
+    const posEighth = { defined: true, numerator: '1', denominator: '8', reason: null };
+    assert.equal(formatRationalV2(posEighth, { places: 2 }), '0.13 (1/8)');
+
+    // -1/8 = -0.125 -> at 2 places rounds half-away-from-zero to -0.13
+    const negEighth = { defined: true, numerator: '-1', denominator: '8', reason: null };
+    assert.equal(formatRationalV2(negEighth, { places: 2 }), '-0.13 (-1/8)');
+
+    // Percent: 1/4 = 25.0% (1/4)
+    const quarter = { defined: true, numerator: '1', denominator: '4', reason: null };
+    assert.equal(formatPercentV2(quarter, { places: 1 }), '25.0% (1/4)');
+
+    // Undefined shows explicit reason text
+    const undef = { defined: false, numerator: null, denominator: null, reason: 'zero_expected_solves' };
+    assert.match(formatRationalV2(undef), /0 expected solves/);
+    assert.match(formatPercentV2(undef), /0 expected solves/);
+  });
+
+  it('5. formats nano-USD with less-than threshold for tiny positive costs, exact zero, and large values', () => {
+    // 5 nano-USD = $0.000000005 < $0.000001 at 6 places
+    const fiveNanoDto = { defined: true, numerator: '5', denominator: '1', reason: null };
+    assert.equal(formatNanoUsdV2(fiveNanoDto, { places: 6 }), '< $0.000001 (5 nano-USD)');
+    assert.equal(formatNanoUsdV2('5', { places: 6 }), '< $0.000001 (5 nano-USD)');
+
+    // Exact 0 nano-USD must NOT show less-than threshold
+    const zeroDto = { defined: true, numerator: '0', denominator: '1', reason: null };
+    assert.equal(formatNanoUsdV2(zeroDto, { places: 6 }), '$0.000000 (0 nano-USD)');
+
+    // 26,000,000 / 3 nano-USD = $0.008667 (26000000/3 nano-USD)
+    const cascadeCps = { defined: true, numerator: '26000000', denominator: '3', reason: null };
+    assert.equal(formatNanoUsdV2(cascadeCps, { places: 6 }), '$0.008667 (26000000/3 nano-USD)');
+
+    // Large integer > 2^53: 1000000000000000009 nano-USD = $1,000,000,000.000000
+    assert.equal(
+      formatNanoUsdV2('1000000000000000009', { places: 6 }),
+      '$1,000,000,000.000000 (1,000,000,000,000,000,009 nano-USD)',
+    );
+
+    // Invalid places option rejected
+    assert.throws(
+      () => formatNanoUsdV2(zeroDto, { places: 7 }),
+      (err) => err instanceof V2DataError && err.code === 'INVALID_FORMAT_OPTIONS',
+    );
+  });
+});
+
+```
+
+## FILE: dashboard/src/v2/data.mjs
+
+```javascript
+// Strict browser ingestion and validation for dojo-explorer-view-v2 and
+// dojo-family-sensitivity-v2. Matches the accepted Python validators.
+
+import {
+  ALLOWED_UNDEFINED_REASONS,
+  MAX_COST_NANO_USD,
+  MAX_COUNT_VALUE,
+  MAX_INT_BITS,
+  MAX_INT_STRING_CHARS,
+  V2DataError,
+  addRationals,
+  compareParsedRationals,
+  divRationals,
+  equalsRational,
+  hasExactKeys,
+  isCleanAsciiOrUtf16String,
+  isPlainObject,
+  makeDefinedRationalDto,
+  mulRationals,
+  parseNanoUsdString,
+  parseRationalV2,
+  subRationals,
+} from './exact.mjs';
+
+export const VIEW_SCHEMA_VERSION = 2;
+export const VIEW_MODEL = 'dojo-explorer-view-v2';
+export const DIAGNOSTIC_SCHEMA_VERSION = 2;
+export const DIAGNOSTIC_MODEL = 'dojo-family-sensitivity-v2';
+export const FOUNDATION_METHOD_VERSION = 'dojo-stats-foundation-v1';
+export const QUANTILE_METHOD = 'linear_hyndman_fan_type_7';
+
+export const CONSTRUCTION_TOTAL = 63;
+export const CONSTRUCTION_TRAIN = 37;
+export const CONSTRUCTION_HELD_OUT = 26;
+
+export const COST_AXIS_COST_PER_SOLVED = 'cost_per_solved';
+export const COST_AXIS_MEAN_TASK_COST = 'mean_task_cost';
+
+export const LIMITS_V2 = Object.freeze({
+  maxViewBytes: 2097152, // 2 MiB
+  maxViewNodes: 80000,
+  maxViewRows: 10000,
+  maxViewConfigs: 100,
+  maxViewDepth: 24,
+  maxIntStringChars: MAX_INT_STRING_CHARS,
+  maxIntBits: MAX_INT_BITS,
+  maxLimitations: 50,
+  maxCellVisits: 2000000,
+  maxStringChars: 1024,
+  maxCostNanoUsd: '1000000000000000000',
+  maxCountValue: MAX_COUNT_VALUE,
+  maxBootstrapReplicates: 100000,
+  maxPairedDifferences: 10000,
+});
+
+export const ALLOWED_SUMMARY_MODES = Object.freeze([
+  'headline_complete',
+  'success_only',
+  'blocked',
+]);
+export const ALLOWED_AUDIT_STATUSES = Object.freeze([
+  'valid',
+  'cost_incomplete',
+  'blocked',
+]);
+export const ALLOWED_FRONTIER_STATUSES = Object.freeze([
+  'non_dominated',
+  'dominated',
+  'undefined_cost',
+]);
+export const VALID_OUTCOMES = Object.freeze([
+  'solved',
+  'unsolved',
+  'undetermined',
+]);
+export const VALID_SCORER_STATUSES = Object.freeze([
+  'passed',
+  'failed',
+  'candidate_error',
+  'invalid_evidence',
+  'infrastructure_error',
+]);
+export const VALID_EVIDENCE_VALIDITIES = Object.freeze([
+  'valid',
+  'invalid',
+  'unknown',
+]);
+
+export const ALLOWED_LIMITATION_CODES = Object.freeze({
+  synthetic_unverified_only:
+    'Synthetic offline benchmark view only; eligibility is UNVERIFIED and real_provider_calls is 0.',
+  descriptive_bootstrap_uncertainty:
+    'Bootstrap intervals represent descriptive empirical uncertainty over observed tasks, not a hypothesis test or registration certificate.',
+  selection_multiplicity_and_contamination:
+    'Small task samples and potential pretraining overlap limit external generalization; train-selected policies require locked held-out evaluation without retuning.',
+  sensitivity_requires_bundle_packaging:
+    'analysis.sensitivity is always null; the separately validated family diagnostic is reserved for future bundle packaging.',
+  panel_audit_blocked:
+    'Panel audit status is blocked; configuration comparisons, frontiers, bootstrap, and cascades are withheld.',
+  cost_incomplete_success_only:
+    'One or more configurations have missing cost_nano_usd values; cost metrics, frontiers, and cascades are withheld.',
+  no_bootstrap_in_report:
+    'analysis.bootstrap is null because the source report did not include bootstrap results.',
+  no_cascade_evaluated:
+    'analysis.cascade is null because no cold-restart cascade was evaluated in the report.',
+  success_only_bootstrap_withheld:
+    'Success-only views withhold bootstrap because report intervals can contain partial costs.',
+});
+
+const DIAGNOSTIC_BASE_LIMITATIONS = Object.freeze([
+  'synthetic_unverified_only',
+  'nonprimary_no_retuning',
+]);
+
+const SHA256_RE = /^[0-9a-f]{64}$/;
+const CONFIG_ALIAS_RE = /^config_(?:0*[1-9][0-9]*)$/;
+const TASK_ALIAS_RE = /^task_(?:0*[1-9][0-9]*)$/;
+const FAMILY_ALIAS_RE = /^family_(?:0*[1-9][0-9]*)$/;
+const CASCADE_ALIAS_RE = /^cascade:config_(?:0*[1-9][0-9]*)->config_(?:0*[1-9][0-9]*)$/;
+const TIE_GROUP_RE = /^tie_group_[1-9][0-9]*$/;
+const NUMBER_TOKEN_RE = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+
+const TOP_LEVEL_VIEW_KEYS = Object.freeze([
+  'schema_version',
+  'view_model',
+  'evidence_kind',
+  'eligibility',
+  'real_provider_calls',
+  'source',
+  'construction_counts',
+  'evaluated_task_count',
+  'configurations',
+  'rows',
+  'analysis',
+  'limitations',
+]);
+const SOURCE_KEYS = Object.freeze([
+  'input_sha256',
+  'expected_plan_hash',
+  'report_method_version',
+]);
+const CONSTRUCTION_COUNT_KEYS = Object.freeze(['total', 'train', 'held_out']);
+const CONFIGURATION_KEYS = Object.freeze([
+  'config_id',
+  'n_tasks',
+  'declared_seeds',
+  'total_runs',
+  'expected_solved_tasks',
+  'pass_at_1',
+  'expected_total_cost_nano_usd',
+  'actual_all_repetitions_spend_nano_usd',
+]);
+const ROW_KEYS = Object.freeze([
+  'task_id',
+  'config_id',
+  'family_id',
+  'seed',
+  'outcome',
+  'scorer_status',
+  'evidence_validity',
+  'baseline_verified',
+  'cost_nano_usd',
+  'visible_tests_pass',
+]);
+const ANALYSIS_KEYS = Object.freeze([
+  'summary_mode',
+  'audit_status',
+  'frontiers',
+  'bootstrap',
+  'cascade',
+  'sensitivity',
+]);
+const FRONTIERS_MAP_KEYS = Object.freeze([
+  COST_AXIS_COST_PER_SOLVED,
+  COST_AXIS_MEAN_TASK_COST,
+]);
+const FRONTIER_TABLE_KEYS = Object.freeze([
+  'cost_axis',
+  'is_headline_axis',
+  'frontier_series_ids',
+  'dominated_series_ids',
+  'undefined_series_ids',
+  'rows',
+]);
+const FRONTIER_ROW_KEYS = Object.freeze([
+  'series_id',
+  'cost_axis',
+  'pass_at_1',
+  'cost_value_nano_usd',
+  'status',
+  'is_on_frontier',
+  'tie_group_id',
+  'tied_with',
+  'dominated_by',
+]);
+const BOOTSTRAP_KEYS = Object.freeze([
+  'method_version',
+  'quantile_method',
+  'replicates',
+  'seed',
+  'confidence_level',
+  'n_tasks',
+  'series_summaries',
+  'paired_differences',
+]);
+const BOOTSTRAP_INTERVAL_KEYS = Object.freeze([
+  'metric_name',
+  'point_estimate',
+  'lower',
+  'upper',
+  'confidence_level',
+  'replicates',
+  'defined_draws',
+  'undefined_draws',
+  'zero_solve_draws',
+  'quantile_method',
+]);
+const BOOTSTRAP_SERIES_SUMMARY_KEYS = Object.freeze([
+  'series_id',
+  'pass_at_1',
+  'expected_total_cost_nano_usd',
+  'mean_task_cost_nano_usd',
+  'expected_cost_per_solved_nano_usd',
+]);
+const BOOTSTRAP_PAIRED_DIFF_KEYS = Object.freeze([
+  'baseline_id',
+  'target_id',
+  'delta_pass_at_1',
+  'delta_expected_total_cost_nano_usd',
+  'delta_expected_cost_per_solved_nano_usd',
+]);
+const CASCADE_KEYS = Object.freeze([
+  'series_id',
+  'base_config_id',
+  'escalate_config_id',
+  'policy_hash',
+  'n_tasks',
+  'pass_at_1',
+  'expected_solved_tasks',
+  'expected_total_cost_nano_usd',
+  'mean_task_cost_nano_usd',
+  'expected_cost_per_solved_nano_usd',
+  'comparison_vs_base',
+  'comparison_vs_escalate',
+]);
+const CASCADE_COMPARISON_KEYS = Object.freeze([
+  'baseline_id',
+  'baseline_pass_at_1',
+  'cascade_pass_at_1',
+  'delta_pass_at_1',
+  'baseline_expected_total_cost_nano_usd',
+  'cascade_expected_total_cost_nano_usd',
+  'delta_expected_total_cost_nano_usd',
+  'relative_cost_savings',
+  'baseline_cost_per_solved_nano_usd',
+  'cascade_cost_per_solved_nano_usd',
+  'delta_cost_per_solved_nano_usd',
+  'observed_cheaper_at_equal_or_better_success',
+]);
+
+const DIAGNOSTIC_TOP_KEYS = Object.freeze([
+  'schema_version',
+  'diagnostic_model',
+  'evidence_kind',
+  'eligibility',
+  'real_provider_calls',
+  'is_primary',
+  'source',
+  'audit_status',
+  'original_n_tasks',
+  'n_families',
+  'configurations',
+  'family_sizes',
+  'originals',
+  'exclusions',
+  'limitations',
+]);
+const DIAGNOSTIC_FAMILY_SIZE_KEYS = Object.freeze(['family_id', 'task_count']);
+const DIAGNOSTIC_ORIGINAL_KEYS = Object.freeze([
+  'config_id',
+  'pass_at_1',
+  'expected_total_cost_nano_usd',
+  'mean_task_cost_nano_usd',
+]);
+const DIAGNOSTIC_EXCLUSION_KEYS = Object.freeze([
+  'family_id',
+  'excluded_task_count',
+  'retained_task_count',
+  'configurations',
+]);
+const DIAGNOSTIC_EXCLUSION_CONFIG_KEYS = Object.freeze([
+  'config_id',
+  'pass_at_1',
+  'expected_total_cost_nano_usd',
+  'mean_task_cost_nano_usd',
+  'delta_pass_at_1',
+  'delta_mean_task_cost_nano_usd',
+]);
+
+function okResult(data) {
+  return { ok: true, data, errors: [] };
+}
+
+function failResult(code) {
+  return { ok: false, data: null, errors: [code] };
+}
+
+function isExactNonNegativeInt(value, maxVal = MAX_COUNT_VALUE) {
+  return (
+    typeof value === 'number' &&
+    Number.isSafeInteger(value) &&
+    value >= 0 &&
+    !Object.is(value, -0) &&
+    value <= maxVal
+  );
+}
+
+function isDensePlainArray(arr) {
+  if (!Array.isArray(arr)) return false;
+  if (Object.getPrototypeOf(arr) !== Array.prototype) return false;
+  if (Object.getOwnPropertySymbols(arr).length > 0) return false;
+  const keys = Object.keys(arr);
+  if (keys.length !== arr.length) return false;
+  for (let i = 0; i < arr.length; i += 1) {
+    const desc = Object.getOwnPropertyDescriptor(arr, i);
+    if (!desc || !Object.prototype.hasOwnProperty.call(desc, 'value')) return false;
+  }
+  return true;
+}
+
+export function formatAlias(prefix, index1Based, totalCount) {
+  const width = Math.max(4, String(Math.max(1, totalCount)).length);
+  return `${prefix}_${String(index1Based).padStart(width, '0')}`;
+}
+
+function asciiJsonStringLength(str) {
+  let len = 2; // quotes
+  for (let i = 0; i < str.length; i += 1) {
+    const code = str.charCodeAt(i);
+    if (code === 34 || code === 92 || code === 8 || code === 12 || code === 10 || code === 13 || code === 9) {
+      len += 2;
+    } else if (code < 32 || code > 126) {
+      len += 6; // \uXXXX
+    } else {
+      len += 1;
+    }
+  }
+  return len;
+}
+
+// Validates tree bounds on a direct object graph (maxNodes, maxDepth, maxViewBytes,
+// cycles vs shared DAGs, sparse arrays, prototypes, symbols, accessors, lone surrogates).
+export function validateJsonTreeBounds(
+  root,
+  {
+    maxNodes = LIMITS_V2.maxViewNodes,
+    maxDepth = LIMITS_V2.maxViewDepth,
+    maxBytes = LIMITS_V2.maxViewBytes,
+    errorCode = 'INVALID_EXPLORER_DATA',
+  } = {},
+) {
+  let visited = 0;
+  let encodedBound = 0;
+  const stack = [{ node: root, depth: 0, exit: false }];
+  const ancestors = new Set();
+
+  while (stack.length > 0) {
+    const frame = stack.pop();
+    if (frame.exit) {
+      ancestors.delete(frame.node);
+      continue;
+    }
+    const { node, depth } = frame;
+    visited += 1;
+    encodedBound += 6;
+    if (encodedBound > maxBytes || visited > maxNodes || depth > maxDepth) {
+      throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+    }
+
+    if (node === null || typeof node === 'boolean') {
+      continue;
+    }
+    if (typeof node === 'number') {
+      if (!Number.isSafeInteger(node) || Object.is(node, -0)) {
+        throw new V2DataError(errorCode);
+      }
+      const s = String(node);
+      if (s.length > LIMITS_V2.maxIntStringChars) {
+        throw new V2DataError(errorCode);
+      }
+      encodedBound += s.length;
+      continue;
+    }
+    if (typeof node === 'string') {
+      if (!isCleanAsciiOrUtf16String(node, LIMITS_V2.maxStringChars, true)) {
+        throw new V2DataError(errorCode);
+      }
+      encodedBound += asciiJsonStringLength(node);
+      if (encodedBound > maxBytes) {
+        throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+      }
+      continue;
+    }
+    if (Array.isArray(node)) {
+      if (!isDensePlainArray(node)) {
+        throw new V2DataError(errorCode);
+      }
+      if (ancestors.has(node)) {
+        throw new V2DataError(errorCode);
+      }
+      if (visited + stack.length + node.length > maxNodes) {
+        throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+      }
+      ancestors.add(node);
+      stack.push({ node, depth: -1, exit: true });
+      for (let i = node.length - 1; i >= 0; i -= 1) {
+        stack.push({ node: node[i], depth: depth + 1, exit: false });
+      }
+      continue;
+    }
+    if (isPlainObject(node)) {
+      if (Object.getOwnPropertySymbols(node).length > 0) {
+        throw new V2DataError(errorCode);
+      }
+      if (ancestors.has(node)) {
+        throw new V2DataError(errorCode);
+      }
+      const keys = Object.keys(node);
+      if (visited + stack.length + 2 * keys.length > maxNodes) {
+        throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+      }
+      ancestors.add(node);
+      stack.push({ node, depth: -1, exit: true });
+      for (let i = keys.length - 1; i >= 0; i -= 1) {
+        const k = keys[i];
+        const desc = Object.getOwnPropertyDescriptor(node, k);
+        if (!desc || !Object.prototype.hasOwnProperty.call(desc, 'value')) {
+          throw new V2DataError(errorCode);
+        }
+        if (!isCleanAsciiOrUtf16String(k, 256, false)) {
+          throw new V2DataError(errorCode);
+        }
+        visited += 1;
+        encodedBound += asciiJsonStringLength(k) + 2;
+        if (encodedBound > maxBytes || visited > maxNodes) {
+          throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+        }
+        stack.push({ node: desc.value, depth: depth + 1, exit: false });
+      }
+      continue;
+    }
+
+    throw new V2DataError(errorCode);
+  }
+
+  return visited;
+}
+
+function isWhitespaceChar(c) {
+  return c === 32 || c === 9 || c === 10 || c === 13;
+}
+
+function isHexChar(c) {
+  return (c >= 48 && c <= 57) || (c >= 65 && c <= 70) || (c >= 97 && c <= 102);
+}
+
+function isNumberTokenChar(c) {
+  return (
+    (c >= 48 && c <= 57) ||
+    c === 45 || // -
+    c === 43 || // +
+    c === 46 || // .
+    c === 101 || // e
+    c === 69 // E
+  );
+}
+
+// Single-pass raw JSON text scanner before JSON.parse.
+// Enforces byte limits, nesting depth <= 24, no lone surrogates, no duplicate
+// decoded keys at any depth, and strict exact integer numeric tokens (no floats,
+// no exponents, no -0, and length <= 96).
+export function parseBoundedJsonText(
+  rawText,
+  {
+    maxBytes = LIMITS_V2.maxViewBytes,
+    maxDepth = LIMITS_V2.maxViewDepth,
+    maxNodes = LIMITS_V2.maxViewNodes,
+    errorCode = 'INVALID_EXPLORER_DATA',
+  } = {},
+) {
+  if (typeof rawText !== 'string') {
+    throw new V2DataError(errorCode);
+  }
+  if (rawText.length > maxBytes) {
+    throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+  }
+  // Check lone surrogates in raw text before UTF-8 encoding
+  for (let i = 0; i < rawText.length; i += 1) {
+    const code = rawText.charCodeAt(i);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      if (i + 1 >= rawText.length) throw new V2DataError(errorCode);
+      const next = rawText.charCodeAt(i + 1);
+      if (next < 0xdc00 || next > 0xdfff) throw new V2DataError(errorCode);
+      i += 1;
+    } else if (code >= 0xdc00 && code <= 0xdfff) {
+      throw new V2DataError(errorCode);
+    }
+  }
+  const encodedLen = new TextEncoder().encode(rawText).byteLength;
+  if (encodedLen > maxBytes) {
+    throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+  }
+  if (rawText.trim() === '') {
+    throw new V2DataError(errorCode);
+  }
+
+  const len = rawText.length;
+  let i = 0;
+  const stack = [];
+
+  while (i < len) {
+    const c = rawText.charCodeAt(i);
+    if (isWhitespaceChar(c)) {
+      i += 1;
+      continue;
+    }
+    if (c === 123 || c === 91) {
+      // '{' or '['
+      // Root container is at depth 0; nested children at depth 1..maxDepth
+      if (stack.length > maxDepth) {
+        throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+      }
+      if (stack.length > 0 && stack[stack.length - 1].type === 'object') {
+        stack[stack.length - 1].afterColon = false;
+      }
+      stack.push(
+        c === 123
+          ? { type: 'object', keys: new Set(), afterColon: false }
+          : { type: 'array' },
+      );
+      i += 1;
+      continue;
+    }
+    if (c === 125 || c === 93) {
+      // '}' or ']'
+      if (stack.length === 0) {
+        throw new V2DataError(errorCode);
+      }
+      const top = stack.pop();
+      if ((c === 125 && top.type !== 'object') || (c === 93 && top.type !== 'array')) {
+        throw new V2DataError(errorCode);
+      }
+      i += 1;
+      continue;
+    }
+    if (c === 58) {
+      // ':'
+      if (stack.length > 0 && stack[stack.length - 1].type === 'object') {
+        stack[stack.length - 1].afterColon = true;
+      }
+      i += 1;
+      continue;
+    }
+    if (c === 44) {
+      // ','
+      if (stack.length > 0 && stack[stack.length - 1].type === 'object') {
+        stack[stack.length - 1].afterColon = false;
+      }
+      i += 1;
+      continue;
+    }
+    if (c === 34) {
+      // '"'
+      const start = i;
+      i += 1;
+      while (i < len) {
+        const ch = rawText.charCodeAt(i);
+        if (ch < 0x20) {
+          throw new V2DataError(errorCode);
+        }
+        if (ch === 92) {
+          if (i + 1 >= len) throw new V2DataError(errorCode);
+          const esc = rawText.charCodeAt(i + 1);
+          if (
+            esc === 34 ||
+            esc === 92 ||
+            esc === 47 ||
+            esc === 98 ||
+            esc === 102 ||
+            esc === 110 ||
+            esc === 114 ||
+            esc === 116
+          ) {
+            i += 2;
+          } else if (esc === 117) {
+            if (
+              i + 5 >= len ||
+              !isHexChar(rawText.charCodeAt(i + 2)) ||
+              !isHexChar(rawText.charCodeAt(i + 3)) ||
+              !isHexChar(rawText.charCodeAt(i + 4)) ||
+              !isHexChar(rawText.charCodeAt(i + 5))
+            ) {
+              throw new V2DataError(errorCode);
+            }
+            i += 6;
+          } else {
+            throw new V2DataError(errorCode);
+          }
+        } else if (ch === 34) {
+          i += 1;
+          break;
+        } else {
+          i += 1;
+        }
+      }
+      if (i > len || rawText.charCodeAt(i - 1) !== 34 || i - 1 === start) {
+        throw new V2DataError(errorCode);
+      }
+      const token = rawText.slice(start, i);
+      let decoded;
+      try {
+        decoded = JSON.parse(token);
+      } catch {
+        throw new V2DataError(errorCode);
+      }
+      // Check decoded string for lone surrogates or control chars
+      for (let j = 0; j < decoded.length; j += 1) {
+        const code = decoded.charCodeAt(j);
+        if (code < 32 || code === 127) {
+          throw new V2DataError(errorCode);
+        }
+        if (code >= 0xd800 && code <= 0xdbff) {
+          if (j + 1 >= decoded.length) throw new V2DataError(errorCode);
+          const next = decoded.charCodeAt(j + 1);
+          if (next < 0xdc00 || next > 0xdfff) throw new V2DataError(errorCode);
+          j += 1;
+        } else if (code >= 0xdc00 && code <= 0xdfff) {
+          throw new V2DataError(errorCode);
+        }
+      }
+
+      let look = i;
+      while (look < len && isWhitespaceChar(rawText.charCodeAt(look))) {
+        look += 1;
+      }
+      const top = stack.length > 0 ? stack[stack.length - 1] : null;
+      if (top && top.type === 'object' && !top.afterColon && look < len && rawText.charCodeAt(look) === 58) {
+        if (decoded.length === 0 || decoded.length > 256 || top.keys.has(decoded)) {
+          throw new V2DataError(errorCode);
+        }
+        top.keys.add(decoded);
+      }
+      continue;
+    }
+
+    if ((c >= 48 && c <= 57) || c === 45) {
+      const start = i;
+      i += 1;
+      while (i < len && isNumberTokenChar(rawText.charCodeAt(i))) {
+        i += 1;
+      }
+      const token = rawText.slice(start, i);
+      if (token.length > LIMITS_V2.maxIntStringChars) {
+        throw new V2DataError(errorCode);
+      }
+      if (!NUMBER_TOKEN_RE.test(token)) {
+        throw new V2DataError(errorCode);
+      }
+      if (
+        token.includes('.') ||
+        token.includes('e') ||
+        token.includes('E') ||
+        token === '-0'
+      ) {
+        throw new V2DataError(errorCode);
+      }
+      const big = BigInt(token);
+      if (big < -9007199254740991n || big > 9007199254740991n) {
+        throw new V2DataError(errorCode);
+      }
+      continue;
+    }
+
+    if ((c >= 97 && c <= 122) || (c >= 65 && c <= 90)) {
+      const start = i;
+      while (i < len) {
+        const ch = rawText.charCodeAt(i);
+        if ((ch >= 97 && ch <= 122) || (ch >= 65 && ch <= 90)) i += 1;
+        else break;
+      }
+      const ident = rawText.slice(start, i);
+      if (ident !== 'true' && ident !== 'false' && ident !== 'null') {
+        throw new V2DataError(errorCode);
+      }
+      continue;
+    }
+
+    i += 1;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(rawText);
+  } catch {
+    throw new V2DataError(errorCode);
+  }
+  if (!isPlainObject(parsed)) {
+    throw new V2DataError(errorCode);
+  }
+  validateJsonTreeBounds(parsed, { maxNodes, maxDepth, maxBytes, errorCode });
+  return parsed;
+}
+
+function canonicalAsciiRowJson(row) {
+  // ROW_KEYS sorted lexicographically
+  const sortedKeys = [
+    'baseline_verified',
+    'config_id',
+    'cost_nano_usd',
+    'evidence_validity',
+    'family_id',
+    'outcome',
+    'scorer_status',
+    'seed',
+    'task_id',
+    'visible_tests_pass',
+  ];
+  const parts = sortedKeys.map((k) => `${JSON.stringify(k)}:${JSON.stringify(row[k])}`);
+  return `{${parts.join(',')}}`;
+}
+
+function compareRowSortKeys(a, b) {
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] < b[i]) return -1;
+    if (a[i] > b[i]) return 1;
+  }
+  return 0;
+}
+
+export function checkRowSemanticsV2(outcome, scorerStatus, evidenceValidity, baselineVerified) {
+  if (scorerStatus === 'passed') {
+    return outcome === 'solved' && evidenceValidity === 'valid';
+  }
+  if (scorerStatus === 'failed') {
+    return outcome === 'unsolved' && evidenceValidity === 'valid';
+  }
+  if (scorerStatus === 'candidate_error') {
+    return outcome === 'unsolved' && evidenceValidity === 'valid' && baselineVerified === true;
+  }
+  if (scorerStatus === 'invalid_evidence') {
+    return outcome === 'undetermined' && evidenceValidity === 'invalid';
+  }
+  if (scorerStatus === 'infrastructure_error') {
+    return outcome === 'undetermined' && evidenceValidity === 'unknown';
+  }
+  return false;
+}
+
+function parseRationalForView(dto, { allowNegative = false, maxOne = false } = {}) {
+  let parsed;
+  try {
+    parsed = parseRationalV2(dto, { allowNegative });
+  } catch {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (parsed !== null && maxOne) {
+    if (parsed.numerator > parsed.denominator) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+  }
+  return parsed;
+}
+
+function cloneRationalDto(dto) {
+  return {
+    defined: dto.defined,
+    numerator: dto.numerator,
+    denominator: dto.denominator,
+    reason: dto.reason,
+  };
+}
+
+function validateSeriesAlias(seriesId, declaredConfigIds, allowedCascadeId) {
+  if (!isCleanAsciiOrUtf16String(seriesId, 128, false)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (declaredConfigIds.has(seriesId)) return seriesId;
+  if (allowedCascadeId !== null && seriesId === allowedCascadeId) return seriesId;
+  throw new V2DataError('INVALID_EXPLORER_DATA');
+}
+
+function validateFrontierTable(
+  table,
+  expectedAxis,
+  declaredConfigIds,
+  allowedCascadeId,
+  seriesMetrics,
+) {
+  if (!hasExactKeys(table, FRONTIER_TABLE_KEYS)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (table.cost_axis !== expectedAxis) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  const expectedHeadline = expectedAxis === COST_AXIS_COST_PER_SOLVED;
+  if (typeof table.is_headline_axis !== 'boolean' || table.is_headline_axis !== expectedHeadline) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (
+    !isDensePlainArray(table.frontier_series_ids) ||
+    !isDensePlainArray(table.dominated_series_ids) ||
+    !isDensePlainArray(table.undefined_series_ids) ||
+    !isDensePlainArray(table.rows)
+  ) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  const rows = table.rows;
+  if (rows.length === 0 || rows.length > LIMITS_V2.maxViewConfigs + 1) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const seenSeries = new Set();
+  const frontierIds = [];
+  const dominatedIds = [];
+  const undefinedIds = [];
+
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    if (!hasExactKeys(row, FRONTIER_ROW_KEYS)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const sid = validateSeriesAlias(row.series_id, declaredConfigIds, allowedCascadeId);
+    if (seenSeries.has(sid)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    seenSeries.add(sid);
+    if (row.cost_axis !== expectedAxis) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+
+    const pVal = parseRationalForView(row.pass_at_1, { allowNegative: false, maxOne: true });
+    if (pVal === null) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const cVal = parseRationalForView(row.cost_value_nano_usd, { allowNegative: false });
+
+    const expMetrics = seriesMetrics.get(sid);
+    if (!expMetrics || !equalsRational(pVal, expMetrics.pass) || !equalsRational(cVal, expMetrics.cost)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+
+    const status = row.status;
+    if (typeof status !== 'string' || !ALLOWED_FRONTIER_STATUSES.includes(status)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    if (typeof row.is_on_frontier !== 'boolean') {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    if (row.tie_group_id !== null) {
+      if (!isCleanAsciiOrUtf16String(row.tie_group_id, 64, false) || !TIE_GROUP_RE.test(row.tie_group_id)) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+    }
+
+    for (const peerKey of ['tied_with', 'dominated_by']) {
+      const peers = row[peerKey];
+      if (!isDensePlainArray(peers)) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+      for (let j = 0; j < peers.length; j += 1) {
+        const pSid = validateSeriesAlias(peers[j], declaredConfigIds, allowedCascadeId);
+        if (pSid === sid || (j > 0 && peers[j - 1] >= pSid)) {
+          throw new V2DataError('INVALID_EXPLORER_DATA');
+        }
+      }
+    }
+
+    if (status === 'non_dominated') {
+      if (!row.is_on_frontier || cVal === null || row.dominated_by.length > 0) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+      frontierIds.push(sid);
+    } else if (status === 'dominated') {
+      if (row.is_on_frontier || cVal === null || row.dominated_by.length === 0) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+      dominatedIds.push(sid);
+    } else {
+      if (
+        row.is_on_frontier ||
+        cVal !== null ||
+        row.dominated_by.length > 0 ||
+        row.tied_with.length > 0 ||
+        row.tie_group_id !== null
+      ) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+      undefinedIds.push(sid);
+    }
+  }
+
+  const expectedSeriesSize = declaredConfigIds.size + (allowedCascadeId !== null ? 1 : 0);
+  if (seenSeries.size !== expectedSeriesSize) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  // Recompute canonical ordering, tie groups, and Pareto dominance from coordinates
+  const definedEntries = [];
+  const undefinedSids = [];
+  for (const [sid, m] of seriesMetrics.entries()) {
+    if (m.cost !== null) {
+      definedEntries.push({ sid, pass: m.pass, cost: m.cost });
+    } else {
+      undefinedSids.push(sid);
+    }
+  }
+  definedEntries.sort((a, b) => {
+    const cCmp = compareParsedRationals(a.cost, b.cost);
+    if (cCmp !== 0) return cCmp;
+    const pCmp = compareParsedRationals(b.pass, a.pass); // descending pass_at_1
+    if (pCmp !== 0) return pCmp;
+    return a.sid < b.sid ? -1 : a.sid > b.sid ? 1 : 0;
+  });
+  undefinedSids.sort();
+
+  const expectedOrder = [...definedEntries.map((e) => e.sid), ...undefinedSids];
+  for (let i = 0; i < rows.length; i += 1) {
+    if (rows[i].series_id !== expectedOrder[i]) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+  }
+
+  const coordGroups = new Map();
+  for (const entry of definedEntries) {
+    const coordKey = `${entry.cost.numerator}/${entry.cost.denominator}|${entry.pass.numerator}/${entry.pass.denominator}`;
+    if (!coordGroups.has(coordKey)) {
+      coordGroups.set(coordKey, []);
+    }
+    coordGroups.get(coordKey).push(entry.sid);
+  }
+  const groupIds = new Map();
+  let groupIdx = 1;
+  for (const coordKey of coordGroups.keys()) {
+    groupIds.set(coordKey, `tie_group_${groupIdx}`);
+    groupIdx += 1;
+  }
+
+  for (const row of rows) {
+    const sid = row.series_id;
+    const m = seriesMetrics.get(sid);
+    if (m.cost === null) continue;
+    const coordKey = `${m.cost.numerator}/${m.cost.denominator}|${m.pass.numerator}/${m.pass.denominator}`;
+    const dominators = [];
+    for (const other of definedEntries) {
+      if (other.sid === sid) continue;
+      const cCmp = compareParsedRationals(other.cost, m.cost);
+      const pCmp = compareParsedRationals(other.pass, m.pass);
+      if (cCmp <= 0 && pCmp >= 0 && (cCmp < 0 || pCmp > 0)) {
+        dominators.push(other.sid);
+      }
+    }
+    dominators.sort();
+    const peers = coordGroups.get(coordKey).filter((otherSid) => otherSid !== sid).sort();
+    const expectedGroup = peers.length > 0 ? groupIds.get(coordKey) : null;
+    const expectedStatus = dominators.length > 0 ? 'dominated' : 'non_dominated';
+
+    if (
+      row.status !== expectedStatus ||
+      row.tie_group_id !== expectedGroup ||
+      row.dominated_by.length !== dominators.length ||
+      row.dominated_by.some((v, idx) => v !== dominators[idx]) ||
+      row.tied_with.length !== peers.length ||
+      row.tied_with.some((v, idx) => v !== peers[idx])
+    ) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+  }
+
+  if (
+    table.frontier_series_ids.length !== frontierIds.length ||
+    table.frontier_series_ids.some((v, idx) => v !== frontierIds[idx]) ||
+    table.dominated_series_ids.length !== dominatedIds.length ||
+    table.dominated_series_ids.some((v, idx) => v !== dominatedIds[idx]) ||
+    table.undefined_series_ids.length !== undefinedIds.length ||
+    table.undefined_series_ids.some((v, idx) => v !== undefinedIds[idx])
+  ) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  return {
+    cost_axis: table.cost_axis,
+    is_headline_axis: table.is_headline_axis,
+    frontier_series_ids: [...table.frontier_series_ids],
+    dominated_series_ids: [...table.dominated_series_ids],
+    undefined_series_ids: [...table.undefined_series_ids],
+    rows: rows.map((r) => ({
+      series_id: r.series_id,
+      cost_axis: r.cost_axis,
+      pass_at_1: cloneRationalDto(r.pass_at_1),
+      cost_value_nano_usd: cloneRationalDto(r.cost_value_nano_usd),
+      status: r.status,
+      is_on_frontier: r.is_on_frontier,
+      tie_group_id: r.tie_group_id,
+      tied_with: [...r.tied_with],
+      dominated_by: [...r.dominated_by],
+    })),
+  };
+}
+
+function validateBootstrapInterval(
+  interval,
+  expectedMetric,
+  expectedReplicates,
+  expectedConf,
+  expectedQMethod,
+  { allowNegative = false } = {},
+) {
+  if (!hasExactKeys(interval, BOOTSTRAP_INTERVAL_KEYS)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (interval.metric_name !== expectedMetric || interval.quantile_method !== expectedQMethod) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  for (const countKey of ['replicates', 'defined_draws', 'undefined_draws', 'zero_solve_draws']) {
+    if (!isExactNonNegativeInt(interval[countKey])) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+  }
+  if (
+    interval.replicates !== expectedReplicates ||
+    interval.defined_draws + interval.undefined_draws !== expectedReplicates ||
+    interval.zero_solve_draws > expectedReplicates ||
+    interval.zero_solve_draws > interval.undefined_draws
+  ) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const conf = parseRationalForView(interval.confidence_level, { allowNegative: false, maxOne: true });
+  if (conf === null || !equalsRational(conf, expectedConf)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const pt = parseRationalForView(interval.point_estimate, { allowNegative });
+  const lo = parseRationalForView(interval.lower, { allowNegative });
+  const hi = parseRationalForView(interval.upper, { allowNegative });
+
+  if (pt === null || interval.undefined_draws > 0 || interval.defined_draws === 0) {
+    if (lo !== null || hi !== null) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+  } else if (lo === null || hi === null || compareParsedRationals(lo, hi) > 0) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  if (expectedMetric.endsWith('pass_at_1')) {
+    const minNum = allowNegative ? -1n : 0n;
+    for (const v of [pt, lo, hi]) {
+      if (v !== null) {
+        if (v.numerator < minNum * v.denominator || v.numerator > v.denominator) {
+          throw new V2DataError('INVALID_EXPLORER_DATA');
+        }
+      }
+    }
+  }
+
+  return {
+    pt,
+    cloned: {
+      metric_name: interval.metric_name,
+      point_estimate: cloneRationalDto(interval.point_estimate),
+      lower: cloneRationalDto(interval.lower),
+      upper: cloneRationalDto(interval.upper),
+      confidence_level: cloneRationalDto(interval.confidence_level),
+      replicates: interval.replicates,
+      defined_draws: interval.defined_draws,
+      undefined_draws: interval.undefined_draws,
+      zero_solve_draws: interval.zero_solve_draws,
+      quantile_method: interval.quantile_method,
+    },
+  };
+}
+
+function validateBootstrapSection(
+  bootstrap,
+  nTasks,
+  declaredConfigIds,
+  allowedCascadeId,
+  pointValuesMap,
+) {
+  if (!hasExactKeys(bootstrap, BOOTSTRAP_KEYS)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (
+    bootstrap.method_version !== FOUNDATION_METHOD_VERSION ||
+    bootstrap.quantile_method !== QUANTILE_METHOD
+  ) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  const replicates = bootstrap.replicates;
+  if (!isExactNonNegativeInt(replicates, LIMITS_V2.maxBootstrapReplicates) || replicates < 1) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (bootstrap.seed !== null && !isExactNonNegativeInt(bootstrap.seed)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (!isExactNonNegativeInt(bootstrap.n_tasks) || bootstrap.n_tasks !== nTasks) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const conf = parseRationalForView(bootstrap.confidence_level, { allowNegative: false, maxOne: true });
+  if (conf === null || conf.numerator <= 0n || conf.numerator >= conf.denominator) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const expectedSeriesSize = declaredConfigIds.size + (allowedCascadeId !== null ? 1 : 0);
+  const summaries = bootstrap.series_summaries;
+  if (!isPlainObject(summaries) || Object.getOwnPropertySymbols(summaries).length > 0) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  const summaryKeys = Object.keys(summaries);
+  if (summaryKeys.length !== expectedSeriesSize) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const clonedSummaries = {};
+  for (const sid of summaryKeys) {
+    validateSeriesAlias(sid, declaredConfigIds, allowedCascadeId);
+    const sSum = summaries[sid];
+    if (!hasExactKeys(sSum, BOOTSTRAP_SERIES_SUMMARY_KEYS) || sSum.series_id !== sid) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const pInt = validateBootstrapInterval(
+      sSum.pass_at_1,
+      'pass_at_1',
+      replicates,
+      conf,
+      QUANTILE_METHOD,
+    );
+    const totInt = validateBootstrapInterval(
+      sSum.expected_total_cost_nano_usd,
+      'expected_total_cost_nano_usd',
+      replicates,
+      conf,
+      QUANTILE_METHOD,
+    );
+    const meanInt = validateBootstrapInterval(
+      sSum.mean_task_cost_nano_usd,
+      'mean_task_cost_nano_usd',
+      replicates,
+      conf,
+      QUANTILE_METHOD,
+    );
+    const cpsInt = validateBootstrapInterval(
+      sSum.expected_cost_per_solved_nano_usd,
+      'expected_cost_per_solved_nano_usd',
+      replicates,
+      conf,
+      QUANTILE_METHOD,
+    );
+
+    const expectedPts = pointValuesMap.get(sid);
+    if (
+      !expectedPts ||
+      !equalsRational(pInt.pt, expectedPts.pass) ||
+      !equalsRational(totInt.pt, expectedPts.totalCost) ||
+      !equalsRational(meanInt.pt, expectedPts.meanCost) ||
+      !equalsRational(cpsInt.pt, expectedPts.cps)
+    ) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+
+    clonedSummaries[sid] = {
+      series_id: sid,
+      pass_at_1: pInt.cloned,
+      expected_total_cost_nano_usd: totInt.cloned,
+      mean_task_cost_nano_usd: meanInt.cloned,
+      expected_cost_per_solved_nano_usd: cpsInt.cloned,
+    };
+  }
+
+  const diffs = bootstrap.paired_differences;
+  if (!isDensePlainArray(diffs) || diffs.length > LIMITS_V2.maxPairedDifferences) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  const seenPairs = new Set();
+  const clonedDiffs = [];
+
+  for (let i = 0; i < diffs.length; i += 1) {
+    const diff = diffs[i];
+    if (!hasExactKeys(diff, BOOTSTRAP_PAIRED_DIFF_KEYS)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const baseId = validateSeriesAlias(diff.baseline_id, declaredConfigIds, allowedCascadeId);
+    const targId = validateSeriesAlias(diff.target_id, declaredConfigIds, allowedCascadeId);
+    const pairKey = `${baseId}|${targId}`;
+    if (baseId === targId || seenPairs.has(pairKey)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    seenPairs.add(pairKey);
+
+    const dpInt = validateBootstrapInterval(
+      diff.delta_pass_at_1,
+      'delta_pass_at_1',
+      replicates,
+      conf,
+      QUANTILE_METHOD,
+      { allowNegative: true },
+    );
+    const dtotInt = validateBootstrapInterval(
+      diff.delta_expected_total_cost_nano_usd,
+      'delta_expected_total_cost_nano_usd',
+      replicates,
+      conf,
+      QUANTILE_METHOD,
+      { allowNegative: true },
+    );
+    const dcpsInt = validateBootstrapInterval(
+      diff.delta_expected_cost_per_solved_nano_usd,
+      'delta_expected_cost_per_solved_nano_usd',
+      replicates,
+      conf,
+      QUANTILE_METHOD,
+      { allowNegative: true },
+    );
+
+    const left = pointValuesMap.get(baseId);
+    const right = pointValuesMap.get(targId);
+    const expDp = left.pass === null || right.pass === null ? null : subRationals(right.pass, left.pass);
+    const expDtot =
+      left.totalCost === null || right.totalCost === null
+        ? null
+        : subRationals(right.totalCost, left.totalCost);
+    const expDcps = left.cps === null || right.cps === null ? null : subRationals(right.cps, left.cps);
+
+    if (
+      !equalsRational(dpInt.pt, expDp) ||
+      !equalsRational(dtotInt.pt, expDtot) ||
+      !equalsRational(dcpsInt.pt, expDcps)
+    ) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+
+    clonedDiffs.push({
+      baseline_id: baseId,
+      target_id: targId,
+      delta_pass_at_1: dpInt.cloned,
+      delta_expected_total_cost_nano_usd: dtotInt.cloned,
+      delta_expected_cost_per_solved_nano_usd: dcpsInt.cloned,
+    });
+  }
+
+  return {
+    method_version: bootstrap.method_version,
+    quantile_method: bootstrap.quantile_method,
+    replicates: bootstrap.replicates,
+    seed: bootstrap.seed,
+    confidence_level: cloneRationalDto(bootstrap.confidence_level),
+    n_tasks: bootstrap.n_tasks,
+    series_summaries: clonedSummaries,
+    paired_differences: clonedDiffs,
+  };
+}
+
+function validateCascadeSection(cascade, nTasks, declaredConfigIds, configPointMetrics) {
+  if (!hasExactKeys(cascade, CASCADE_KEYS)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  const baseId = cascade.base_config_id;
+  const escId = cascade.escalate_config_id;
+  if (!declaredConfigIds.has(baseId) || !declaredConfigIds.has(escId) || baseId === escId) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  const expectedSid = `cascade:${baseId}->${escId}`;
+  if (cascade.series_id !== expectedSid || !CASCADE_ALIAS_RE.test(expectedSid)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (!isCleanAsciiOrUtf16String(cascade.policy_hash, 64, false) || !SHA256_RE.test(cascade.policy_hash)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (!isExactNonNegativeInt(cascade.n_tasks) || cascade.n_tasks !== nTasks) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const pAt1 = parseRationalForView(cascade.pass_at_1, { allowNegative: false, maxOne: true });
+  const expSolved = parseRationalForView(cascade.expected_solved_tasks, { allowNegative: false });
+  const totCost = parseRationalForView(cascade.expected_total_cost_nano_usd, { allowNegative: false });
+  const meanCost = parseRationalForView(cascade.mean_task_cost_nano_usd, { allowNegative: false });
+  const cps = parseRationalForView(cascade.expected_cost_per_solved_nano_usd, { allowNegative: false });
+
+  if (pAt1 === null || expSolved === null || totCost === null || meanCost === null) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  const nTasksRat = { numerator: BigInt(nTasks), denominator: 1n };
+  if (
+    !equalsRational(expSolved, mulRationals(pAt1, nTasksRat)) ||
+    !equalsRational(totCost, mulRationals(meanCost, nTasksRat))
+  ) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (expSolved.numerator === 0n) {
+    if (cps !== null || cascade.expected_cost_per_solved_nano_usd.reason !== 'zero_expected_solves') {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+  } else if (cps === null || !equalsRational(cps, divRationals(totCost, expSolved))) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const clonedComparisons = {};
+  for (const [compKey, expectedBase] of [
+    ['comparison_vs_base', baseId],
+    ['comparison_vs_escalate', escId],
+  ]) {
+    const comp = cascade[compKey];
+    if (!hasExactKeys(comp, CASCADE_COMPARISON_KEYS) || comp.baseline_id !== expectedBase) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const bp = parseRationalForView(comp.baseline_pass_at_1);
+    const cp = parseRationalForView(comp.cascade_pass_at_1);
+    const dp = parseRationalForView(comp.delta_pass_at_1, { allowNegative: true });
+    const bc = parseRationalForView(comp.baseline_expected_total_cost_nano_usd);
+    const cc = parseRationalForView(comp.cascade_expected_total_cost_nano_usd);
+    const dc = parseRationalForView(comp.delta_expected_total_cost_nano_usd, { allowNegative: true });
+    const sav = parseRationalForView(comp.relative_cost_savings, { allowNegative: true });
+    const bCps = parseRationalForView(comp.baseline_cost_per_solved_nano_usd);
+    const cCps = parseRationalForView(comp.cascade_cost_per_solved_nano_usd);
+    const dCps = parseRationalForView(comp.delta_cost_per_solved_nano_usd, { allowNegative: true });
+    const cheaper = comp.observed_cheaper_at_equal_or_better_success;
+
+    if (typeof cheaper !== 'boolean') {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    if (bp === null || cp === null || dp === null || bc === null || cc === null || dc === null) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    if (
+      !equalsRational(cp, pAt1) ||
+      !equalsRational(cc, totCost) ||
+      !equalsRational(dp, subRationals(cp, bp)) ||
+      !equalsRational(dc, subRationals(cc, bc))
+    ) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    if (bc.numerator === 0n) {
+      if (sav !== null) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+    } else if (sav === null || !equalsRational(sav, divRationals(subRationals(bc, cc), bc))) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    if (bCps !== null && cCps !== null) {
+      if (dCps === null || !equalsRational(dCps, subRationals(cCps, bCps))) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+    } else if (dCps !== null) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const expectedCheaper = compareParsedRationals(cc, bc) < 0 && compareParsedRationals(cp, bp) >= 0;
+    if (cheaper !== expectedCheaper) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+
+    // Bind baseline metrics to configuration point metrics
+    const cfgPt = configPointMetrics.get(expectedBase);
+    const expectedBaseCps =
+      cfgPt.solved.numerator > 0n ? divRationals(cfgPt.cost, cfgPt.solved) : null;
+    if (
+      !equalsRational(bp, cfgPt.pass) ||
+      !equalsRational(bc, cfgPt.cost) ||
+      !equalsRational(bCps, expectedBaseCps) ||
+      comp.cascade_cost_per_solved_nano_usd.defined !== cascade.expected_cost_per_solved_nano_usd.defined ||
+      comp.cascade_cost_per_solved_nano_usd.numerator !== cascade.expected_cost_per_solved_nano_usd.numerator ||
+      comp.cascade_cost_per_solved_nano_usd.denominator !== cascade.expected_cost_per_solved_nano_usd.denominator ||
+      comp.cascade_cost_per_solved_nano_usd.reason !== cascade.expected_cost_per_solved_nano_usd.reason
+    ) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+
+    clonedComparisons[compKey] = {
+      baseline_id: comp.baseline_id,
+      baseline_pass_at_1: cloneRationalDto(comp.baseline_pass_at_1),
+      cascade_pass_at_1: cloneRationalDto(comp.cascade_pass_at_1),
+      delta_pass_at_1: cloneRationalDto(comp.delta_pass_at_1),
+      baseline_expected_total_cost_nano_usd: cloneRationalDto(comp.baseline_expected_total_cost_nano_usd),
+      cascade_expected_total_cost_nano_usd: cloneRationalDto(comp.cascade_expected_total_cost_nano_usd),
+      delta_expected_total_cost_nano_usd: cloneRationalDto(comp.delta_expected_total_cost_nano_usd),
+      relative_cost_savings: cloneRationalDto(comp.relative_cost_savings),
+      baseline_cost_per_solved_nano_usd: cloneRationalDto(comp.baseline_cost_per_solved_nano_usd),
+      cascade_cost_per_solved_nano_usd: cloneRationalDto(comp.cascade_cost_per_solved_nano_usd),
+      delta_cost_per_solved_nano_usd: cloneRationalDto(comp.delta_cost_per_solved_nano_usd),
+      observed_cheaper_at_equal_or_better_success: comp.observed_cheaper_at_equal_or_better_success,
+    };
+  }
+
+  return {
+    sid: expectedSid,
+    pass: pAt1,
+    solved: expSolved,
+    totalCost: totCost,
+    meanCost,
+    cps,
+    cloned: {
+      series_id: cascade.series_id,
+      base_config_id: cascade.base_config_id,
+      escalate_config_id: cascade.escalate_config_id,
+      policy_hash: cascade.policy_hash,
+      n_tasks: cascade.n_tasks,
+      pass_at_1: cloneRationalDto(cascade.pass_at_1),
+      expected_solved_tasks: cloneRationalDto(cascade.expected_solved_tasks),
+      expected_total_cost_nano_usd: cloneRationalDto(cascade.expected_total_cost_nano_usd),
+      mean_task_cost_nano_usd: cloneRationalDto(cascade.mean_task_cost_nano_usd),
+      expected_cost_per_solved_nano_usd: cloneRationalDto(cascade.expected_cost_per_solved_nano_usd),
+      comparison_vs_base: clonedComparisons.comparison_vs_base,
+      comparison_vs_escalate: clonedComparisons.comparison_vs_escalate,
+    },
+  };
+}
+
+export function validateExplorerViewStrict(view) {
+  if (!isPlainObject(view)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  validateJsonTreeBounds(view, { errorCode: 'INVALID_EXPLORER_DATA' });
+  if (!hasExactKeys(view, TOP_LEVEL_VIEW_KEYS)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (
+    !isExactNonNegativeInt(view.schema_version) ||
+    view.schema_version !== VIEW_SCHEMA_VERSION ||
+    view.view_model !== VIEW_MODEL ||
+    view.evidence_kind !== 'synthetic' ||
+    view.eligibility !== 'UNVERIFIED' ||
+    !isExactNonNegativeInt(view.real_provider_calls) ||
+    view.real_provider_calls !== 0
+  ) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const source = view.source;
+  if (!hasExactKeys(source, SOURCE_KEYS)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (
+    !isCleanAsciiOrUtf16String(source.input_sha256, 64, false) ||
+    !SHA256_RE.test(source.input_sha256) ||
+    !isCleanAsciiOrUtf16String(source.expected_plan_hash, 64, false) ||
+    !SHA256_RE.test(source.expected_plan_hash) ||
+    source.report_method_version !== FOUNDATION_METHOD_VERSION
+  ) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const counts = view.construction_counts;
+  if (!hasExactKeys(counts, CONSTRUCTION_COUNT_KEYS)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (
+    !isExactNonNegativeInt(counts.total) ||
+    !isExactNonNegativeInt(counts.train) ||
+    !isExactNonNegativeInt(counts.held_out) ||
+    counts.total !== CONSTRUCTION_TOTAL ||
+    counts.train !== CONSTRUCTION_TRAIN ||
+    counts.held_out !== CONSTRUCTION_HELD_OUT
+  ) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const nTasks = view.evaluated_task_count;
+  if (!isExactNonNegativeInt(nTasks, LIMITS_V2.maxViewRows) || nTasks < 1) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const analysis = view.analysis;
+  if (!hasExactKeys(analysis, ANALYSIS_KEYS)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  const summaryMode = analysis.summary_mode;
+  const auditStatus = analysis.audit_status;
+  if (
+    typeof summaryMode !== 'string' ||
+    !ALLOWED_SUMMARY_MODES.includes(summaryMode) ||
+    typeof auditStatus !== 'string' ||
+    !ALLOWED_AUDIT_STATUSES.includes(auditStatus)
+  ) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (
+    (auditStatus === 'blocked' && summaryMode !== 'blocked') ||
+    (auditStatus === 'cost_incomplete' && summaryMode !== 'blocked' && summaryMode !== 'success_only') ||
+    (auditStatus === 'valid' && summaryMode !== 'headline_complete')
+  ) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (analysis.sensitivity !== null) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const configs = view.configurations;
+  if (!isDensePlainArray(configs)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (configs.length > LIMITS_V2.maxViewConfigs) {
+    throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+  }
+  if (configs.length < 1) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+
+  const declaredSeedsByCfg = new Map();
+  const configPointMetrics = new Map();
+  const clonedConfigs = [];
+  const nTasksRat = { numerator: BigInt(nTasks), denominator: 1n };
+
+  for (let i = 0; i < configs.length; i += 1) {
+    const cfg = configs[i];
+    if (!hasExactKeys(cfg, CONFIGURATION_KEYS)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const expectedCid = formatAlias('config', i + 1, configs.length);
+    const cid = cfg.config_id;
+    if (cid !== expectedCid || !CONFIG_ALIAS_RE.test(cid)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    if (!isExactNonNegativeInt(cfg.n_tasks) || cfg.n_tasks !== nTasks) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const seeds = cfg.declared_seeds;
+    if (!isDensePlainArray(seeds) || seeds.length === 0 || seeds.length > LIMITS_V2.maxViewRows) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const seenSeeds = new Set();
+    for (let j = 0; j < seeds.length; j += 1) {
+      const s = seeds[j];
+      if (!isExactNonNegativeInt(s) || seenSeeds.has(s)) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+      seenSeeds.add(s);
+    }
+    declaredSeedsByCfg.set(cid, [...seeds]);
+
+    if (!isExactNonNegativeInt(cfg.total_runs) || cfg.total_runs !== nTasks * seeds.length) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+
+    const expSolved = parseRationalForView(cfg.expected_solved_tasks, { allowNegative: false });
+    const passAt1 = parseRationalForView(cfg.pass_at_1, { allowNegative: false, maxOne: true });
+    const expCost = parseRationalForView(cfg.expected_total_cost_nano_usd, { allowNegative: false });
+    let actualSpend;
+    try {
+      actualSpend = parseNanoUsdString(cfg.actual_all_repetitions_spend_nano_usd, { allowNull: true });
+    } catch {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+
+    if (summaryMode === 'blocked') {
+      if (
+        expSolved !== null ||
+        passAt1 !== null ||
+        expCost !== null ||
+        actualSpend !== null ||
+        cfg.expected_solved_tasks.reason !== 'panel_blocked' ||
+        cfg.pass_at_1.reason !== 'panel_blocked' ||
+        cfg.expected_total_cost_nano_usd.reason !== 'panel_blocked'
+      ) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+    } else {
+      if (expSolved === null || passAt1 === null) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+      if (!equalsRational(expSolved, mulRationals(passAt1, nTasksRat))) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+      if ((expCost === null) !== (actualSpend === null)) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+      if (expCost !== null) {
+        const expectedSpendRat = mulRationals(expCost, { numerator: BigInt(seeds.length), denominator: 1n });
+        if (expectedSpendRat.denominator !== 1n || expectedSpendRat.numerator !== actualSpend) {
+          throw new V2DataError('INVALID_EXPLORER_DATA');
+        }
+      }
+    }
+
+    configPointMetrics.set(cid, {
+      pass: passAt1,
+      solved: expSolved,
+      cost: expCost,
+      spend: actualSpend,
+    });
+    clonedConfigs.push({
+      config_id: cid,
+      n_tasks: cfg.n_tasks,
+      declared_seeds: [...seeds],
+      total_runs: cfg.total_runs,
+      expected_solved_tasks: cloneRationalDto(cfg.expected_solved_tasks),
+      pass_at_1: cloneRationalDto(cfg.pass_at_1),
+      expected_total_cost_nano_usd: cloneRationalDto(cfg.expected_total_cost_nano_usd),
+      actual_all_repetitions_spend_nano_usd: cfg.actual_all_repetitions_spend_nano_usd,
+    });
+  }
+
+  const rows = view.rows;
+  if (!isDensePlainArray(rows)) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  if (rows.length > LIMITS_V2.maxViewRows) {
+    throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+  }
+
+  const declaredCfgSet = new Set(declaredSeedsByCfg.keys());
+  const cellsMap = new Map();
+  const taskFamilies = new Map();
+  const tasksSeen = new Set();
+  const familiesSeen = new Set();
+  let hasSemanticBlocker = false;
+  let prevSortKey = null;
+  const clonedRows = [];
+
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    if (!hasExactKeys(row, ROW_KEYS)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const tid = row.task_id;
+    const cid = row.config_id;
+    const fid = row.family_id;
+    if (
+      !isCleanAsciiOrUtf16String(tid, 64, false) ||
+      !TASK_ALIAS_RE.test(tid) ||
+      !isCleanAsciiOrUtf16String(cid, 64, false) ||
+      !CONFIG_ALIAS_RE.test(cid) ||
+      !isCleanAsciiOrUtf16String(fid, 64, false) ||
+      !FAMILY_ALIAS_RE.test(fid)
+    ) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const seed = row.seed;
+    if (!isExactNonNegativeInt(seed)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const { outcome, scorer_status: scorer, evidence_validity: validity, baseline_verified: baseVer, visible_tests_pass: visPass } = row;
+    if (
+      typeof outcome !== 'string' ||
+      !VALID_OUTCOMES.includes(outcome) ||
+      typeof scorer !== 'string' ||
+      !VALID_SCORER_STATUSES.includes(scorer) ||
+      typeof validity !== 'string' ||
+      !VALID_EVIDENCE_VALIDITIES.includes(validity) ||
+      typeof baseVer !== 'boolean' ||
+      (visPass !== null && typeof visPass !== 'boolean')
+    ) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    try {
+      parseNanoUsdString(row.cost_nano_usd, { allowNull: true, checkMaxCost: true });
+    } catch {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+
+    const sortKey = [cid, tid, seed, outcome, scorer, canonicalAsciiRowJson(row)];
+    if (prevSortKey !== null && compareRowSortKeys(sortKey, prevSortKey) < 0) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    prevSortKey = sortKey;
+
+    if (!checkRowSemanticsV2(outcome, scorer, validity, baseVer) || outcome === 'undetermined' || validity !== 'valid') {
+      hasSemanticBlocker = true;
+    }
+
+    tasksSeen.add(tid);
+    familiesSeen.add(fid);
+    if (!taskFamilies.has(tid)) taskFamilies.set(tid, new Set());
+    taskFamilies.get(tid).add(fid);
+
+    const cellKey = `${cid}|${tid}|${seed}`;
+    if (!cellsMap.has(cellKey)) cellsMap.set(cellKey, []);
+    cellsMap.get(cellKey).push(row);
+
+    clonedRows.push({
+      task_id: tid,
+      config_id: cid,
+      family_id: fid,
+      seed,
+      outcome,
+      scorer_status: scorer,
+      evidence_validity: validity,
+      baseline_verified: baseVer,
+      cost_nano_usd: row.cost_nano_usd,
+      visible_tests_pass: visPass,
+    });
+  }
+
+  if (familiesSeen.size > 0) {
+    for (let i = 1; i <= familiesSeen.size; i += 1) {
+      if (!familiesSeen.has(formatAlias('family', i, familiesSeen.size))) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+    }
+  }
+
+  let totalDeclaredSeeds = 0;
+  for (const seeds of declaredSeedsByCfg.values()) {
+    totalDeclaredSeeds += seeds.length;
+  }
+  const expectedCellsCount = nTasks * totalDeclaredSeeds;
+  const workload = Math.max(expectedCellsCount, rows.length) * (familiesSeen.size + configs.length + 1);
+  if (expectedCellsCount > LIMITS_V2.maxViewRows || workload > LIMITS_V2.maxCellVisits) {
+    throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+  }
+
+  const expectedTaskAliases = [];
+  for (let i = 1; i <= nTasks; i += 1) {
+    expectedTaskAliases.push(formatAlias('task', i, nTasks));
+  }
+
+  if (summaryMode !== 'blocked') {
+    if (hasSemanticBlocker || tasksSeen.size !== nTasks) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    for (const tid of expectedTaskAliases) {
+      if (!tasksSeen.has(tid) || taskFamilies.get(tid).size !== 1) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+    }
+    if (cellsMap.size !== expectedCellsCount) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    for (const [cid, seeds] of declaredSeedsByCfg.entries()) {
+      for (const tid of expectedTaskAliases) {
+        for (const s of seeds) {
+          const recs = cellsMap.get(`${cid}|${tid}|${s}`);
+          if (!recs || recs.length !== 1) {
+            throw new V2DataError('INVALID_EXPLORER_DATA');
+          }
+        }
+      }
+    }
+
+    let anyMissingCost = false;
+    for (const [cid, seeds] of declaredSeedsByCfg.entries()) {
+      const kC = BigInt(seeds.length);
+      let passSum = { numerator: 0n, denominator: 1n };
+      let costSum = { numerator: 0n, denominator: 1n };
+      let actualSpendSum = 0n;
+      let cfgMissingCost = false;
+
+      for (const tid of expectedTaskAliases) {
+        let solvedC = 0n;
+        let taskCostSum = 0n;
+        for (const s of seeds) {
+          const r = cellsMap.get(`${cid}|${tid}|${s}`)[0];
+          if (r.outcome === 'solved') solvedC += 1n;
+          if (r.cost_nano_usd === null) {
+            cfgMissingCost = true;
+            anyMissingCost = true;
+          } else {
+            const cInt = BigInt(r.cost_nano_usd);
+            taskCostSum += cInt;
+            actualSpendSum += cInt;
+          }
+        }
+        passSum = addRationals(passSum, { numerator: solvedC, denominator: kC });
+        if (!cfgMissingCost) {
+          costSum = addRationals(costSum, { numerator: taskCostSum, denominator: kC });
+        }
+      }
+
+      const recompPass = divRationals(passSum, nTasksRat);
+      const recompSolved = passSum;
+      const rep = configPointMetrics.get(cid);
+      if (!equalsRational(rep.pass, recompPass) || !equalsRational(rep.solved, recompSolved)) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+      if (cfgMissingCost || summaryMode === 'success_only') {
+        if (rep.cost !== null || rep.spend !== null) {
+          throw new V2DataError('INVALID_EXPLORER_DATA');
+        }
+      } else if (!equalsRational(rep.cost, costSum) || rep.spend !== actualSpendSum) {
+        throw new V2DataError('INVALID_EXPLORER_DATA');
+      }
+    }
+
+    if (
+      (summaryMode === 'headline_complete' && anyMissingCost) ||
+      (summaryMode === 'success_only' && !anyMissingCost)
+    ) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+  }
+
+  let clonedFrontiers = null;
+  let clonedBootstrap = null;
+  let clonedCascade = null;
+
+  if (summaryMode === 'blocked' || summaryMode === 'success_only') {
+    if (analysis.frontiers !== null || analysis.bootstrap !== null || analysis.cascade !== null) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+  } else {
+    // headline_complete
+    let allowedCascadeId = null;
+    let cascadeInfo = null;
+    if (analysis.cascade !== null) {
+      cascadeInfo = validateCascadeSection(
+        analysis.cascade,
+        nTasks,
+        declaredCfgSet,
+        configPointMetrics,
+      );
+      allowedCascadeId = cascadeInfo.sid;
+      clonedCascade = cascadeInfo.cloned;
+    }
+
+    if (analysis.frontiers === null || !hasExactKeys(analysis.frontiers, FRONTIERS_MAP_KEYS)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+
+    const cpsSeriesMetrics = new Map();
+    const mtcSeriesMetrics = new Map();
+    const pointValuesMap = new Map();
+
+    for (const [cid, m] of configPointMetrics.entries()) {
+      const cpsVal = m.solved.numerator > 0n ? divRationals(m.cost, m.solved) : null;
+      const mtcVal = divRationals(m.cost, nTasksRat);
+      cpsSeriesMetrics.set(cid, { pass: m.pass, cost: cpsVal });
+      mtcSeriesMetrics.set(cid, { pass: m.pass, cost: mtcVal });
+      pointValuesMap.set(cid, {
+        pass: m.pass,
+        totalCost: m.cost,
+        meanCost: mtcVal,
+        cps: cpsVal,
+      });
+    }
+
+    if (cascadeInfo !== null) {
+      cpsSeriesMetrics.set(cascadeInfo.sid, { pass: cascadeInfo.pass, cost: cascadeInfo.cps });
+      mtcSeriesMetrics.set(cascadeInfo.sid, { pass: cascadeInfo.pass, cost: cascadeInfo.meanCost });
+      pointValuesMap.set(cascadeInfo.sid, {
+        pass: cascadeInfo.pass,
+        totalCost: cascadeInfo.totalCost,
+        meanCost: cascadeInfo.meanCost,
+        cps: cascadeInfo.cps,
+      });
+    }
+
+    clonedFrontiers = {
+      [COST_AXIS_COST_PER_SOLVED]: validateFrontierTable(
+        analysis.frontiers[COST_AXIS_COST_PER_SOLVED],
+        COST_AXIS_COST_PER_SOLVED,
+        declaredCfgSet,
+        allowedCascadeId,
+        cpsSeriesMetrics,
+      ),
+      [COST_AXIS_MEAN_TASK_COST]: validateFrontierTable(
+        analysis.frontiers[COST_AXIS_MEAN_TASK_COST],
+        COST_AXIS_MEAN_TASK_COST,
+        declaredCfgSet,
+        allowedCascadeId,
+        mtcSeriesMetrics,
+      ),
+    };
+
+    if (analysis.bootstrap !== null) {
+      clonedBootstrap = validateBootstrapSection(
+        analysis.bootstrap,
+        nTasks,
+        declaredCfgSet,
+        allowedCascadeId,
+        pointValuesMap,
+      );
+    }
+  }
+
+  // Limitations
+  const limitations = view.limitations;
+  if (!isDensePlainArray(limitations) || limitations.length < 1 || limitations.length > LIMITS_V2.maxLimitations) {
+    throw new V2DataError('INVALID_EXPLORER_DATA');
+  }
+  const seenCodes = new Set();
+  for (let i = 0; i < limitations.length; i += 1) {
+    const item = limitations[i];
+    if (!isCleanAsciiOrUtf16String(item, LIMITS_V2.maxStringChars, false)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const colonIdx = item.indexOf(':');
+    if (colonIdx <= 0) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    const code = item.slice(0, colonIdx);
+    if (
+      !Object.prototype.hasOwnProperty.call(ALLOWED_LIMITATION_CODES, code) ||
+      item !== `${code}: ${ALLOWED_LIMITATION_CODES[code]}` ||
+      seenCodes.has(code)
+    ) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+    seenCodes.add(code);
+  }
+
+  const requiredCodes = [
+    'synthetic_unverified_only',
+    'descriptive_bootstrap_uncertainty',
+    'selection_multiplicity_and_contamination',
+    'sensitivity_requires_bundle_packaging',
+  ];
+  if (summaryMode === 'blocked') requiredCodes.push('panel_audit_blocked');
+  if (summaryMode === 'success_only') {
+    requiredCodes.push('cost_incomplete_success_only', 'success_only_bootstrap_withheld');
+  }
+  for (const reqCode of requiredCodes) {
+    if (!seenCodes.has(reqCode)) {
+      throw new V2DataError('INVALID_EXPLORER_DATA');
+    }
+  }
+
+  return {
+    schema_version: VIEW_SCHEMA_VERSION,
+    view_model: VIEW_MODEL,
+    evidence_kind: 'synthetic',
+    eligibility: 'UNVERIFIED',
+    real_provider_calls: 0,
+    source: {
+      input_sha256: source.input_sha256,
+      expected_plan_hash: source.expected_plan_hash,
+      report_method_version: source.report_method_version,
+    },
+    construction_counts: {
+      total: CONSTRUCTION_TOTAL,
+      train: CONSTRUCTION_TRAIN,
+      held_out: CONSTRUCTION_HELD_OUT,
+    },
+    evaluated_task_count: nTasks,
+    configurations: clonedConfigs,
+    rows: clonedRows,
+    analysis: {
+      summary_mode: summaryMode,
+      audit_status: auditStatus,
+      frontiers: clonedFrontiers,
+      bootstrap: clonedBootstrap,
+      cascade: clonedCascade,
+      sensitivity: null,
+    },
+    limitations: [...limitations],
+  };
+}
+
+function parseDiagRational(dto, { allowNegative = false } = {}) {
+  try {
+    return parseRationalV2(dto, { allowNegative });
+  } catch {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+}
+
+function parseDiagMetricsEntry(entry, nt, hideCosts) {
+  const p = parseDiagRational(entry.pass_at_1);
+  const total = parseDiagRational(entry.expected_total_cost_nano_usd);
+  const mean = parseDiagRational(entry.mean_task_cost_nano_usd);
+
+  if (nt === 0) {
+    if (
+      p !== null ||
+      total !== null ||
+      mean !== null ||
+      entry.pass_at_1.reason !== 'no_retained_tasks' ||
+      entry.expected_total_cost_nano_usd.reason !== 'no_retained_tasks' ||
+      entry.mean_task_cost_nano_usd.reason !== 'no_retained_tasks'
+    ) {
+      throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+    }
+  } else {
+    if (p === null || p.numerator < 0n || p.numerator > p.denominator) {
+      throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+    }
+    if (hideCosts) {
+      if (
+        total !== null ||
+        mean !== null ||
+        entry.expected_total_cost_nano_usd.reason !== 'missing_cost_nano_usd' ||
+        entry.mean_task_cost_nano_usd.reason !== 'missing_cost_nano_usd'
+      ) {
+        throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+      }
+    } else {
+      const ntRat = { numerator: BigInt(nt), denominator: 1n };
+      if (total === null || mean === null || !equalsRational(total, mulRationals(mean, ntRat))) {
+        throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+      }
+    }
+  }
+  return { pass: p, total, mean };
+}
+
+export function validateFamilyDiagnosticStrict(value) {
+  if (!isPlainObject(value)) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+  validateJsonTreeBounds(value, { errorCode: 'INVALID_DIAGNOSTIC_DATA' });
+  if (!hasExactKeys(value, DIAGNOSTIC_TOP_KEYS)) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+  if (
+    !isExactNonNegativeInt(value.schema_version) ||
+    value.schema_version !== DIAGNOSTIC_SCHEMA_VERSION ||
+    value.diagnostic_model !== DIAGNOSTIC_MODEL ||
+    value.evidence_kind !== 'synthetic' ||
+    value.eligibility !== 'UNVERIFIED' ||
+    !isExactNonNegativeInt(value.real_provider_calls) ||
+    value.real_provider_calls !== 0 ||
+    value.is_primary !== false
+  ) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+
+  const src = value.source;
+  if (!hasExactKeys(src, SOURCE_KEYS)) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+  if (
+    !isCleanAsciiOrUtf16String(src.input_sha256, 64, false) ||
+    !SHA256_RE.test(src.input_sha256) ||
+    !isCleanAsciiOrUtf16String(src.expected_plan_hash, 64, false) ||
+    !SHA256_RE.test(src.expected_plan_hash) ||
+    src.report_method_version !== FOUNDATION_METHOD_VERSION
+  ) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+
+  const nt = value.original_n_tasks;
+  const nf = value.n_families;
+  if (!isExactNonNegativeInt(nt, LIMITS_V2.maxViewRows) || nt < 1 || !isExactNonNegativeInt(nf, LIMITS_V2.maxViewRows)) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+
+  const configs = value.configurations;
+  if (!isDensePlainArray(configs) || configs.length === 0) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+  if (configs.length > LIMITS_V2.maxViewConfigs) {
+    throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+  }
+  for (let i = 0; i < configs.length; i += 1) {
+    const expectedCid = formatAlias('config', i + 1, configs.length);
+    if (configs[i] !== expectedCid) {
+      throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+    }
+  }
+
+  if (
+    nf * configs.length * 100 + configs.length * 60 > LIMITS_V2.maxViewNodes ||
+    nt * Math.max(1, nf) * configs.length > LIMITS_V2.maxCellVisits
+  ) {
+    throw new V2DataError('RESOURCE_LIMIT_EXCEEDED');
+  }
+
+  const status = value.audit_status;
+  if (typeof status !== 'string' || !ALLOWED_AUDIT_STATUSES.includes(status)) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+  const hideCosts = status === 'cost_incomplete';
+  const expectedLimits = [
+    ...DIAGNOSTIC_BASE_LIMITATIONS,
+    ...(status === 'blocked' ? ['panel_blocked'] : hideCosts ? ['unknown_costs_withheld'] : []),
+  ];
+  if (
+    !isDensePlainArray(value.limitations) ||
+    value.limitations.length !== expectedLimits.length ||
+    value.limitations.some((v, idx) => v !== expectedLimits[idx])
+  ) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+
+  if (
+    !isDensePlainArray(value.family_sizes) ||
+    !isDensePlainArray(value.originals) ||
+    !isDensePlainArray(value.exclusions)
+  ) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+
+  if (status === 'blocked') {
+    if (value.family_sizes.length > 0 || value.originals.length > 0 || value.exclusions.length > 0) {
+      throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+    }
+    return {
+      schema_version: 2,
+      diagnostic_model: DIAGNOSTIC_MODEL,
+      evidence_kind: 'synthetic',
+      eligibility: 'UNVERIFIED',
+      real_provider_calls: 0,
+      is_primary: false,
+      source: {
+        input_sha256: src.input_sha256,
+        expected_plan_hash: src.expected_plan_hash,
+        report_method_version: src.report_method_version,
+      },
+      audit_status: status,
+      original_n_tasks: nt,
+      n_families: nf,
+      configurations: [...configs],
+      family_sizes: [],
+      originals: [],
+      exclusions: [],
+      limitations: [...expectedLimits],
+    };
+  }
+
+  if (nf < 1 || nf > nt) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+  if (value.family_sizes.length !== nf || value.exclusions.length !== nf) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+
+  const families = [];
+  for (let i = 1; i <= nf; i += 1) {
+    families.push(formatAlias('family', i, nf));
+  }
+
+  const sizeMap = new Map();
+  let sumSizes = 0;
+  const clonedSizes = [];
+  for (let i = 0; i < nf; i += 1) {
+    const sizeObj = value.family_sizes[i];
+    if (!hasExactKeys(sizeObj, DIAGNOSTIC_FAMILY_SIZE_KEYS) || sizeObj.family_id !== families[i]) {
+      throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+    }
+    const tc = sizeObj.task_count;
+    if (!isExactNonNegativeInt(tc, nt) || tc < 1) {
+      throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+    }
+    sizeMap.set(families[i], tc);
+    sumSizes += tc;
+    clonedSizes.push({ family_id: sizeObj.family_id, task_count: tc });
+  }
+  if (sumSizes !== nt) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+
+  if (value.originals.length !== configs.length) {
+    throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+  }
+  const originalValues = new Map();
+  const clonedOriginals = [];
+  for (let i = 0; i < configs.length; i += 1) {
+    const cid = configs[i];
+    const entry = value.originals[i];
+    if (!hasExactKeys(entry, DIAGNOSTIC_ORIGINAL_KEYS) || entry.config_id !== cid) {
+      throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+    }
+    originalValues.set(cid, parseDiagMetricsEntry(entry, nt, hideCosts));
+    clonedOriginals.push({
+      config_id: cid,
+      pass_at_1: cloneRationalDto(entry.pass_at_1),
+      expected_total_cost_nano_usd: cloneRationalDto(entry.expected_total_cost_nano_usd),
+      mean_task_cost_nano_usd: cloneRationalDto(entry.mean_task_cost_nano_usd),
+    });
+  }
+
+  const totals = new Map();
+  for (const cid of configs) {
+    totals.set(cid, {
+      passSum: { numerator: 0n, denominator: 1n },
+      costSum: { numerator: 0n, denominator: 1n },
+    });
+  }
+
+  const clonedExclusions = [];
+  for (let i = 0; i < nf; i += 1) {
+    const family = families[i];
+    const entry = value.exclusions[i];
+    if (!hasExactKeys(entry, DIAGNOSTIC_EXCLUSION_KEYS) || entry.family_id !== family) {
+      throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+    }
+    const excluded = entry.excluded_task_count;
+    const retained = entry.retained_task_count;
+    if (
+      !isExactNonNegativeInt(excluded, nt) ||
+      excluded < 1 ||
+      !isExactNonNegativeInt(retained, nt) ||
+      excluded !== sizeMap.get(family) ||
+      retained !== nt - excluded
+    ) {
+      throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+    }
+    const entries = entry.configurations;
+    if (!isDensePlainArray(entries) || entries.length !== configs.length) {
+      throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+    }
+
+    const clonedInnerConfigs = [];
+    for (let j = 0; j < configs.length; j += 1) {
+      const cid = configs[j];
+      const metric = entries[j];
+      if (!hasExactKeys(metric, DIAGNOSTIC_EXCLUSION_CONFIG_KEYS) || metric.config_id !== cid) {
+        throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+      }
+      const parsedMetric = parseDiagMetricsEntry(metric, retained, hideCosts);
+      const origMetric = originalValues.get(cid);
+
+      for (const [deltaName, currVal, origVal] of [
+        ['delta_pass_at_1', parsedMetric.pass, origMetric.pass],
+        ['delta_mean_task_cost_nano_usd', parsedMetric.mean, origMetric.mean],
+      ]) {
+        const actual = parseDiagRational(metric[deltaName], { allowNegative: true });
+        const expected = currVal === null || origVal === null ? null : subRationals(currVal, origVal);
+        const expectedReason = retained === 0 ? 'no_retained_tasks' : 'missing_cost_nano_usd';
+        if (
+          !equalsRational(actual, expected) ||
+          (expected === null && metric[deltaName].reason !== expectedReason)
+        ) {
+          throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+        }
+      }
+
+      if (retained > 0) {
+        const t = totals.get(cid);
+        const retRat = { numerator: BigInt(retained), denominator: 1n };
+        t.passSum = addRationals(t.passSum, mulRationals(parsedMetric.pass, retRat));
+        if (parsedMetric.total !== null) {
+          t.costSum = addRationals(t.costSum, parsedMetric.total);
+        }
+      }
+
+      clonedInnerConfigs.push({
+        config_id: cid,
+        pass_at_1: cloneRationalDto(metric.pass_at_1),
+        expected_total_cost_nano_usd: cloneRationalDto(metric.expected_total_cost_nano_usd),
+        mean_task_cost_nano_usd: cloneRationalDto(metric.mean_task_cost_nano_usd),
+        delta_pass_at_1: cloneRationalDto(metric.delta_pass_at_1),
+        delta_mean_task_cost_nano_usd: cloneRationalDto(metric.delta_mean_task_cost_nano_usd),
+      });
+    }
+
+    clonedExclusions.push({
+      family_id: family,
+      excluded_task_count: excluded,
+      retained_task_count: retained,
+      configurations: clonedInnerConfigs,
+    });
+  }
+
+  const ntRat = { numerator: BigInt(nt), denominator: 1n };
+  const nfMinusOneRat = { numerator: BigInt(nf - 1), denominator: 1n };
+  for (const cid of configs) {
+    const orig = originalValues.get(cid);
+    const t = totals.get(cid);
+    const expPassTotal = mulRationals(mulRationals(orig.pass, ntRat), nfMinusOneRat);
+    if (!equalsRational(t.passSum, expPassTotal)) {
+      throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+    }
+    if (!hideCosts) {
+      const expCostTotal = mulRationals(orig.total, nfMinusOneRat);
+      if (!equalsRational(t.costSum, expCostTotal)) {
+        throw new V2DataError('INVALID_DIAGNOSTIC_DATA');
+      }
+    }
+  }
+
+  return {
+    schema_version: 2,
+    diagnostic_model: DIAGNOSTIC_MODEL,
+    evidence_kind: 'synthetic',
+    eligibility: 'UNVERIFIED',
+    real_provider_calls: 0,
+    is_primary: false,
+    source: {
+      input_sha256: src.input_sha256,
+      expected_plan_hash: src.expected_plan_hash,
+      report_method_version: src.report_method_version,
+    },
+    audit_status: status,
+    original_n_tasks: nt,
+    n_families: nf,
+    configurations: [...configs],
+    family_sizes: clonedSizes,
+    originals: clonedOriginals,
+    exclusions: clonedExclusions,
+    limitations: [...expectedLimits],
+  };
+}
+
+function dtoEquals(a, b) {
+  return (
+    a.defined === b.defined &&
+    a.numerator === b.numerator &&
+    a.denominator === b.denominator &&
+    a.reason === b.reason
+  );
+}
+
+export function bindExplorerAndDiagnosticStrict(viewInput, diagnosticInput) {
+  const view = validateExplorerViewStrict(viewInput);
+  const sensitivity = validateFamilyDiagnosticStrict(diagnosticInput);
+
+  if (view.analysis.sensitivity !== null) {
+    throw new V2DataError('BUNDLE_MISMATCH');
+  }
+  if (
+    view.source.input_sha256 !== sensitivity.source.input_sha256 ||
+    view.source.expected_plan_hash !== sensitivity.source.expected_plan_hash ||
+    view.source.report_method_version !== sensitivity.source.report_method_version ||
+    view.evidence_kind !== sensitivity.evidence_kind ||
+    view.eligibility !== sensitivity.eligibility ||
+    view.real_provider_calls !== sensitivity.real_provider_calls ||
+    view.analysis.audit_status !== sensitivity.audit_status ||
+    view.evaluated_task_count !== sensitivity.original_n_tasks
+  ) {
+    throw new V2DataError('BUNDLE_MISMATCH');
+  }
+
+  let viewConfigs = view.configurations.map((c) => c.config_id);
+  if (view.analysis.audit_status === 'blocked') {
+    const unionSet = new Set(viewConfigs);
+    for (const row of view.rows) {
+      unionSet.add(row.config_id);
+    }
+    viewConfigs = [...unionSet].sort();
+  }
+  if (
+    viewConfigs.length !== sensitivity.configurations.length ||
+    viewConfigs.some((v, idx) => v !== sensitivity.configurations[idx])
+  ) {
+    throw new V2DataError('BUNDLE_MISMATCH');
+  }
+
+  const observedFamilies = new Set(view.rows.map((r) => r.family_id));
+  if (observedFamilies.size !== sensitivity.n_families) {
+    throw new V2DataError('BUNDLE_MISMATCH');
+  }
+
+  if (view.analysis.audit_status !== 'blocked') {
+    const nTasks = view.evaluated_task_count;
+    const hideCosts = view.analysis.audit_status === 'cost_incomplete';
+    const seedsByCfg = new Map();
+    const cfgMetricsById = new Map();
+
+    for (const cfg of view.configurations) {
+      seedsByCfg.set(cfg.config_id, cfg.declared_seeds);
+      cfgMetricsById.set(cfg.config_id, cfg);
+    }
+
+    const originalsToCompare =
+      view.analysis.summary_mode !== 'blocked' ? sensitivity.originals : [];
+    for (const orig of originalsToCompare) {
+      const cfg = cfgMetricsById.get(orig.config_id);
+      if (!dtoEquals(orig.pass_at_1, cfg.pass_at_1)) {
+        throw new V2DataError('BUNDLE_MISMATCH');
+      }
+      if (hideCosts) {
+        if (
+          orig.expected_total_cost_nano_usd.defined !== false ||
+          orig.mean_task_cost_nano_usd.defined !== false
+        ) {
+          throw new V2DataError('BUNDLE_MISMATCH');
+        }
+      } else {
+        if (!dtoEquals(orig.expected_total_cost_nano_usd, cfg.expected_total_cost_nano_usd)) {
+          throw new V2DataError('BUNDLE_MISMATCH');
+        }
+        const totFrac = parseRationalV2(cfg.expected_total_cost_nano_usd);
+        const meanFrac = parseRationalV2(orig.mean_task_cost_nano_usd);
+        if (
+          totFrac === null ||
+          meanFrac === null ||
+          !equalsRational(totFrac, mulRationals(meanFrac, { numerator: BigInt(nTasks), denominator: 1n }))
+        ) {
+          throw new V2DataError('BUNDLE_MISMATCH');
+        }
+      }
+    }
+
+    const taskToFamily = new Map();
+    const cellLookup = new Map();
+    for (const row of view.rows) {
+      const { task_id: tid, family_id: fid, config_id: cid, seed } = row;
+      if (taskToFamily.has(tid) && taskToFamily.get(tid) !== fid) {
+        throw new V2DataError('BUNDLE_MISMATCH');
+      }
+      taskToFamily.set(tid, fid);
+      const cellKey = `${cid}|${tid}|${seed}`;
+      if (cellLookup.has(cellKey)) {
+        throw new V2DataError('BUNDLE_MISMATCH');
+      }
+      cellLookup.set(cellKey, row);
+    }
+
+    const allTasks = [...taskToFamily.keys()].sort();
+    const allFamilies = [...new Set(taskToFamily.values())].sort();
+    let totalDeclaredSeeds = 0;
+    for (const seeds of seedsByCfg.values()) {
+      totalDeclaredSeeds += seeds.length;
+    }
+
+    if (allTasks.length !== nTasks || cellLookup.size !== nTasks * totalDeclaredSeeds) {
+      throw new V2DataError('BUNDLE_MISMATCH');
+    }
+    for (let i = 0; i < nTasks; i += 1) {
+      if (allTasks[i] !== formatAlias('task', i + 1, nTasks)) {
+        throw new V2DataError('BUNDLE_MISMATCH');
+      }
+    }
+    for (const row of view.rows) {
+      const seeds = seedsByCfg.get(row.config_id);
+      if (!seeds || !seeds.includes(row.seed)) {
+        throw new V2DataError('BUNDLE_MISMATCH');
+      }
+    }
+
+    for (let i = 0; i < allFamilies.length; i += 1) {
+      const famId = allFamilies[i];
+      const expectedCount = allTasks.filter((tid) => taskToFamily.get(tid) === famId).length;
+      const fs = sensitivity.family_sizes[i];
+      if (!fs || fs.family_id !== famId || fs.task_count !== expectedCount) {
+        throw new V2DataError('BUNDLE_MISMATCH');
+      }
+    }
+
+    const taskPointsByCfg = new Map();
+    for (const [cid, seeds] of seedsByCfg.entries()) {
+      const kC = BigInt(seeds.length);
+      const pts = [];
+      for (const tid of allTasks) {
+        const famId = taskToFamily.get(tid);
+        let solved = 0n;
+        let costSum = 0n;
+        let missingCost = false;
+        for (const s of seeds) {
+          const cell = cellLookup.get(`${cid}|${tid}|${s}`);
+          if (cell.outcome === 'solved') solved += 1n;
+          if (cell.cost_nano_usd === null) missingCost = true;
+          else costSum += BigInt(cell.cost_nano_usd);
+        }
+        pts.push({
+          tid,
+          famId,
+          pRate: { numerator: solved, denominator: kC },
+          mCost: missingCost || hideCosts ? null : { numerator: costSum, denominator: kC },
+        });
+      }
+      taskPointsByCfg.set(cid, pts);
+    }
+
+    const origByCfg = new Map(sensitivity.originals.map((o) => [o.config_id, o]));
+    const nTasksRat = { numerator: BigInt(nTasks), denominator: 1n };
+
+    for (const [cid, pts] of taskPointsByCfg.entries()) {
+      const orig = origByCfg.get(cid);
+      let passSum = { numerator: 0n, denominator: 1n };
+      let totalCostSum = { numerator: 0n, denominator: 1n };
+      for (const pt of pts) {
+        passSum = addRationals(passSum, pt.pRate);
+        if (!hideCosts && pt.mCost !== null) {
+          totalCostSum = addRationals(totalCostSum, pt.mCost);
+        }
+      }
+      const expOrigPass = divRationals(passSum, nTasksRat);
+      if (!dtoEquals(orig.pass_at_1, makeDefinedRationalDto(expOrigPass.numerator, expOrigPass.denominator))) {
+        throw new V2DataError('BUNDLE_MISMATCH');
+      }
+      if (!hideCosts) {
+        const expOrigMean = divRationals(totalCostSum, nTasksRat);
+        if (
+          !dtoEquals(
+            orig.expected_total_cost_nano_usd,
+            makeDefinedRationalDto(totalCostSum.numerator, totalCostSum.denominator),
+          ) ||
+          !dtoEquals(
+            orig.mean_task_cost_nano_usd,
+            makeDefinedRationalDto(expOrigMean.numerator, expOrigMean.denominator),
+          )
+        ) {
+          throw new V2DataError('BUNDLE_MISMATCH');
+        }
+      }
+    }
+
+    for (let i = 0; i < allFamilies.length; i += 1) {
+      const famId = allFamilies[i];
+      const excl = sensitivity.exclusions[i];
+      const retainedTasks = allTasks.filter((tid) => taskToFamily.get(tid) !== famId);
+      if (
+        excl.family_id !== famId ||
+        excl.retained_task_count !== retainedTasks.length ||
+        excl.excluded_task_count !== nTasks - retainedTasks.length
+      ) {
+        throw new V2DataError('BUNDLE_MISMATCH');
+      }
+
+      for (const cfgEntry of excl.configurations) {
+        const cid = cfgEntry.config_id;
+        const retainedPts = taskPointsByCfg.get(cid).filter((pt) => pt.famId !== famId);
+        if (retainedPts.length === 0) {
+          for (const k of [
+            'pass_at_1',
+            'expected_total_cost_nano_usd',
+            'mean_task_cost_nano_usd',
+            'delta_pass_at_1',
+            'delta_mean_task_cost_nano_usd',
+          ]) {
+            if (cfgEntry[k].defined !== false || cfgEntry[k].reason !== 'no_retained_tasks') {
+              throw new V2DataError('BUNDLE_MISMATCH');
+            }
+          }
+          continue;
+        }
+
+        const nRetRat = { numerator: BigInt(retainedPts.length), denominator: 1n };
+        let retPassSum = { numerator: 0n, denominator: 1n };
+        for (const pt of retainedPts) {
+          retPassSum = addRationals(retPassSum, pt.pRate);
+        }
+        const expPass = divRationals(retPassSum, nRetRat);
+        const origPass = parseRationalV2(origByCfg.get(cid).pass_at_1);
+        const expDeltaPass = subRationals(expPass, origPass);
+
+        if (
+          !dtoEquals(cfgEntry.pass_at_1, makeDefinedRationalDto(expPass.numerator, expPass.denominator)) ||
+          !dtoEquals(
+            cfgEntry.delta_pass_at_1,
+            makeDefinedRationalDto(expDeltaPass.numerator, expDeltaPass.denominator, { allowNegative: true }),
+          )
+        ) {
+          throw new V2DataError('BUNDLE_MISMATCH');
+        }
+
+        if (hideCosts) {
+          for (const k of [
+            'expected_total_cost_nano_usd',
+            'mean_task_cost_nano_usd',
+            'delta_mean_task_cost_nano_usd',
+          ]) {
+            if (cfgEntry[k].defined !== false || cfgEntry[k].reason !== 'missing_cost_nano_usd') {
+              throw new V2DataError('BUNDLE_MISMATCH');
+            }
+          }
+        } else {
+          let retCostSum = { numerator: 0n, denominator: 1n };
+          for (const pt of retainedPts) {
+            retCostSum = addRationals(retCostSum, pt.mCost);
+          }
+          const expMeanCost = divRationals(retCostSum, nRetRat);
+          const origMeanCost = parseRationalV2(origByCfg.get(cid).mean_task_cost_nano_usd);
+          const expDeltaMean = subRationals(expMeanCost, origMeanCost);
+
+          if (
+            !dtoEquals(
+              cfgEntry.expected_total_cost_nano_usd,
+              makeDefinedRationalDto(retCostSum.numerator, retCostSum.denominator),
+            ) ||
+            !dtoEquals(
+              cfgEntry.mean_task_cost_nano_usd,
+              makeDefinedRationalDto(expMeanCost.numerator, expMeanCost.denominator),
+            ) ||
+            !dtoEquals(
+              cfgEntry.delta_mean_task_cost_nano_usd,
+              makeDefinedRationalDto(expDeltaMean.numerator, expDeltaMean.denominator, { allowNegative: true }),
+            )
+          ) {
+            throw new V2DataError('BUNDLE_MISMATCH');
+          }
+        }
+      }
+    }
+  }
+
+  return { view, diagnostic: sensitivity };
+}
+
+export function parseExplorerV2(text) {
+  try {
+    const parsed = parseBoundedJsonText(text, { errorCode: 'INVALID_EXPLORER_DATA' });
+    const data = validateExplorerViewStrict(parsed);
+    return okResult(data);
+  } catch (err) {
+    const code = err instanceof V2DataError ? err.code : 'INVALID_EXPLORER_DATA';
+    return failResult(code);
+  }
+}
+
+export function validateExplorerV2(input) {
+  try {
+    const data = validateExplorerViewStrict(input);
+    return okResult(data);
+  } catch (err) {
+    const code = err instanceof V2DataError ? err.code : 'INVALID_EXPLORER_DATA';
+    return failResult(code);
+  }
+}
+
+export function parseFamilyDiagnosticV2(text) {
+  try {
+    const parsed = parseBoundedJsonText(text, { errorCode: 'INVALID_DIAGNOSTIC_DATA' });
+    const data = validateFamilyDiagnosticStrict(parsed);
+    return okResult(data);
+  } catch (err) {
+    const code = err instanceof V2DataError ? err.code : 'INVALID_DIAGNOSTIC_DATA';
+    return failResult(code);
+  }
+}
+
+export function bindFamilyDiagnosticV2(view, diagnostic) {
+  try {
+    const bound = bindExplorerAndDiagnosticStrict(view, diagnostic);
+    return okResult(bound);
+  } catch (err) {
+    const code = err instanceof V2DataError ? err.code : 'BUNDLE_MISMATCH';
+    return failResult(code);
+  }
+}
+
+```
+
+## FILE: dashboard/src/v2/data.test.mjs
+
+```javascript
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import {
+  LIMITS_V2,
+  bindFamilyDiagnosticV2,
+  parseExplorerV2,
+  parseFamilyDiagnosticV2,
+  validateExplorerV2,
+} from './data.mjs';
+
+const CONTEXT_DIR = new URL('../../../docs/reviews/argon/browser-v2-context-v1/', import.meta.url);
+const FIXTURES_DIR = new URL('../../../docs/reviews/argon/browser-v2-context-v1/fixtures/', import.meta.url);
+
+const fixtureIndex = JSON.parse(readFileSync(new URL('fixture-index-v1.json', CONTEXT_DIR), 'utf8'));
+const runtimeFacts = JSON.parse(readFileSync(new URL('runtime-facts-v1.json', CONTEXT_DIR), 'utf8'));
+
+function readFixtureText(filename) {
+  return readFileSync(new URL(filename, FIXTURES_DIR), 'utf8');
+}
+
+describe('data.mjs — positive fixture acceptance and literal oracles', () => {
+  it('6. parses, validates, and binds all 7 generated fixture pairs against fixture-index-v1.json', () => {
+    assert.equal(fixtureIndex.cases.length, 7);
+    for (const c of fixtureIndex.cases) {
+      const expName = c.explorer.replace(/^fixtures\//, '');
+      const diagName = c.diagnostic.replace(/^fixtures\//, '');
+      const expText = readFixtureText(expName);
+      const diagText = readFixtureText(diagName);
+
+      const expRes = parseExplorerV2(expText);
+      assert.equal(expRes.ok, true, `Explorer fixture ${c.id} should pass`);
+      assert.deepEqual(expRes.errors, []);
+      assert.equal(expRes.data.analysis.audit_status, c.expected.audit_status);
+      assert.equal(expRes.data.analysis.summary_mode, c.expected.summary_mode);
+      assert.equal(expRes.data.evaluated_task_count, c.expected.declared_tasks);
+      assert.equal(expRes.data.rows.length, c.expected.run_rows);
+
+      const diagRes = parseFamilyDiagnosticV2(diagText);
+      assert.equal(diagRes.ok, true, `Diagnostic fixture ${c.id} should pass`);
+
+      const bindRes = bindFamilyDiagnosticV2(expRes.data, diagRes.data);
+      assert.equal(bindRes.ok, true, `Binding ${c.id} should pass`);
+    }
+  });
+
+  it('7. matches literal oracles for unequal-seeds, large-exact-cost, and four-task-cascade', () => {
+    // Unequal seeds
+    const unequalCase = fixtureIndex.cases.find((c) => c.id === 'unequal-seeds');
+    const unequalView = parseExplorerV2(readFixtureText('unequal-seeds.explorer.json')).data;
+    const unequalDiag = parseFamilyDiagnosticV2(readFixtureText('unequal-seeds.family-diagnostic.json')).data;
+    const cfg1 = unequalView.configurations.find((c) => c.config_id === 'config_0001');
+    const cfg2 = unequalView.configurations.find((c) => c.config_id === 'config_0002');
+
+    assert.equal(`${cfg1.pass_at_1.numerator}/${cfg1.pass_at_1.denominator}`, unequalCase.literal_oracles.config_0001.pass);
+    assert.equal(`${cfg1.expected_solved_tasks.numerator}/${cfg1.expected_solved_tasks.denominator}`, unequalCase.literal_oracles.config_0001.solves);
+    assert.equal(cfg1.expected_total_cost_nano_usd.numerator, unequalCase.literal_oracles.config_0001.expected_cost);
+    assert.equal(cfg1.actual_all_repetitions_spend_nano_usd, unequalCase.literal_oracles.config_0001.spend);
+    assert.equal(`${cfg2.pass_at_1.numerator}/${cfg2.pass_at_1.denominator}`, unequalCase.literal_oracles.config_0002.pass);
+    assert.equal(cfg2.actual_all_repetitions_spend_nano_usd, unequalCase.literal_oracles.config_0002.spend);
+
+    const exFam1 = unequalDiag.exclusions.find((e) => e.family_id === 'family_0001');
+    const ex1Cfg1 = exFam1.configurations.find((c) => c.config_id === 'config_0001');
+    assert.equal(`${ex1Cfg1.delta_pass_at_1.numerator}/${ex1Cfg1.delta_pass_at_1.denominator}`, '-1/4');
+    assert.equal(`${ex1Cfg1.delta_mean_task_cost_nano_usd.numerator}/${ex1Cfg1.delta_mean_task_cost_nano_usd.denominator}`, '1/2');
+
+    // Large exact cost (> 2^53)
+    const largeCase = fixtureIndex.cases.find((c) => c.id === 'large-exact-cost');
+    const largeView = parseExplorerV2(readFixtureText('large-exact-cost.explorer.json')).data;
+    assert.equal(largeView.rows[0].cost_nano_usd, largeCase.literal_oracles.first_row_cost_nano_usd);
+    assert.equal(
+      largeView.configurations[0].actual_all_repetitions_spend_nano_usd,
+      largeCase.literal_oracles.config_0001_actual_all_repetitions_spend_nano_usd,
+    );
+    assert.equal(
+      `${largeView.configurations[0].expected_total_cost_nano_usd.numerator}/${largeView.configurations[0].expected_total_cost_nano_usd.denominator}`,
+      largeCase.literal_oracles.config_0001_expected_total_cost_nano_usd,
+    );
+
+    // Four-task cascade
+    const cascCase = fixtureIndex.cases.find((c) => c.id === 'four-task-cascade');
+    const cascView = parseExplorerV2(readFixtureText('four-task-cascade.explorer.json')).data;
+    assert.equal(
+      `${cascView.analysis.cascade.pass_at_1.numerator}/${cascView.analysis.cascade.pass_at_1.denominator}`,
+      cascCase.literal_oracles.cascade_pass_at_1,
+    );
+    assert.equal(
+      cascView.analysis.cascade.expected_total_cost_nano_usd.numerator,
+      cascCase.literal_oracles.cascade_total_cost_nano_usd,
+    );
+    assert.equal(
+      `${cascView.analysis.cascade.expected_cost_per_solved_nano_usd.numerator}/${cascView.analysis.cascade.expected_cost_per_solved_nano_usd.denominator}`,
+      cascCase.literal_oracles.cascade_cost_per_solved_nano_usd,
+    );
+  });
+
+  it('8. verifies zero-solved, one-family, cost-incomplete, and audit-blocked edge invariants', () => {
+    const zeroView = parseExplorerV2(readFixtureText('zero-solved.explorer.json')).data;
+    for (const r of zeroView.analysis.frontiers.cost_per_solved.rows) {
+      assert.equal(r.cost_value_nano_usd.defined, false);
+      assert.equal(r.cost_value_nano_usd.reason, 'zero_expected_solves');
+    }
+
+    const oneFamDiag = parseFamilyDiagnosticV2(readFixtureText('one-family.family-diagnostic.json')).data;
+    assert.equal(oneFamDiag.exclusions[0].retained_task_count, 0);
+    assert.equal(oneFamDiag.exclusions[0].configurations[0].pass_at_1.reason, 'no_retained_tasks');
+
+    const costIncView = parseExplorerV2(readFixtureText('cost-incomplete.explorer.json')).data;
+    assert.equal(costIncView.analysis.summary_mode, 'success_only');
+    assert.equal(costIncView.analysis.frontiers, null);
+    assert.equal(costIncView.analysis.bootstrap, null);
+
+    const blockedView = parseExplorerV2(readFixtureText('audit-blocked.explorer.json')).data;
+    const blockedDiag = parseFamilyDiagnosticV2(readFixtureText('audit-blocked.family-diagnostic.json')).data;
+    assert.equal(blockedView.rows.length, 5);
+    assert.equal(blockedDiag.exclusions.length, 0);
+  });
+});
+
+describe('data.mjs — raw JSON scanner and negative validation gates', () => {
+  const validRaw = readFixtureText('unequal-seeds.explorer.json');
+
+  it('9. rejects float, exponent, negative-zero, nonfinite, and >96-char numeric tokens in raw JSON', () => {
+    const rawMutations = [
+      validRaw.replace('"schema_version":2', '"schema_version":2e0'),
+      validRaw.replace('"schema_version":2', '"schema_version":2.0'),
+      validRaw.replace('"real_provider_calls":0', '"real_provider_calls":-0'),
+      validRaw.replace('"seed":0', '"seed":1e999999'),
+      validRaw.replace('"seed":0', `"seed":${'9'.repeat(97)}`),
+      validRaw.replace('"seed":0', '"seed":NaN'),
+    ];
+    for (const mutated of rawMutations) {
+      const res = parseExplorerV2(mutated);
+      assert.equal(res.ok, false);
+      assert.deepEqual(res.errors, ['INVALID_EXPLORER_DATA']);
+    }
+  });
+
+  it('10. rejects top-level, nested, and Unicode-escape-equivalent duplicate object keys', () => {
+    const dupCases = [
+      validRaw.replace('"schema_version":2', '"schema_version":2,"schema_version":2'),
+      validRaw.replace('"schema_version":2', '"schema_\\u0076ersion":2,"schema_version":2'),
+      validRaw.replace('"train":37', '"train":37,"\\u0074rain":37'),
+      validRaw.replace('"outcome":"solved"', '"outcome":"unsolved","\\u006futcome":"solved"'),
+    ];
+    for (const text of dupCases) {
+      const res = parseExplorerV2(text);
+      assert.equal(res.ok, false);
+      assert.deepEqual(res.errors, ['INVALID_EXPLORER_DATA']);
+    }
+  });
+
+  it('11. rejects lone UTF-16 surrogates while accepting valid paired non-BMP Unicode in strings before schema check', () => {
+    const loneHigh = validRaw.replace('"dojo-explorer-view-v2"', '"bad \\ud800"');
+    const loneLow = validRaw.replace('"dojo-explorer-view-v2"', '"bad \\udc00"');
+    assert.equal(parseExplorerV2(loneHigh).ok, false);
+    assert.equal(parseExplorerV2(loneLow).ok, false);
+
+    // Paired surrogate is valid UTF-16 in the scanner, then rejected cleanly as an unknown limitation string
+    const pairedEmoji = validRaw.replace(
+      '"synthetic_unverified_only:',
+      '"\\ud83d\\ude80_emoji:',
+    );
+    const res = parseExplorerV2(pairedEmoji);
+    assert.equal(res.ok, false);
+    assert.deepEqual(res.errors, ['INVALID_EXPLORER_DATA']);
+  });
+
+  it('12. rejects real flags, non-null sensitivity, unknown nested keys, and boolean counts without leaking values', () => {
+    const base = parseExplorerV2(validRaw).data;
+    const mutations = [
+      (d) => { d.evidence_kind = 'real'; },
+      (d) => { d.eligibility = 'VERIFIED'; },
+      (d) => { d.real_provider_calls = 1; },
+      (d) => { d.schema_version = true; },
+      (d) => { d.rows[0].seed = false; },
+      (d) => { d.rows[0].baseline_verified = 1; },
+      (d) => { d.analysis.sensitivity = { arbitrary: 'FICTIONAL_SECRET_CANARY' }; },
+      (d) => { d.source.private_key = 'FICTIONAL_SECRET_CANARY'; },
+      (d) => { d.rows[0].raw_label = 'FICTIONAL_SECRET_CANARY'; },
+      (d) => { d.source.report_method_version = `${runtimeFacts.foundation_method_version}-wrong`; },
+    ];
+
+    for (const mutate of mutations) {
+      const copy = structuredClone(base);
+      mutate(copy);
+      const res = validateExplorerV2(copy);
+      assert.equal(res.ok, false);
+      assert.deepEqual(res.errors, ['INVALID_EXPLORER_DATA']);
+      assert.equal(JSON.stringify(res).includes('FICTIONAL_SECRET_CANARY'), false);
+    }
+  });
+
+  it('13. recomputes and rejects forged config metrics, false Pareto dominance, bootstrap mismatches, and cascade tampering', () => {
+    const cascView = parseExplorerV2(readFixtureText('four-task-cascade.explorer.json')).data;
+
+    // 1. Forged config pass_at_1
+    const badCfg = structuredClone(cascView);
+    badCfg.configurations[0].pass_at_1.numerator = '3';
+    badCfg.configurations[0].expected_solved_tasks.numerator = '3';
+    assert.equal(validateExplorerV2(badCfg).ok, false);
+
+    // 2. Self-consistent false Pareto dominance at existing coordinates
+    const badFrontier = structuredClone(cascView);
+    const cpsTable = badFrontier.analysis.frontiers.cost_per_solved;
+    for (const row of cpsTable.rows) {
+      row.status = 'non_dominated';
+      row.is_on_frontier = true;
+      row.dominated_by = [];
+    }
+    cpsTable.frontier_series_ids = cpsTable.rows.map((r) => r.series_id);
+    cpsTable.dominated_series_ids = [];
+    assert.equal(validateExplorerV2(badFrontier).ok, false);
+
+    // 3. Bootstrap point estimate contradicting configuration pass_at_1
+    const badBoot = structuredClone(cascView);
+    badBoot.analysis.bootstrap.series_summaries.config_0001.pass_at_1.point_estimate.numerator = '0';
+    assert.equal(validateExplorerV2(badBoot).ok, false);
+
+    // 4. Cascade comparison delta contradicting baseline
+    const badCasc = structuredClone(cascView);
+    badCasc.analysis.cascade.comparison_vs_base.delta_pass_at_1.numerator = '0';
+    assert.equal(validateExplorerV2(badCasc).ok, false);
+  });
+
+  it('14. rejects standalone-valid diagnostic when paired with explorer view with swapped family task assignments', () => {
+    const view = parseExplorerV2(readFixtureText('unequal-seeds.explorer.json')).data;
+    const diag = parseFamilyDiagnosticV2(readFixtureText('unequal-seeds.family-diagnostic.json')).data;
+
+    // Swap family_0001 and family_0002 in view.rows; config totals stay identical so view is standalone-valid!
+    const swappedView = structuredClone(view);
+    for (const row of swappedView.rows) {
+      row.family_id = row.family_id === 'family_0001' ? 'family_0002' : 'family_0001';
+    }
+    assert.equal(validateExplorerV2(swappedView).ok, true);
+
+    // Cross-file binding must detect that exclusions contradict the swapped rows
+    const bound = bindFamilyDiagnosticV2(swappedView, diag);
+    assert.equal(bound.ok, false);
+    assert.deepEqual(bound.errors, ['BUNDLE_MISMATCH']);
+  });
+
+  it('15. accepts shared acyclic DAG objects in validateExplorerV2 while rejecting cycles, sparse arrays, and resource overflows', () => {
+    const view = parseExplorerV2(validRaw).data;
+    // Share the same acyclic rational DTO reference across two fields
+    const sharedDto = { defined: true, numerator: '1', denominator: '4', reason: null };
+    view.configurations[0].pass_at_1 = sharedDto;
+    assert.equal(validateExplorerV2(view).ok, true);
+
+    // Cyclic reference rejected
+    const cyclic = structuredClone(view);
+    cyclic.source.self = cyclic.source;
+    assert.equal(validateExplorerV2(cyclic).ok, false);
+
+    // Sparse array rejected
+    const sparse = structuredClone(view);
+    sparse.limitations = new Array(5);
+    assert.equal(validateExplorerV2(sparse).ok, false);
+
+    // Depth > 24 in raw JSON rejected with RESOURCE_LIMIT_EXCEEDED
+    const deepJson = `${'{"a":'.repeat(26)}1${'}'.repeat(26)}`;
+    const deepRes = parseExplorerV2(deepJson);
+    assert.equal(deepRes.ok, false);
+    assert.deepEqual(deepRes.errors, ['RESOURCE_LIMIT_EXCEEDED']);
+    assert.equal(LIMITS_V2.maxViewDepth, 24);
+  });
+});
+
+```
+
+## FILE: dashboard/src/v2/derive.mjs
+
+```javascript
+// Seed-aware pure read model (DerivedV2) and deterministic pagination/sorting
+// selector (selectRowsV2) for dojo-explorer-view-v2.
+
+import {
+  V2DataError,
+  addRationals,
+  approximateRationalToNumber,
+  compareParsedRationals,
+  divRationals,
+  formatNanoUsdV2,
+  formatPercentV2,
+  formatRationalV2,
+  formatUndefinedReasonV2,
+  hasExactKeys,
+  isCleanAsciiOrUtf16String,
+  isPlainObject,
+  makeDefinedRationalDto,
+  makeUndefinedRationalDto,
+  mulRationals,
+  parseNanoUsdString,
+  parseRationalV2,
+} from './exact.mjs';
+import {
+  ALLOWED_AUDIT_STATUSES,
+  ALLOWED_SUMMARY_MODES,
+  CONSTRUCTION_HELD_OUT,
+  CONSTRUCTION_TOTAL,
+  CONSTRUCTION_TRAIN,
+  COST_AXIS_COST_PER_SOLVED,
+  COST_AXIS_MEAN_TASK_COST,
+  LIMITS_V2,
+  VALID_EVIDENCE_VALIDITIES,
+  VALID_OUTCOMES,
+  VALID_SCORER_STATUSES,
+  bindExplorerAndDiagnosticStrict,
+  checkRowSemanticsV2,
+  formatAlias,
+  validateExplorerViewStrict,
+  validateJsonTreeBounds,
+} from './data.mjs';
+
+export const SYNTHETIC_BANNER_V2 =
+  'SYNTHETIC OFFLINE VIEW ONLY — UNVERIFIED ELIGIBILITY — 0 REAL PROVIDER CALLS';
+
+const DERIVED_TOP_KEYS = Object.freeze([
+  'scope',
+  'configurations',
+  'runRows',
+  'taskSummaries',
+  'frontiers',
+  'cascade',
+  'familyDiagnostic',
+  'limitations',
+]);
+
+const SCOPE_KEYS = Object.freeze([
+  'schemaVersion',
+  'viewModel',
+  'evidenceKind',
+  'eligibility',
+  'realProviderCalls',
+  'bannerText',
+  'source',
+  'constructionCounts',
+  'evaluatedTaskCount',
+  'declaredConfigCount',
+  'observedConfigIds',
+  'observedTaskIds',
+  'observedFamilyIds',
+  'declaredSeedsByConfig',
+  'summaryMode',
+  'auditStatus',
+  'isBlocked',
+  'blockedReason',
+  'isCostIncomplete',
+]);
+
+const RUN_ROW_WRAPPER_KEYS = Object.freeze(['rowKey', 'row']);
+const INNER_ROW_KEYS = Object.freeze([
+  'task_id',
+  'config_id',
+  'family_id',
+  'seed',
+  'outcome',
+  'scorer_status',
+  'evidence_validity',
+  'baseline_verified',
+  'cost_nano_usd',
+  'visible_tests_pass',
+]);
+
+const SELECT_OPTION_KEYS = new Set([
+  'configId',
+  'outcome',
+  'taskId',
+  'page',
+  'pageSize',
+  'sortKey',
+  'direction',
+]);
+
+const ALLOWED_SORT_KEYS = new Set([
+  'task_id',
+  'config_id',
+  'seed',
+  'outcome',
+  'cost_nano_usd',
+]);
+
+const ALLOWED_DIRECTIONS = new Set(['asc', 'desc']);
+const OUTCOME_SORT_ORDER = Object.freeze({
+  solved: 0,
+  unsolved: 1,
+  undetermined: 2,
+});
+
+function deepFreeze(obj) {
+  if (obj === null || typeof obj !== 'object') return obj;
+  Object.freeze(obj);
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i += 1) {
+      deepFreeze(obj[i]);
+    }
+  } else {
+    const keys = Object.keys(obj);
+    for (let i = 0; i < keys.length; i += 1) {
+      deepFreeze(obj[keys[i]]);
+    }
+  }
+  return obj;
+}
+
+function buildConfigReadModels(view) {
+  const nTasks = view.evaluated_task_count;
+  const nTasksRat = { numerator: BigInt(nTasks), denominator: 1n };
+  const summaryMode = view.analysis.summary_mode;
+
+  // Count outcomes per configuration across all supplied rows
+  const rowCountsByCfg = new Map();
+  for (const cfg of view.configurations) {
+    rowCountsByCfg.set(cfg.config_id, {
+      observedRuns: 0,
+      solvedRuns: 0,
+      unsolvedRuns: 0,
+      undeterminedRuns: 0,
+      missingCostRuns: 0,
+    });
+  }
+  for (const row of view.rows) {
+    const tally = rowCountsByCfg.get(row.config_id);
+    if (!tally) continue;
+    tally.observedRuns += 1;
+    if (row.outcome === 'solved') tally.solvedRuns += 1;
+    else if (row.outcome === 'unsolved') tally.unsolvedRuns += 1;
+    else tally.undeterminedRuns += 1;
+    if (row.cost_nano_usd === null) tally.missingCostRuns += 1;
+  }
+
+  return view.configurations.map((cfg) => {
+    const cid = cfg.config_id;
+    const tally = rowCountsByCfg.get(cid);
+    const passParsed = parseRationalV2(cfg.pass_at_1);
+    const solvedParsed = parseRationalV2(cfg.expected_solved_tasks);
+    const costParsed = parseRationalV2(cfg.expected_total_cost_nano_usd);
+
+    let meanTaskCostDto;
+    let costPerSolvedDto;
+
+    if (summaryMode === 'blocked') {
+      meanTaskCostDto = makeUndefinedRationalDto('panel_blocked');
+      costPerSolvedDto = makeUndefinedRationalDto('panel_blocked');
+    } else if (costParsed === null) {
+      meanTaskCostDto = makeUndefinedRationalDto(cfg.expected_total_cost_nano_usd.reason);
+      costPerSolvedDto = makeUndefinedRationalDto(cfg.expected_total_cost_nano_usd.reason);
+    } else {
+      const meanRat = divRationals(costParsed, nTasksRat);
+      meanTaskCostDto = makeDefinedRationalDto(meanRat.numerator, meanRat.denominator);
+      if (solvedParsed === null || solvedParsed.numerator === 0n) {
+        costPerSolvedDto = makeUndefinedRationalDto('zero_expected_solves');
+      } else {
+        const cpsRat = divRationals(costParsed, solvedParsed);
+        costPerSolvedDto = makeDefinedRationalDto(cpsRat.numerator, cpsRat.denominator);
+      }
+    }
+
+    const actualSpendStr = cfg.actual_all_repetitions_spend_nano_usd;
+    const actualSpendReason =
+      actualSpendStr === null
+        ? summaryMode === 'blocked'
+          ? 'panel_blocked'
+          : 'missing_cost_nano_usd'
+        : null;
+
+    return {
+      configId: cid,
+      nTasks: cfg.n_tasks,
+      declaredSeeds: [...cfg.declared_seeds],
+      seedCount: cfg.declared_seeds.length,
+      totalRuns: cfg.total_runs,
+      observedRuns: tally.observedRuns,
+      solvedRuns: tally.solvedRuns,
+      unsolvedRuns: tally.unsolvedRuns,
+      undeterminedRuns: tally.undeterminedRuns,
+      missingCostRuns: tally.missingCostRuns,
+      passAt1: cfg.pass_at_1,
+      expectedSolvedTasks: cfg.expected_solved_tasks,
+      expectedTotalCostNanoUsd: cfg.expected_total_cost_nano_usd,
+      meanTaskCostNanoUsd: meanTaskCostDto,
+      expectedCostPerSolvedNanoUsd: costPerSolvedDto,
+      actualAllRepetitionsSpendNanoUsd: actualSpendStr,
+      undefinedReasons: {
+        passAt1: cfg.pass_at_1.reason,
+        expectedSolvedTasks: cfg.expected_solved_tasks.reason,
+        expectedTotalCostNanoUsd: cfg.expected_total_cost_nano_usd.reason,
+        meanTaskCostNanoUsd: meanTaskCostDto.reason,
+        expectedCostPerSolvedNanoUsd: costPerSolvedDto.reason,
+        actualAllRepetitionsSpendNanoUsd: actualSpendReason,
+      },
+      display: {
+        passAt1Percent: formatPercentV2(cfg.pass_at_1, { places: 1 }),
+        expectedSolvedTasks: formatRationalV2(cfg.expected_solved_tasks, { places: 3 }),
+        expectedTotalCostUsd: formatNanoUsdV2(cfg.expected_total_cost_nano_usd, { places: 6 }),
+        meanTaskCostUsd: formatNanoUsdV2(meanTaskCostDto, { places: 6 }),
+        expectedCostPerSolvedUsd: formatNanoUsdV2(costPerSolvedDto, { places: 6 }),
+        actualAllRepetitionsSpendUsd:
+          actualSpendStr === null
+            ? formatUndefinedReasonV2(actualSpendReason)
+            : formatNanoUsdV2(actualSpendStr, { places: 6 }),
+      },
+    };
+  });
+}
+
+function buildTaskSummaries(view) {
+  if (view.analysis.audit_status === 'blocked' || view.analysis.summary_mode === 'blocked') {
+    return [];
+  }
+  const nTasks = view.evaluated_task_count;
+  const hideCosts =
+    view.analysis.audit_status === 'cost_incomplete' ||
+    view.analysis.summary_mode === 'success_only';
+
+  const cellLookup = new Map();
+  const taskFamilyMap = new Map();
+  for (const row of view.rows) {
+    taskFamilyMap.set(row.task_id, row.family_id);
+    cellLookup.set(`${row.config_id}|${row.task_id}|${row.seed}`, row);
+  }
+
+  const summaries = [];
+  for (let i = 1; i <= nTasks; i += 1) {
+    const tid = formatAlias('task', i, nTasks);
+    const fid = taskFamilyMap.get(tid);
+    const byConfig = {};
+
+    for (const cfg of view.configurations) {
+      const cid = cfg.config_id;
+      const seeds = cfg.declared_seeds;
+      const kC = BigInt(seeds.length);
+      let solvedCount = 0;
+      let unsolvedCount = 0;
+      let undeterminedCount = 0;
+      let costSum = 0n;
+      let hasMissingCost = false;
+
+      for (const s of seeds) {
+        const cell = cellLookup.get(`${cid}|${tid}|${s}`);
+        if (cell.outcome === 'solved') solvedCount += 1;
+        else if (cell.outcome === 'unsolved') unsolvedCount += 1;
+        else undeterminedCount += 1;
+
+        if (cell.cost_nano_usd === null) {
+          hasMissingCost = true;
+        } else {
+          costSum += BigInt(cell.cost_nano_usd);
+        }
+      }
+
+      const successRateDto = makeDefinedRationalDto(BigInt(solvedCount), kC);
+      // Cost-incomplete source ALWAYS withholds aggregate task-summary costs,
+      // even if a specific (task, config) group happens to have all non-null seed costs.
+      const meanCostNanoUsdDto =
+        hideCosts || hasMissingCost
+          ? makeUndefinedRationalDto('missing_cost_nano_usd')
+          : makeDefinedRationalDto(costSum, kC);
+      const actualAllSeedsSpendNanoUsd =
+        hideCosts || hasMissingCost ? null : costSum.toString(10);
+
+      byConfig[cid] = {
+        configId: cid,
+        declaredSeeds: [...seeds],
+        seedCount: seeds.length,
+        solvedSeedCount: solvedCount,
+        unsolvedSeedCount: unsolvedCount,
+        undeterminedSeedCount: undeterminedCount,
+        successRate: successRateDto,
+        meanCostNanoUsd: meanCostNanoUsdDto,
+        actualAllSeedsSpendNanoUsd,
+        display: {
+          successPercent: formatPercentV2(successRateDto, { places: 1 }),
+          meanCostUsd: formatNanoUsdV2(meanCostNanoUsdDto, { places: 6 }),
+          actualAllSeedsSpendUsd:
+            actualAllSeedsSpendNanoUsd === null
+              ? formatUndefinedReasonV2('missing_cost_nano_usd')
+              : formatNanoUsdV2(actualAllSeedsSpendNanoUsd, { places: 6 }),
+        },
+      };
+    }
+
+    summaries.push({
+      taskId: tid,
+      familyId: fid,
+      byConfig,
+    });
+  }
+
+  return summaries;
+}
+
+function buildFrontiersReadModel(view) {
+  if (view.analysis.frontiers === null) {
+    return null;
+  }
+  const out = {};
+  for (const axis of [COST_AXIS_COST_PER_SOLVED, COST_AXIS_MEAN_TASK_COST]) {
+    const ft = view.analysis.frontiers[axis];
+    const rows = ft.rows.map((r) => {
+      const pParsed = parseRationalV2(r.pass_at_1);
+      const cParsed = parseRationalV2(r.cost_value_nano_usd);
+      const approxYPercent = approximateRationalToNumber(pParsed, 100n, 1n);
+      const approxXUsd = approximateRationalToNumber(cParsed, 1n, 1000000000n);
+      const plottable = cParsed !== null && approxXUsd !== null && approxYPercent !== null;
+
+      return {
+        seriesId: r.series_id,
+        costAxis: r.cost_axis,
+        passAt1: r.pass_at_1,
+        costValueNanoUsd: r.cost_value_nano_usd,
+        status: r.status,
+        isOnFrontier: r.is_on_frontier,
+        tieGroupId: r.tie_group_id,
+        tiedWith: [...r.tied_with],
+        dominatedBy: [...r.dominated_by],
+        plottable,
+        unplottableReason: plottable ? null : r.cost_value_nano_usd.reason || 'unplottable_coordinate',
+        chartOnlyApprox: {
+          isApproximate: true,
+          approxXUsd: plottable ? approxXUsd : null,
+          approxYPercent: plottable ? approxYPercent : null,
+        },
+        display: {
+          passAt1Percent: formatPercentV2(r.pass_at_1, { places: 1 }),
+          costUsd: formatNanoUsdV2(r.cost_value_nano_usd, { places: 6 }),
+        },
+      };
+    });
+
+    out[axis] = {
+      costAxis: ft.cost_axis,
+      isHeadlineAxis: ft.is_headline_axis,
+      frontierSeriesIds: [...ft.frontier_series_ids],
+      dominatedSeriesIds: [...ft.dominated_series_ids],
+      undefinedSeriesIds: [...ft.undefined_series_ids],
+      rows,
+    };
+  }
+  return out;
+}
+
+function formatComparisonReadModel(comp) {
+  return {
+    ...comp,
+    display: {
+      baselinePassAt1Percent: formatPercentV2(comp.baseline_pass_at_1, { places: 1 }),
+      cascadePassAt1Percent: formatPercentV2(comp.cascade_pass_at_1, { places: 1 }),
+      deltaPassAt1Percent: formatPercentV2(comp.delta_pass_at_1, { places: 1 }),
+      baselineExpectedTotalCostUsd: formatNanoUsdV2(comp.baseline_expected_total_cost_nano_usd, { places: 6 }),
+      cascadeExpectedTotalCostUsd: formatNanoUsdV2(comp.cascade_expected_total_cost_nano_usd, { places: 6 }),
+      deltaExpectedTotalCostUsd: formatNanoUsdV2(comp.delta_expected_total_cost_nano_usd, { places: 6 }),
+      relativeCostSavingsPercent: formatPercentV2(comp.relative_cost_savings, { places: 1 }),
+      baselineCostPerSolvedUsd: formatNanoUsdV2(comp.baseline_cost_per_solved_nano_usd, { places: 6 }),
+      cascadeCostPerSolvedUsd: formatNanoUsdV2(comp.cascade_cost_per_solved_nano_usd, { places: 6 }),
+      deltaCostPerSolvedUsd: formatNanoUsdV2(comp.delta_cost_per_solved_nano_usd, { places: 6 }),
+    },
+  };
+}
+
+function buildCascadeReadModel(view) {
+  const casc = view.analysis.cascade;
+  if (casc === null) return null;
+  return {
+    seriesId: casc.series_id,
+    baseConfigId: casc.base_config_id,
+    escalateConfigId: casc.escalate_config_id,
+    policyHash: casc.policy_hash,
+    nTasks: casc.n_tasks,
+    passAt1: casc.pass_at_1,
+    expectedSolvedTasks: casc.expected_solved_tasks,
+    expectedTotalCostNanoUsd: casc.expected_total_cost_nano_usd,
+    meanTaskCostNanoUsd: casc.mean_task_cost_nano_usd,
+    expectedCostPerSolvedNanoUsd: casc.expected_cost_per_solved_nano_usd,
+    comparisonVsBase: formatComparisonReadModel(casc.comparison_vs_base),
+    comparisonVsEscalate: formatComparisonReadModel(casc.comparison_vs_escalate),
+    policyNote:
+      'Frozen report cascade point and baseline comparisons only; routing signals and policy prose are not in the v2 view and cannot be re-simulated or retuned in the browser.',
+    display: {
+      passAt1Percent: formatPercentV2(casc.pass_at_1, { places: 1 }),
+      expectedSolvedTasks: formatRationalV2(casc.expected_solved_tasks, { places: 3 }),
+      expectedTotalCostUsd: formatNanoUsdV2(casc.expected_total_cost_nano_usd, { places: 6 }),
+      meanTaskCostUsd: formatNanoUsdV2(casc.mean_task_cost_nano_usd, { places: 6 }),
+      expectedCostPerSolvedUsd: formatNanoUsdV2(casc.expected_cost_per_solved_nano_usd, { places: 6 }),
+    },
+  };
+}
+
+function buildFamilyDiagnosticReadModel(diag) {
+  if (diag === null) return null;
+  return {
+    schemaVersion: diag.schema_version,
+    diagnosticModel: diag.diagnostic_model,
+    isPrimary: false,
+    auditStatus: diag.audit_status,
+    originalNTasks: diag.original_n_tasks,
+    nFamilies: diag.n_families,
+    configurations: [...diag.configurations],
+    familySizes: diag.family_sizes.map((fs) => ({ ...fs })),
+    originals: diag.originals.map((orig) => ({
+      ...orig,
+      display: {
+        passAt1Percent: formatPercentV2(orig.pass_at_1, { places: 1 }),
+        expectedTotalCostUsd: formatNanoUsdV2(orig.expected_total_cost_nano_usd, { places: 6 }),
+        meanTaskCostUsd: formatNanoUsdV2(orig.mean_task_cost_nano_usd, { places: 6 }),
+      },
+    })),
+    exclusions: diag.exclusions.map((ex) => ({
+      familyId: ex.family_id,
+      excludedTaskCount: ex.excluded_task_count,
+      retainedTaskCount: ex.retained_task_count,
+      configurations: ex.configurations.map((c) => ({
+        ...c,
+        display: {
+          passAt1Percent: formatPercentV2(c.pass_at_1, { places: 1 }),
+          expectedTotalCostUsd: formatNanoUsdV2(c.expected_total_cost_nano_usd, { places: 6 }),
+          meanTaskCostUsd: formatNanoUsdV2(c.mean_task_cost_nano_usd, { places: 6 }),
+          deltaPassAt1Percent: formatPercentV2(c.delta_pass_at_1, { places: 1 }),
+          deltaMeanTaskCostUsd: formatNanoUsdV2(c.delta_mean_task_cost_nano_usd, { places: 6 }),
+        },
+      })),
+    })),
+    limitations: [...diag.limitations],
+    advisoryNote:
+      'Leave-one-family-out diagnostics are non-primary sensitivity checks only, never a best-subset recommendation or retuning signal.',
+  };
+}
+
+export function deriveExplorerV2(viewInput, diagnosticInput = null) {
+  let view;
+  let diagnostic = null;
+  if (diagnosticInput !== null && diagnosticInput !== undefined) {
+    const bound = bindExplorerAndDiagnosticStrict(viewInput, diagnosticInput);
+    view = bound.view;
+    diagnostic = bound.diagnostic;
+  } else {
+    view = validateExplorerViewStrict(viewInput);
+  }
+
+  const declaredConfigIds = view.configurations.map((c) => c.config_id);
+  const observedConfigSet = new Set(declaredConfigIds);
+  const observedTaskSet = new Set();
+  const observedFamilySet = new Set();
+
+  for (let i = 1; i <= view.evaluated_task_count; i += 1) {
+    observedTaskSet.add(formatAlias('task', i, view.evaluated_task_count));
+  }
+  for (const row of view.rows) {
+    observedConfigSet.add(row.config_id);
+    observedTaskSet.add(row.task_id);
+    observedFamilySet.add(row.family_id);
+  }
+
+  const declaredSeedsByConfig = {};
+  for (const cfg of view.configurations) {
+    declaredSeedsByConfig[cfg.config_id] = [...cfg.declared_seeds];
+  }
+
+  const isBlocked =
+    view.analysis.audit_status === 'blocked' || view.analysis.summary_mode === 'blocked';
+  const isCostIncomplete =
+    view.analysis.audit_status === 'cost_incomplete' ||
+    view.analysis.summary_mode === 'success_only';
+
+  const blockedReason = isBlocked
+    ? view.analysis.audit_status === 'cost_incomplete'
+      ? 'cost_incomplete_report_blocked'
+      : 'panel_audit_blocked'
+    : null;
+
+  const scope = {
+    schemaVersion: view.schema_version,
+    viewModel: view.view_model,
+    evidenceKind: view.evidence_kind,
+    eligibility: view.eligibility,
+    realProviderCalls: view.real_provider_calls,
+    bannerText: SYNTHETIC_BANNER_V2,
+    source: { ...view.source },
+    constructionCounts: { ...view.construction_counts },
+    evaluatedTaskCount: view.evaluated_task_count,
+    declaredConfigCount: view.configurations.length,
+    observedConfigIds: [...observedConfigSet].sort(),
+    observedTaskIds: [...observedTaskSet].sort(),
+    observedFamilyIds: [...observedFamilySet].sort(),
+    declaredSeedsByConfig,
+    summaryMode: view.analysis.summary_mode,
+    auditStatus: view.analysis.audit_status,
+    isBlocked,
+    blockedReason,
+    isCostIncomplete,
+  };
+
+  const configurations = buildConfigReadModels(view);
+  const runRows = view.rows.map((r, idx) => ({
+    rowKey: `run:${idx}`,
+    row: { ...r },
+  }));
+  const taskSummaries = buildTaskSummaries(view);
+  const frontiers = buildFrontiersReadModel(view);
+  const cascade = buildCascadeReadModel(view);
+  const familyDiagnostic = buildFamilyDiagnosticReadModel(diagnostic);
+  const limitations = [...view.limitations];
+
+  return deepFreeze({
+    scope,
+    configurations,
+    runRows,
+    taskSummaries,
+    frontiers,
+    cascade,
+    familyDiagnostic,
+    limitations,
+  });
+}
+
+function validateDerivedModelBoundary(derived) {
+  if (!hasExactKeys(derived, DERIVED_TOP_KEYS)) {
+    throw new V2DataError('INVALID_DERIVED_MODEL');
+  }
+  validateJsonTreeBounds(derived, { errorCode: 'INVALID_DERIVED_MODEL' });
+
+  const { scope, configurations, runRows, taskSummaries, limitations } = derived;
+  if (!hasExactKeys(scope, SCOPE_KEYS)) {
+    throw new V2DataError('INVALID_DERIVED_MODEL');
+  }
+  if (
+    scope.schemaVersion !== 2 ||
+    scope.viewModel !== 'dojo-explorer-view-v2' ||
+    scope.evidenceKind !== 'synthetic' ||
+    scope.eligibility !== 'UNVERIFIED' ||
+    scope.realProviderCalls !== 0 ||
+    typeof scope.bannerText !== 'string' ||
+    !ALLOWED_SUMMARY_MODES.includes(scope.summaryMode) ||
+    !ALLOWED_AUDIT_STATUSES.includes(scope.auditStatus) ||
+    typeof scope.isBlocked !== 'boolean' ||
+    typeof scope.isCostIncomplete !== 'boolean' ||
+    !isPlainObject(scope.constructionCounts) ||
+    scope.constructionCounts.total !== CONSTRUCTION_TOTAL ||
+    scope.constructionCounts.train !== CONSTRUCTION_TRAIN ||
+    scope.constructionCounts.held_out !== CONSTRUCTION_HELD_OUT ||
+    !Array.isArray(scope.observedConfigIds) ||
+    !Array.isArray(scope.observedTaskIds) ||
+    !Array.isArray(configurations) ||
+    configurations.length < 1 ||
+    configurations.length > LIMITS_V2.maxViewConfigs ||
+    !Array.isArray(runRows) ||
+    runRows.length > LIMITS_V2.maxViewRows ||
+    !Array.isArray(taskSummaries) ||
+    !Array.isArray(limitations) ||
+    limitations.length < 1
+  ) {
+    throw new V2DataError('INVALID_DERIVED_MODEL');
+  }
+
+  if (scope.isBlocked && taskSummaries.length !== 0) {
+    throw new V2DataError('INVALID_DERIVED_MODEL');
+  }
+
+  const allowedConfigs = new Set(scope.observedConfigIds);
+  const allowedTasks = new Set(scope.observedTaskIds);
+  for (const cfg of configurations) {
+    if (!isPlainObject(cfg) || typeof cfg.configId !== 'string') {
+      throw new V2DataError('INVALID_DERIVED_MODEL');
+    }
+    allowedConfigs.add(cfg.configId);
+  }
+
+  for (let i = 0; i < runRows.length; i += 1) {
+    const entry = runRows[i];
+    if (!hasExactKeys(entry, RUN_ROW_WRAPPER_KEYS)) {
+      throw new V2DataError('INVALID_DERIVED_MODEL');
+    }
+    const expectedKey = `run:${i}`;
+    if (entry.rowKey !== expectedKey) {
+      throw new V2DataError('INVALID_DERIVED_MODEL');
+    }
+    const r = entry.row;
+    if (!hasExactKeys(r, INNER_ROW_KEYS)) {
+      throw new V2DataError('INVALID_DERIVED_MODEL');
+    }
+    if (
+      !isCleanAsciiOrUtf16String(r.task_id, 64, false) ||
+      !isCleanAsciiOrUtf16String(r.config_id, 64, false) ||
+      !isCleanAsciiOrUtf16String(r.family_id, 64, false) ||
+      typeof r.seed !== 'number' ||
+      !Number.isSafeInteger(r.seed) ||
+      r.seed < 0 ||
+      r.seed > LIMITS_V2.maxCountValue ||
+      Object.is(r.seed, -0) ||
+      !VALID_OUTCOMES.includes(r.outcome) ||
+      !VALID_SCORER_STATUSES.includes(r.scorer_status) ||
+      !VALID_EVIDENCE_VALIDITIES.includes(r.evidence_validity) ||
+      typeof r.baseline_verified !== 'boolean' ||
+      (r.visible_tests_pass !== null && typeof r.visible_tests_pass !== 'boolean')
+    ) {
+      throw new V2DataError('INVALID_DERIVED_MODEL');
+    }
+    try {
+      parseNanoUsdString(r.cost_nano_usd, { allowNull: true, checkMaxCost: true });
+    } catch {
+      throw new V2DataError('INVALID_DERIVED_MODEL');
+    }
+    if (!scope.isBlocked && !checkRowSemanticsV2(r.outcome, r.scorer_status, r.evidence_validity, r.baseline_verified)) {
+      throw new V2DataError('INVALID_DERIVED_MODEL');
+    }
+    if (!allowedConfigs.has(r.config_id) || !allowedTasks.has(r.task_id)) {
+      throw new V2DataError('INVALID_DERIVED_MODEL');
+    }
+  }
+
+  return { allowedConfigs, allowedTasks };
+}
+
+export function selectRowsV2(derived, options = {}) {
+  const { allowedConfigs, allowedTasks } = validateDerivedModelBoundary(derived);
+
+  if (!isPlainObject(options) || Object.getOwnPropertySymbols(options).length > 0) {
+    throw new V2DataError('INVALID_SELECT_OPTIONS');
+  }
+  const optKeys = Object.keys(options);
+  for (let i = 0; i < optKeys.length; i += 1) {
+    const k = optKeys[i];
+    if (!SELECT_OPTION_KEYS.has(k)) {
+      throw new V2DataError('INVALID_SELECT_OPTIONS');
+    }
+    const desc = Object.getOwnPropertyDescriptor(options, k);
+    if (!desc || !Object.prototype.hasOwnProperty.call(desc, 'value')) {
+      throw new V2DataError('INVALID_SELECT_OPTIONS');
+    }
+  }
+
+  const configId = options.configId === undefined ? null : options.configId;
+  const outcome = options.outcome === undefined ? null : options.outcome;
+  const taskId = options.taskId === undefined ? null : options.taskId;
+  const page = options.page === undefined ? 1 : options.page;
+  const pageSize = options.pageSize === undefined ? 50 : options.pageSize;
+  const sortKey = options.sortKey === undefined ? 'task_id' : options.sortKey;
+  const direction = options.direction === undefined ? 'asc' : options.direction;
+
+  if (configId !== null && (typeof configId !== 'string' || !allowedConfigs.has(configId))) {
+    throw new V2DataError('INVALID_SELECT_OPTIONS');
+  }
+  if (outcome !== null && (typeof outcome !== 'string' || !VALID_OUTCOMES.includes(outcome))) {
+    throw new V2DataError('INVALID_SELECT_OPTIONS');
+  }
+  if (taskId !== null && (typeof taskId !== 'string' || !allowedTasks.has(taskId))) {
+    throw new V2DataError('INVALID_SELECT_OPTIONS');
+  }
+  if (
+    typeof page !== 'number' ||
+    !Number.isSafeInteger(page) ||
+    page < 1 ||
+    page > LIMITS_V2.maxCountValue
+  ) {
+    throw new V2DataError('INVALID_SELECT_OPTIONS');
+  }
+  if (
+    typeof pageSize !== 'number' ||
+    !Number.isSafeInteger(pageSize) ||
+    pageSize < 1 ||
+    pageSize > 200
+  ) {
+    throw new V2DataError('INVALID_SELECT_OPTIONS');
+  }
+  if (typeof sortKey !== 'string' || !ALLOWED_SORT_KEYS.has(sortKey)) {
+    throw new V2DataError('INVALID_SELECT_OPTIONS');
+  }
+  if (typeof direction !== 'string' || !ALLOWED_DIRECTIONS.has(direction)) {
+    throw new V2DataError('INVALID_SELECT_OPTIONS');
+  }
+
+  const matched = [];
+  for (let i = 0; i < derived.runRows.length; i += 1) {
+    const item = derived.runRows[i];
+    const r = item.row;
+    if (configId !== null && r.config_id !== configId) continue;
+    if (outcome !== null && r.outcome !== outcome) continue;
+    if (taskId !== null && r.task_id !== taskId) continue;
+    matched.push({
+      ordinal: i,
+      rowKey: item.rowKey,
+      row: { ...r },
+      costBig: r.cost_nano_usd === null ? null : BigInt(r.cost_nano_usd),
+    });
+  }
+
+  const factor = direction === 'asc' ? 1 : -1;
+  matched.sort((a, b) => {
+    if (sortKey === 'cost_nano_usd') {
+      // Null costs ALWAYS sort last in BOTH asc and desc directions.
+      if (a.costBig === null && b.costBig === null) {
+        return a.ordinal - b.ordinal;
+      }
+      if (a.costBig === null) return 1;
+      if (b.costBig === null) return -1;
+      if (a.costBig < b.costBig) return -1 * factor;
+      if (a.costBig > b.costBig) return 1 * factor;
+      return a.ordinal - b.ordinal;
+    }
+
+    if (sortKey === 'seed') {
+      if (a.row.seed !== b.row.seed) {
+        return (a.row.seed - b.row.seed) * factor;
+      }
+      return a.ordinal - b.ordinal;
+    }
+
+    if (sortKey === 'outcome') {
+      const rA = OUTCOME_SORT_ORDER[a.row.outcome];
+      const rB = OUTCOME_SORT_ORDER[b.row.outcome];
+      if (rA !== rB) {
+        return (rA - rB) * factor;
+      }
+      return a.ordinal - b.ordinal;
+    }
+
+    // task_id or config_id
+    const vA = a.row[sortKey];
+    const vB = b.row[sortKey];
+    if (vA < vB) return -1 * factor;
+    if (vA > vB) return 1 * factor;
+    return a.ordinal - b.ordinal;
+  });
+
+  const totalMatched = matched.length;
+  if (totalMatched === 0) {
+    return {
+      rows: [],
+      totalMatched: 0,
+      page: 1,
+      pageCount: 1,
+      pageSize,
+    };
+  }
+
+  const pageCount = Math.ceil(totalMatched / pageSize);
+  const clampedPage = Math.min(page, pageCount);
+  const startIdx = (clampedPage - 1) * pageSize;
+  const pageItems = matched.slice(startIdx, startIdx + pageSize).map((m) => ({
+    rowKey: m.rowKey,
+    row: m.row,
+  }));
+
+  return {
+    rows: pageItems,
+    totalMatched,
+    page: clampedPage,
+    pageCount,
+    pageSize,
+  };
+}
+
+```
+
+## FILE: dashboard/src/v2/derive.test.mjs
+
+```javascript
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { V2DataError } from './exact.mjs';
+import { formatAlias, parseExplorerV2, parseFamilyDiagnosticV2 } from './data.mjs';
+import { deriveExplorerV2, selectRowsV2 } from './derive.mjs';
+
+const FIXTURES_DIR = new URL('../../../docs/reviews/argon/browser-v2-context-v1/fixtures/', import.meta.url);
+
+function loadFixture(name) {
+  return JSON.parse(readFileSync(new URL(name, FIXTURES_DIR), 'utf8'));
+}
+
+describe('derive.mjs — DerivedV2 structure, seed-aware summaries, and selection invariants', () => {
+  it('16. derives exact top-level shape and unequal-seeds taskSummaries without inflating task denominator', () => {
+    const view = loadFixture('unequal-seeds.explorer.json');
+    const diag = loadFixture('unequal-seeds.family-diagnostic.json');
+    const derived = deriveExplorerV2(view, diag);
+
+    assert.deepEqual(Object.keys(derived), [
+      'scope',
+      'configurations',
+      'runRows',
+      'taskSummaries',
+      'frontiers',
+      'cascade',
+      'familyDiagnostic',
+      'limitations',
+    ]);
+    assert.equal(derived.scope.constructionCounts.total, 63);
+    assert.equal(derived.scope.evaluatedTaskCount, 2);
+    assert.equal(derived.scope.evidenceKind, 'synthetic');
+    assert.equal(derived.scope.eligibility, 'UNVERIFIED');
+    assert.equal(derived.scope.realProviderCalls, 0);
+
+    // task_0001 for config_0001 has 2 seeds (one solved cost 1, one unsolved cost 3) -> success 1/2, meanCost 2/1
+    const t1 = derived.taskSummaries.find((t) => t.taskId === 'task_0001');
+    assert.deepEqual(t1.byConfig.config_0001.successRate, {
+      defined: true,
+      numerator: '1',
+      denominator: '2',
+      reason: null,
+    });
+    assert.deepEqual(t1.byConfig.config_0001.meanCostNanoUsd, {
+      defined: true,
+      numerator: '2',
+      denominator: '1',
+      reason: null,
+    });
+    assert.equal(t1.byConfig.config_0001.actualAllSeedsSpendNanoUsd, '4');
+    assert.equal(derived.familyDiagnostic.isPrimary, false);
+  });
+
+  it('17. withholds aggregate taskSummaries costs globally in cost-incomplete mode even for locally complete tasks', () => {
+    const view = loadFixture('cost-incomplete.explorer.json');
+    const diag = loadFixture('cost-incomplete.family-diagnostic.json');
+    const derived = deriveExplorerV2(view, diag);
+
+    assert.equal(derived.scope.isCostIncomplete, true);
+    assert.equal(derived.frontiers, null);
+    assert.equal(derived.cascade, null);
+
+    // Even though config_0002 has known row costs (10 and 20), aggregate task summary costs are withheld globally
+    for (const ts of derived.taskSummaries) {
+      for (const cid of ['config_0001', 'config_0002']) {
+        assert.equal(ts.byConfig[cid].meanCostNanoUsd.defined, false);
+        assert.equal(ts.byConfig[cid].meanCostNanoUsd.reason, 'missing_cost_nano_usd');
+        assert.equal(ts.byConfig[cid].actualAllSeedsSpendNanoUsd, null);
+      }
+    }
+  });
+
+  it('18. leaves taskSummaries empty when audit is blocked while retaining all runRows and duplicate blocked cells', () => {
+    const view = loadFixture('audit-blocked.explorer.json');
+    // Add a duplicate blocked cell to verify rowKey disambiguation
+    const dupRow = structuredClone(view.rows[0]);
+    dupRow.visible_tests_pass = false;
+    view.rows.splice(1, 0, dupRow);
+
+    const derived = deriveExplorerV2(view);
+    assert.equal(derived.scope.isBlocked, true);
+    assert.equal(derived.scope.blockedReason, 'panel_audit_blocked');
+    assert.deepEqual(derived.taskSummaries, []);
+    assert.equal(derived.runRows.length, 6);
+    assert.equal(derived.runRows[0].rowKey, 'run:0');
+    assert.equal(derived.runRows[1].rowKey, 'run:1');
+  });
+
+  it('19. exposes both frontier axes with chart-only finite approximations and marks zero-solved unplottable on cost_per_solved', () => {
+    const cascDerived = deriveExplorerV2(loadFixture('four-task-cascade.explorer.json'));
+    assert.ok(cascDerived.frontiers.cost_per_solved);
+    assert.ok(cascDerived.frontiers.mean_task_cost);
+    assert.equal(cascDerived.frontiers.cost_per_solved.isHeadlineAxis, true);
+    assert.equal(cascDerived.frontiers.mean_task_cost.isHeadlineAxis, false);
+    for (const r of cascDerived.frontiers.cost_per_solved.rows) {
+      assert.equal(r.plottable, true);
+      assert.equal(r.chartOnlyApprox.isApproximate, true);
+      assert.equal(Number.isFinite(r.chartOnlyApprox.approxXUsd), true);
+      assert.equal(Number.isFinite(r.chartOnlyApprox.approxYPercent), true);
+    }
+
+    const zeroDerived = deriveExplorerV2(loadFixture('zero-solved.explorer.json'));
+    for (const r of zeroDerived.frontiers.cost_per_solved.rows) {
+      assert.equal(r.plottable, false);
+      assert.equal(r.unplottableReason, 'zero_expected_solves');
+      assert.equal(r.chartOnlyApprox.approxXUsd, null);
+    }
+  });
+
+  it('20. sorts null costs LAST in both asc and desc directions and compares large BigInt costs accurately with ordinal tie-break', () => {
+    const view = loadFixture('cost-incomplete.explorer.json');
+    const derived = deriveExplorerV2(view);
+
+    const ascPage = selectRowsV2(derived, { sortKey: 'cost_nano_usd', direction: 'asc' });
+    assert.equal(ascPage.rows[ascPage.rows.length - 1].row.cost_nano_usd, null);
+    assert.equal(ascPage.rows[0].row.cost_nano_usd, '2');
+
+    const descPage = selectRowsV2(derived, { sortKey: 'cost_nano_usd', direction: 'desc' });
+    assert.equal(descPage.rows[descPage.rows.length - 1].row.cost_nano_usd, null);
+    assert.equal(descPage.rows[0].row.cost_nano_usd, '20');
+
+    // Large BigInt sorting (> 2^53)
+    const largeDerived = deriveExplorerV2(loadFixture('large-exact-cost.explorer.json'));
+    const largeDesc = selectRowsV2(largeDerived, { sortKey: 'cost_nano_usd', direction: 'desc' });
+    assert.equal(largeDesc.rows[0].row.cost_nano_usd, '1000000000000000000');
+  });
+
+  it('21. reaches >200 rows across pages, clamps excessive page numbers, handles empty selections, and preserves stable rowKeys', () => {
+    // Build a valid blocked view with 250 rows to exercise >200-row pagination
+    const view = loadFixture('audit-blocked.explorer.json');
+    const baseRow = view.rows[0];
+    view.rows = [];
+    for (let i = 1; i <= 250; i += 1) {
+      view.rows.push({
+        ...baseRow,
+        task_id: formatAlias('task', i, 250),
+        seed: i,
+      });
+    }
+    const derived = deriveExplorerV2(view);
+
+    const p1 = selectRowsV2(derived, { page: 1, pageSize: 200 });
+    assert.equal(p1.totalMatched, 250);
+    assert.equal(p1.page, 1);
+    assert.equal(p1.pageCount, 2);
+    assert.equal(p1.rows.length, 200);
+    assert.equal(p1.rows[0].rowKey, 'run:0');
+
+    // Page 2 reaches rows 201..250; clamping page: 99 returns page 2
+    const p2 = selectRowsV2(derived, { page: 99, pageSize: 200 });
+    assert.equal(p2.page, 2);
+    assert.equal(p2.rows.length, 50);
+    assert.equal(p2.rows[0].rowKey, 'run:200');
+    assert.equal(p2.rows[49].rowKey, 'run:249');
+
+    // Empty filter match returns page 1, pageCount 1, rows [], totalMatched 0
+    const emptyPage = selectRowsV2(derived, { outcome: 'undetermined' });
+    assert.deepEqual(emptyPage, {
+      rows: [],
+      totalMatched: 0,
+      page: 1,
+      pageCount: 1,
+      pageSize: 50,
+    });
+  });
+
+  it('22. rejects unknown/invalid selectRowsV2 options and mutated/untrusted DerivedV2 objects with V2DataError', () => {
+    const derived = deriveExplorerV2(loadFixture('unequal-seeds.explorer.json'));
+
+    const badOptions = [
+      { unknownKey: 1 },
+      { configId: 'config_9999' },
+      { taskId: 'task_9999' },
+      { outcome: 'invalid_outcome' },
+      { page: 0 },
+      { pageSize: 201 },
+      { sortKey: 'unknown_col' },
+      { direction: 'sideways' },
+    ];
+    for (const opt of badOptions) {
+      assert.throws(
+        () => selectRowsV2(derived, opt),
+        (err) => err instanceof V2DataError && err.code === 'INVALID_SELECT_OPTIONS',
+      );
+    }
+
+    // Reconstructed / tampered derived model rejected at selectRowsV2 boundary
+    const tampered = structuredClone(derived);
+    tampered.runRows[0].rowKey = 'run:999';
+    assert.throws(
+      () => selectRowsV2(tampered, {}),
+      (err) => err instanceof V2DataError && err.code === 'INVALID_DERIVED_MODEL',
+    );
+  });
+});
+
+```
+
+## FILE: docs/explorer-browser-v2-contract.md
+
+```markdown
+# Dojo Browser Explorer v2 Contract (Part 1 Foundation & Part 2 UI Handoff)
+
+Scope: ACTION_PLAN `10j1` / `10j2` (`dashboard/src/v2/exact.mjs`, `dashboard/src/v2/data.mjs`, `dashboard/src/v2/derive.mjs`).
+All inputs and derived models represent **synthetic, UNVERIFIED offline benchmark arithmetic (`real_provider_calls === 0`)**. Nothing in this browser layer authenticates provider calls, test-harness execution, or Stage B benchmark registration.
+
+---
+
+## 1. Public API & Error Contract
+
+### 1.1 `dashboard/src/v2/exact.mjs`
+- `class V2DataError extends Error`:
+  - `.code`: One of 10 fixed error codes (`INVALID_RATIONAL_DTO`, `NEGATIVE_RATIONAL_FORBIDDEN`, `INVALID_NANO_USD`, `INVALID_FORMAT_OPTIONS`, `INVALID_EXPLORER_DATA`, `INVALID_DIAGNOSTIC_DATA`, `BUNDLE_MISMATCH`, `INVALID_DERIVED_MODEL`, `INVALID_SELECT_OPTIONS`, `RESOURCE_LIMIT_EXCEEDED`).
+  - `.message`: Fixed static description mapped from `.code`. Never echoes untrusted keys, paths, filenames, or values.
+- `parseRationalV2(dto, { allowNegative = false } = {})`:
+  - Validates exact keys `{ defined, numerator, denominator, reason }`, string length `<= 96`, bit length `<= 320` before decimal expansion, canonical integer syntax, and reduced-fraction invariant (`gcd(|num|, den) === 1n`).
+  - Returns `{ numerator: bigint, denominator: bigint }` when `defined === true`, or `null` when `defined === false`.
+- `compareRationalV2(left, right)`:
+  - Compares two valid rational DTOs (allowing signed deltas) using exact `BigInt` cross-multiplication. Returns `-1 | 0 | 1`, or `null` if either DTO is undefined.
+- `formatRationalV2(dto, { places = 3 } = {})`:
+  - Formats a rational DTO using half-away-from-zero `BigInt` rounding (`places` integer `0..6`) plus its exact fraction in parentheses, e.g. `"0.250 (1/4)"`, or an explicit undefined label.
+- `formatPercentV2(dto, { places = 1 } = {})`:
+  - Multiplies numerator by `100n` before half-away-from-zero `BigInt` rounding, e.g. `"25.0% (1/4)"`.
+- `formatNanoUsdV2(dto, { places = 6 } = {})`:
+  - Accepts a rational DTO or canonical nonnegative decimal string. Divides nano-USD by `10^9` using `BigInt` arithmetic. Positive non-zero amounts strictly below `10^-places` USD display `< $0.000001 (<exact> nano-USD)` instead of `$0.000000`.
+
+### 1.2 `dashboard/src/v2/data.mjs`
+- `LIMITS_V2`: Frozen object publishing `{ maxViewBytes: 2097152, maxViewNodes: 80000, maxViewRows: 10000, maxViewConfigs: 100, maxViewDepth: 24, maxIntStringChars: 96, maxIntBits: 320, maxLimitations: 50, maxCellVisits: 2000000, maxStringChars: 1024, maxCostNanoUsd: "1000000000000000000", maxCountValue: 1000000000, maxBootstrapReplicates: 100000, maxPairedDifferences: 10000 }`.
+- `parseExplorerV2(text)` -> `{ ok: boolean, data: ViewV2 | null, errors: string[] }`
+- `validateExplorerV2(input)` -> `{ ok: boolean, data: ViewV2 | null, errors: string[] }`
+- `parseFamilyDiagnosticV2(text)` -> `{ ok: boolean, data: FamilyDiagnosticV2 | null, errors: string[] }`
+- `bindFamilyDiagnosticV2(view, diagnostic)` -> `{ ok: boolean, data: { view, diagnostic } | null, errors: string[] }`
+
+### 1.3 `dashboard/src/v2/derive.mjs`
+- `deriveExplorerV2(view, diagnostic = null)` -> `DerivedV2` (throws `V2DataError` on invalid input or cross-file mismatch).
+- `selectRowsV2(derived, options = {})` -> `PageV2` (revalidates `derived` and `options`; throws `V2DataError` on any violation).
+
+---
+
+## 2. Exact `DerivedV2` Read-Model Specification
+
+`deriveExplorerV2(view, diagnostic = null)` returns a deep-frozen object with exact top-level keys:
+`{ scope, configurations, runRows, taskSummaries, frontiers, cascade, familyDiagnostic, limitations }`.
+
+### 2.1 `scope`
+- `schemaVersion`: `2`
+- `viewModel`: `'dojo-explorer-view-v2'`
+- `evidenceKind`: `'synthetic'`
+- `eligibility`: `'UNVERIFIED'`
+- `realProviderCalls`: `0`
+- `bannerText`: `'SYNTHETIC OFFLINE VIEW ONLY — UNVERIFIED ELIGIBILITY — 0 REAL PROVIDER CALLS'`
+- `source`: `{ input_sha256, expected_plan_hash, report_method_version }`
+- `constructionCounts`: `{ total: 63, train: 37, held_out: 26 }` (informational project construction inventory, never evaluated panel outcomes)
+- `evaluatedTaskCount`: positive integer declared task count for this panel
+- `declaredConfigCount`: positive integer (`1..100`)
+- `observedConfigIds`: sorted array of declared and observed `config_XXXX` aliases
+- `observedTaskIds`: sorted array of declared and observed `task_XXXX` aliases
+- `observedFamilyIds`: sorted array of observed `family_XXXX` aliases
+- `declaredSeedsByConfig`: `{ [configId]: number[] }`
+- `summaryMode`: `'headline_complete' | 'success_only' | 'blocked'`
+- `auditStatus`: `'valid' | 'cost_incomplete' | 'blocked'`
+- `isBlocked`: boolean
+- `blockedReason`: `'panel_audit_blocked' | 'cost_incomplete_report_blocked' | null`
+- `isCostIncomplete`: boolean
+
+### 2.2 `configurations` (Array of `ConfigReadModelV2`)
+Each item preserves original aliases and exact metric DTOs alongside formatted strings:
+- `configId`: `'config_XXXX'`
+- `nTasks`: integer (`=== scope.evaluatedTaskCount`)
+- `declaredSeeds`: `number[]`
+- `seedCount`: integer (`declaredSeeds.length`)
+- `totalRuns`: integer (`nTasks * seedCount`)
+- `observedRuns`, `solvedRuns`, `unsolvedRuns`, `undeterminedRuns`, `missingCostRuns`: exact nonnegative integer row counts
+- `passAt1`, `expectedSolvedTasks`, `expectedTotalCostNanoUsd`, `meanTaskCostNanoUsd`, `expectedCostPerSolvedNanoUsd`: exact rational DTOs
+- `actualAllRepetitionsSpendNanoUsd`: canonical decimal string or `null`
+- `undefinedReasons`: `{ passAt1, expectedSolvedTasks, expectedTotalCostNanoUsd, meanTaskCostNanoUsd, expectedCostPerSolvedNanoUsd, actualAllRepetitionsSpendNanoUsd }`
+- `display`: `{ passAt1Percent, expectedSolvedTasks, expectedTotalCostUsd, meanTaskCostUsd, expectedCostPerSolvedUsd, actualAllRepetitionsSpendUsd }`
+
+### 2.3 `runRows` (Array of `{ rowKey, row }`)
+- `rowKey`: `'run:' + ordinal` (`'run:0'`, `'run:1'`, ... in canonical `view.rows` array order). Stable across filtering, sorting, and pagination; disambiguates duplicate blocked cells.
+- `row`: Fresh validated copy of the 10-field wire row (`task_id, config_id, family_id, seed, outcome, scorer_status, evidence_validity, baseline_verified, cost_nano_usd, visible_tests_pass`).
+
+### 2.4 `taskSummaries` (Array of `TaskSummaryV2`)
+Empty array `[]` when `scope.isBlocked === true`. Otherwise contains one entry per declared task (`task_0001..task_NNNN`):
+- `taskId`: `'task_XXXX'`
+- `familyId`: `'family_XXXX'`
+- `byConfig`: `{ [configId]: { configId, declaredSeeds, seedCount, solvedSeedCount, unsolvedSeedCount, undeterminedSeedCount, successRate, meanCostNanoUsd, actualAllSeedsSpendNanoUsd, display: { successPercent, meanCostUsd, actualAllSeedsSpendUsd } } }`
+- **Invariants**: Per-task success averages seed successes within that task (`solvedSeedCount / seedCount`); unequal seed counts never alter the task denominator. When `scope.isCostIncomplete === true`, `meanCostNanoUsd` (`reason: 'missing_cost_nano_usd'`) and `actualAllSeedsSpendNanoUsd` (`null`) are withheld globally across all tasks and configurations.
+
+### 2.5 `frontiers` (`null` or `{ cost_per_solved, mean_task_cost }`)
+Present only when `summaryMode === 'headline_complete'`. Each axis table contains:
+- `costAxis`: `'cost_per_solved' | 'mean_task_cost'`
+- `isHeadlineAxis`: boolean (`true` for `cost_per_solved`, `false` for `mean_task_cost`)
+- `frontierSeriesIds`, `dominatedSeriesIds`, `undefinedSeriesIds`: `string[]`
+- `rows`: Array of `{ seriesId, costAxis, passAt1, costValueNanoUsd, status, isOnFrontier, tieGroupId, tiedWith, dominatedBy, plottable, unplottableReason, chartOnlyApprox: { isApproximate: true, approxXUsd, approxYPercent }, display: { passAt1Percent, costUsd } }`
+
+### 2.6 `cascade` (`null` or `CascadeReadModelV2`)
+Present only when `view.analysis.cascade !== null`. Exposes frozen report cascade coordinates (`seriesId, baseConfigId, escalateConfigId, policyHash, nTasks, passAt1, expectedSolvedTasks, expectedTotalCostNanoUsd, meanTaskCostNanoUsd, expectedCostPerSolvedNanoUsd`), `comparisonVsBase`, `comparisonVsEscalate`, `policyNote`, and `display`.
+
+### 2.7 `familyDiagnostic` (`null` or `FamilyDiagnosticReadModelV2`)
+Validated, bound leave-one-family-out sensitivity artifact (`isPrimary: false, auditStatus, originalNTasks, nFamilies, configurations, familySizes, originals, exclusions, limitations, advisoryNote`). Never a subset selector.
+
+### 2.8 `PageV2` (`selectRowsV2(derived, options)`)
+- Exact return shape: `{ rows, totalMatched, page, pageCount, pageSize }`.
+- Options: `configId` (`null` or observed/declared alias), `outcome` (`null` or `'solved' | 'unsolved' | 'undetermined'`), `taskId` (`null` or observed/declared alias), `page` (positive int, default `1`), `pageSize` (int `1..200`, default `50`), `sortKey` (`'task_id' | 'config_id' | 'seed' | 'outcome' | 'cost_nano_usd'`, default `'task_id'`), `direction` (`'asc' | 'desc'`, default `'asc'`).
+- Null `cost_nano_usd` values sort **LAST** in both `asc` and `desc` directions. Ties break deterministically by ascending `rowKey` ordinal.
+
+---
+
+## 3. Part 2 React UI Integration Points
+
+1. **Upload / Reset Race Protection**: Maintain a monotonic request counter (`requestTicketRef.current += 1`) across single-file explorer uploads, optional paired family-diagnostic uploads, and built-in fixture resets. Discard stale async `FileReader` completions. Check `file.size <= LIMITS_V2.maxViewBytes` (2 MiB) before reading.
+2. **Persistent Synthetic Banner & Scope Header**: Render `derived.scope.bannerText` persistently at the top of the viewport. Display `constructionCounts` (`63 total: 37 train / 26 held-out`) with explicit labeling distinguishing project construction inventory from `evaluatedTaskCount`.
+3. **Configuration Comparison Cards**: Show `passAt1Percent`, fractional `expectedSolvedTasks` (never whole-number v1 `solved_count`), `expectedTotalCostUsd` (1-seed expected benchmark cost) vs. `actualAllRepetitionsSpendUsd` (summed across `declaredSeeds`), and explicit undefined reason badges when blocked or cost-incomplete.
+4. **Two-Axis Frontier Chart & Accessible Table Equivalent**: Provide an axis toggle between `cost_per_solved` (headline) and `mean_task_cost`. Plot only rows where `row.plottable === true` using `row.chartOnlyApprox.approxXUsd` and `approxYPercent`. Always render the complete exact frontier table below the chart (including `undefined_cost` series such as `zero_expected_solves`) and use exact `display` strings in tooltips.
+5. **Seed-Aware Run Grid & Task Summary Matrix**: Render `derived.taskSummaries` as the task-by-configuration summary view and `selectRowsV2(derived, options)` as the paginated seed-level run table with controls for `configId`, `taskId`, `outcome`, `sortKey`, `direction`, `page`, and `pageSize` (`aria-sort` on active column header, keyboard-focusable row detail drawer keyed by `rowKey`).
+6. **Frozen Cascade & Non-Primary Family Sensitivity Panels**: When `derived.cascade` is non-null, render the cascade summary and `comparisonVsBase` / `comparisonVsEscalate` tables with `derived.cascade.policyNote`. When `derived.familyDiagnostic` is bound, render `originals` and leave-one-family-out `exclusions` (`delta_pass_at_1` and `delta_mean_task_cost_nano_usd`) with `advisoryNote`.
+
+```
+
+## FILE: docs/explorer-browser-v2-part1-verification-ledger-v1.md
+
+```markdown
+# Argon Browser Explorer v2 — Part 1 Verification Ledger (`10j1` / `10j2`)
+
+Prepared: `2026-10-31` under `10j0`.
+Execution status in this web agent: **UNEXECUTED** (no shell, Node runtime, or local filesystem access is available in this agent environment).
+
+## 1. Proposed Primary Reproduction Command
+
+After extracting the nine delivered files into the repository working tree, run from the repository root:
+
+```powershell
+node --test dashboard/src/v2/exact.test.mjs dashboard/src/v2/data.test.mjs dashboard/src/v2/derive.test.mjs
+```
+
+## 2. Claim-to-Test Verification Ledger
+
+All 22 top-level `it(...)` blocks (covering >45 substantive behavioral assertions across `exact.test.mjs`, `data.test.mjs`, and `derive.test.mjs`) are mapped below.
+
+| Claim ID | Claim Summary | Test File & Case | Execution Status |
+|---|---|---|---|
+| C1 | Canonical defined/undefined/signed rational DTO parsing | `dashboard/src/v2/exact.test.mjs` (#1) | UNEXECUTED |
+| C2 | Pre-`BigInt` rejection of unreduced, `01`, `-0`, exponent, >96-char, and unknown-reason DTOs | `dashboard/src/v2/exact.test.mjs` (#2) | UNEXECUTED |
+| C3 | Exact `BigInt` rational comparison beyond `2^53 - 1` and `null` for undefined | `dashboard/src/v2/exact.test.mjs` (#3) | UNEXECUTED |
+| C4 | Half-away-from-zero decimal & percent formatting with exact fraction labels | `dashboard/src/v2/exact.test.mjs` (#4) | UNEXECUTED |
+| C5 | Nano-USD formatting with `< $0.000001` threshold for tiny positive amounts vs `$0.000000` for zero | `dashboard/src/v2/exact.test.mjs` (#5) | UNEXECUTED |
+| C6 | All 7 generated fixture pairs (`unequal-seeds`, `cost-incomplete`, `audit-blocked`, `zero-solved`, `one-family`, `large-exact-cost`, `four-task-cascade`) parse, validate, and bind | `dashboard/src/v2/data.test.mjs` (#6) | UNEXECUTED |
+| C7 | Independent literal oracle agreement for `unequal-seeds`, `large-exact-cost`, and `four-task-cascade` | `dashboard/src/v2/data.test.mjs` (#7) | UNEXECUTED |
+| C8 | Edge fixture invariants (`zero_expected_solves`, `no_retained_tasks`, `success_only` withholding, `blocked` empty exclusions) | `dashboard/src/v2/data.test.mjs` (#8) | UNEXECUTED |
+| C9 | Raw JSON scanner rejects float (`2.0`), exponent (`2e0`, `1e999999`), `-0`, `NaN`, and >96-char number tokens before `JSON.parse` | `dashboard/src/v2/data.test.mjs` (#9) | UNEXECUTED |
+| C10 | Raw JSON scanner rejects top-level, nested, and Unicode-escaped duplicate keys (`\u0076`) at all depths | `dashboard/src/v2/data.test.mjs` (#10) | UNEXECUTED |
+| C11 | Lone UTF-16 surrogates rejected; paired non-BMP surrogates decoded properly | `dashboard/src/v2/data.test.mjs` (#11) | UNEXECUTED |
+| C12 | Real evidence flags, non-null `sensitivity`, unknown keys, and boolean counts rejected with fixed error codes and zero canary leakage | `dashboard/src/v2/data.test.mjs` (#12) | UNEXECUTED |
+| C13 | Forged config metrics, self-consistent false Pareto dominance, bootstrap point mismatches, and cascade delta tampering rejected | `dashboard/src/v2/data.test.mjs` (#13) | UNEXECUTED |
+| C14 | Standalone-valid explorer and diagnostic with swapped task-family assignments rejected by `bindFamilyDiagnosticV2` | `dashboard/src/v2/data.test.mjs` (#14) | UNEXECUTED |
+| C15 | Shared acyclic DAG objects accepted; cycles, sparse arrays, and depth > 24 rejected | `dashboard/src/v2/data.test.mjs` (#15) | UNEXECUTED |
+| C16 | `deriveExplorerV2` produces exact top-level shape and unequal-seed `taskSummaries` without inflating task denominator | `dashboard/src/v2/derive.test.mjs` (#16) | UNEXECUTED |
+| C17 | `cost_incomplete` source withholds aggregate `taskSummaries` costs globally even for locally cost-complete groups | `dashboard/src/v2/derive.test.mjs` (#17) | UNEXECUTED |
+| C18 | `blocked` audit leaves `taskSummaries` empty while retaining all `runRows` with disambiguated `run:<ordinal>` keys | `dashboard/src/v2/derive.test.mjs` (#18) | UNEXECUTED |
+| C19 | `frontiers` exposes both axes with labeled chart-only finite approximations and marks zero-solved unplottable | `dashboard/src/v2/derive.test.mjs` (#19) | UNEXECUTED |
+| C20 | `selectRowsV2` sorts `null` costs LAST in both `asc` and `desc` directions and compares `BigInt` costs with ordinal tie-breaking | `dashboard/src/v2/derive.test.mjs` (#20) | UNEXECUTED |
+| C21 | `selectRowsV2` reaches >200 rows across pages, clamps excessive pages, and handles empty matches | `dashboard/src/v2/derive.test.mjs` (#21) | UNEXECUTED |
+| C22 | `selectRowsV2` rejects unknown/invalid options and mutated/reconstructed `DerivedV2` inputs with `V2DataError` | `dashboard/src/v2/derive.test.mjs` (#22) | UNEXECUTED |
+
+## 3. Deliberate Deviations & Known Limitations
+
+- **Deliberate Deviations**: None. All exported function names, parameter signatures, error codes, resource limits (`LIMITS_V2`), and schema invariants match the assignment specification and the accepted Python validators (`explorer_export.py`, `sensitivity_diagnostics.py`, `evidence_bundle.py`).
+- **What Static/Node Tests Cannot Establish**: Passing pure-JS Node tests does not establish React component rendering, Vite bundling, npm dependency resolution, CSP compliance, or browser accessibility. Those belong to Part 2 (`10j3`/`10j4`).
+
+## 4. Part 2 Acceptance Risks to Track
+
+1. **No `BigInt` in React State / JSON Serialization**: `DerivedV2` and `PageV2` intentionally keep all public DTOs as JSON-safe strings/booleans/numbers so React state or dev-tools serialization never encounters a raw `BigInt`. Part 2 components must consume `DerivedV2` / `PageV2` rather than holding `parseRationalV2` outputs in React state.
+2. **Chart Coordinate Overflow**: Extremely large synthetic costs near `10^18` nano-USD (`$10^9` USD) remain finite in IEEE-754 `Number`, but Recharts axis tick formatting in Part 2 should use compact notation or fall back to the exact accessible table when domain ratios are extreme.
+
+```
+
+## FILE: docs/explorer-browser-v2-part1-delivery-manifest-v1.json
+
+```json
+{
+  "task_ids": [
+    "10j1",
+    "10j2"
+  ],
+  "prepared_date": "2026-10-31",
+  "execution_status": "UNEXECUTED",
+  "hash_status_reason": "Bytes and SHA-256 digests are null because this web agent has no shell or filesystem execution environment; Primary computes exact byte lengths and SHA-256 digests during intake.",
+  "files": [
+    {
+      "order": 1,
+      "path": "dashboard/src/v2/exact.mjs",
+      "group": "10j1",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 2,
+      "path": "dashboard/src/v2/exact.test.mjs",
+      "group": "10j1",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 3,
+      "path": "dashboard/src/v2/data.mjs",
+      "group": "10j1",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 4,
+      "path": "dashboard/src/v2/data.test.mjs",
+      "group": "10j1",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 5,
+      "path": "dashboard/src/v2/derive.mjs",
+      "group": "10j2",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 6,
+      "path": "dashboard/src/v2/derive.test.mjs",
+      "group": "10j2",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 7,
+      "path": "docs/explorer-browser-v2-contract.md",
+      "group": "10j2",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 8,
+      "path": "docs/explorer-browser-v2-part1-verification-ledger-v1.md",
+      "group": "10j2",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 9,
+      "path": "docs/explorer-browser-v2-part1-delivery-manifest-v1.json",
+      "group": "10j2",
+      "bytes": null,
+      "sha256": null
+    }
+  ],
+  "delivered_count": 9,
+  "remaining_files": []
+}
+
+```
+
+END OF ARGON BROWSER V2 PART 1 DELIVERY

@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "mode": "offline_plan",
+  "planned_requests": 1,
+  "provider_calls": 0,
+  "approved_maximum_usd": "0.01",
+  "configured_reservation_estimate_usd": "0.0000768",
+  "input_token_allowance": 1024,
+  "token_allowance_verified": false,
+  "pricing_verified_for_execution": false,
+  "execution_authorized": false,
+  "max_retries": 0,
+  "timeout_seconds": 30,
+  "api_base": "https://api.tokenfactory.nebius.com/v1/",
+  "request": {
+    "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Answer the arithmetic question briefly."
+      },
+      {
+        "role": "user",
+        "content": "What is 17 * 19? Reply with the integer only."
+      }
+    ],
+    "max_tokens": 64,
+    "max_completion_tokens": 64,
+    "temperature": 1.0,
+    "top_p": 0.95,
+    "stream": false,
+    "extra_body": {
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      }
+    }
+  },
+  "remaining_checks": [
+    "Current usable credit expiry and exclusive organization use",
+    "Current model availability, pricing and provider token-bound semantics",
+    "Fresh durable allowance reservation and untouched safety reserve",
+    "Reviewed single-request execution adapter and post-call reconciliation"
+  ]
+}

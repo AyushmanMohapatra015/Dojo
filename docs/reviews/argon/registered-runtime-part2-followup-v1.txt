@@ -1,0 +1,2197 @@
+All deliverables below are marked **UNEXECUTED**. None of the previously supplied five tests in `outputs/test_runtime_bridge_argon_partial.py` are claimed to pass; they failed during setup with `PreflightError("workspace_artifact_mismatch")` when calling `prepare_bound_plan` against the frozen Stage B v1 directory. The proposed scorer diff to `dojo/eval/docker_scoring_v2.py` was not applied in the workspace.
+
+---
+
+## 1. Root-Cause Diagnosis: Frozen Stage B v1 `workspace_artifact_mismatch` vs. Proposal Changes
+
+### Why the Five Supplied Tests Failed During Setup
+
+1. **Unbypassed Host Preflight Verification Chain:**
+* `prepare_bound_plan(directory, task_id, config_id, seed)` calls `execution_intent.build_intent(directory, task_id, config_id, seed)`.
+
+
+* `build_intent` calls `registration_preflight.verify_workspace(directory)` both before and after reading the seven per-cell JSON artifacts (`draft`, `expected_plan`, `task_inputs`, `configurations`, `sampling_and_thinking`, `solver_image`, `scoring_image`).
+
+
+* `verify_workspace(directory)` first verifies internal 12-file artifact integrity via `verify_artifacts(directory)` and then calls `expected = build_workspace_artifacts()`, requiring `read_file(Path(directory) / name) == data` for every file in `expected` (`PreflightError("workspace_artifact_mismatch")`).
+
+
+
+
+2. **Distinguishing Existing Source Drift from Proposal Changes:**
+* **Existing Workspace Source Drift vs. Frozen `data/development/stage-b-preflight-v1`:** `data/development/stage-b-preflight-v1` is a frozen checkpoint. `registration_preflight.SOURCE_FILES` pins 30 source files across `scaffold`, `collector`, `evaluator`, `source_policy`, and `baseline_policy`. Because workspace sources tracked in `SOURCE_FILES` evolved after `stage-b-preflight-v1` was written (even before applying any Part 2 diff), `build_workspace_artifacts()` computes live `_files(names)` digests that differ from the historical digests inside `data/development/stage-b-preflight-v1/{scaffold,collector,evaluator,source_policy,baseline_policy,draft}.json`, raising `PreflightError("workspace_artifact_mismatch")`.
+
+
+* **Proposal Changes (`dojo/eval/docker_scoring_v2.py`):** `dojo/eval/docker_scoring_v2.py` is explicitly listed in `registration_preflight.SOURCE_FILES["evaluator"]`. Applying the guarded raw-scorer diff changes the SHA-256 of `dojo/eval/docker_scoring_v2.py` (from `593fbfd204f27b3d2825481246981e66c6f917dd96240c4d403d6e428249b363`), which updates `evaluator.json` and `draft.json` in any newly generated snapshot.
+
+
+
+
+3. **Fixing Test Setup Without Modifying Frozen v1 Artifacts or Bypassing Host Preflight:**
+* `data/development/stage-b-preflight-v1` must never be modified in place. In `stage_b_host`, we first assert `verify_artifacts(FROZEN_V1_DIRECTORY)` to verify that the frozen v1 bundle remains intact and internally consistent.
+
+
+* Next, `stage_b_host` calls `registration_preflight.create_snapshot(snapshot_dir)` into a fresh pytest temporary directory (`tmp_path_factory.mktemp("stage_b_current") / "snapshot"`). `create_snapshot` runs the **real, unbypassed** `build_workspace_artifacts()` and `verify_workspace(snapshot_dir)` against the live workspace anchors (`input_guard_v2._trusted_bundle()`, `configs/models.yaml`, `split.lock.json`, and `SOURCE_FILES`).
+
+
+* All calls to `prepare_bound_plan`, `build_intent`, `check_intent`, `IntentAttemptStore.claim_cell`, and `IntentAttemptStore.verify_cell` run unmocked against `snapshot_dir`. Only the read-only Git `cat-file --batch` reconstruction (`load_contract(TASK)` / `prepare_plan(TASK, settings)`) is cached from the module-scoped `prepare_bound_plan` result so the 22 tests do not spawn redundant Git subprocesses on every test function.
+
+
+
+
+
+---
+
+## 2. Exact Unified Diffs for Existing / Reviewed Files
+
+### 2.1 Guarded Raw-Scorer API Diff (`dojo/eval/docker_scoring_v2.py`)
+
+This exact unified diff against `dojo/eval/docker_scoring_v2.py` (`7100` bytes; SHA-256 `593fbfd204f27b3d2825481246981e66c6f917dd96240c4d403d6e428249b363`):
+
+* Adds `RawCandidateScore` and the public guarded `run_development_score_raw(contract, candidate_archive, patch, *, timeout=60)` entrypoint so both `score.envelope` and `baseline_envelope` are returned to the coordinator without calling private `_execute` from outside `docker_scoring_v2.py`.
+
+
+* Eliminates the redundant intermediate `CandidateDecision` reassignment when `decision.status == 'requires_baseline'` by computing `status`, `outcome`, and `verified` directly before constructing `CandidateScore` once.
+
+
+* Preserves `run_development_score` and all existing synthetic-task, profile, deadline, selector, image-inspect, and `finally` container-cleanup guards unchanged.
+
+
+
+```diff
+--- a/dojo/eval/docker_scoring_v2.py
++++ b/dojo/eval/docker_scoring_v2.py
+@@ -11,7 +11,6 @@
+ from dojo.backends.receipt_v2 import ReceiptV2
+ from dojo.eval import docker_scoring as v1
+ from dojo.eval.candidate_outcomes import (
+-    CandidateDecision,
+     assess_candidate,
+     baseline_is_operational,
+ )
+@@ -57,6 +56,16 @@
+     provider_calls: int = 0
+ 
+ 
++@dataclass(frozen=True)
++class RawCandidateScore:
++    score: CandidateScore
++    baseline_envelope: dict | None = field(repr=False, default=None)
++    synthetic: bool = True
++    counts_toward_frozen_benchmark: bool = False
++    provider_calls: int = 0
++
++
+ def harness(protocol):
+     if protocol == 'legacy-v1':
+         _, found, tail = legacy.RUNNER.partition('class Receipt:\n')
+@@ -94,7 +103,7 @@
+             raise RuntimeError('Scoring container cleanup failed; stop')
+ 
+ 
+-def run_development_score(contract, candidate_archive, patch, *, timeout=60):
++def run_development_score_raw(contract, candidate_archive, patch, *, timeout=60):
+     if not contract.task_id.startswith('synthetic_'):
+         raise ValueError('Benchmark scoring remains locked pending Stage B review')
+     if (contract.source_prefix, contract.collector_protocol, contract.image_id) not in PROFILES.values():
+@@ -113,14 +122,21 @@
+     deadline = time.monotonic() + timeout
+     envelope = _execute(contract, archive, deadline=deadline)
+     decision = assess_candidate(contract, envelope, image_id=contract.image_id)
+-    verified = False
+-    if decision.status == 'requires_baseline':
++    verified = decision.status == 'requires_baseline'
++    baseline = None
++    if verified:
+         baseline = _execute(contract, contract.restored_archive, deadline=deadline)
+         if not baseline_is_operational(contract, baseline, image_id=contract.image_id):
+             raise RuntimeError('Operational baseline is unhealthy or uncertain; stop')
+-        verified = True
+-        decision = CandidateDecision('candidate_error', decision.reason, decision.phase, 'unsolved')
+-    return CandidateScore(decision.status, decision.reason, decision.phase, decision.candidate_outcome,
+-                          verified, contract.image_id, hashlib.sha256(harness(
+-                              contract.collector_protocol).encode()).hexdigest(),
+-                          hashlib.sha256(archive).hexdigest(), envelope)
++    status = 'candidate_error' if verified else decision.status
++    outcome = 'unsolved' if verified else decision.candidate_outcome
++    score = CandidateScore(status, decision.reason, decision.phase, outcome,
++                           verified, contract.image_id, hashlib.sha256(harness(
++                               contract.collector_protocol).encode()).hexdigest(),
++                           hashlib.sha256(archive).hexdigest(), envelope)
++    return RawCandidateScore(score, baseline)
++
++
++def run_development_score(contract, candidate_archive, patch, *, timeout=60):
++    return run_development_score_raw(contract, candidate_archive, patch, timeout=timeout).score
+
+```
+
+### 2.2 Coordinator Diff (`outputs/runtime_bridge_argon_proposed.py` / `dojo/bench/runtime_bridge.py`)
+
+This exact unified diff against the 1,506-line proposed coordinator fixes all local check findings in `PART2-INCOMPLETE-INTAKE.md`:
+
+1. **Ruff Cleanups:** Removes unused imports and replaces any bare/swallowed cleanup pass with explicit uncertainty handling.
+
+
+2. **No Direct `_execute` Calls:** `DockerScoringV2Adapter.score` calls only the public guarded `docker_scoring_v2.run_development_score_raw(contract, candidate_archive, patch, timeout=...)` API and raises `BridgeError("raw_scorer_api_unavailable")` if the scorer diff has not been applied yet, never calling private `docker_scoring_v2._execute`.
+
+
+3. **Removes Redundant Candidate `decision` Assignment:** Relies directly on `scoring_state = store.scoring_observation(...)` (which validates `assess_candidate` and `baseline_is_operational` inside `ObservationStore`) rather than computing a redundant intermediate `CandidateDecision` in the coordinator.
+
+
+4. **Moves Post-Run `check_clean()` *Before* Terminal Settlement:** Whenever Docker is used (`uses_docker` via `DockerSandbox`, `ProfiledDockerSandbox`, or `DockerScoringV2Adapter`), `check_clean()` is verified **after** sandbox and scoring containers finish and **strictly before** `ledger.finish_run(reservation_id, settled_usd)` and `store.finish_known(claim, ledger, now=now())`. If `check_clean()` fails, the coordinator never settles `CreditLedger` or `ObservationStore`; instead, it transitions both into `uncertain` (`stop_reason="cleanup_failed"`, `settled_cost_nano_usd=None`).
+
+
+
+```diff
+--- a/dojo/bench/runtime_bridge.py
++++ b/dojo/bench/runtime_bridge.py
+@@ -16,12 +16,9 @@
+ import os
+ import sqlite3
+ import time
+-from collections.abc import Callable
+-from dataclasses import asdict, dataclass, field, replace
+-from datetime import datetime
+-from decimal import Decimal
++from dataclasses import asdict, dataclass, field, replace
++from decimal import Decimal
+ from pathlib import Path
+-from typing import Any, Protocol
+ 
+ from dojo.bench import bound_plan, execution_intent, registration_preflight, runner
+ from dojo.bench.bound_plan import BoundPlan, prepare_bound_plan
+@@ -34,11 +31,7 @@
+ )
+ from dojo.eval import contract_development, docker_scoring_v2, flow_development, scoring_contract
+ from dojo.eval.candidate_outcomes import assess_candidate, baseline_is_operational
+-from dojo.eval.flow_development import HIDDEN_CANARY, assert_agent_boundary, check_clean
+-from dojo.eval.scoring_contract import (
+-    ScoringContract,
+-    load_contract,
+-    prepare_candidate_reference,
+-)
++from dojo.eval.flow_development import assert_agent_boundary, check_clean
++from dojo.eval.scoring_contract import load_contract, prepare_candidate_reference
+ from dojo.mine.validate import snapshot_archive
+ from dojo.providers.fake_session import (
+     FakeHTTPResponse,
+@@ -395,25 +388,20 @@
+         if not math.isfinite(effective_timeout) or not (0 < effective_timeout <= 60):
+             raise BridgeError("invalid_scoring_timeout")
+         raw_scorer = getattr(docker_scoring_v2, "run_development_score_raw", None)
+-        if callable(raw_scorer):
+-            raw_result = raw_scorer(
+-                contract, candidate_archive, patch, timeout=effective_timeout
+-            )
+-            score = raw_result.score
+-            baseline_raw = (
+-                None
+-                if raw_result.baseline_envelope is None
+-                else canonical(raw_result.baseline_envelope)
+-            )
+-            return RawScoringEvidence(
+-                prepared_archive_sha256=score.prepared_archive_sha256,
+-                image_id=score.image_id,
+-                harness_sha256=score.harness_sha256,
+-                envelope_raw=canonical(score.envelope),
+-                baseline_raw=baseline_raw,
+-                scoring_backend="local_docker_v2",
+-            )
+-        raise BridgeError("raw_scorer_api_unavailable")
++        if not callable(raw_scorer):
++            raise BridgeError("raw_scorer_api_unavailable")
++        raw_result = raw_scorer(
++            contract, candidate_archive, patch, timeout=effective_timeout
++        )
++        score = raw_result.score
++        baseline_raw = (
++            None
++            if raw_result.baseline_envelope is None
++            else canonical(raw_result.baseline_envelope)
++        )
++        return RawScoringEvidence(
++            prepared_archive_sha256=score.prepared_archive_sha256,
++            image_id=score.image_id,
++            harness_sha256=score.harness_sha256,
++            envelope_raw=canonical(score.envelope),
++            baseline_raw=baseline_raw,
++            scoring_backend="local_docker_v2",
++        )
+@@ -1198,16 +1186,6 @@
+         except Exception:
+             return _fence_uncertain("scoring_error")
+ 
+-        try:
+-            envelope_dict = decode(raw_evidence.envelope_raw)
+-            decision = assess_candidate(
+-                contract, envelope_dict, image_id=contract.image_id
+-            )
+-        except Exception:
+-            return _fence_uncertain("scoring_error")
+-
+         try:
+             scoring_state = store.scoring_observation(
+                 claim,
+@@ -1220,6 +1198,13 @@
+         scoring_status = scoring_state["scoring"]["status"]
+         benchmark_outcome = scoring_state["scoring"]["outcome"]
+         baseline_verified = scoring_state["scoring"]["baseline_verified"]
++
++        # Verify Docker container cleanup BEFORE terminal ledger/store settlement
++        # so a dirty container environment never hides behind 'settled'.
++        if uses_docker:
++            try:
++                check_clean()
++            except Exception:
++                return _fence_uncertain("cleanup_failed")
+ 
+         settled_usd = _nano_usd_to_plain_usd(accumulated_cost)
+         try:
+@@ -1233,11 +1218,6 @@
+         except Exception:
+             return _fence_uncertain("settlement_binding_failed", ledger_already_settled=True)
+ 
+-        if uses_docker:
+-            try:
+-                check_clean()
+-            except Exception:
+-                raise BridgeError("post_settlement_cleanup_check_failed") from None
+-
+         return BridgeResult(
+             status="settled",
+             stop_reason=loop_stop_reason,
+
+```
+
+---
+
+## 3. Complete Focused Pytest File (`tests/test_runtime_bridge.py` — AC-01 through AC-22, `UNEXECUTED`)
+
+Because the first five tests in `outputs/test_runtime_bridge_argon_partial.py` failed during fixture setup against the frozen v1 directory and the sixth was truncated, below is the complete, self-contained `tests/test_runtime_bridge.py` file containing the corrected `stage_b_host` / `env` fixtures plus all 22 runnable acceptance tests (`AC-01` through `AC-22`), including **AC-19b** which explicitly proves that required Docker cleanup (`check_clean()`) runs **before** terminal settlement (`ledger.finish_run` and `store.finish_known`).
+
+### FILE: `tests/test_runtime_bridge.py`
+
+```python
+"""UNEXECUTED focused acceptance suite (AC-01..AC-22) for dojo/bench/runtime_bridge.py.
+
+Exercises Stage B preflight snapshot creation without modifying frozen v1 artifacts
+or bypassing verify_workspace, plus all 22 acceptance scenarios from
+runtime-bridge-acceptance-v1.md.
+"""
+
+from __future__ import annotations
+
+import json
+import sqlite3
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from dojo.bench import bound_plan, execution_intent, registration_preflight, runner
+from dojo.bench.registration_artifacts import PreflightError, canonical, decode, verify_artifacts
+from dojo.bench.runtime_bridge import (
+    BridgeError,
+    DockerScoringV2Adapter,
+    FakeScoringAdapter,
+    RawScoringEvidence,
+    prepare_synthetic_cell_bundle,
+    run_bridged_cell_rehearsal,
+)
+from dojo.eval import contract_development, scoring_contract
+from dojo.providers.fake_session import FakeHTTPResponse, ScriptedWireTransport
+from dojo.solve.docker_sandbox import files_from_archive, make_patch
+from dojo.solve.sandbox import FakeSandbox, FakeStep
+from dojo.store import observations as journal
+from dojo.store.credits import CreditError, CreditLedger
+from dojo.store.db import StoreError
+from dojo.store.identity import sha256_bytes
+from dojo.store.records import PricingSnapshot, decimal_rate_nanos
+
+ROOT = Path(__file__).resolve().parents[1]
+FROZEN_V1_DIRECTORY = ROOT / "data/development/stage-b-preflight-v1"
+TASK = "click_6de212151893"
+CONFIG_ID = "nano"
+SEED = 0
+NOW = datetime(2026, 11, 1, 12, 0, 0, tzinfo=UTC)
+PROMPT_BOUND = 4096
+
+
+@pytest.fixture(scope="module")
+def stage_b_host(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
+    """Create a fresh Stage B snapshot from current workspace anchors without touching v1.
+
+    1. Verifies that the frozen v1 snapshot remains internally consistent via verify_artifacts.
+    2. Calls registration_preflight.create_snapshot(snapshot_dir) so verify_workspace,
+       build_intent, and prepare_bound_plan run completely unbypassed against current
+       workspace SOURCE_FILES hashes.
+    """
+    v1_check = verify_artifacts(FROZEN_V1_DIRECTORY)
+    assert v1_check.summary()["artifact_bytes_verified"] is True
+
+    snapshot_dir = tmp_path_factory.mktemp("stage_b_current") / "snapshot"
+    summary = registration_preflight.create_snapshot(snapshot_dir)
+    assert summary["workspace_artifacts_match"] is True
+
+    prepared = bound_plan.prepare_bound_plan(snapshot_dir, TASK, CONFIG_ID, SEED)
+    intent_raw = execution_intent.build_intent(snapshot_dir, TASK, CONFIG_ID, SEED)
+    intent_data = decode(intent_raw)
+
+    tasks_payload = decode((snapshot_dir / "task_inputs.json").read_bytes())["payload"]["tasks"]
+    held_out_id = next(row["task_id"] for row in tasks_payload if row["split"] == "held_out")
+
+    return {
+        "directory": snapshot_dir,
+        "prepared": prepared,
+        "intent_raw": intent_raw,
+        "intent_data": intent_data,
+        "held_out_task_id": held_out_id,
+    }
+
+
+@pytest.fixture
+def env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, stage_b_host: dict[str, Any]
+) -> dict[str, Any]:
+    """Per-test isolated ObservationStore + fictional CreditLedger + cached Git contract."""
+    prepared: bound_plan.BoundPlan = stage_b_host["prepared"]
+    contract: scoring_contract.ScoringContract = prepared.evaluator
+
+    # Keep verify_workspace, build_intent, and check_intent 100% real and unbypassed.
+    # Cache only the read-only Git cat-file extraction for the already-verified TASK.
+    orig_load_contract = scoring_contract.load_contract
+    orig_prepare_plan = runner.prepare_plan
+
+    def fast_load_contract(task_id: str, *args: Any, **kwargs: Any) -> Any:
+        if task_id == TASK and not args and not kwargs:
+            return contract
+        return orig_load_contract(task_id, *args, **kwargs)
+
+    def fast_prepare_plan(task_id: str, settings: Any) -> Any:
+        if task_id == TASK and settings == prepared.settings:
+            return prepared.plan
+        return orig_prepare_plan(task_id, settings)
+
+    monkeypatch.setattr(scoring_contract, "load_contract", fast_load_contract)
+    monkeypatch.setattr(bound_plan, "load_contract", fast_load_contract)
+    monkeypatch.setattr(journal, "load_contract", fast_load_contract)
+    monkeypatch.setattr(runner, "prepare_plan", fast_prepare_plan)
+
+    store = journal.ObservationStore(tmp_path / "observations.sqlite")
+    store.initialize()
+
+    ledger = CreditLedger(tmp_path / "fictional-ledger.sqlite")
+    ledger.initialize(
+        balance_usd="10",
+        reserve_usd="2",
+        allowance_usd="1",
+        expires_at=NOW + timedelta(days=30),
+        exclusive_use=True,
+        now=NOW,
+    )
+
+    cfg = stage_b_host["intent_data"]["configuration"]
+    pricing = PricingSnapshot(
+        model_id=cfg["model_id"],
+        api_base=cfg["api_base"],
+        input_nano_usd_per_million=decimal_rate_nanos(cfg["input_price"]),
+        output_nano_usd_per_million=decimal_rate_nanos(cfg["output_price"]),
+        source_sha256=sha256_bytes(b"fictional-stage-b-pricing-v1"),
+        checked_at_us=1_761_998_400_000_000,
+    )
+
+    base_files = files_from_archive(contract.original_archive)
+    editable_name = next(
+        name for name in sorted(base_files) if scoring_contract.editable_source(contract, name)
+    )
+    edited_files = dict(base_files)
+    edited_files[editable_name] = base_files[editable_name] + b"\n# synthetic rehearsal edit\n"
+    valid_patch = make_patch(base_files, edited_files)
+
+    return {
+        "directory": stage_b_host["directory"],
+        "held_out_task_id": stage_b_host["held_out_task_id"],
+        "prepared": prepared,
+        "contract": contract,
+        "store": store,
+        "ledger": ledger,
+        "pricing": pricing,
+        "base_files": base_files,
+        "editable_name": editable_name,
+        "edited_files": edited_files,
+        "valid_patch": valid_patch,
+    }
+
+
+def make_wire_response(
+    model_id: str,
+    content: Any = '{"action":"finish"}',
+    *,
+    prompt_tokens: int = 500,
+    completion_tokens: int = 30,
+    total_tokens: int | None = None,
+    finish_reason: str = "stop",
+    include_usage: bool = True,
+    status_code: int = 200,
+) -> FakeHTTPResponse:
+    payload: dict[str, Any] = {
+        "id": "chatcmpl-fictional-bridge",
+        "object": "chat.completion",
+        "created": 1_761_998_400,
+        "model": model_id,
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": content},
+                "finish_reason": finish_reason,
+            }
+        ],
+    }
+    if include_usage:
+        payload["usage"] = {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": (
+                prompt_tokens + completion_tokens if total_tokens is None else total_tokens
+            ),
+        }
+    return FakeHTTPResponse(status_code=status_code, body=json.dumps(payload).encode("utf-8"))
+
+
+def make_receipt_envelope(
+    contract: scoring_contract.ScoringContract,
+    *,
+    outcome: str = "passed",
+) -> dict[str, Any]:
+    """Build a valid canonical scoring envelope for contract."""
+    f2p = list(contract.fail_to_pass)
+    p2p = list(contract.pass_to_pass)
+    skips = list(contract.stable_skips)
+    total = len(f2p) + len(p2p) + len(skips)
+
+    if outcome == "passed":
+        report: dict[str, Any] = {
+            "exit_code": 0,
+            "collected": total,
+            "passed": sorted(f2p + p2p),
+            "failed": [],
+            "skipped": sorted(skips),
+            "errors": [],
+        }
+    elif outcome == "failed_baseline":
+        report = {
+            "exit_code": 1,
+            "collected": total,
+            "passed": sorted(p2p),
+            "failed": sorted(f2p),
+            "skipped": sorted(skips),
+            "errors": [],
+        }
+    elif outcome == "collection_error":
+        report = {
+            "exit_code": 2,
+            "collected": 0,
+            "passed": [],
+            "failed": [],
+            "skipped": [],
+            "errors": [contract.selectors[0]],
+        }
+    elif outcome == "stable_skip_drift":
+        report = {
+            "exit_code": 0,
+            "collected": total,
+            "passed": sorted(f2p + p2p + skips),
+            "failed": [],
+            "skipped": [],
+            "errors": [],
+        }
+    else:
+        raise ValueError(f"Unknown receipt outcome fixture: {outcome}")
+
+    if contract.collector_protocol == "method-subtests-v2":
+        report["collector_protocol"] = "method-subtests-v2"
+        report["subtests"] = {}
+
+    return {"phase": "pytest", "report": report, "install_exit_code": None}
+
+
+def ledger_row(ledger: CreditLedger) -> tuple[int, int | None, str, int] | None:
+    db = sqlite3.connect(ledger.path)
+    try:
+        res = db.execute("SELECT amount, usage, state FROM reservations").fetchone()
+        pol = db.execute("SELECT blocked FROM policy WHERE id=1").fetchone()
+        if res is None:
+            return None
+        return (res[0], res[1], res[2], pol[0])
+    finally:
+        db.close()
+
+
+def observation_kinds(store: journal.ObservationStore, run_id: str) -> list[str]:
+    db = sqlite3.connect(store.path)
+    try:
+        rows = db.execute(
+            "SELECT kind FROM observation_events WHERE run_id=? ORDER BY ordinal", (run_id,)
+        ).fetchall()
+        return [r[0] for r in rows]
+    finally:
+        db.close()
+
+
+# ---------------------------------------------------------------------------
+# AC-01 through AC-05 (Corrected setup using stage_b_host)
+# ---------------------------------------------------------------------------
+
+
+def test_ac01_happy_path_passed_solved_rehearsal(env: dict[str, Any]) -> None:
+    """AC-01: 2 scripted turns (bash edit + finish), valid patch, passing receipt -> settled/solved."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    transport = ScriptedWireTransport(
+        (
+            make_wire_response(model_id, '{"action":"bash","command":"edit source"}'),
+            make_wire_response(model_id, '{"action":"finish"}'),
+        )
+    )
+    sandbox = FakeSandbox(
+        (
+            FakeStep(
+                "edit source",
+                "Applied synthetic edit",
+                exit_code=0,
+                patch_after=env["valid_patch"],
+                visible_tests_pass=True,
+            ),
+        )
+    )
+    scorer = FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed"))
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=sandbox,
+        scorer=scorer,
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+
+    assert result.status == "settled"
+    assert result.stop_reason == "self_reported_done"
+    assert result.scoring_status == "passed"
+    assert result.benchmark_outcome == "solved"
+    assert result.baseline_verified is False
+    assert result.has_patch is True
+    assert result.visible_tests_pass is True
+    assert result.turns == 2
+    assert result.commands == 1
+    assert result.settled_cost_nano_usd is not None and result.settled_cost_nano_usd > 0
+    assert result.run_id is not None
+
+    assert observation_kinds(env["store"], result.run_id) == [
+        "reservation_intent",
+        "reservation_bound",
+        "request_intent",
+        "response_known",
+        "request_intent",
+        "response_known",
+        "candidate",
+        "scoring",
+        "settled",
+    ]
+    row = ledger_row(env["ledger"])
+    assert row is not None
+    assert row[1] == result.settled_cost_nano_usd
+    assert row[2] == "completed"
+    assert row[3] == 0
+
+    summary = result.summary()
+    assert summary["registration_verified"] is False
+    assert summary["publishable"] is False
+    assert summary["live_enabled"] is False
+    assert summary["provider_calls"] == 0
+
+
+def test_ac02_happy_path_failed_unsolved_rehearsal(env: dict[str, Any]) -> None:
+    """AC-02: Solver finishes without fixing bug; scorer reports fail_to_pass failed -> unsolved."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    transport = ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),))
+    sandbox = FakeSandbox(())
+    scorer = FakeScoringAdapter(make_receipt_envelope(contract, outcome="failed_baseline"))
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=sandbox,
+        scorer=scorer,
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+
+    assert result.status == "settled"
+    assert result.scoring_status == "failed"
+    assert result.benchmark_outcome == "unsolved"
+    assert result.baseline_verified is False
+    assert result.has_patch is False
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "completed" and row[3] == 0
+
+
+def test_ac03_healthy_baseline_attribution_for_candidate_error(env: dict[str, Any]) -> None:
+    """AC-03: Candidate causes collection error; healthy baseline attributes candidate_error."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    transport = ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),))
+    sandbox = FakeSandbox(())
+    scorer = FakeScoringAdapter(
+        make_receipt_envelope(contract, outcome="collection_error"),
+        baseline_envelope=make_receipt_envelope(contract, outcome="failed_baseline"),
+    )
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=sandbox,
+        scorer=scorer,
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+
+    assert result.status == "settled"
+    assert result.scoring_status == "candidate_error"
+    assert result.benchmark_outcome == "unsolved"
+    assert result.baseline_verified is True
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "completed" and row[3] == 0
+
+
+def test_ac04_incomplete_or_unhealthy_baseline_fences_uncertain(env: dict[str, Any]) -> None:
+    """AC-04: Candidate requires baseline, but baseline is missing or unhealthy -> uncertain."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    transport = ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),))
+    sandbox = FakeSandbox(())
+    scorer = FakeScoringAdapter(
+        make_receipt_envelope(contract, outcome="collection_error"),
+        baseline_envelope=make_receipt_envelope(contract, outcome="collection_error"),
+    )
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=sandbox,
+        scorer=scorer,
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+
+    assert result.status == "uncertain"
+    assert result.stop_reason == "scoring_error"
+    assert result.settled_cost_nano_usd is None
+    assert result.run_id is not None
+    assert observation_kinds(env["store"], result.run_id)[-1] == "uncertain"
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[1] is None and row[2] == "uncertain" and row[3] == 1
+
+
+def test_ac05_unexpected_baseline_on_ordinary_pass_fences_uncertain(env: dict[str, Any]) -> None:
+    """AC-05: Candidate passes cleanly (no baseline needed), but baseline_raw is supplied -> uncertain."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    transport = ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),))
+    sandbox = FakeSandbox(())
+    scorer = FakeScoringAdapter(
+        make_receipt_envelope(contract, outcome="passed"),
+        baseline_envelope=make_receipt_envelope(contract, outcome="failed_baseline"),
+    )
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=sandbox,
+        scorer=scorer,
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+
+    assert result.status == "uncertain"
+    assert result.stop_reason == "scoring_error"
+    assert result.settled_cost_nano_usd is None
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "uncertain" and row[3] == 1
+
+
+# ---------------------------------------------------------------------------
+# AC-06 through AC-22 (Complete Remaining Acceptance Tests)
+# ---------------------------------------------------------------------------
+
+
+def test_ac06_stale_ownership_lease_expiration_mid_run_fences_without_second_send(
+    env: dict[str, Any],
+) -> None:
+    """AC-06: Lease expires before turn 2 request_intent; turn 2 never sends and run fences."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    transport = ScriptedWireTransport(
+        (
+            make_wire_response(model_id, '{"action":"bash","command":"edit source"}'),
+            make_wire_response(model_id, '{"action":"finish"}'),
+        )
+    )
+    sandbox = FakeSandbox(
+        (
+            FakeStep(
+                "edit source",
+                "Applied edit",
+                exit_code=0,
+                patch_after=env["valid_patch"],
+                visible_tests_pass=True,
+            ),
+        )
+    )
+    scorer = FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed"))
+
+    current_now = NOW
+
+    def advancing_now() -> datetime:
+        nonlocal current_now
+        if len(sandbox.commands) == 1:
+            current_now = NOW + timedelta(seconds=120)
+        return current_now
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=sandbox,
+        scorer=scorer,
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=advancing_now,
+        lease_seconds=60,
+    )
+
+    assert result.status == "uncertain"
+    assert result.stop_reason == "binding_error"
+    assert result.settled_cost_nano_usd is None
+    assert transport.consumed == 1
+    assert result.run_id is not None
+    assert observation_kinds(env["store"], result.run_id) == [
+        "reservation_intent",
+        "reservation_bound",
+        "request_intent",
+        "response_known",
+        "uncertain",
+    ]
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "uncertain" and row[3] == 1
+
+
+def test_ac07_changed_coordinator_source_mid_run_fences_uncertain(
+    env: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """AC-07: Coordinator _sources() map drifts between turn 1 and turn 2 -> uncertain."""
+    from dojo.bench import runtime_bridge
+
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    transport = ScriptedWireTransport(
+        (
+            make_wire_response(model_id, '{"action":"bash","command":"edit source"}'),
+            make_wire_response(model_id, '{"action":"finish"}'),
+        )
+    )
+    sandbox = FakeSandbox(
+        (FakeStep("edit source", "ok", exit_code=0, patch_after=env["valid_patch"]),)
+    )
+    scorer = FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed"))
+
+    orig_sources = runtime_bridge._sources()
+
+    def drifting_sources() -> dict[str, str]:
+        if len(sandbox.commands) >= 1:
+            mutated = dict(orig_sources)
+            mutated["dojo/bench/runtime_bridge.py"] = "0" * 64
+            return mutated
+        return dict(orig_sources)
+
+    monkeypatch.setattr(runtime_bridge, "_sources", drifting_sources)
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=sandbox,
+        scorer=scorer,
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+
+    assert result.status == "uncertain"
+    assert result.stop_reason == "source_changed"
+    assert transport.consumed == 1
+    assert result.settled_cost_nano_usd is None
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "uncertain" and row[3] == 1
+
+
+def test_ac08_changed_stage_b_artifact_before_and_during_run(
+    env: dict[str, Any], tmp_path: Path
+) -> None:
+    """AC-08: Pre-claim Stage B drift raises PreflightError; mid-run drift fences uncertain."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+
+    local_dir = tmp_path / "local_stage_b"
+    local_dir.mkdir()
+    for item in env["directory"].iterdir():
+        (local_dir / item.name).write_bytes(item.read_bytes())
+
+    # Subcase 8a: Tamper with draft.json before run_bridged_cell_rehearsal -> raises PreflightError
+    draft_path = local_dir / "draft.json"
+    original_draft = draft_path.read_bytes()
+    tampered = decode(original_draft)
+    tampered["bindings"]["scaffold"] = "f" * 64
+    draft_path.write_bytes(canonical(tampered))
+
+    transport_a = ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),))
+    with pytest.raises((PreflightError, BridgeError)):
+        run_bridged_cell_rehearsal(
+            local_dir,
+            TASK,
+            CONFIG_ID,
+            SEED,
+            store=env["store"],
+            ledger=env["ledger"],
+            transport=transport_a,
+            sandbox=FakeSandbox(()),
+            scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+            pricing=env["pricing"],
+            prompt_unit_bound=PROMPT_BOUND,
+            now=lambda: NOW,
+        )
+    assert transport_a.consumed == 0
+    assert ledger_row(env["ledger"]) is None
+
+    # Restore valid draft.json and test Subcase 8b: tamper mid-run after turn 1 command
+    draft_path.write_bytes(original_draft)
+
+    class TamperingFakeSandbox(FakeSandbox):
+        def execute(self, command: str, *, timeout: float) -> FakeStep:
+            step = super().execute(command, timeout=timeout)
+            draft_path.write_bytes(canonical(tampered))
+            return step
+
+    transport_b = ScriptedWireTransport(
+        (
+            make_wire_response(model_id, '{"action":"bash","command":"edit source"}'),
+            make_wire_response(model_id, '{"action":"finish"}'),
+        )
+    )
+    sandbox_b = TamperingFakeSandbox(
+        (FakeStep("edit source", "ok", exit_code=0, patch_after=env["valid_patch"]),)
+    )
+
+    result = run_bridged_cell_rehearsal(
+        local_dir,
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport_b,
+        sandbox=sandbox_b,
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert result.status == "uncertain"
+    assert result.stop_reason in {"intent_changed", "binding_error"}
+    assert transport_b.consumed == 1
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "uncertain" and row[3] == 1
+
+
+def test_ac09_duplicate_dispatch_on_existing_attempt_blocked_without_wire_send(
+    env: dict[str, Any],
+) -> None:
+    """AC-09: Re-claiming a cell with an existing attempt returns blocked_existing_attempt."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    scorer = FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed"))
+
+    res1 = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),)),
+        sandbox=FakeSandbox(()),
+        scorer=scorer,
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert res1.status == "settled"
+
+    transport2 = ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),))
+    res2 = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport2,
+        sandbox=FakeSandbox(()),
+        scorer=scorer,
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW + timedelta(seconds=5),
+    )
+    assert res2.status == "blocked_existing_attempt"
+    assert res2.stop_reason == "attempt_not_acquired"
+    assert res2.reservation_id is None
+    assert res2.reserved_nano_usd == 0
+    assert res2.turns == 0
+    assert transport2.consumed == 0
+
+
+@pytest.mark.parametrize(
+    "bad_wire_kwargs",
+    [
+        {"include_usage": False},
+        {"prompt_tokens": 200, "completion_tokens": 50, "total_tokens": 999},
+    ],
+)
+def test_ac10_ambiguous_or_inconsistent_usage_fences_uncertain(
+    env: dict[str, Any], bad_wire_kwargs: dict[str, Any]
+) -> None:
+    """AC-10: Missing usage or total_tokens mismatch triggers ObservationStore uncertain fence."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    transport = ScriptedWireTransport(
+        (make_wire_response(model_id, '{"action":"finish"}', **bad_wire_kwargs),)
+    )
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=FakeSandbox(()),
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert result.status == "uncertain"
+    assert result.stop_reason == "response_uncertain"
+    assert result.settled_cost_nano_usd is None
+    assert result.run_id is not None
+    assert observation_kinds(env["store"], result.run_id) == [
+        "reservation_intent",
+        "reservation_bound",
+        "request_intent",
+        "uncertain",
+    ]
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "uncertain" and row[3] == 1
+
+
+def test_ac11_model_mismatch_in_wire_response_fences_uncertain(env: dict[str, Any]) -> None:
+    """AC-11: Wire response with wrong model ID forces unknown_usage and fences uncertain."""
+    contract = env["contract"]
+    transport = ScriptedWireTransport(
+        (make_wire_response("nvidia/Wrong-Served-Model", '{"action":"finish"}'),)
+    )
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=FakeSandbox(()),
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert result.status == "uncertain"
+    assert result.stop_reason == "response_uncertain"
+    assert result.settled_cost_nano_usd is None
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "uncertain" and row[3] == 1
+
+
+@pytest.mark.parametrize(
+    ("prompt_tokens", "completion_tokens"),
+    [
+        (PROMPT_BOUND + 1, 30),
+        (500, 2049),
+    ],
+)
+def test_ac12_per_request_token_overrun_fences_uncertain(
+    env: dict[str, Any], prompt_tokens: int, completion_tokens: int
+) -> None:
+    """AC-12: Response tokens exceeding admitted request bounds fence uncertain."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    transport = ScriptedWireTransport(
+        (
+            make_wire_response(
+                model_id,
+                '{"action":"finish"}',
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+            ),
+        )
+    )
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=FakeSandbox(()),
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert result.status == "uncertain"
+    assert result.stop_reason == "response_uncertain"
+    assert result.settled_cost_nano_usd is None
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "uncertain" and row[3] == 1
+
+
+def test_ac13_invalid_evidence_verdict_vs_malformed_scoring_receipt(
+    env: dict[str, Any], tmp_path: Path
+) -> None:
+    """AC-13: Subcase 13a records invalid_evidence/undetermined; Subcase 13b fences malformed JSON."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+
+    # Subcase 13a: Well-formed canonical receipt with stable_skip_drift -> invalid_evidence / undetermined
+    res_13a = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),)),
+        sandbox=FakeSandbox(()),
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="stable_skip_drift")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert res_13a.status == "settled"
+    assert res_13a.scoring_status == "invalid_evidence"
+    assert res_13a.benchmark_outcome == "undetermined"
+    assert res_13a.baseline_verified is False
+
+    # Subcase 13b: Non-canonical / malformed raw receipt bytes -> fences uncertain
+    store_b = journal.ObservationStore(tmp_path / "obs_13b.sqlite")
+    store_b.initialize()
+    ledger_b = CreditLedger(tmp_path / "ledger_13b.sqlite")
+    ledger_b.initialize(
+        balance_usd="10",
+        reserve_usd="2",
+        allowance_usd="1",
+        expires_at=NOW + timedelta(days=30),
+        exclusive_use=True,
+        now=NOW,
+    )
+
+    class MalformedRawScorer(FakeScoringAdapter):
+        def score(
+            self, contract: Any, candidate_archive: bytes, patch: str, *, timeout: float = 60.0
+        ) -> RawScoringEvidence:
+            return RawScoringEvidence(
+                prepared_archive_sha256="0" * 64,
+                image_id=contract.image_id,
+                harness_sha256="0" * 64,
+                envelope_raw=b'{"not_canonical": true}',
+                baseline_raw=None,
+            )
+
+    res_13b = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=store_b,
+        ledger=ledger_b,
+        transport=ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),)),
+        sandbox=FakeSandbox(()),
+        scorer=MalformedRawScorer(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert res_13b.status == "uncertain"
+    assert res_13b.stop_reason == "scoring_error"
+    assert res_13b.settled_cost_nano_usd is None
+    row_b = ledger_row(ledger_b)
+    assert row_b is not None and row_b[2] == "uncertain" and row_b[3] == 1
+
+
+def test_ac14_patch_mismatch_fences_and_protected_test_edits_are_stripped(
+    env: dict[str, Any], tmp_path: Path
+) -> None:
+    """AC-14: Subcase 14a tampered patch fences uncertain; Subcase 14b test edits are stripped."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+
+    class DesyncedPatchSandbox(FakeSandbox):
+        @property
+        def current(self) -> dict[str, bytes]:
+            return dict(env["base_files"])
+
+    res_14a = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=ScriptedWireTransport(
+            (
+                make_wire_response(model_id, '{"action":"bash","command":"edit source"}'),
+                make_wire_response(model_id, '{"action":"finish"}'),
+            )
+        ),
+        sandbox=DesyncedPatchSandbox(
+            (FakeStep("edit source", "ok", exit_code=0, patch_after=env["valid_patch"]),)
+        ),
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert res_14a.status == "uncertain"
+    assert res_14a.stop_reason == "candidate_invalid"
+    assert res_14a.settled_cost_nano_usd is None
+
+    # Subcase 14b: Candidate modifies a protected test file; prepare_candidate_reference
+    # strips non-editable edits and restores hidden tests.
+    store_b = journal.ObservationStore(tmp_path / "obs_14b.sqlite")
+    store_b.initialize()
+    ledger_b = CreditLedger(tmp_path / "ledger_14b.sqlite")
+    ledger_b.initialize(
+        balance_usd="10",
+        reserve_usd="2",
+        allowance_usd="1",
+        expires_at=NOW + timedelta(days=30),
+        exclusive_use=True,
+        now=NOW,
+    )
+
+    test_selector = contract.selectors[0]
+    tampered_files = dict(env["base_files"])
+    tampered_files[test_selector] = b"def test_tampered():\n    assert True\n"
+    tampered_patch = make_patch(env["base_files"], tampered_files)
+
+    res_14b = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=store_b,
+        ledger=ledger_b,
+        transport=ScriptedWireTransport(
+            (
+                make_wire_response(model_id, '{"action":"bash","command":"tamper tests"}'),
+                make_wire_response(model_id, '{"action":"finish"}'),
+            )
+        ),
+        sandbox=FakeSandbox(
+            (FakeStep("tamper tests", "ok", exit_code=0, patch_after=tampered_patch),)
+        ),
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="failed_baseline")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert res_14b.status == "settled"
+    assert res_14b.scoring_status == "failed"
+    assert res_14b.benchmark_outcome == "unsolved"
+
+
+def test_ac15_failure_after_begin_reservation_before_ledger_reserve_fences_store(
+    env: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """AC-15: Failure in ledger.reserve_run after begin_reservation records [reservation_intent, uncertain]."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+
+    def failing_reserve(self: CreditLedger, amount_usd: object, *, now: Any = None) -> str:
+        raise CreditError("Simulated failure inside reserve_run")
+
+    monkeypatch.setattr(CreditLedger, "reserve_run", failing_reserve)
+    transport = ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),))
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=FakeSandbox(()),
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert result.status == "uncertain"
+    assert result.stop_reason == "reservation_failed"
+    assert result.reservation_id is None
+    assert transport.consumed == 0
+    assert result.run_id is not None
+    assert observation_kinds(env["store"], result.run_id) == [
+        "reservation_intent",
+        "uncertain",
+    ]
+    assert ledger_row(env["ledger"]) is None
+
+
+def test_ac16_failure_after_ledger_reserve_before_bind_reservation_fences_both(
+    env: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """AC-16: Failure in store.bind_reservation after ledger.reserve_run blocks ledger and store."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+
+    def failing_bind(
+        self: journal.ObservationStore, claim: Any, ledger: Any, reservation_id: str, *, now: Any
+    ) -> Any:
+        raise StoreError("Simulated failure during bind_reservation")
+
+    monkeypatch.setattr(journal.ObservationStore, "bind_reservation", failing_bind)
+    transport = ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),))
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=FakeSandbox(()),
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert result.status == "uncertain"
+    assert result.stop_reason == "binding_error"
+    assert result.settled_cost_nano_usd is None
+    assert transport.consumed == 0
+    assert result.run_id is not None
+    assert observation_kinds(env["store"], result.run_id) == [
+        "reservation_intent",
+        "uncertain",
+    ]
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[1] is None and row[2] == "uncertain" and row[3] == 1
+
+
+def test_ac17_wire_dispatch_timeout_fences_both_without_retry(env: dict[str, Any]) -> None:
+    """AC-17: None timeout sentinel in ScriptedWireTransport fences request_intent as uncertain."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    transport = ScriptedWireTransport(
+        (None, make_wire_response(model_id, '{"action":"finish"}'))
+    )
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=FakeSandbox(()),
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert result.status == "uncertain"
+    assert result.stop_reason == "dispatch_failed"
+    assert result.settled_cost_nano_usd is None
+    assert transport.consumed == 1
+    assert result.run_id is not None
+    assert observation_kinds(env["store"], result.run_id) == [
+        "reservation_intent",
+        "reservation_bound",
+        "request_intent",
+        "uncertain",
+    ]
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "uncertain" and row[3] == 1
+
+
+def test_ac18_failure_after_ledger_finish_before_store_finish_known_fences_store(
+    env: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """AC-18: If ledger.finish_run succeeds and store.finish_known fails, store appends uncertain."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+
+    def failing_finish_known(
+        self: journal.ObservationStore, claim: Any, ledger: Any, *, now: Any
+    ) -> Any:
+        raise StoreError("Simulated failure in finish_known after ledger settled")
+
+    monkeypatch.setattr(journal.ObservationStore, "finish_known", failing_finish_known)
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),)),
+        sandbox=FakeSandbox(()),
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert result.status == "uncertain"
+    assert result.stop_reason == "settlement_binding_failed"
+    assert result.settled_cost_nano_usd is None
+    assert result.run_id is not None
+    assert observation_kinds(env["store"], result.run_id)[-1] == "uncertain"
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "completed"
+
+
+def test_ac19_sandbox_timeout_and_pre_settlement_docker_cleanup_verification(
+    env: dict[str, Any], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """AC-19: (a) Sandbox timeout skips scoring and fences uncertain; (b) Docker cleanup runs BEFORE settlement."""
+    from dojo.bench import runtime_bridge
+
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+
+    # Subcase 19a: Sandbox command times out -> scorer is never called, run fences uncertain
+    scorer_called = False
+
+    class SpyScorer(FakeScoringAdapter):
+        def score(self, *args: Any, **kwargs: Any) -> RawScoringEvidence:
+            nonlocal scorer_called
+            scorer_called = True
+            return super().score(*args, **kwargs)
+
+    res_19a = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=ScriptedWireTransport(
+            (
+                make_wire_response(model_id, '{"action":"bash","command":"sleep 99"}'),
+                make_wire_response(model_id, '{"action":"finish"}'),
+            )
+        ),
+        sandbox=FakeSandbox((FakeStep("sleep 99", "", exit_code=None, timed_out=True),)),
+        scorer=SpyScorer(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert res_19a.status == "uncertain"
+    assert res_19a.stop_reason == "command_timeout"
+    assert res_19a.scoring_status == "not_scored"
+    assert scorer_called is False
+    row_a = ledger_row(env["ledger"])
+    assert row_a is not None and row_a[2] == "uncertain" and row_a[3] == 1
+
+    # Subcase 19b: Verify that when uses_docker is True, check_clean() runs BEFORE
+    # ledger.finish_run(known_cost) and store.finish_known, so a lingering container at
+    # cleanup check time fences the run and ledger as 'uncertain' instead of settling!
+    store_b = journal.ObservationStore(tmp_path / "obs_19b.sqlite")
+    store_b.initialize()
+    ledger_b = CreditLedger(tmp_path / "ledger_19b.sqlite")
+    ledger_b.initialize(
+        balance_usd="10",
+        reserve_usd="2",
+        allowance_usd="1",
+        expires_at=NOW + timedelta(days=30),
+        exclusive_use=True,
+        now=NOW,
+    )
+
+    check_clean_calls = 0
+
+    def fake_check_clean() -> None:
+        nonlocal check_clean_calls
+        check_clean_calls += 1
+        if check_clean_calls >= 2:
+            raise RuntimeError("Lingering dojo-candidate-score container detected")
+
+    monkeypatch.setattr(runtime_bridge, "check_clean", fake_check_clean)
+
+    class StubDockerScorer(DockerScoringV2Adapter):
+        def score(
+            self, contract: Any, candidate_archive: bytes, patch: str, *, timeout: float = 60.0
+        ) -> RawScoringEvidence:
+            return RawScoringEvidence(
+                prepared_archive_sha256="0" * 64,
+                image_id=contract.image_id,
+                harness_sha256="0" * 64,
+                envelope_raw=canonical(make_receipt_envelope(contract, outcome="passed")),
+                baseline_raw=None,
+                scoring_backend="local_docker_v2",
+            )
+
+    res_19b = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=store_b,
+        ledger=ledger_b,
+        transport=ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),)),
+        sandbox=FakeSandbox(()),
+        scorer=StubDockerScorer(),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert check_clean_calls == 2
+    assert res_19b.status == "uncertain"
+    assert res_19b.stop_reason == "cleanup_failed"
+    assert res_19b.settled_cost_nano_usd is None
+    assert res_19b.run_id is not None
+    assert observation_kinds(store_b, res_19b.run_id)[-1] == "uncertain"
+    row_b = ledger_row(ledger_b)
+    assert row_b is not None and row_b[1] is None and row_b[2] == "uncertain" and row_b[3] == 1
+
+
+def test_ac20_evaluator_to_solver_boundary_canary_violation_fences_uncertain(
+    env: dict[str, Any],
+) -> None:
+    """AC-20: If sandbox output leaks HIDDEN_CANARY or fail_to_pass node IDs, coordinator fences immediately."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    leaked_node = contract.fail_to_pass[0]
+
+    transport = ScriptedWireTransport(
+        (
+            make_wire_response(model_id, '{"action":"bash","command":"cat leak"}'),
+            make_wire_response(model_id, '{"action":"finish"}'),
+        )
+    )
+    sandbox = FakeSandbox(
+        (FakeStep("cat leak", f"Leaked evaluator node: {leaked_node}", exit_code=0),)
+    )
+
+    result = run_bridged_cell_rehearsal(
+        env["directory"],
+        TASK,
+        CONFIG_ID,
+        SEED,
+        store=env["store"],
+        ledger=env["ledger"],
+        transport=transport,
+        sandbox=sandbox,
+        scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+        pricing=env["pricing"],
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert result.status == "uncertain"
+    assert result.stop_reason == "boundary_violation"
+    assert result.settled_cost_nano_usd is None
+    assert transport.consumed == 1
+    row = ledger_row(env["ledger"])
+    assert row is not None and row[2] == "uncertain" and row[3] == 1
+
+
+def test_ac21_held_out_split_execution_refused_before_claim_or_reservation(
+    env: dict[str, Any],
+) -> None:
+    """AC-21: Attempting to run a held_out split task raises BridgeError('held_out_task_forbidden')."""
+    contract = env["contract"]
+    model_id = env["pricing"].model_id
+    held_out_id = env["held_out_task_id"]
+    transport = ScriptedWireTransport((make_wire_response(model_id, '{"action":"finish"}'),))
+
+    with pytest.raises(BridgeError) as exc_info:
+        run_bridged_cell_rehearsal(
+            env["directory"],
+            held_out_id,
+            CONFIG_ID,
+            SEED,
+            store=env["store"],
+            ledger=env["ledger"],
+            transport=transport,
+            sandbox=FakeSandbox(()),
+            scorer=FakeScoringAdapter(make_receipt_envelope(contract, outcome="passed")),
+            pricing=env["pricing"],
+            prompt_unit_bound=PROMPT_BOUND,
+            now=lambda: NOW,
+        )
+    assert exc_info.value.reason == "held_out_task_forbidden"
+    assert transport.consumed == 0
+    assert ledger_row(env["ledger"]) is None
+    db = sqlite3.connect(env["store"].path)
+    try:
+        assert db.execute("SELECT COUNT(*) FROM runs").fetchone()[0] == 0
+    finally:
+        db.close()
+
+
+def test_ac22_synthetic_cell_bundle_offline_rehearsal_and_explicit_boundary_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """AC-22: Exercises prepare_synthetic_cell_bundle end-to-end with zero Git/network calls.
+
+    Note on ObservationStore boundary: ObservationStore hardcodes prepare_bound_plan,
+    build_intent, and load_contract for the 63 registered Stage B tasks. In unit tests,
+    bundle.install_into_modules(monkeypatch) redirects those module attributes inside
+    pytest; in production without monkeypatch, synthetic rehearsal uses BindingStore /
+    flow_development until a versioned synthetic observation entrypoint is added.
+    """
+    bundle = prepare_synthetic_cell_bundle(
+        tmp_path / "synthetic_bundle",
+        repo="more-itertools/more-itertools",
+        config_id="nano",
+        seed=0,
+    )
+    bundle.install_into_modules(monkeypatch)
+
+    store = journal.ObservationStore(tmp_path / "syn_obs.sqlite")
+    store.initialize()
+    ledger = CreditLedger(tmp_path / "syn_ledger.sqlite")
+    ledger.initialize(
+        balance_usd="10",
+        reserve_usd="2",
+        allowance_usd="1",
+        expires_at=NOW + timedelta(days=30),
+        exclusive_use=True,
+        now=NOW,
+    )
+
+    base_files = files_from_archive(bundle.contract.original_archive)
+    fixed_files = {**base_files, bundle.source_path: contract_development.FIXED}
+    fixed_patch = make_patch(base_files, fixed_files)
+
+    model_id = bundle.pricing.model_id
+    transport = ScriptedWireTransport(
+        (
+            make_wire_response(model_id, '{"action":"bash","command":"fix add"}'),
+            make_wire_response(model_id, '{"action":"finish"}'),
+        )
+    )
+    sandbox = FakeSandbox(
+        (
+            FakeStep(
+                "fix add",
+                "Fixed synthetic source",
+                exit_code=0,
+                patch_after=fixed_patch,
+                visible_tests_pass=True,
+            ),
+        )
+    )
+    scorer = FakeScoringAdapter(make_receipt_envelope(bundle.contract, outcome="passed"))
+
+    result = run_bridged_cell_rehearsal(
+        bundle.directory,
+        bundle.task_id,
+        bundle.config_id,
+        bundle.seed,
+        store=store,
+        ledger=ledger,
+        transport=transport,
+        sandbox=sandbox,
+        scorer=scorer,
+        pricing=bundle.pricing,
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+    )
+    assert result.status == "settled"
+    assert result.scoring_status == "passed"
+    assert result.benchmark_outcome == "solved"
+    assert result.model_evidence_kind == "scripted_wire_rehearsal"
+    assert result.sandbox_evidence_kind == "fake_sandbox"
+    assert result.scoring_evidence_kind == "fake_scorer"
+
+```
+
+---
+
+## 4. No-Network Synthetic Integration Demo (`scripts/runtime_bridge_demo.py`, `UNEXECUTED`)
+
+### Explicit Interface Audit for the No-Network Synthetic Demo (Correction #1 from `PRIMARY-REVIEW.md`)
+
+Per **Required Correction #1** in `PRIMARY-REVIEW.md` and `PART2-REVIEW-ADDENDUM.md`:
+
+* *"ObservationStore.claim_cell invokes prepare_bound_plan and build_intent; candidate_observation and scoring_observation invoke load_contract internally. A SyntheticCellAdapter alone cannot redirect these calls. Test monkeypatching does not establish a production path. Either propose narrow explicit synthetic interfaces with host-verified provenance, or keep synthetic rehearsal outside the registered observation store. Never forge Stage B records. ... Do not call `_execute` directly from the bridge or monkeypatch production modules."*
+
+
+* Therefore, `scripts/runtime_bridge_demo.py` **never monkeypatches production modules** (`intent_attempts`, `observations`, `bound_plan`, or `execution_intent`). Instead, it provides two clean, unmonkeypatched no-network demonstration paths:
+
+
+1. **Path 1 — Stage B Host-Preflight Rehearsal (`ObservationStore` v6 + `CreditLedger` + `FakeSandbox` + `FakeScoringAdapter`):** Creates a real temporary Stage B snapshot via `registration_preflight.create_snapshot(...)`, binds the real train task `click_6de212151893` through `ObservationStore` (schema v6) and `CreditLedger` with zero monkeypatching, and runs three cases (`fixed_solved`, `test_tampering_restored_unsolved`, and `syntax_error_baseline_attributed`).
+2. **Path 2 — Pure Synthetic Fixture Rehearsal Outside `ObservationStore` (`BindingStore` v4 + `CreditLedger` + `contract_development.fixture` + `prepare_candidate_reference` + `assess_candidate` / `run_development_score_raw`):** Keeps `synthetic_method-subtests-v2` outside the registered Stage B `ObservationStore` (as directed by Correction #1 when `ObservationStore` is not edited), using `owned_adaptive.run_owned_rehearsal` (`BindingStore` v4 + `CreditLedger`) paired with `prepare_candidate_reference` and `assess_candidate` (offline default) or `docker_scoring_v2.run_development_score_raw` (`--with-local-docker`), with zero monkeypatching and zero forged Stage B records.
+
+
+
+
+
+### FILE: `scripts/runtime_bridge_demo.py`
+
+```python
+"""UNEXECUTED no-network integration demo for the Argon runtime bridge (5e4r1).
+
+Strictly avoids monkeypatching production modules or forging Stage B records:
+1. Stage B ObservationStore (v6) rehearsal: Creates a fresh host-verified Stage B
+   snapshot in a temporary directory via registration_preflight.create_snapshot(...)
+   and exercises run_bridged_cell_rehearsal on train cell ('click_6de212151893', 'nano', 0)
+   using FakeSandbox and FakeScoringAdapter (zero network / zero Docker / zero monkeypatching).
+2. Synthetic fixture rehearsal outside ObservationStore: Exercises owned_adaptive.run_owned_rehearsal
+   (BindingStore v4 + CreditLedger) + prepare_candidate_reference + candidate_outcomes
+   (or docker_scoring_v2.run_development_score_raw when --with-local-docker is passed)
+   on contract_development.fixture('more-itertools/more-itertools') without touching
+   Stage B ObservationStore.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import shlex
+import tempfile
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
+
+from dojo.bench import bound_plan, execution_intent, registration_preflight
+from dojo.bench.registration_artifacts import decode
+from dojo.bench.runtime_bridge import (
+    FakeScoringAdapter,
+    run_bridged_cell_rehearsal,
+)
+from dojo.eval import candidate_outcomes, contract_development, docker_scoring_v2, scoring_contract
+from dojo.eval.contract_development import FIXED, TEST_FILE
+from dojo.Eval_flow_helpers import check_clean if False else None  # type: ignore[misc]
+from dojo.eval.flow_development import check_clean as verify_docker_clean
+from dojo.mine.validate import snapshot_archive
+from dojo.providers.fake_session import FakeHTTPResponse, ScriptedWireTransport
+from dojo.solve import owned_adaptive
+from dojo.solve.docker_sandbox import VISIBLE_TEST_COMMAND, DockerSandbox, files_from_archive, make_patch
+from dojo.solve.sandbox import FakeSandbox, FakeStep
+from dojo.solve.task_view import SolverInput
+from dojo.store import observations as journal
+from dojo.store.bindings import BindingStore
+from dojo.store.credits import CreditLedger
+from dojo.store.identity import sha256_bytes
+from dojo.store.records import PricingSnapshot, decimal_rate_nanos
+
+TRAIN_TASK = "click_6de212151893"
+CONFIG_ID = "nano"
+SEED = 0
+NOW = datetime(2026, 11, 1, 12, 0, 0, tzinfo=UTC)
+PROMPT_BOUND = 4096
+
+
+def _wire_reply(
+    model_id: str, content: str, *, prompt_tokens: int = 420, completion_tokens: int = 24
+) -> FakeHTTPResponse:
+    payload = {
+        "id": "chatcmpl-synthetic-demo",
+        "object": "chat.completion",
+        "created": 1_761_998_400,
+        "model": model_id,
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": content},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
+        },
+    }
+    return FakeHTTPResponse(status_code=200, body=json.dumps(payload).encode("utf-8"))
+
+
+def _envelope(contract: scoring_contract.ScoringContract, kind: str) -> dict[str, Any]:
+    f2p = list(contract.fail_to_pass)
+    p2p = list(contract.pass_to_pass)
+    skips = list(contract.stable_skips)
+    total = len(f2p) + len(p2p) + len(skips)
+    if kind == "passed":
+        report: dict[str, Any] = {
+            "exit_code": 0,
+            "collected": total,
+            "passed": sorted(f2p + p2p),
+            "failed": [],
+            "skipped": sorted(skips),
+            "errors": [],
+        }
+    elif kind == "failed":
+        report = {
+            "exit_code": 1,
+            "collected": total,
+            "passed": sorted(p2p),
+            "failed": sorted(f2p),
+            "skipped": sorted(skips),
+            "errors": [],
+        }
+    elif kind == "collection_error":
+        report = {
+            "exit_code": 2,
+            "collected": 0,
+            "passed": [],
+            "failed": [],
+            "skipped": [],
+            "errors": [contract.selectors[0]],
+        }
+    else:
+        raise ValueError(f"Unsupported demo receipt kind: {kind}")
+    if contract.collector_protocol == "method-subtests-v2":
+        report["collector_protocol"] = "method-subtests-v2"
+        report["subtests"] = {}
+    return {"phase": "pytest", "report": report, "install_exit_code": None}
+
+
+def run_stage_b_observation_rehearsal(tmp: Path) -> dict[str, Any]:
+    """Run 3 rehearsal cases through ObservationStore v6 using a real host Stage B snapshot."""
+    snapshot_dir = tmp / "stage_b_snapshot"
+    registration_preflight.create_snapshot(snapshot_dir)
+
+    prepared = bound_plan.prepare_bound_plan(snapshot_dir, TRAIN_TASK, CONFIG_ID, SEED)
+    intent_data = decode(execution_intent.build_intent(snapshot_dir, TRAIN_TASK, CONFIG_ID, SEED))
+    contract: scoring_contract.ScoringContract = prepared.evaluator
+    cfg = intent_data["configuration"]
+
+    pricing = PricingSnapshot(
+        model_id=cfg["model_id"],
+        api_base=cfg["api_base"],
+        input_nano_usd_per_million=decimal_rate_nanos(cfg["input_price"]),
+        output_nano_usd_per_million=decimal_rate_nanos(cfg["output_price"]),
+        source_sha256=sha256_bytes(b"fictional-demo-pricing-v1"),
+        checked_at_us=1_761_998_400_000_000,
+    )
+
+    base_files = files_from_archive(contract.original_archive)
+    editable_name = next(
+        name for name in sorted(base_files) if scoring_contract.editable_source(contract, name)
+    )
+    test_selector = contract.selectors[0]
+
+    cases = (
+        (
+            "fixed_solved",
+            {**base_files, editable_name: base_files[editable_name] + b"\n# fix\n"},
+            True,
+            "passed",
+            None,
+        ),
+        (
+            "test_tampering_restored_unsolved",
+            {**base_files, test_selector: b"def test_tamper():\n    pass\n"},
+            True,
+            "failed",
+            None,
+        ),
+        (
+            "syntax_error_baseline_attributed",
+            {**base_files, editable_name: b"def broken(:\n"},
+            False,
+            "collection_error",
+            "failed",
+        ),
+    )
+
+    outcomes: dict[str, Any] = {}
+    for name, edited_files, vis_pass, cand_kind, base_kind in cases:
+        case_dir = tmp / f"stage_b_{name}"
+        case_dir.mkdir()
+        store = journal.ObservationStore(case_dir / "observations.sqlite")
+        store.initialize()
+        ledger = CreditLedger(case_dir / "fictional-ledger.sqlite")
+        ledger.initialize(
+            balance_usd="10",
+            reserve_usd="2",
+            allowance_usd="1",
+            expires_at=NOW + timedelta(days=30),
+            exclusive_use=True,
+            now=NOW,
+        )
+
+        patch_str = make_patch(base_files, edited_files)
+        transport = ScriptedWireTransport(
+            (
+                _wire_reply(cfg["model_id"], '{"action":"bash","command":"apply edit"}'),
+                _wire_reply(cfg["model_id"], '{"action":"finish"}'),
+            )
+        )
+        sandbox = FakeSandbox(
+            (
+                FakeStep(
+                    "apply edit",
+                    "Applied rehearsal edit",
+                    exit_code=0 if vis_pass else 1,
+                    patch_after=patch_str,
+                    visible_tests_pass=vis_pass,
+                ),
+            )
+        )
+        scorer = FakeScoringAdapter(
+            _envelope(contract, cand_kind),
+            baseline_envelope=None if base_kind is None else _envelope(contract, base_kind),
+        )
+
+        res = run_bridged_cell_rehearsal(
+            snapshot_dir,
+            TRAIN_TASK,
+            CONFIG_ID,
+            SEED,
+            store=store,
+            ledger=ledger,
+            transport=transport,
+            sandbox=sandbox,
+            scorer=scorer,
+            pricing=pricing,
+            prompt_unit_bound=PROMPT_BOUND,
+            now=lambda: NOW,
+        )
+        outcomes[name] = res.summary()
+
+    return outcomes
+
+
+def run_synthetic_fixture_rehearsal(tmp: Path, *, use_local_docker: bool = False) -> dict[str, Any]:
+    """Run synthetic_method-subtests-v2 rehearsal outside ObservationStore (zero monkeypatching)."""
+    contract, source_path, base_files = contract_development.fixture(
+        "more-itertools/more-itertools"
+    )
+    view = SolverInput(
+        "Adding two numbers should return their mathematical sum.",
+        contract.original_archive,
+    )
+    from dojo.solve.run_settings import load_run_settings
+
+    root = Path(__file__).resolve().parents[1]
+    settings = load_run_settings(root / "configs/models.yaml", CONFIG_ID, seed=SEED)
+    pricing = PricingSnapshot(
+        model_id=settings.model.model_id,
+        api_base=settings.model.api_base,
+        input_nano_usd_per_million=decimal_rate_nanos(str(settings.model.input_price)),
+        output_nano_usd_per_million=decimal_rate_nanos(str(settings.model.output_price)),
+        source_sha256=sha256_bytes(b"fictional-synthetic-pricing-v1"),
+        checked_at_us=1_761_998_400_000_000,
+    )
+
+    fixed_files = {**base_files, source_path: FIXED}
+    fixed_patch = make_patch(base_files, fixed_files)
+
+    store = BindingStore(tmp / "synthetic_bindings.sqlite")
+    store.initialize()
+    ledger = CreditLedger(tmp / "synthetic_ledger.sqlite")
+    ledger.initialize(
+        balance_usd="10",
+        reserve_usd="2",
+        allowance_usd="1",
+        expires_at=NOW + timedelta(days=30),
+        exclusive_use=True,
+        now=NOW,
+    )
+
+    edit_cmd = "python -c " + shlex.quote(
+        f"from pathlib import Path; Path({source_path!r}).write_bytes({FIXED!r})"
+    )
+    transport = ScriptedWireTransport(
+        (
+            _wire_reply(
+                settings.model.model_id, json.dumps({"action": "bash", "command": edit_cmd})
+            ),
+            _wire_reply(settings.model.model_id, '{"action":"finish"}'),
+        )
+    )
+    fake_sandbox = FakeSandbox(
+        (
+            FakeStep(
+                edit_cmd,
+                "edited",
+                exit_code=0,
+                patch_after=fixed_patch,
+                visible_tests_pass=True,
+            ),
+        )
+    )
+
+    owned = owned_adaptive.run_owned_rehearsal(
+        view,
+        settings,
+        transport,
+        fake_sandbox,
+        pricing,
+        store=store,
+        ledger=ledger,
+        prompt_unit_bound=PROMPT_BOUND,
+        now=lambda: NOW,
+        task_id=contract.task_id,
+    )
+
+    candidate_archive = snapshot_archive(fixed_files)
+    prepared_archive = scoring_contract.prepare_candidate_reference(
+        contract, candidate_archive, fixed_patch
+    )
+
+    if use_local_docker:
+        verify_docker_clean()
+        raw_scorer = getattr(docker_scoring_v2, "run_development_score_raw", None)
+        if callable(raw_scorer):
+            raw_res = raw_scorer(contract, candidate_archive, fixed_patch, timeout=30)
+            score_status = raw_res.score.status
+            score_outcome = raw_res.score.candidate_outcome
+            baseline_verified = raw_res.score.baseline_verified
+        else:
+            score_res = docker_scoring_v2.run_development_score(
+                contract, candidate_archive, fixed_patch, timeout=30
+            )
+            score_status = score_res.status
+            score_outcome = score_res.candidate_outcome
+            baseline_verified = score_res.baseline_verified
+        verify_docker_clean()
+        scoring_evidence_kind = "local_docker_cooperative"
+    else:
+        env_dict = _envelope(contract, "passed")
+        decision = candidate_outcomes.assess_candidate(
+            contract, env_dict, image_id=contract.image_id
+        )
+        score_status = decision.status
+        score_outcome = decision.candidate_outcome
+        baseline_verified = False
+        scoring_evidence_kind = "fake_scorer"
+
+    return {
+        "task_id": contract.task_id,
+        "owned_binding": owned.summary(),
+        "prepared_archive_sha256": sha256_bytes(prepared_archive),
+        "scoring_status": score_status,
+        "benchmark_outcome": score_outcome,
+        "baseline_verified": baseline_verified,
+        "scoring_evidence_kind": scoring_evidence_kind,
+        "monkeypatching_used": False,
+    }
+
+
+def run_demo(*, use_local_docker: bool = False) -> dict[str, Any]:
+    with tempfile.TemporaryDirectory(prefix="dojo_bridge_demo_") as raw_tmp:
+        tmp = Path(raw_tmp)
+        stage_b_cases = run_stage_b_observation_rehearsal(tmp)
+        synthetic_case = run_synthetic_fixture_rehearsal(tmp, use_local_docker=use_local_docker)
+        return {
+            "protocol": "dojo-runtime-bridge-demo-v1",
+            "provider_calls": 0,
+            "partner_api_calls": 0,
+            "live_enabled": False,
+            "registration_verified": False,
+            "publishable": False,
+            "monkeypatching_used": False,
+            "stage_b_observation_rehearsal": stage_b_cases,
+            "synthetic_fixture_rehearsal": synthetic_case,
+        }
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Run no-network runtime bridge rehearsal demo (zero monkeypatching)."
+    )
+    parser.add_argument(
+        "--with-local-docker",
+        action="store_true",
+        help="Run optional synthetic scoring in local Docker (--pull=never, --network=none).",
+    )
+    args = parser.parse_args(argv)
+    print(json.dumps(run_demo(use_local_docker=args.with_local_docker), indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+```
+
+---
+
+## 5. Integration Manifest (`runtime-bridge-manifest-v1.md`)
+
+### FILE: `runtime-bridge-manifest-v1.md`
+
+```markdown
+# Argon Runtime Bridge Integration Manifest (`5e4r1` — Part 2)
+
+## 1. Closed File & Diff Inventory
+
+| # | File Path | Deliverable Format | Role & Scope | Execution Status |
+|---|---|---|---|---|
+| 1 | `dojo/eval/docker_scoring_v2.py` | **Exact Unified Diff** (§2.1) | Adds `RawCandidateScore` and public guarded `run_development_score_raw(contract, candidate_archive, patch, *, timeout=60)` while removing the redundant `CandidateDecision` reassignment and preserving `run_development_score` and its `synthetic_` lock. | `UNEXECUTED` |
+| 2 | `dojo/bench/runtime_bridge.py` | **1,506-line Base + Exact Unified Diff** (§2.2) | Host-owned runtime bridge coordinator with Ruff cleanups, public `run_development_score_raw` enforcement (no private `_execute` calls), removal of redundant `decision` assignment, and `check_clean()` moved strictly before `ledger.finish_run` / `store.finish_known`. | `UNEXECUTED` |
+| 3 | `tests/test_runtime_bridge.py` | **Complete Fenced File** (§3) | Runnable 22-case pytest suite (`AC-01` through `AC-22`) using `registration_preflight.create_snapshot(...)` in `stage_b_host` so `verify_workspace` runs unbypassed without mutating frozen `data/development/stage-b-preflight-v1`. | `UNEXECUTED` |
+| 4 | `scripts/runtime_bridge_demo.py` | **Complete Fenced File** (§4) | No-network integration demo with zero monkeypatching: runs Stage B `ObservationStore` v6 rehearsal against a fresh temporary host snapshot and synthetic fixture rehearsal via `BindingStore` v4 + `prepare_candidate_reference` + `run_development_score_raw`. | `UNEXECUTED` |
+| 5 | `runtime-bridge-manifest-v1.md` | **Complete Fenced File** (§5) | Integration manifest, interface boundary audit, exact prerequisite sequence for versioned Stage B snapshot (`5f3`), and `UNEXECUTED` verification commands. | `UNEXECUTED` |
+
+---
+
+## 2. Explicit Interface Boundary Audit (Blocked vs. Supported Without Store Edits)
+
+1. **`ObservationStore` (schema v6) + Stage B Repository Tasks (`click_*` / `more_itertools_*`):**
+   - **Supported today with zero store edits** once a fresh Stage B snapshot is generated from current workspace sources (`registration_preflight.create_snapshot(...)`), because `IntentAttemptStore.claim_cell`, `IntentAttemptStore.verify_cell`, `ObservationStore.candidate_observation`, and `ObservationStore.scoring_observation` call `prepare_bound_plan`, `build_intent`, `check_intent`, and `load_contract` against the Stage B snapshot directory and local Git repos (`data/repos/click`, `data/repos/more-itertools`).
+2. **`ObservationStore` (schema v6) + `synthetic_*` Tasks in Production (Without Monkeypatching):**
+   - **Explicitly gated / blocked without a store parameter or synthetic Stage B panel:** `IntentAttemptStore.claim_cell` calls `bound_plan.prepare_bound_plan(directory, task_id, config_id, seed)`, which enforces `plan.backend == "profiled_docker_plan_only" and identity.namespace == "live"` and checks `verify_workspace(directory)` against the 63 repository tasks in `input_guard_v2._trusted_bundle()`.
+   - Therefore, as required by Primary Review Correction #1, production code must **not** monkeypatch `intent_attempts` or forge Stage B records; synthetic fixtures run outside `ObservationStore` (via `BindingStore` v4 / `flow_development`) in `scripts/runtime_bridge_demo.py`, while `prepare_synthetic_cell_bundle(...).install_into_modules(monkeypatch)` is used only inside isolated unit test `AC-22`.
+3. **Real Repository Task Scoring in `docker_scoring_v2.py`:**
+   - **Intentionally locked pending Stage B / Task `4j` review:** Both `run_development_score_raw` and `run_development_score` enforce `if not contract.task_id.startswith('synthetic_'): raise ValueError('Benchmark scoring remains locked pending Stage B review')`.
+
+---
+
+## 3. Exact Prerequisite Sequence for Guarded Raw-Scorer API & Versioned Stage B Snapshot (`5f3`)
+
+Because `dojo/eval/docker_scoring_v2.py` is pinned inside `dojo/bench/registration_preflight.py:SOURCE_FILES["evaluator"]`, any edit to `dojo/eval/docker_scoring_v2.py` changes the `evaluator.json` and `draft.json` digests computed by `registration_preflight.build_workspace_artifacts()`. Integrate in this exact order:
+
+### Step 1 — Confirm Frozen Stage B v1 Artifact Integrity (Read-Only)
+Verify that the frozen `data/development/stage-b-preflight-v1` directory remains untouched and internally self-consistent via `verify_artifacts` (which checks all 12 JSON files against `draft.json`):
+
+```powershell
+python -c "from dojo.bench.registration_artifacts import verify_artifacts; print(verify_artifacts('data/development/stage-b-preflight-v1').summary())"
+
+```
+
+### Step 2 — Apply the Guarded Raw-Scorer Diff to `dojo/eval/docker_scoring_v2.py`
+
+Apply the unified diff in Section 2.1 to `dojo/eval/docker_scoring_v2.py`.
+
+* Preserves the `contract.task_id.startswith('synthetic_')` gate, `PROFILES` check, `timeout <= 60` check, `prepare_candidate_reference`, `docker image inspect`, and `finally` container removal (`docker rm --force`).
+* Removes the redundant intermediate `CandidateDecision` assignment.
+* Exposes `RawCandidateScore` and `run_development_score_raw`.
+
+### Step 3 — Place `dojo/bench/runtime_bridge.py` and Apply the Coordinator Diff
+
+Copy `outputs/runtime_bridge_argon_proposed.py` to `dojo/bench/runtime_bridge.py` and apply the unified diff in Section 2.2 so that:
+
+* `DockerScoringV2Adapter` calls `docker_scoring_v2.run_development_score_raw` (never private `_execute`).
+* `check_clean()` runs **before** `ledger.finish_run` and `store.finish_known` whenever `uses_docker` is True.
+* Redundant `decision = assess_candidate(...)` before `store.scoring_observation(...)` and unused imports are removed.
+
+### Step 4 — Create a New Versioned Stage B Preflight Snapshot (`stage-b-preflight-v2` under Task `5f3`)
+
+Never overwrite `data/development/stage-b-preflight-v1`. To freeze a versioned Stage B snapshot reflecting current workspace sources and the updated `dojo/eval/docker_scoring_v2.py` digest:
+
+```powershell
+python -m dojo.bench.registration_preflight create --directory data/development/stage-b-preflight-v2
+python -m dojo.bench.registration_preflight check --directory data/development/stage-b-preflight-v2
+
+```
+
+*(Note: `tests/test_runtime_bridge.py` and `scripts/runtime_bridge_demo.py` call `registration_preflight.create_snapshot(...)` into a temporary directory during execution, so they do not depend on `data/development/stage-b-preflight-v2` pre-existing on disk and never modify `data/development/stage-b-preflight-v1`.)*
+
+### Step 5 — Run Offline Verification & Linting Commands (All Currently `UNEXECUTED`)
+
+```powershell
+# 1. Lint modified and new files
+ruff check dojo/eval/docker_scoring_v2.py dojo/bench/runtime_bridge.py tests/test_runtime_bridge.py scripts/runtime_bridge_demo.py
+
+# 2. Run the 22 focused acceptance tests (AC-01..AC-22, zero network / zero Docker calls)
+pytest -q --tb=short tests/test_runtime_bridge.py
+
+# 3. Run the existing observation journal test suite
+pytest -q --tb=short tests/test_observation_journal.py
+
+# 4. Run the no-network integration demo (zero monkeypatching, zero Docker calls)
+python scripts/runtime_bridge_demo.py
+
+# 5. Optional: run synthetic fixture scoring against local Docker (--pull=never, --network=none)
+python scripts/runtime_bridge_demo.py --with-local-docker
+
+```
+
+```
+
+---
+
+## 6. Complete-Files Checklist
+
+| # | Deliverable Piece | Format | Status | Test / Execution State |
+|---|---|---|---|---|
+| 1 | Frozen Stage B v1 `workspace_artifact_mismatch` diagnosis & unbypassed `create_snapshot` test setup | Root-cause analysis (§1) + `stage_b_host` fixture in `tests/test_runtime_bridge.py` (§3) | **Complete** (no truncation) | `UNEXECUTED` |
+| 2 | `dojo/eval/docker_scoring_v2.py` guarded raw-scorer API & removal of redundant `CandidateDecision` assignment | Exact unified diff (§2.1) | **Complete** (no truncation) | `UNEXECUTED` |
+| 3 | `dojo/bench/runtime_bridge.py` pre-settlement `check_clean()`, removal of redundant `decision` assignment, and Ruff fixes | Exact unified diff (§2.2) against 1,506-line coordinator | **Complete** (no truncation) | `UNEXECUTED` |
+| 4 | `tests/test_runtime_bridge.py` (`AC-01` through `AC-22`, including pre-settlement cleanup check in `AC-19b`) | Complete fenced Python file (§3) | **Complete** (no truncation) | `UNEXECUTED` |
+| 5 | `scripts/runtime_bridge_demo.py` (no-network synthetic & Stage B demo with zero monkeypatching) | Complete fenced Python file (§4) | **Complete** (no truncation) | `UNEXECUTED` |
+| 6 | `runtime-bridge-manifest-v1.md` (prerequisite sequence for versioned Stage B snapshot & guarded raw-scorer API) | Complete fenced Markdown file (§5) | **Complete** (no truncation) | `UNEXECUTED` |
+
+```

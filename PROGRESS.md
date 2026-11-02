@@ -1,5 +1,428 @@
 # Progress
 
+## Continuation and Thursday demonstration handoff (14j1/14j2)
+
+Prepared HANDOFF.md with every unfinished action-plan row, dependency-specific
+completion guidance, continuation prompt and final Demo-Thursaday section for
+November 5, 2026. Rehearsed all ten offline demo commands: initialization,
+synthetic run, completed-run reuse, status, cost, owned-provider demonstration,
+partner-adapter demonstration, analysis, explorer export and bundle verification.
+All expected outputs exist; reuse reports reused_completed and bundle verification
+reports valid. These are offline/scripted demonstrations, not live integrations.
+No paid calls ran. Local screen sharing needs no deployment. Many paid requests
+remain gated; no reset, bypass or repeat-call instructions were added.
+Owner explicitly authorized the cumulative private GitHub push for this task,
+overriding the older manual-only rule for this checkpoint. Push verification pending.
+
+
+## Persistent one-call probe guard (6e2)
+
+- Owner explicitly requested a live promotional-credit probe capped by call
+  count. Added a fixed project-local exclusive-create permit consumed before
+  SDK creation, no refund/reset/retry path, and existing SDK max_retries=0.
+  Parallel processes and restarts cannot acquire the same consumed permit.
+- 87 offline probe/verifier/credit/precision tests passed in 3.47s, including
+  two-process race and fake SDK proof that only the first client is constructed.
+  No account-wide hard spending cap or credit-consumption priority is claimed.
+- Presence-only environment check: NEBIUS_API_KEY is absent from this Codex
+  session. No key value was read or printed. No API request was possible or
+  sent. Existing live lock and financial/runtime prerequisites remain in place;
+  no assumed expiry was entered into a real ledger.
+
+## Offline credit-readiness recheck (6a/6e)
+
+- Read the current financial rules and verified LIVE_INFERENCE_ENABLED remains
+  false. Verifier/credit/precision regression suites: **83 passed in 3.49s**,
+  using fake transports and temporary fictional ledgers. No credentials or
+  private account data were accessed and no Nebius request was sent.
+- PROJECT_CLEANUP retains the explicit support/card-removal reminder. The
+  US$29.50 balance and separate US$1/12-day trial remain owner reports, not
+  independently inspected account entitlements. Builder expiry, fresh exclusive
+  use and explicit probe allowance remain missing; paid execution stays blocked.
+
+## 2026-11-01: offline observation binding complete (5f3c)
+
+- New-file-only v6 journal binds owned intent to a pending local reservation,
+  request/response digests and exact per-request costs, candidate/restored archive
+  digests, baseline-attributed scoring diagnostics and actual ledger settlement.
+  SQL immutability, hash-linked/state-checked reads and strict owner/lease/time/
+  cumulative bounds prevent silent overwrites and replay. Reservation intent
+  now atomically blocks the older abort-before-dispatch path. The inherited
+  begin_reservation_intent API is explicitly refused by the intent-only store.
+- Combined journal/intent/attempt/schema suites: 130 passed in 47.79s, including
+  nine actual abrupt child-process exits. Final required-digest guard: two
+  focused checks passed in 7.45s. Scoped lint and temporary no-network demo pass.
+  Demo uses one scripted response, fictional 1800 nano-USD cost and scripted
+  baseline-pattern scoring; no real model, task code or container runs.
+- 5f3 offline association is implemented; genuine runtime provenance remains
+  incomplete. Summary stays diagnostic/nonpublishable, parent stays uncertain,
+  and no live/registration flag is enabled. Raw observation content is not an
+  authenticated private evidence archive. Actual adapters, new registered
+  sources, scope/runtime/financial approvals and genuine verification remain.
+- Owner requests supervised probe preparation and reports US$29.50 account
+  balance plus a separate US$1 trial with 12 days left. Builder expiry, fresh
+  exclusive-use status and explicit allowance remain unknown. Wrote exact
+  console/support steps in docs/supervised-probe-next-steps.md. No real ledger
+  initialized. PROJECT_CLEANUP explicitly retains the support/card-removal
+  reminder, token-deletion question and written-confirmation requirement.
+- A preceding final-check command was not executed because automatic approval
+  review reached its usage limit. Access subsequently resumed and checks above
+  ran successfully; no approval bypass or unsafe-action finding occurred.
+
+## 2026-11-01: durable owned intent association (5f3b)
+
+- Added new-file-only IntentAttemptStore v5 with immutable intent bytes/hash,
+  host solver key and owner-generation/time association. Existing v3/v4 files
+  and APIs remain unchanged and incompatible versions refuse each other.
+- Claim-to-attachment crash leaves an occupied attempt without replay. Verify
+  rebuilds host identity and intent outside transactions, then checks ownership,
+  lease, generation, solver key and stored bytes. Direct caller identity claims,
+  dispatch, accounting mutation and result promotion remain refused.
+- Initial final suite: 12 passed in 74.30s, including actual abrupt process exit.
+  Existing attempt/schema compatibility: 86 passed in 2.87s. Final added fresh
+  host-key consistency guard passed two focused positive/negative probes
+  (24.43s); scoped lint passed. Host bridge at 5f3a also passed 13 tests.
+- No actual reservation/provider/scorer execution or public result was created.
+  5f3 remains partial: next 5f3c binds actual reservation/dispatch/usage/patch/
+  evaluator events, under separate scorer/registration/financial/runtime gates.
+
+## 2026-11-01: solver/evaluator host bridge (5f3a)
+
+- Added prepare_bound_plan: settings are derived from checked intent; existing
+  host RunPlan and private scoring contract are reconstructed independently.
+  Task/source/issue/record, model/settings and solver/scoring runtime identities
+  must agree; intent is checked again after preparation. Private archive and
+  evaluator contents stay out of repr and summary.
+- 13 tests passed in 18.99s, including actual read-only preparation for both
+  repositories and eleven mismatch probes. Scoped Ruff passed. No candidate
+  code/container/provider, store claim, reservation or record promotion occurred.
+- 5f3 remains partial. Next 5f3b is a versioned durable intent/attempt association,
+  followed by actual reservation/dispatch/usage/patch/evaluator binding. A new
+  reviewed registration snapshot and live/scorer/financial gates remain required.
+
+## 2026-11-01: host-derived execution intent (5f2)
+
+- Added canonical immutable per-cell intents derived from host-verified full preflight: task/config/seed, all eleven artifact bindings, model/settings, task/archive/issue and image/harness identities. Rebuild/compare refuses caller flags, unexpected fields and mismatched cells. Input bytes and host preflight are rechecked.
+- 18 focused tests passed in 32.67s; scoped Ruff passed. Includes forged approval flags, wrong model/archive/harness/digest/seed, unexpected cells, noncanonical bytes and read-window drift.
+- Intent identity is not actual execution provenance. No provider/container, database, scoring or public-result path enabled. Next 5f3 binds actual owned dispatch/reservation/usage/patch/evaluator observations. New implementation/callers must enter a fresh reviewed registration before real use.
+
+## 2026-11-01: corrected scorer acceptance matrix (4j2)
+
+- Normalized 13 Gravity attack categories to the actual scorer/contract APIs, receipt prefix, profile and protected archive paths. Mapped concrete regression tests and distinguished architectural limitations from unexecuted attack hypotheses.
+- Existing pure/mocked scorer suite: 169 passed in 0.32s. No new container/payload/provider execution. Scorer scope signoff (4j1), adversarial redesign if required (4j3), trusted execution binding (5f) and financial gates remain open.
+- Added deferred website information-structure/UX work as 10k at owner request. Next primary implementation remains trusted execution provenance under 5f, within the cooperative scorer scope only if approved.
+
+## 2026-11-01: local images verified (7a4 complete)
+
+- After owner started Docker Desktop, fresh runtime-input-check-v2 evidence verified all 63 archives/contracts and both pinned image IDs. No containers started or provider calls made. Original v1 blocked evidence retained.
+- Production dashboard preview started at http://127.0.0.1:4173/ and returned HTTP 200. Owner visual review remains open under 10j4. Next implementation is scorer-scope/provenance work at 4j/5f; financial/live gates remain open.
+
+## 2026-11-01: archive reconstruction and local image check (7a4 partial)
+
+- Two requested subagents independently reviewed archive and image verification
+  boundaries, without edits, execution, network or Git writes.
+- Existing runtime input check verified all 63 original archives, pinned
+  manifest and 37/26 split. Supplementary checker reconstructed all 63 scoring
+  contracts (34 legacy-v1 / 29 method-subtests-v2), verified the preflight before
+  and after, and saved only hashes/profile metadata with its draft fingerprint.
+- Both exact local image inspections failed; bounded local Docker server version
+  check also failed. Docker Desktop readiness is required to finish 7a4. No
+  pull/build/container/model execution or eligibility approval occurred.
+- Five focused image/error/privacy tests pass. Reproduction, limitation and
+  manual Git commands are in docs/stage-b-runtime-input-check.md. Next: open
+  Docker Desktop and rerun with a fresh v2 output, then continue scorer/provenance
+  gates. Existing frozen preflight and archive evidence are preserved.
+
+## 2026-11-01: Argon browser UI Part 2 integrated (10j3/10j4)
+
+- Preserved the 133,923-byte Argon response and twelve proposed file blocks
+  with a SHA-256 manifest. Repaired ten escaped pipe operators and two escaped
+  percent characters in the adopted App.jsx. Copied both canonical unequal-seed
+  fixtures because the returned JSON blocks differed from accepted bytes.
+- Initial React suite was 15 passed / 11 failed. Vitest's HTTP-style
+  `import.meta.url` made Argon's fixture loader silently substitute the bundled
+  demo for every scenario. Replaced it with a fixed local fixture path and no
+  fallback; corrected selectors/expected text and grammatical denominator
+  display. Accepted v2 data modules remain unchanged.
+- Final `npm test`: **43 Node data tests and 26 React/hygiene tests passed**.
+  `npm run build` succeeded. Local preview served HTML, JS and CSS with HTTP
+  200, and production HTML includes `connect-src 'none'`. The build reports a
+  694 kB JS chunk (about 201 kB gzip); optimization is a later UX task.
+- The dashboard is a runnable, local synthetic explorer. Manual browser,
+  responsive/accessibility review and hosting remain open, as do all real
+  provider, registration, scoring, balance and publication gates. No paid model
+  call or Git write. Next primary remains 7a4 archive/image verification.
+
+## 2026-11-01: artifact/host preflight and Argon UI handoff (7a2/7a3/10j3)
+
+- Added separate fixed-file verifier and host create/check command. Eleven
+  canonical artifacts plus draft are checked from actual bytes; exact panel,
+  duplicate/extra/missing cells, source/profile/image-harness relations, policy
+  and fixed false authority flags are enforced. Host reconstruction rejects
+  self-consistent forged splits/subsets/source digests.
+- Actual pinned inventory: 63 tasks, 37 train / 26 held-out, four configured
+  model candidates and seed 0 = 252 illustrative unapproved cells. Task kinds:
+  50 bug fixes, seven feature requests, four API changes, two compatibility
+  restorations. No model results were read or generated.
+- User-requested two subagents performed independent read-only reviews. Fixed
+  config/split digest/recheck gaps, four missing source dependencies, consistently
+  swapped repo profiles and UNC/device paths before filesystem access. No agent
+  edited shared files, used credentials or contacted external services.
+- Registration/preflight/scorer compatibility suites: **252 passed, one skipped
+  (31.02s)**. Skip is real symlink creation unavailable on this Windows host;
+  mocked reparse rejection remains tested. Socket audit/create-check subprocess
+  tests, scoped lint and packet integrity checks pass. No full-suite run claimed.
+- Fresh Argon browser UI Part 2 packet has accepted v2 source/tests/contracts,
+  reusable archived UI and all fourteen fixture artifacts. Two WPs/twelve files;
+  guide provides prompt and save path. Primary retains registration/runtime work.
+- New preflight artifacts/report retain execution_authorized=False,
+  registration_verified=False, publishable=False and live_enabled=False. Image
+  IDs are configured/uninspected, archives not reconstructed and scope not signed
+  off; candidate grid/prices are not approved. No model/container execution,
+  keys, dependencies, publication or Git writes. Next primary: 7a4 archive/image
+  identity checks, while Argon proposes UI only.
+
+## 2026-11-01: owned reservation coordinator (8a2)
+
+- Added separate v4 BindingStore, leaving v1/v2/v3 schemas, existing store APIs
+  and provider/ledger sources unchanged. New stores require new paths; versions
+  refuse each other without migration/reset. Static binding identity, terminal
+  state, dispatch intents and event history are guarded against rewriting.
+- Owned fake coordinator derives synthetic input/settings/source/fixture identity,
+  acquires a claim, commits intent, reserves the whole fictional budget and links
+  the actual UUID before entering the adaptive loop. Every fake turn verifies
+  current owner/generation/lease and matching ledger row, then commits wire digest
+  intent and known-response cost. No network or sandbox work spans a store lock.
+- Extracted an internal reserved execution helper from 8a1 and added exact offline
+  binding hooks. Original public standalone API and synthetic controller remain
+  compatible. The earlier 8a1 source hash is historical; its evidence artifact
+  was preserved rather than rewritten to hide this intentional source change.
+- Settlement verifies the actual completed ledger row and every known response.
+  Parent attempts deliberately remain fenced diagnostics, with no completed
+  artifact/usage/evaluation record. Unknown/failing/expired state never replays;
+  no cross-database atomicity or live dispatch approval is claimed.
+- **34 new cases** cover eight actual process-exit windows, independent-process
+  race, stale/bool generation/token, lost lease, schema mismatch, missing/busy/
+  corrupt state, immutable records, source drift and safe cleanup/socket audit.
+  Main targeted compatibility rerun: **481 passed (18.99s)**. Final coordinator
+  rerun after export sorting/test-environment scrubbing: **34 passed (7.55s)**.
+  Scoped Ruff, direct demo and accepted provider integrity verification pass.
+- One original compatibility run had 480 passes and a one-off existing ledger
+  race assertion failure (zero successful reservations). Isolated rerun passed;
+  100 bounded races all produced one success and SQLITE_BUSY for the competitor.
+  No ledger policy/test was weakened; sanitized observation is in FEEDBACK.md.
+- Temporary demo shows settled fake binding, two fake requests/one scripted
+  command, refused repeat with zero sends, zero actual provider/partner calls,
+  registration unverified and publishable=False. No keys, existing spend ledgers,
+  installs, schema migrations or Git writes. Next primary: 5f/7a/4j host artifact/
+  scorer-scope verification; 6g/tokenizer/financial gates remain before live use.
+
+## 2026-11-01: adaptive provider-shaped controller rehearsal (8a1)
+
+- Added separate dojo.solve.adaptive entry point reusing the existing action loop,
+  parser, exact scripted wire transport, fake sandbox and accepted accounting/
+  codec helpers. Existing controller/contract/ledger/provider files unchanged.
+- Each request incorporates previous bounded command/format feedback. Whole-run
+  reservation precedes sandbox start; every send rechecks reservation/deadline,
+  with timeout clipped to remaining wall time. Context/cumulative admission units
+  are explicitly fictional UTF-8/framing counts, never a verified tokenizer.
+- Known usage stops settle known cost without refunds. Unknown/malformed/over-bound
+  responses and accounting failures stop; failed finalization preserves pending
+  state. Interrupt/actual abrupt child-process exit leaves a committed pending
+  reservation; a fresh ledger refuses replay before starting the sandbox.
+- Added **43 new tests**. Adaptive/old solver/controller/runner/provider/partner/
+  credit precision/execution-record compatibility: **480 passed (8.04s)**.
+  Scoped Ruff, documented demo and subprocess no-socket audit pass. This is a
+  targeted count; no full-suite run or genuine provider/scorer result claimed.
+- Private requests/observations/patch/reservation stay outside summary/repr.
+  Demo creates/removes a temporary fictional ledger, reports two fake calls and
+  one scripted command with 1105920 reserved / 21600 observed nano-USD. Zero actual
+  provider/partner calls, live disabled, unscored and nonpublishable.
+- New guide maps current behavior and the next 8a2 owned-attempt/reservation
+  coordinator design and cross-database crash windows. Persistent AttemptStore/
+  ResultStore binding, real tokenizer verification and all financial/live/scorer/
+  registration gates remain open. No keys, real ledgers, installs or Git writes.
+
+## 2026-11-01: provider Part 2 reviewed and integrated (8h8)
+
+- Preserved 84650-byte response and all eight complete bodies with hashes.
+  Original suite: 99 passed, three failed. Corrected ineffective lowercase URL
+  check and two wrong error-message assertions; tightened UUID4 and scripted
+  response byte validation, removed redundant global garbage collection, fixed
+  lint and qualified URL/pricing/runtime claims in documentation.
+- Added 17 independently authored primary cases covering privacy/unknown credits,
+  URL forms, limits, trace copying/whitelist/disabled behavior, temporary cleanup,
+  existing ledger sentinel preservation and subprocess socket audit.
+- 102 accepted proposal cases plus primary and existing provider/credit precision/
+  configured solver/execution-record compatibility suites: **370 passed**.
+  Scoped Ruff and direct documented demo pass. Demo uses only fictional temporary
+  ledgers: 368640 nano-USD reserved / 108000 observed in the known case; unknown
+  usage blocks the reopened ledger with zero subsequent sends.
+- Accepted-source manifest verifies all original bodies and nine Part 1 reference
+  hashes, scans nine deliverables for common credential patterns and checks the
+  three runtime modules for unexpected service/network imports. Bounded evidence,
+  not a universal privacy proof. Full suite not rerun or claimed for this batch.
+- 8h3/8h5/11b1/12i2 now DONE offline. 8a remains PARTIAL: next 8a1 is an adaptive
+  fake provider-to-controller bridge; docs/provider-runtime-readiness-v1.md maps
+  acceptance and later financial/scorer/registration/hosted-service gates.
+- No real provider/search calls, hosted tracing, API key inspection, existing
+  spend-ledger access, dependency installs or Git writes. Exact accepted Part 1
+  interfaces and current synthetic controller remain unchanged.
+
+## Provider restart Part 1 accepted (8h7; 8h1/8h2)
+
+- Integrated bounded Nemotron request/response codec and scripted durable-credit
+  fake session, plus proposal tests and docs. Original six bodies remain archived.
+- Corrected malformed init heading, test-name typo, oversized test IDs, lint,
+  and escaped-surrogate key exception handling. Five independent primary cases
+  exercise decoder states and uncertain ledger/restart refusal.
+- Provider/primary boundaries plus existing credit precision, configured solver
+  and execution-record tests: 251 passed. Scoped Ruff passes. Supplement generator
+  byte/hash check passes; tracked whitespace passes with Windows newline notices.
+- Part 2 now ready with original Part 2 packet AND accepted-source supplement
+  (nine references; 125785 bytes; SHA-256
+  aba5360aee6cc0ce817ff55af4beae40ccf2207c89e3a64cdae67286472fcbe7).
+- No live provider transport, API verification, real spend ledger, keys, hosted
+  uploads, dependency installs or Git writes. ModelController remains synthetic.
+
+## Provider restart Part 1 intake (8h5, partial)
+
+- Archived all six complete response bodies and source/file hashes. Corrected
+  malformed init header only in archive path mapping; originals preserved.
+- Isolated proposal run: syntax typo initially blocked collection; fixed in
+  review copy. Bounded byte-fixture IDs resolved setup errors; final 77 passed.
+- Not installed or accepted yet: independent codec/accounting boundary review
+  remains. See provider-restart-part1-primary-assessment-v1.md. Part 2 awaits
+  accepted-source supplement. No real calls, keys, spend ledger or Git writes.
+
+## 2026-10-31: fresh two-part provider handoff (8h6)
+
+- Owner has no remembered/saved historical Provider Partners response. Replaced
+  the recovery request with two fresh scoped packets; no old response required.
+- Inspected existing solver contracts/controller and provider assignment context;
+  no dojo/providers package exists. Part 1 proposes six codec/fake-accounting
+  files. Part 2 proposes eight search/local-trace/demo files, and explicitly waits
+  for a primary-reviewed Part 1 source supplement rather than guessing APIs.
+- Both packets embed 23 exact current references, including corrected credit
+  arithmetic and precision regressions; manifest records sizes/SHA-256. Original
+  historical packets remain unchanged. Configuration/pricing references are
+  labeled historical, not current provider verification.
+- Guide supplies attachment instructions, prompts, response save paths and scoped
+  manual Git commands. Next: owner sends only Part 1, then primary performs 8h5
+  intake/review/fake tests. No provider implementation, live requests, API-key
+  inspection, hosted tracing, dependencies or Git mutations performed.
+- Verification: replacement packet/manifest byte comparison passes, generator
+  Ruff passes, tracked checkpoint whitespace passes (Windows newline notices
+  only), and a bounded common credential-pattern scan passes. No implementation
+  tests claimed: these are assignments, not installed provider code.
+
+## 2026-10-31: provider integration intake checkpoint (8h5)
+
+- Checked review filenames and Markdown/text content for the completed Provider
+  Partners delivery. Assignments and frozen packets exist, but the actual response
+  was not found. No provider code has been reviewed or adopted at this checkpoint.
+- Owner must save the existing full response as
+  `docs/reviews/argon/provider-partners-feedback-v1.txt`; plain text preserves code.
+  Intake notes specify archival, API/accounting review, isolated fake tests and
+  a fresh continuation packet only after accepted interfaces are known.
+- Browser Part 2 remains queued behind provider work. No duplicate provider task
+  sent, live calls, credential access, financial changes or Git writes performed.
+
+## 2026-10-31: browser v2 Part 1 reviewed and integrated (10j5)
+
+- Completed 10j1/10j2 pure browser data layer. Original response is 185,789 bytes,
+  SHA-256 9e3d6669e08164eac49cd26bdebd7613e7efdcbe3c467a204aa2900a597b47c6;
+  all nine extracted files archived unchanged with intake hashes.
+- Reused exact math, scanner, wire validators, pair binder, read-model builders
+  and selection from Argon. Fixed 10^9 vs 10^12 count mismatch, wrong quantile
+  constant, legitimate decimal-chart rejection, stale headline/display/scope/
+  chart/task-average acceptance, hidden keys/options/accessors, error paths,
+  pre-parse node/array preflight and tiny chart coordinates. Corrected unreduced
+  rational and noncanonical duplicate-row test inputs; preserved strict rules.
+- Original Node suite: 9 passed/13 failed. After only two constant fixes:
+  18 passed/4 failed. Initial primary boundaries: 12 passed/9 failed; mutation
+  rejections were masked by reject-all behavior. Fixed that before accepting
+  mutation checks, with positive controls. Final four Node modules: **43 passed**.
+- Differential script uses real accepted Python validators: **102 cases and five
+  paired artifacts agree**, including valid high seeds, ties/zero-cost, empty/
+  extra-config blocked panels and cost-incomplete blocked-report pairs. Bounded
+  equivalence evidence, not comprehensive proof. Helper Ruff/syntax pass.
+- New data-layer contract/primary ledger and source assessment record claims and
+  limits. DerivedV2 has no bootstrap intervals: UI must also retain validated
+  ViewV2 for uncertainty. Source scope remains synthetic/UNVERIFIED/zero calls;
+  no checksum/metadata/frozen-object claim grants authenticity or approval.
+- No backend source, frozen source packet or old frontend snapshot changed.
+  Previous Python result (1,338 passed/one skipped) is historical, not rerun for
+  JavaScript-only work. No dependencies installed, React/build/browser/CSP/
+  accessibility accepted, paid/model calls, hosted uploads or Git writes.
+- User's next priority after this step is **Nemotron/provider integration**:
+  review saved Provider Partners response at 8h5, then 5f/7a/4j1 execution gates.
+  UI Part 2 (10j3) remains queued. Manual Git guide: browser-v2-part1-git-checkpoint-v1.md.
+- Final integrity/privacy checks: 13 adapted deliverable hashes and all nine
+  archived body hashes verified; scan of 202 scoped source/fixture/review files
+  found no common long-token/private-key/tenant-ID matches. This is a bounded
+  pattern scan, not universal secret detection. New-file and tracked whitespace
+  checks pass; only ordinary Windows newline notices remain.
+
+## 2026-10-31: next Argon browser v2 handoff (10j0)
+
+- Done: prepared browser-v2-part1-packet-v1.md, 481,371 bytes, 37 hashed entries,
+  SHA-256 7e18911af0024bfbcf13ebe3b9159a2141d2b76af953d2746e20485375aa75d3.
+  Selected complete v1 parser/caller/test/package sources are labeled archived
+  proposals; accepted Python validators/contracts remain the wire authority.
+- Generated and validated seven fictional view/diagnostic pairs: unequal seeds,
+  unknown costs, missing cells, zero solved, one family, exact large costs and
+  four-task cascade. Hand oracles check 1/4 vs 1/2 success, 5 vs 30 nano-USD,
+  exact (10^18+9)/2 cost, and 3/4 / 26M / (26M/3) cascade arithmetic.
+- 10j1 group A reserves exact BigInt helpers and strict browser schema/pair
+  ingestion. 10j2 group B reserves pure seed-aware derivation, exact sorting,
+  reachable pagination, tests and stable Part 2 contract: nine complete files
+  total. Primary reviews returned files before 10j3 React/UI packet preparation.
+- Builder --check reproduces exact source/fixture bytes; helper Ruff and tracked
+  whitespace pass. No production changes, browser tests, npm install/build,
+  provider calls, spend or Git writes. Last application evidence remains 1,338
+  passed/one real-Windows-symlink skipped; no full suite rerun for handoff docs.
+- Owner uploads only the combined packet and saves complete reply as
+  docs/reviews/argon/browser-v2-part1-feedback-v1.txt. Upload/continuation prompts,
+  Part 2 scope and manual Git commands: browser-v2-two-part-guide-v1.md.
+- Primary queue remains 8h5 then 5f/7a/4j1. Agent 2 v1 review is read-only on its
+  old frozen snapshot; new browser-v2 namespace avoids concurrent source edits.
+
+## 2026-10-31: Argon explorer Part 2 reviewed and integrated (13m1c)
+
+- Completed 10i2/10i3/10i4 offline bundle/export acceptance. Archived unchanged
+  104,953-byte response (ac9dd9456b5cd840926b277e9007346c7597acf601ef1ac62db668379e5c4bfc)
+  and eight exact extracted bodies with hashes. Original proposal tests remain
+  UNEXECUTED in the archive; primary ran the adaptation locally.
+- Reused Argon's manifest, cross-file recomputation, filesystem/CLI structure and
+  tests. Corrected syntax, silent successful module no-op, argv type handling,
+  parent traversal, canonical-byte manifest binding, fd cleanup/input identity,
+  bounded counts and two valid blocked-pair edge cases. Before fixes: supplied
+  tests 29 passed/1 failed/1 skipped; independent initial set 2 passed/9 failed.
+- Current Part 1/2 acceptance: **139 passed, 1 skipped in 3.41s**. Full suite:
+  **1,338 passed, 1 skipped in 66.62s**. Full dojo/tests plus intake-helper Ruff
+  pass. Real symlink creation unavailable on this Windows host; mocked reparse
+  metadata tests pass but do not establish real junction/race immunity.
+- Actual module smoke exported and verified the six-cell fictional panel:
+  tasks=2/configs=2/families=2; source hash
+  080ed06dd17ff155648974263b31cfd984de2e9a16c70ff7fa5e3701aaaf89f3.
+  Existing destination refusal is covered; no actual spend/model success claim.
+- All 15 accepted Part 2 packet references still match (344,890-byte packet,
+  8844bb5f914572be82774e711e39d8538c99d19eb31f4e29848e54f59537b400).
+  Part 1 source/tests/contract and all frozen artifacts remain unchanged.
+- Evidence: explorer-export-part2-primary-assessment-v1.md, reproduction guide,
+  primary execution ledger and final delivery manifest. Pure bundles support
+  audit-blocked diagnostics; CLI refuses their export with exit 2. Cost-unknown
+  aggregates remain withheld. Hash consistency never grants real approval.
+- Final checks: nine live deliverable hashes and all eight archived body hashes
+  verified; scoped scan of 174 code/fixture/review files found no common long
+  API-token/private-key/tenant-ID patterns. New-file whitespace and tracked diff
+  checks pass. Actual repeat export refused the existing destination with exit 1.
+  Manual owner commands are in explorer-export-part2-git-checkpoint-v1.md.
+- Next: 8h5 provider-response review, then 5f/7a/4j1 actual registered execution
+  boundaries; frontend v2 adoption remains separate. No paid/provider requests,
+  credentials, installs, Docker, hosting, account changes or Git mutations.
+
 ## 2026-10-31: Argon explorer Part 2 handoff (13m1b)
 
 - Done: generated `docs/reviews/argon/explorer-export-part2-packet-v1.md` from 15 reviewed, exact-byte references (344,890 bytes); reserved eight new bundle/CLI/test/doc deliverables for 10i2–10i4. Existing Part 1 implementation remains accepted.
@@ -1960,3 +2383,248 @@ Updated: 2026-10-21 (tasks 4h/4i; owner now runs Git commands)
   and obtaining written confirmation of final balance and effective closure.
   Any change of spending policy requires an explicit owner instruction; do not
   infer it from this support reply. Offline project work can continue.
+
+
+## 6e3 - Local key setup
+Added explicit project-root .env loading for live verifier setup (dry runs do not read it). Environment takes precedence; 16 KiB limit, single nonempty key, optional matching quotes, no interpolation or secret logging. Invalid configuration returns a redacted blocked status. Local boolean-only loading succeeded. File is Git-ignored and untracked. 47 offline loader/verifier/call-permit tests passed (2.23s); scoped Ruff and git diff --check passed. Tests now isolate credentials from the owner file. No provider request or real credit reservation. Next: confirm financial prerequisites in docs/supervised-probe-next-steps.md before designing/enabling the dedicated tiny probe; the old grid is not that probe.
+
+
+## 6e4 - Single probe plan
+Owner approved suggested US$0.01 ceiling for one supervised call. Added offline-only Nano plan separate from verifier grid: 64 output tokens, no thinking, zero retries, 30-second timeout; configured estimate $0.0000768 using an unverified 1024-token input allowance. This is not a verified billing bound. Plan JSON contains fixed arithmetic messages only, no secrets. 53 offline tests passed (2.24s); scoped Ruff passed after literal style correction. No SDK construction, provider calls or real reservation. Credit expiry/exclusive use/current pricing/token semantics and execution adapter review remain open.
+
+
+## 6e5 - Locked supervised execution adapter
+Implemented one-request Nano transport/accounting separate from the old grid. Full US$0.01 durable reservation, shared exclusive permit, SDK retry-zero/30-second timeout and both output limits 64. Sanitized response validation; unknown usage/errors stop and block ledger, no refunds or retries. Public unauthenticated catalog agrees with configured Nano prices and availability; OpenAPI documents reasoning-inclusive completion limit. Input tokenizer/template bound still unresolved. 112 combined offline tests passed (3.68s); two additional failure cases added and all 10 adapter tests passed (1.43s); scoped Ruff passed. Updated plan JSON and docs/single-probe-execution.md. No paid call, real ledger initialization or project permit consumption. Next live prerequisites remain exact usable credit expiry/fresh exclusive-use and verified token bound plus deliberate policy review.
+
+
+## 6e6 / 10j4a / 7a4t1 - Offline readiness and compatibility
+Added python -m dojo.probe_readiness: sanitized local key/permit/ledger/live-policy statuses; no network, ledger initialization or permit mutation. Actual status key configured, permit not consumed, ledger unavailable, live false, input bound unverified. 31 focused tests passed in 1.53s; scoped Ruff passed. Recorded public NVIDIA tokenizer config/template hashes at pinned BF16 revision, without executing templates, downloading weights or installing packages; provider tokenizer agreement unresolved.
+
+Dashboard compatibility originally passed 43 Node +26 UI tests but reproduced invalid whitespace table text-node warnings. Fixed structural JSX whitespace and added DOM regression: final 27 UI tests pass without nesting warnings; final production build passes (694.17 kB JS, 200.90 kB gzip; existing chunk warning). Deferred UX redesign remains 10k.
+
+Full Python compatibility run completed: 1788 passed, 2 skipped, 1 failed in 454.08s. The failure was the older history test treating runtime reports as task records. It had been imported before the in-flight fix; separate final history rerun passed all 15 cases in 0.74s. No other full-run failures occurred. Full suite was not repeated after this test-only correction. No frozen data edits, live requests, real ledger initialization, project permit consumption or Git writes. Remaining live prerequisites: exact usable-credit expiry, fresh exclusive-use, provider token bound and policy review. docs/probe-readiness.md and docs/probe-tokenizer-source-v1.json hold evidence.
+
+
+## 6e7 - FIRST REAL PROVIDER REQUEST
+Owner explicitly directed one call despite unknown expiry, reported balance US$29.50 and confirmed exclusive use. Added distinct one-cent unknown-expiry policy (default strict policy remains); 72 offline tests passed in 2.64s and Ruff passed. One supervised Nano arithmetic request completed: 38 prompt +4 completion =42 tokens, answer matched, not truncated. Usage estimate US$0.00000324; console reconciliation still required. Full US$0.01 reserved allowance retained, US$2.95 safety reserve recorded, fixed one-call permit consumed. General live switch remains false in source and subsequent process. No retries, coding benchmark or additional live requests. Private sanitized result/ledger under ignored data/runtime. See docs/supervised-probe-result-v1.md. This supersedes earlier historical zero-provider-call checkpoints: cumulative real inference calls now 1.
+
+
+## 5e4r1 / 14a2 - Runtime handoff and wheel acceptance
+Prepared Argon current-source registered-runtime-v1 assignment/context/manifest/README: 54 full allowlisted files, 443734 raw source bytes. Verified every source size/hash and context header. Part 1 is design/API/crash/acceptance audit; Part 2 complete implementation proposal only after primary review. No credentials/private runtime or real task archives shared. Runtime integration itself remains open.
+
+Built 0.1.0 wheel with isolated Hatchling 1.33 tooling after initial missing-backend attempt. Audit 123 members, no .env/runtime/data/review paths and matching Apache license. Actual wheel installed into temporary target; Python -I imports installed package, version and explicit-checkout-config dry-run succeed with zero requests. Eight archive audit tests pass (0.20s), scoped Ruff pass. This uses existing virtualenv dependencies, not a fresh-machine test, and wheel excludes benchmark data/configs. No publication, Git writes or additional provider calls; lifetime real calls remains one. docs/release-wheel-check-v1.md. Owner console reconciliation remains pending.
+
+
+## 12i4 / 12jk2 - Useful sponsor integration foundations
+Current official LangSmith trace API/privacy and Toloka/Tendem roles researched. Implemented pure synthetic aggregate TraceEvent -> LangSmith POST/PATCH mapping: empty inputs, fixed names, deterministic opaque span IDs, revalidation, exact text counts/costs, bounded payload, no SDK/network/environment reads. Generated a local ignored synthetic preview. 68 trace/partner/codec tests passed (1.03s), Ruff passed. Real probe is not relabeled synthetic.
+
+Prepared separate sponsor-integration-v1 Argon packet: 11 full source/context files, 72044 raw source bytes and verified SHA-256/size inventory. A proposes optional hosted aggregate-trace adapter, B later local human-review contracts/rubric/queue for Toloka/Tendem after primary review. docs/sponsor-integration-plan-v1.md maps concrete usefulness and account/API unknowns. No hosted trace, account change, jobs, private-content upload or additional inference; lifetime provider calls remains 1. Next: primary review Argon A, then B and owner-selected hosted account/region/sharing/budget before activation. Core runtime bridge remains separate.
+## 2026-11-01 — Argon runtime Part 1 intake (5e4r1)
+
+Received and preserved Argon's Part 1 response. Extracted complete design and acceptance documents, checked key claims against `ObservationStore` and the public Docker scoring entrypoint, and recorded six required corrections in `docs/reviews/argon/registered-runtime-v1/PRIMARY-REVIEW.md`. Prepared the Part 2 addendum and exact-source supplement for 11 omitted helpers. Part 1 supplied no implementation or executed tests. No provider, sponsor, Docker, or Git action was taken. The one-call live permit remains consumed; registered benchmark execution remains gated.
+
+## 2026-11-01 — Interrupted runtime Part 2 intake (5e4r2)
+
+Extracted complete Argon coordinator and five complete tests into the review folder. Coordinator compiles/imports; Ruff reports eight findings. A temporary offline run of those five tests produced five setup errors from frozen Stage B v1 `workspace_artifact_mismatch`; the temporary production files were removed. Identified Docker cleanup verification after terminal settlement, an unsafe ordering. No scorer diff or runtime coordinator was accepted into production. Prepared a focused continuation prompt. No paid, Docker, or Git action.
+
+## 2026-11-01 — Runtime Part 2 completed locally (5e4r3)
+
+Reviewed the complete Argon follow-up, preserved source proposals, and corrected mismatched APIs/diffs, nonexistent synthetic helpers, invalid demo import, exact-type adapter tests, consumed-scorer reuse and empty-skip fixture assumptions. Integrated `dojo/bench/runtime_bridge.py`, guarded candidate/baseline receipt return in `dojo/eval/docker_scoring_v2.py`, and `scripts/runtime_bridge_demo.py`. Removed the proposed incomplete fake patch parser; explicit scripted snapshots must agree with the patch through existing restoration validation. Scorer identities bind to the actual restored archive/image/harness. Required cleanup happens before both terminal writes, with unknown cleanup/usage fenced.
+
+Measured verification: **124 passed in 99.49 seconds** across runtime, synthetic bridge, Docker-scorer mocks and candidate outcomes; **35 passed in 76.40 seconds** across the existing observation journal and representative bound-plan/execution-intent/attempt regressions. Ruff passes for all eleven changed Python files. The no-network demo completes source-fix, protected-test-edit and baseline-attributed-error scenarios using fictional ledgers and canned receipts. These are diagnostic outcomes, not model performance or executed tests inside Docker.
+
+Frozen Stage B v1 artifacts remain intact. Existing host tests now create a current temporary snapshot instead of requiring current source to equal historical hashes; unit fault cases explicitly cache previously verified expected bytes. No real provider/Docker/sponsor call, spending, permit reset, Git write or registration approval occurred. Next: reviewed current runtime source inventory and versioned registration, explicit cooperative scorer scope, then separately authorized genuine execution. See docs/runtime-bridge.md and docs/reviews/argon/registered-runtime-v1/PART2-INTEGRATION-REVIEW.md.
+## 2026-11-01 — Focused frontend handoff and runtime source checkpoint
+
+Replaced vague frontend Batch A instructions with a self-contained file-access workspace at docs/reviews/frontend-agent. Nine exact source snapshots total 228,956 bytes, independently hash-verified against the current dashboard. AGENTS.md restricts writes to outputs/; ASSIGNMENT.md fixes the navigation prop API, four deliverables, six interaction cases, exact section map, state-loss caveat and visual/accessibility constraints. START-HERE.md supplies the prompt. The agent should open this dedicated folder; source snapshots are sufficient for this bounded task. Folder instructions are behavioral controls; actual tool permissions should also restrict edits when supported. No frontend application code changed.
+
+Completed 5f3d: shared literal inventory covers 65 static local runtime/import files and package initializers. Runtime checks now hash exact bytes using the bounded link-refusing reader; preflight binds the same inventory. New data/development/stage-b-preflight-v2 snapshot created and independently checked with fingerprint c27019cbbfa894a3a545636f698f0d8a49766fb52db55e2f4f66d6e26f44a469. Historical v1 preserved. All approval/live/publication flags remain false; 63 tasks/252 candidate cells are unapproved metadata only.
+
+17 inventory/preflight tests pass in 40.70 seconds; 52 synthetic runtime/scorer regressions pass in 3.22 seconds. Ruff passes. No provider/Docker/sponsor/spending/Git write. Next primary task 5f3e addresses final runtime/environment binding in solver/cache identity before genuine evaluation; frontend proposal 10k1 proceeds independently.
+## 2026-11-01 — Runtime/cache identity and host metadata (5f3e1–5f3e2)
+
+Aligned runner scaffold identity with the shared static coordinator import inventory, now 66 source files. Exact bounded/link-refusing file reads replace the old shorter normalized source list. New private canonical metadata records Python implementation/version/platform/architecture, required distribution version labels and hashes of pyproject.toml/uv.lock; no environment variables, executable paths, machine/user names or keys are collected. BoundPlan independently rejects stale scaffold or mismatched metadata. Source/environment rechecks fence preparation and runtime drift; old execution records remain intact and model repricing does not change solver identity.
+
+Initial combined check: 91 passed, seven runtime settlement tests failed because artifact canonicalization adds a newline while identity canonicalization does not. Corrected the final comparison to use the identity serializer. Final focused verification: **11 cache-identity tests passed in 1.50 seconds**, and **32 affected runtime/synthetic tests passed in 142.45 seconds**, including stale/unknown environment fencing, prior-record preservation, cleanup and settlement failure behavior. Ruff passes. The earlier combined run also passed the runner, bound-plan and static-source suites; no full repository suite rerun is claimed.
+
+Created/independently checked final data/development/stage-b-preflight-v4; fingerprint efb7f69e653aae3fa00d8dea7401a7e3ea205123cd9a780e37895378286eae50. Earlier v1-v3 preserved. It remains unapproved metadata for 63 tasks/252 candidate cells, with every live/registration/execution/publication flag false. No provider, sponsor, Docker, paid call, permit reset or Git write. Source-checkout host metadata is not proof of loaded third-party code or image identity; actual environment/scorer-scope/registration review remains 5f3e3/4j. Full profile retention for genuine execution remains part of that protocol. See docs/runtime-cache-identity-v2.md.
+## 2026-11-01 — Frontend navigation review and larger follow-up (10k1/10k2)
+
+Read all four file-access agent outputs. The controlled native-button component follows the assignment and is usable; it is too narrow a deliverable to rank a complete website against the earlier Argon implementation. Primary accepted component/test source, improved the custom aria-controls test, used stable button weight and a compact two-column mobile layout, and removed unnecessary CSS. Corrected the integration-note suggestion of visibility:hidden, which would leave layout gaps. Added the component to source-hygiene coverage. App.jsx remains unchanged; actual view wiring stays in 10k2 and no full visual/browser validation is claimed.
+
+Necessary verification only: 10 component behavior tests and 12 source-hygiene tests pass (22 total, 1.99-second Vitest duration). Production build passes (5.78 seconds), retaining the existing >500-kB bundle advisory; no warning threshold or network policy changed. No backend/statistics tests were run for this component change.
+
+Prepared a larger three-work-package Batch 2 proposal: view grouping/compact dataset controls/persistent evidence warnings; preserved mounted state and focus; exact affected App test updates. BATCH-2.md specifies four complete output diffs/notes, output-first interruption handling and no direct application edits. START-HERE.md has the current prompt. context-batch2/ contains exact current source and synthetic test fixtures with a verified manifest; original snapshots/outputs preserved. Recommend continuing with the file-access agent for bounded implementation, with Argon later reviewing rendered UX and larger product decisions instead of a competing App rewrite.
+## 2026-11-01 — Read-only environment evidence (5f3e3a)
+
+Implemented standalone dojo.bench.environment_audit, outside the execution coordinator import graph. It checks fixed package entrypoint origins/RECORD hashes and inspects only the two reviewed image IDs on the fixed local daemon. Fixed error/status output excludes package paths and exception text; unknown results do not grant trust. 8 targeted tests pass in 0.07 seconds and Ruff passes. No unrelated backend/frontend suites rerun.
+
+Actual read-only collection: PyYAML/openai/typer entrypoint RECORD hashes match; loaded PyYAML origin matches, openai/typer loaded-origin status remains unknown. Both configured image IDs match locally. Report saved exclusively to ignored data/runtime/execution-environment-audit-v1.json. Zero containers started, image pulls, provider/sponsor calls or spending. This is limited evidence, not whole-environment authentication or registration/scorer-scope approval. All authority flags stay false. Existing v4 source checkpoint remains current; see docs/execution-environment-evidence.md. Parent 5f3e3/4j/6 admission gates remain open work.
+## 2026-11-01 — Four-view frontend integrated; allocation review
+
+Reviewed all four Batch 2 outputs. Exact proposal application was refused because source context was ambiguous/mismatched; adapted the useful additions manually against current source. App now opens on Overview and provides Compare, Runs and Method. All view subtrees remain mounted with a scoped hidden rule, preserving run filters/page/selection and comparison state. Explicit dataset reset retains existing state-reset semantics. Dataset controls use a native Change dataset disclosure; status/source labels and critical restrictions remain available across views. Removed duplicate Method notices and kept a single persistent warning/denominator region. Intro copy is simpler; parsers, math and backend code unchanged.
+
+Verification scoped to changed UI: initial run had 46 passes and one faulty proposed negative-text assertion. Strengthened that case to actually change filter/page/selection and verify navigation focus/reset; corrected primary's initial accessible-name lookup. Other 24 App tests passed in the intervening run, and the final corrected case passed independently (0.744 seconds). Navigation/hygiene checks remain passing; production build passes (5.84 seconds), with the existing large-chunk advisory retained. No backend/statistics reruns. Actual browser chart sizing/reflow remains 10k4, not claimed from jsdom.
+
+Backend mega-packet request evaluated: keep coupled execution/accounting/registration implementation in primary, using Argon for focused independent review of stable boundaries. Prior web-agent runtime output was useful for design but needed substantial API/diff/test correction, so no unsubstantiated speedup or broad backend rewrite delegated. LangSmith/Toloka/Tendem remain outside this work. Rationale and critical path in docs/backend-work-allocation.md.
+
+Prepared moderate frontend Batch 3 with only shell CSS and introductory copy; three bounded output files, six exact source snapshots and a small copy excerpt. Current prompt is in docs/reviews/frontend-agent/START-HERE.md; BATCH-3.md is active. Original proposals/snapshots preserved. Primary review notes and dashboard README updated. No external service activation, spending or Git write.
+
+## 2026-11-01 — Candidate-panel composition audit (7b1)
+
+Added `dojo.bench.panel_composition.inspect_candidate_panel` as a read-only aggregate audit of a host-verified Stage B candidate snapshot. Current v4 has 63 tasks: 37 train and 26 held out. Kinds by split: train 27 bug fixes, 5 feature requests, 3 API changes, 2 compatibility restores; held out 23 bug fixes, 2 feature requests, 1 API change. No issue fingerprint repeats; six source-archive hashes are reused within a split, none across splits. Source-archive reuse does not prove task duplication. The output omits task IDs and outcomes and keeps registration/execution/publication false. One focused test passes (8.49s); Ruff passes. No frozen artifact changes, provider call, container run, Git write or spend. Remaining 7b work is outcome-based family sensitivity and mixed-kind results once eligible evidence exists.
+
+## 2026-11-01 — Solver transfer review (7e1)
+
+Added one host-prepared Click regression and `docs/solver-transfer-boundary.md`. The checked `SolverInput` has only issue text and original source archive; evaluator-restored archive differs at one path. The offline codec request contains only system policy and issue text, and docsearch remains disabled. Reviewed feedback, local trace and private observation paths and documented their limits. The focused test passes (6.98s; 15 other cases deselected). No live provider, container, paid call, registration, publication or Git write. Full 7e still requires editorial semantic leak review and a genuine-runtime canary/transfer check after its gates are met.
+
+## 2026-11-01 — Offline observation panel audit (5f3f)
+
+Added `dojo.bench.panel_journal_audit.audit_observation_panel`, a bounded read-only comparison of the exact host-verified 252-cell candidate plan against the immutable v6 journal. It counts missing, duplicate, unexpected, foreign-snapshot, orphan, unsettled and invalid-scoring diagnostic attempts without choosing a winner. A settled fictional attempt still leaves 251 cells missing; a separate parent claim without intent is counted as an orphan. Two focused tests pass (29.97s). No provider, container, network, spend, replay, registration, public promotion or Git write. This audit does not establish genuine execution provenance; see docs/observation-panel-audit.md.
+
+## 2026-11-01 — Loaded dependency entrypoint check (5f3e3b)
+
+Added a separate fixed-import local diagnostic for PyYAML, openai and typer. All three loaded top-level origins and installed RECORD hashes match in the audit process. Three focused tests pass (0.05s), Ruff passes; exclusive-create sanitized report saved under ignored `data/runtime/loaded-dependency-audit-v1.json`. This resolves the earlier top-level loaded-origin unknowns only in this process. It does not authenticate transitive modules, the interpreter, future execution or images, and every authority flag remains false. No provider, sponsor, Docker, paid call or Git write. See docs/loaded-dependency-evidence.md.
+
+## 2026-11-01 — Website launch path and static bundle audit (8g1)
+
+Confirmed the dashboard's package.json and installed dependencies under `dashboard/`. The exact root-level command is `npm.cmd --prefix .\dashboard run dev`. A separate server was already listening on loopback port 5173 and returned the Dojo development page with HTTP 200; no process was stopped or replaced. Added `scripts/audit_dashboard_bundle.py`, a read-only check for the built site's fixed file shape, source maps, known private markers, offline CSP and synthetic disclosure. The existing two-asset build passes; five focused tests pass (0.15s) and Ruff passes. This does not provide whole-project secret clearance, actual browser QA or deployment approval. No provider call, spending or Git write; docs/dashboard-bundle-audit.md.
+
+## 2026-11-01 — Public provider-boundary review (6g1)
+
+2026-11-02 (5f3h1–5f3h3): per-turn private capture integrated into optional
+synthetic owned coordinator, before-send request retention, response-before-
+decode retention and seal-before-settlement enforced. Fifteen capsule, four
+capture (including abrupt child exit), thirteen synthetic coordinator and 41
+runtime/cache/source/report compatibility checks pass across scoped runs. Actual
+capture-enabled Docker matrix passes twelve cases; ten sealed capsules and two
+timeout-only pending captures independently verified. Runtime inventory is 68
+files. v5 preflight created and independently checked: fingerprint
+7147145cda5ddf47cf4172a8f9abc0dbed25ad752350b3cabd7638d75e0737a2,
+all live/registration/execution/publication flags false, earlier snapshots kept.
+No provider calls or actual private transcripts. An inline shell quoting failure
+was resolved using structured multiline input. Owner now requests complete
+continuation/demo handoff and explicitly authorizes cumulative private Git push.
+
+2026-11-02 (5f3g/5f3g1/5f3g2): added bounded private evidence capsule storage
+with expected attempt/intent identity, fixed transcript/patch/scorer/baseline
+filenames, exclusive creation, per-file fsync and canonical manifest written
+last. Verification uses bounded/link-refusing reads and exact retained hashes;
+summary excludes raw data and all authority flags remain false. Snapshot caller
+map before validation/writes. Fifteen focused synthetic tests pass (0.31s), Ruff
+clean. Documented plaintext/Windows-ACL and durability limits plus missing
+per-turn/host-transport/journal/scorer integration. New module is outside runtime
+import graph; v4 source snapshot unchanged. No real keys/evidence collected,
+provider calls, spending, container runs, deployment or Git writes.
+docs/private-evidence-retention.md.
+
+2026-11-02 (10k4c/10k4d): explicit 12-pair CSS contrast check passes with a
+minimum 7.7095:1; independent arithmetic oracle test passes (0.04s). Actual
+native disclosure, Tab/Shift+Tab/Enter view navigation pass across four widths.
+Corrected debugger Enter character delivery and confirmed against a native
+button control rather than altering app behavior. Four-view 200% root-font
+reflow has no horizontal overflow at 375/1440px (eight cases); private v9
+report/screenshots retained, narrow screenshot inspected. Ruff and JS syntax
+checks pass; local launcher confirms active Dojo server. No production app code,
+dependencies, paid calls, deployment or Git writes changed. Native browser zoom
+and full manual accessibility scope remain open; frontend-text-keyboard-check.md.
+
+2026-11-02 (14a8/10k4b): diagnosed unreachable website as no local server
+listener. Started loopback-only Vite and verified HTTP 200 plus Dojo title.
+Added root start-dashboard.cmd/serve_dashboard.py; actual invocation detects
+and reuses the active server without a duplicate process. Documented setup and
+local-only availability. Browser v7 now uses actual ArrowRight events: tables
+scroll at 320/375/768px and fit at 1440px, retaining visible 3px keyboard focus
+at every width. No app/math/data changes, package installs, model calls,
+deployment or Git writes. docs/local-preview.md; cleanup inventory updated.
+
+2026-11-02 (10k3b/10k4a): completed responsive grid/table containment, empty/error
+recovery guidance, pagination announcements, selected-off-page explanation and
+details focus/return (including disconnected-row fallback). Shortened bundled
+labels. 50 affected UI/navigation/hygiene checks pass; final fallback separately
+passes 3 affected cases. Final build 5.84s, static bundle audit passes. Real
+Chromium emulation checks 16 view/width combinations at exact 320/375/768/1440,
+chart rendering, focus and native 44px disclosure. Corrected initial window-clamp
+verification mistake, fixed reproduced 320px Method overflow via limitation
+wrapping, and hid the debug result element for clean screenshots. Final v6
+private screenshots/report retained; mobile/desktop Compare visually inspected.
+No data/math/backend changes, packages installed, paid calls, deployment or Git
+writes. Manual screen-reader/contrast/zoom/cross-browser checks remain open.
+docs/frontend-acceptance-2026-11-02.md and cleanup inventory updated.
+
+2026-11-02 (10k3a / plan reconciliation): read all available frontend Batch 3
+outputs and adapted scoped shell CSS/copy. Retained native summary marker,
+44px target and readable mobile text, rejected flex-marker risk and introductory
+jargon, corrected literal question-mark separators. Production build passes
+(6.18s), static bundle audit passes, all 12 existing hygiene tests pass (36.18s).
+No parser/data/backend changes; browser validation remains open. Corrected stale
+7d/9g/10i/14a parent descriptions and superseded outdated external-agent queue
+prompts. Added docs/remaining-work.md. Approximate completion remains a judgment,
+not a row/test-count metric. No paid calls, deployment or Git writes.
+
+2026-11-02 (14a6/14a7/10g1): reconstructed a separate Python 3.12.7 environment
+with 31 locked packages from cache and verified installed-wheel CLI/free-plan/
+analysis with socket connects denied. Package origins are within the new
+environment, user-site disabled. Initial default 3.14 reconstruction hit a cache
+miss and was preserved. Separate fixed website-source copy installs 196 locked
+npm packages offline with scripts disabled; production build passes (5.62s),
+bundle audit passes and output matches existing build bytes. Existing large
+chunk/deprecation warnings retained. No downloads, model spending, original
+dependency-directory mutation, deployment or Git writes. Same-machine cached
+setup evidence only; docs/isolated-setup-check.md.
+
+2026-11-02 (14a3/14a4/14a5): final current wheel built offline with cached
+isolated tooling; 131 entries audited, Apache license matches, every one of 126
+Python source files matches checkout bytes. Separate --no-deps/--no-index target
+passes installed import/version/free-plan/synthetic-analysis smoke under Python
+-I with socket connects denied. Initial smoke report-nesting assertion corrected;
+no report schema change. README stale no-model-request/explorer-pending claims
+fixed, website root command and checkout/wheel limitations documented. Final
+wheel SHA-256 0f99a1d3a9a2a1cccd03e4fdf81802707fb5b659d2916e576f30ac31c03d4ae3.
+Earlier artifacts preserved; existing virtualenv dependencies mean this is not
+fresh-machine reproduction. No provider calls, downloads, publication, global
+environment changes or Git writes. docs/release-wheel-check-v2.md.
+
+2026-11-02 (5e4r7): completed the repeatable twelve-case real local Docker
+matrix across both synthetic scoring profiles, including passing visible tests
+with failed evaluator scoring. Final exclusive report
+data/runtime/local-runtime-matrix-v2.json independently checked for all twelve
+unique cells, cleanup, zero-provider flags and selected-source hashes; Git-ignore
+confirmed. Historical v1 retained after final report safeguards were added.
+Two focused report tests pass (0.10s), Ruff clean. An initial CLI syntax error
+was corrected before any matrix execution. No model spending, source-runtime
+changes, frozen artifact edits or Git writes. docs/local-runtime-acceptance.md.
+
+2026-11-02 (5e4r6a/5e4r6b): actual local protected-test tampering remains
+failed/unsolved after restoration; actual local command timeout stops before
+scoring with uncertain accounting and unknown settled cost. Both pass cleanup.
+Scripted replies only, zero provider calls or spending. Updated the rehearsal
+script and docs/local-runtime-rehearsal.md. No frozen/runtime sources or Git writes.
+
+2026-11-02 (5e4r5a/5e4r5b): actual local Docker source-fix scenario passes
+scoring with a nonempty patch; deliberate syntax-error scenario yields
+candidate_error/unsolved with baseline_verified=true. Both settle fictional
+accounting and pass container cleanup. Each uses one real sandbox command and
+two scripted replies, with independent temporary stores. No provider calls,
+credit spending, publication approval or Git writes. See local-runtime-rehearsal.md.
+
+2026-11-02 (5e4r4a/5e4r4b): completed actual local Docker runtime rehearsals
+using scripted model replies. Fake solver plus real scorer and real solver plus
+real scorer both correctly reject the unchanged broken fixture, settle fictional
+accounting and pass cleanup. The real solver path executes one command in a
+container and consumes two scripted turns. Corrected fictional expiry and
+selector setup mistakes; final runs pass and scoped Ruff passes. Zero provider
+calls, spending, image pulls or Git writes. docs/local-runtime-rehearsal.md.
+
+2026-11-02 follow-up (5f3f2): verified actual malformed SQLite refusal through
+the panel-audit command without mocking its implementation. Original bytes
+remain unchanged and the output excludes the private fixture marker. All three
+CLI cases pass (1.89s). Corrected stale parent 6e language: the historical probe
+has run and its permit is consumed. No additional paid call or Git write.
+
+Follow-up 2026-11-02: interrupted `git diff --check` completed successfully.
+Added 5f3f1 read-only observation-panel CLI with explicit snapshot/store paths,
+missing-file refusal and sanitized failures. Two focused tests pass (0.05s),
+Ruff clean. No database initialization, paid call, live unlock or Git write.
+
+Checked Nebius's current public quickstart, rate-limit, cache and documentation-index pages before attempting a genuine multi-turn provider adapter. The offline bridge's `fictional_prompt_units` is not a verified serving-token bound. Public pages document the OpenAI-compatible endpoint, dynamic throttling and best-effort cache discounts, but the reviewed pages did not establish a provider-guaranteed count for Dojo's exact model/template request. Recorded the distinction in docs/provider-live-boundary-review-2026-11-01.md and kept 6g2 gated. No code path was unlocked, key/account queried, model called, Docker container started, credit spent or Git write performed.

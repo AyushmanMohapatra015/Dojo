@@ -76,6 +76,21 @@ def test_unhealthy_baseline_stops_attribution(task, monkeypatch):
     assert len([entry for entry in calls if 'rm' in entry[0]]) == 2
 
 
+def test_raw_api_retains_candidate_and_only_required_baseline(task, monkeypatch):
+    contract, _, base = task
+    candidate, baseline = diagnostic(contract, bad=True), diagnostic(contract)
+    mock_transport(monkeypatch, contract, [candidate, baseline])
+    result = runner.run_development_score_raw(contract, snapshot_archive(base), '')
+    assert result.score.envelope == candidate
+    assert result.baseline_envelope == baseline
+    assert result.score.status == 'candidate_error'
+    assert result.score.baseline_verified
+    mock_transport(monkeypatch, contract, [baseline])
+    ordinary = runner.run_development_score_raw(contract, snapshot_archive(base), '')
+    assert ordinary.baseline_envelope is None
+    assert ordinary.score.status == 'failed'
+
+
 def test_corrupt_report_does_not_trigger_baseline_or_become_failure(task, monkeypatch):
     contract, _, base = task
     raw = diagnostic(contract, bad=True)

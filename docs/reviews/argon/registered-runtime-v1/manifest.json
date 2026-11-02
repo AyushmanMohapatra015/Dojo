@@ -1,0 +1,272 @@
+[
+  {
+    "path": "dojo/bench/runner.py",
+    "bytes": 14264,
+    "sha256": "7da10e09ea53841c30d98c77c8584cf6c3de77e64b3656d1f6ba7ec511871d4e"
+  },
+  {
+    "path": "dojo/bench/execution_intent.py",
+    "bytes": 3367,
+    "sha256": "3f53e7d3e25b34196fc4bf190577634496ac1326d0ab7cf8f524e22a00d655d0"
+  },
+  {
+    "path": "dojo/bench/bound_plan.py",
+    "bytes": 3655,
+    "sha256": "352fda7e1e063fdc3b2dfbd4bb9290866e906442bdb8f45f0d5e1f0f7dcb0b34"
+  },
+  {
+    "path": "dojo/bench/registration_artifacts.py",
+    "bytes": 17424,
+    "sha256": "4d31f31e9ff30f68f2172e6113b246e133399877b8c1d217ab34f9d1e3c4b4a0"
+  },
+  {
+    "path": "dojo/bench/registration_preflight.py",
+    "bytes": 13193,
+    "sha256": "10a38aeef0aa85eadbdc9cc787a3b7ba623fb29c65ac2da7ef632e1063a93fa2"
+  },
+  {
+    "path": "dojo/bench/registration.py",
+    "bytes": 2919,
+    "sha256": "e0fbb56785763763e55dcbd16f0bffcdf15a313a7c1c0f0c15aad9ad335bc797"
+  },
+  {
+    "path": "dojo/solve/agent.py",
+    "bytes": 8702,
+    "sha256": "875fa5e42a5e4150068ff8930113a2ed9b9cf017c6b6905bb7afdde08cf307f2"
+  },
+  {
+    "path": "dojo/solve/contracts.py",
+    "bytes": 5505,
+    "sha256": "2a503a69d35f9f963e7bace73551c6a40ea42e59bcb130086885afee8b5a9b9a"
+  },
+  {
+    "path": "dojo/solve/model.py",
+    "bytes": 2281,
+    "sha256": "deacbacb8d7921eaac545e68981010d870e34efa8d84a12e1fbc75667d83d201"
+  },
+  {
+    "path": "dojo/solve/run_settings.py",
+    "bytes": 4281,
+    "sha256": "6f3d072a28b1d7091e4a7861d5edd607c23d7aeb4fe2aba5aaf5f4546ea6cf94"
+  },
+  {
+    "path": "dojo/solve/signals.py",
+    "bytes": 300,
+    "sha256": "34fe81d0b1e38aed16c8a2073f315f6cb77545158a08cae104da51c075faf9c0"
+  },
+  {
+    "path": "dojo/solve/sandbox.py",
+    "bytes": 2751,
+    "sha256": "c4f2f59b64b8ba4cfd9bdace4fb972586696c06c1e958bcbd4138292c3f4fbe9"
+  },
+  {
+    "path": "dojo/solve/task_view.py",
+    "bytes": 5969,
+    "sha256": "e4957b53c88458718e518a76bb96cf3c2ea4ca6d6c806b61dc7ce219f50be4ce"
+  },
+  {
+    "path": "dojo/solve/input_guard_v2.py",
+    "bytes": 9183,
+    "sha256": "c1df7aced4e89c7e6851ccde142b322e73e0081140b652cc2ec7add9b8ba6185"
+  },
+  {
+    "path": "dojo/solve/profiled_sandbox.py",
+    "bytes": 6185,
+    "sha256": "147f5104e7ea812655962148b396aa70a7214906a1c204c718c889f47b6c2f34"
+  },
+  {
+    "path": "dojo/solve/docker_sandbox.py",
+    "bytes": 14915,
+    "sha256": "cabc7e221015592d7624d5f6d1508cc39442e136fc947a83eecdc4f0b17f7be3"
+  },
+  {
+    "path": "dojo/solve/adaptive.py",
+    "bytes": 15387,
+    "sha256": "91f7da01c25db50547cefd6f4ed829e04861aca371bb0b22d5b9f261110f7429"
+  },
+  {
+    "path": "dojo/solve/owned_adaptive.py",
+    "bytes": 9949,
+    "sha256": "ab5701a35ddc7e976f9af782d0b408f201c32b32939b83590517545cdeeb4502"
+  },
+  {
+    "path": "dojo/providers/nebius_codec.py",
+    "bytes": 30045,
+    "sha256": "0ce5381176831f9a794d37fa5f76e39f5ab949eb4111ad8d5b1a73770b1cbfd8"
+  },
+  {
+    "path": "dojo/providers/fake_session.py",
+    "bytes": 22656,
+    "sha256": "53f8550f61a2f4d7578d616fc7b7ed258b62962f01c4afbf12722147563dddc3"
+  },
+  {
+    "path": "dojo/providers/call_limit.py",
+    "bytes": 912,
+    "sha256": "36ebc4bfae41e0160741f65e9f5fd8e08ae9c8f2f41277a80537084703e0ec72"
+  },
+  {
+    "path": "dojo/store/observations.py",
+    "bytes": 17459,
+    "sha256": "46bdebb9b9e7f3ffdb3e2609342dd96c32f3ef5487120aa35aeb4836aadb36e9"
+  },
+  {
+    "path": "dojo/store/intent_attempts.py",
+    "bytes": 6411,
+    "sha256": "51310c731367edf39ae0c03b5f97151fe90d9da94fb152d60b71d58031fd5dd6"
+  },
+  {
+    "path": "dojo/store/attempts.py",
+    "bytes": 17032,
+    "sha256": "f07944b268215842e500ba2f17fdca48dd8ee421fae3db4e4561a74af0c8ba93"
+  },
+  {
+    "path": "dojo/store/db.py",
+    "bytes": 4588,
+    "sha256": "ece2155a6ea3060eb53d441680bfd1a85d34697cfa83aec500cc560bf8303d52"
+  },
+  {
+    "path": "dojo/store/credits.py",
+    "bytes": 11565,
+    "sha256": "7263fc79f9645a59083b991114c1821388dc4df43f9199c7245aa3bc493c44b0"
+  },
+  {
+    "path": "dojo/store/identity.py",
+    "bytes": 26481,
+    "sha256": "42acc8f7cddad1b81aa4c4d7f8e58d7a27fa914440f41348f6b69329ad4bd9c3"
+  },
+  {
+    "path": "dojo/store/records.py",
+    "bytes": 13287,
+    "sha256": "1d9e8dcaa67a2c8c6d2e474856e4380403c003e2d8a713313bc1ef939d4dcf15"
+  },
+  {
+    "path": "dojo/store/bindings.py",
+    "bytes": 11376,
+    "sha256": "2bc4663b6e56ec6bb597870299233eac5ec0549de5834bb62df8ed134e4d02aa"
+  },
+  {
+    "path": "dojo/store/schemas.py",
+    "bytes": 2318,
+    "sha256": "d54eb307a4739df8bc942e9f0a2269738a4eeea7c5516ab64790dc50c6fb5027"
+  },
+  {
+    "path": "dojo/store/schema_v1.py",
+    "bytes": 8184,
+    "sha256": "81618419321e36fc97f171dcdb9298c3bfbab3606620d1ed040f9c639b04436a"
+  },
+  {
+    "path": "dojo/store/schema_v2.py",
+    "bytes": 2166,
+    "sha256": "b676b74c7de608d519cc38bb357951a0776c0033d35b8fa19e72dc4592e7beb6"
+  },
+  {
+    "path": "dojo/store/schema_v4.py",
+    "bytes": 3863,
+    "sha256": "c8b20b6e34864f3ec55fc88b91991c942c63d0968307d24292a9ced454d1ff47"
+  },
+  {
+    "path": "dojo/store/schema_v5.py",
+    "bytes": 1206,
+    "sha256": "62b78c1af6d00e78dd741fa702e223e0668727205dddc7afa9798c25b03e7b4e"
+  },
+  {
+    "path": "dojo/store/schema_v6.py",
+    "bytes": 1473,
+    "sha256": "f8242e1cb08cfe34a154d733ad64e8a71561f9edf83de9fa54c44eef94a6b445"
+  },
+  {
+    "path": "dojo/eval/scoring_contract.py",
+    "bytes": 10548,
+    "sha256": "2a3033fda3f283d23bd311c30d32f274d2befaad7037d3dfd4287b675a70b0ed"
+  },
+  {
+    "path": "dojo/eval/candidate_outcomes.py",
+    "bytes": 5513,
+    "sha256": "0edbd048a0890756447d53fdb3f0b098bc42dd8d80d89c901c387346c535eac3"
+  },
+  {
+    "path": "dojo/eval/docker_scoring.py",
+    "bytes": 6839,
+    "sha256": "e3e4625f129fc14ef5ec6a78a15232cad820d198e9bcda52f3bac0ae3c022c76"
+  },
+  {
+    "path": "dojo/eval/docker_scoring_v2.py",
+    "bytes": 7100,
+    "sha256": "593fbfd204f27b3d2825481246981e66c6f917dd96240c4d403d6e428249b363"
+  },
+  {
+    "path": "dojo/eval/flow_development.py",
+    "bytes": 6817,
+    "sha256": "66a8300f732b27f6aa208f5a0217b09454fc2ed79d6257d5fc6b5b60ee7bfc71"
+  },
+  {
+    "path": "dojo/eval/contract_development.py",
+    "bytes": 7847,
+    "sha256": "45576e3fa4779e02dc6ca6417c497878d5d5279bda7185a878eb1dbe65393d08"
+  },
+  {
+    "path": "dojo/backends/local_docker.py",
+    "bytes": 6791,
+    "sha256": "11b66cc507762aa04204a377afd766b316c7789f63da5422d7789c80c187ee71"
+  },
+  {
+    "path": "dojo/backends/receipt_v2.py",
+    "bytes": 3350,
+    "sha256": "94d95287d5499b02c6e248fc7fa37e42b3cba6cd2a7a0cd7893e2349696473e4"
+  },
+  {
+    "path": "tests/test_observation_journal.py",
+    "bytes": 14627,
+    "sha256": "41bf982202cb388cee11343715eff5405e313a1fc040b0634a28f2b08f1be1d1"
+  },
+  {
+    "path": "tests/test_intent_attempts.py",
+    "bytes": 5511,
+    "sha256": "89a7d400717da4cb9a388f0bdec0aa1780164b7802dd58d9a4a2467b7953f421"
+  },
+  {
+    "path": "tests/test_bound_plan.py",
+    "bytes": 2946,
+    "sha256": "bff8103cef6670f66cff14cc2e45b9718306e3939692b8e64b02792c4a596194"
+  },
+  {
+    "path": "tests/test_owned_adaptive.py",
+    "bytes": 19137,
+    "sha256": "bc270eb0eb146ffee67403813efc9162cb1c9938728893e18f6525b64f6d1ce9"
+  },
+  {
+    "path": "tests/test_solver_flow.py",
+    "bytes": 2909,
+    "sha256": "f529b17fcfb53fdb16345054433c678398c88f8abaab54706168cd82047d8dc9"
+  },
+  {
+    "path": "scripts/observation_journal_demo.py",
+    "bytes": 3537,
+    "sha256": "5bf9b7f14bded7ef75653f853352a0592c517754a566569e23551a40f3cdcce1"
+  },
+  {
+    "path": "docs/observation-journal.md",
+    "bytes": 5462,
+    "sha256": "517b3231407f2d00e1bfd6bba0564cc2edb3c59dabbf71c8acae4ece402cb11a"
+  },
+  {
+    "path": "docs/bound-execution-plan.md",
+    "bytes": 2166,
+    "sha256": "a89bc0e40884f553c15a2bbe6eaccea60bbb1836532c0597b7bfc11f3dce7f27"
+  },
+  {
+    "path": "docs/scorer-acceptance-matrix-v1.md",
+    "bytes": 5696,
+    "sha256": "347dda7207c5700e96a6bf2c1c08fb360d3c0ce459f9c6dd1ba8a50b619dac86"
+  },
+  {
+    "path": "docs/stage-b-registration-draft.md",
+    "bytes": 3243,
+    "sha256": "694f7e37476678d37c82d1a320072236746ffc871b70af57ddb926fbe6391824"
+  },
+  {
+    "path": "docs/supervised-probe-result-v1.md",
+    "bytes": 2443,
+    "sha256": "5f6da42ec9ba195be84a91aa15d79412b55c6d56fd528b480d41c45e6e508ff6"
+  }
+]

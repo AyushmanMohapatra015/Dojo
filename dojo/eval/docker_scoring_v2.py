@@ -12,7 +12,6 @@ from dojo.backends import local_docker as legacy
 from dojo.backends.receipt_v2 import ReceiptV2
 from dojo.eval import docker_scoring as v1
 from dojo.eval.candidate_outcomes import (
-    CandidateDecision,
     assess_candidate,
     baseline_is_operational,
 )
@@ -117,7 +116,7 @@ def _execute(contract, archive, *, deadline):
             raise RuntimeError('Scoring container cleanup failed; stop')
 
 
-def run_development_score(contract, candidate_archive, patch, *, timeout=60):
+def run_development_score_raw(contract, candidate_archive, patch, *, timeout=60):
     if not contract.task_id.startswith('synthetic_'):
         raise ValueError('Benchmark scoring remains locked pending Stage B review')
     if (contract.source_prefix, contract.collector_protocol, contract.image_id) not in PROFILES.values():
@@ -140,13 +139,30 @@ def run_development_score(contract, candidate_archive, patch, *, timeout=60):
     envelope = _execute(contract, archive, deadline=deadline)
     decision = assess_candidate(contract, envelope, image_id=contract.image_id)
     verified = False
+    baseline = None
     if decision.status == 'requires_baseline':
         baseline = _execute(contract, contract.restored_archive, deadline=deadline)
         if not baseline_is_operational(contract, baseline, image_id=contract.image_id):
             raise RuntimeError('Operational baseline is unhealthy or uncertain; stop')
         verified = True
-        decision = CandidateDecision('candidate_error', decision.reason, decision.phase, 'unsolved')
-    return CandidateScore(decision.status, decision.reason, decision.phase, decision.candidate_outcome,
+    status = 'candidate_error' if verified else decision.status
+    outcome = 'unsolved' if verified else decision.candidate_outcome
+    score = CandidateScore(status, decision.reason, decision.phase, outcome,
                           verified, contract.image_id, hashlib.sha256(harness(
                               contract.collector_protocol).encode()).hexdigest(),
                           hashlib.sha256(archive).hexdigest(), envelope)
+
+    return RawCandidateScore(score, baseline)
+
+
+@dataclass(frozen=True)
+class RawCandidateScore:
+    """Private candidate and conditional baseline receipts from the guarded scorer."""
+
+    score: CandidateScore
+    baseline_envelope: dict | None = field(repr=False, default=None)
+
+
+def run_development_score(contract, candidate_archive, patch, *, timeout=60):
+    """Preserve the existing public score interface and all execution guards."""
+    return run_development_score_raw(contract, candidate_archive, patch, timeout=timeout).score

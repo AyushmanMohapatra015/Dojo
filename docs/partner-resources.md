@@ -1,5 +1,16 @@
 # Builder partner resources and integration decisions
 
+## Current fast-track work (2026-10-22)
+
+See [the owner handoff guide](fasttrack-agent-guide-v1.md). Argon is assigned
+fake-first NVIDIA/Nebius response/accounting work plus bounded Tavily and local
+aggregate-trace contracts (8h1/8h2/11b1/12i2/8h3). Packet prepared, no response
+or implementation adopted. Local traces are not hosted LangSmith integration;
+the hosted adapter and real search remain separately gated. Agent 2 gets a short
+Toloka/Tendem public-source fit check (12j1), not account onboarding or paid jobs.
+Core NVIDIA/Nebius runtime evidence remains the priority. Official documentation
+checks and remaining assumptions are in integration-research-2026-10-22.md.
+
 The owner reported these email offers: $100 LangSmith, $25 Tavily, $50 Toloka
 and $50 Tandem, plus Nebius learning/community opportunities. These are advertised
 offers, not independently verified redeemed balances, expiry dates or permission

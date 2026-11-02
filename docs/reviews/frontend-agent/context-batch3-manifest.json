@@ -1,0 +1,32 @@
+[
+  {
+    "path": "dashboard/src/App.jsx",
+    "bytes": 60825,
+    "sha256": "b2d0e91444456cc488f71c129acb87b36fe35391051feeff64b3d895c9dce9f1"
+  },
+  {
+    "path": "dashboard/src/styles.css",
+    "bytes": 8676,
+    "sha256": "955c7e36341f3d937e5421928d48e11aa01fcfe413b55b21bc9194cfde3708d4"
+  },
+  {
+    "path": "dashboard/src/components/ExplorerNavigation.jsx",
+    "bytes": 1226,
+    "sha256": "9db8f7c5c48410a975a227789451bd25ac63ef40ef67b980aff4d441964a6c6c"
+  },
+  {
+    "path": "dashboard/src/components/ExplorerNavigation.css",
+    "bytes": 1188,
+    "sha256": "c98ac4a49b4526c3ee5f927dfc32a46b19ce70ee54ac97f81d979dfb77cdbd0e"
+  },
+  {
+    "path": "dashboard/README.md",
+    "bytes": 1549,
+    "sha256": "0aa7e8287ef231c80750c76fc147164c7837863196033dc2213fe028fbe0be50"
+  },
+  {
+    "path": "dashboard/package.json",
+    "bytes": 998,
+    "sha256": "a1e4b5c967e3f5d4f1bf15c756338645d047255271cba840d0ed90d3efa1b968"
+  }
+]

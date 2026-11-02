@@ -1,0 +1,38 @@
+{
+  "source_sha256": "8e5d606d7472a038373e8869d4457968767b8c303fbe5beebb848244022b8f27",
+  "source_bytes": 100805,
+  "status": "unaccepted",
+  "header_correction": "**init** -> __init__",
+  "files": [
+    {
+      "path": "dojo/providers/__init__.py",
+      "bytes": 266,
+      "sha256": "b99e2ae7993f9ac16e7b903d533e66b5476f488f8807193f7d85f7a59d14fbec"
+    },
+    {
+      "path": "dojo/providers/nebius_codec.py",
+      "bytes": 29541,
+      "sha256": "fb9541d212caf0e10cf1cb4e6ca1c970ff5faab4ef6f12cfd4aed651ad2d2007"
+    },
+    {
+      "path": "dojo/providers/fake_session.py",
+      "bytes": 22766,
+      "sha256": "6932818bf1eccfc02f89f5dfdac12ef267f8570612c87bbc35eed73788c87b6f"
+    },
+    {
+      "path": "tests/test_nebius_codec.py",
+      "bytes": 16058,
+      "sha256": "bd1e852f874ebda2fdfafe49171cffd83b572455b893e13dba6b142fb938fcee"
+    },
+    {
+      "path": "tests/test_provider_fake_session.py",
+      "bytes": 20050,
+      "sha256": "3f233793b0172aa4bf98487f5acf6ac1954f7c57c599b31236c794542f7c88d3"
+    },
+    {
+      "path": "docs/provider-core-adapters.md",
+      "bytes": 6499,
+      "sha256": "27d503a3d2b743a9b6190146a7f7c8a399c9f5672fbf73e426554f9c2d351ba3"
+    }
+  ]
+}

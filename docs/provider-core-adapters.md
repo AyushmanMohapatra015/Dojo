@@ -1,0 +1,120 @@
+# Provider Core Adapters: Part 1 (`8h1` / `8h2`)
+
+## Primary integration status
+
+Accepted offline Part 1 after primary review. Fixed a test identifier, bounded
+byte-fixture IDs, escaped-surrogate JSON-key handling and lint issues. Primary
+ran 251 targeted tests including five independently written boundary cases and
+existing ledger/controller/record compatibility tests. Live provider transport
+and hosted integrations remain separate work. Original proposal is archived.
+
+## Scope and Non-Claims
+
+`dojo.providers.nebius_codec` (WP1 / `8h1`) and `dojo.providers.fake_session`
+(WP2 / `8h2`) implement offline request/response codecs and credit-bounded
+scripted session orchestration.
+
+- **No live execution:** Neither module imports an external SDK, reads an API
+  key or environment variable, opens a socket, or contacts Nebius/NVIDIA.
+- **Evidence boundary:** `ProviderObservation.provider_evidence_verified` is
+  permanently `False`, and `FakeSessionResult.provider_calls` is permanently `0`.
+  Passing fake sessions are synthetic software contract tests, not evidence of
+  live model serving, template forwarding, or provider billing settlement.
+- **Controller separation:** The existing `dojo.solve.configured.ControllerModel`
+  and `ScriptedTransport` remain untouched and continue to require exact
+  synthetic token counters.
+
+## WP1 (`dojo/providers/nebius_codec.py`)
+
+### SDK Kwargs vs. HTTP Wire Payload
+
+- `build_sdk_kwargs(request: ModelRequest) -> dict`: Revalidates `ModelRequest`
+  and returns a fresh dictionary matching `request.body()` plus `stream=False`
+  and `n=1`, preserving `extra_body={"chat_template_kwargs": ...}`.
+- `build_http_payload(request: ModelRequest) -> dict`: Revalidates
+  `ModelRequest` and merges `chat_template_kwargs` to the top level of the JSON
+  payload while setting `stream=False` and `n=1`. It guarantees that
+  `extra_body`, URLs, timeouts, keys, and headers never appear in raw wire JSON.
+
+### Bounded Completion Decoding (`decode_completion`)
+
+`decode_completion(raw: bytes, request: ModelRequest) -> ProviderObservation`
+enforces strict structural and size limits before and during JSON parsing:
+
+1. **Pre-parse and tree limits:** Input must be `bytes` of length `1..1,048,576`
+   (1 MiB) and valid UTF-8 without NUL bytes. Duplicate keys at any depth,
+   non-finite numbers (`NaN`, `Infinity`), integer tokens exceeding signed 64-bit
+   range, nesting deeper than 32, total nodes over 4,096, or strings exceeding
+   64 KiB raise `CodecError(reason)` with a fixed reason code and zero payload
+   echo.
+2. **Model and usage survival:** If `model` disagrees with `request.model_id`,
+   returns `status='unknown_usage'`, `reason='model_mismatch'`,
+   `model_matches=False`, and `UsageEvidence('unknown', None, None, 1)`.
+   Otherwise, if `usage` is valid (`prompt_tokens >= 0`, `completion_tokens >= 0`,
+   optional `total_tokens == prompt + completion`, optional `cached_tokens <= prompt`,
+   optional `reasoning_tokens <= completion`), `UsageEvidence('provider', ...)`
+   is retained even if choices, role, finish reason, or visible content are
+   missing or unusable.
+3. **Visible content vs. reasoning:** `reasoning_content` is never substituted
+   for visible `content`. Only `finish_reason == 'stop'` (`status='ready'`,
+   `reason='ok'`) and `finish_reason == 'length'` (`status='truncated'`,
+   `reason='output_limit'`) with non-empty visible `content <= 64 KiB` retain
+   `content`. Tool calls, function calls, refusals, or content filter stops
+   return `status='unusable'` with `content=None` while preserving known usage.
+   `parse_action` is never called here.
+
+## WP2 (`dojo/providers/fake_session.py`)
+
+### Pre-Reservation Validation and Per-Request Upward Rounding
+
+`run_fake_session(plans, transport, pricing, *, ledger, now)` validates all
+`1..40` `PlannedRequest` items, `PricingSnapshot` model/base binding, and
+exact `ScriptedWireTransport` state before touching `CreditLedger`.
+
+Each planned request upper bound is valued independently in integer nano-USD:
+
+$$\text{bound\_nano\_usd}_i = \left\lceil \frac{\text{prompt\_token\_bound}_i \times r_{\text{in}} + \text{max\_completion\_tokens}_i \times r_{\text{out}}}{1{,}000{,}000} \right\rceil$$
+
+The session reserves $\sum_i \text{bound\_nano\_usd}_i$ once via
+`ledger.reserve_run(...)` before any fake wire send. Zero whole-session
+reservations are rejected before ledger mutation. Every `CreditLedger` call is
+wrapped in an isolated `decimal.localcontext(Context(prec=80))` so caller
+Decimal precision or traps cannot alter conversion or leak across boundaries.
+
+### Session Execution and Uncertainty Semantics
+
+Before each planned request, `ledger.check_run(reservation_id, now=now())`
+re-verifies policy freshness (`< 1h`) and expiry safety margin (`>= 24h`).
+
+- **`blocked_before_dispatch`:** `reserve_run` raises `CreditError`. Zero sends
+  occur (`reserved_nano_usd=0`, `fake_attempts=0`).
+- **`completed`:** All planned requests return HTTP 2xx, decode as `ready`, fit
+  their individual prompt/completion token bounds and per-request monetary
+  bounds, and finalize via `ledger.finish_run` with the sum of per-request
+  upward-rounded observed costs.Reservations are never refunded.
+- **`stopped_known_usage`:** A response has valid model match and known usage
+  within request bounds, but decodes as `truncated` or `unusable`. The session
+  stops immediately before the next request and finalizes known accumulated cost.
+- **`uncertain`:** Triggered on `check_run` failure, transport timeout (`None`
+  sentinel), non-2xx HTTP status, `CodecError`, `unknown_usage`, model mismatch,
+  per-request token/cost overrun (even if aggregate session headroom remains),
+  or `finish_run` failure. The session stops immediately, attempts
+  `ledger.finish_run(reservation_id, None)` to block the ledger, and returns
+  `observed_cost_nano_usd=None`.
+
+## Primary Wiring Points (Pending Review and Gated Tasks)
+
+Primary can integrate Part 1 after offline review and test execution:
+
+1. **Real Tokenizer Upper Bounds (`8h` / `5e4`):** Replace caller-supplied test
+   `prompt_token_bound` fixtures with verified tokenizer upper bounds before any
+   live admission. Never use `synthetic_tokens` as a spend bound.
+2. **RunStore / AttemptStore Binding (`5e4`):** Record `reservation_id` and
+   `planned_nano_usd` in `run_context` before dispatch and persist
+   `ExecutionRecord` / `CostValuation` in `ResultStore` v3 without conflating
+   aggregate `CostValuation` with per-request `CreditLedger` reservations.
+3. **Locked Transport Bridge (`6` / `8`):** Wire an explicit non-retrying HTTP
+   or SDK transport (`max_retries=0`, explicit timeout, host-only environment
+   key) behind the existing live gates only after promotional balance, earliest
+   expiry, and exclusive account use are confirmed.
+

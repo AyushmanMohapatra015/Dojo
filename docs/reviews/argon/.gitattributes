@@ -1,0 +1,11 @@
+# Preserve the received review and its forensic extraction byte-for-byte.
+explorer-export-two-part-guide-v1_incomplete.txt -text
+proposals/explorer-export-part1-incomplete-v1/** -text
+explorer-export-part2-feedback-v1.txt -text
+proposals/explorer-export-part2-v1/** -text
+browser-v2-part1-feedback-v1.txt -text
+proposals/browser-v2-part1-v1/** -text
+provider-restart-part1-feedback-v1.txt -text
+proposals/provider-restart-part1-v1/** -text
+provider-restart-part2-feedback-v1.txt -text
+proposals/provider-restart-part2-v1/** -text

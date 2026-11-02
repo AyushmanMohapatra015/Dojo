@@ -1,0 +1,442 @@
+// Pure exact rational and nano-USD arithmetic and formatting for dojo-explorer-view-v2.
+// Dependency-free ECMAScript module; never uses Number for rounding or comparison.
+
+export const MAX_INT_STRING_CHARS = 96;
+export const MAX_INT_BITS = 320;
+export const MAX_COST_NANO_USD = 1000000000000000000n; // 10^18
+export const MAX_COUNT_VALUE = 1000000000; // 10^9
+export const NANO_PER_USD = 1000000000n; // 10^9
+
+export const ALLOWED_UNDEFINED_REASONS = Object.freeze([
+  'missing_cost_nano_usd',
+  'zero_expected_solves',
+  'panel_blocked',
+  'no_retained_tasks',
+  'unconditional_interval_blocked_by_zero_solve_draws',
+  'undefined_bootstrap_draws_present',
+  'zero_escalations',
+  'zero_a_failures',
+  'zero_baseline_cost',
+]);
+
+const UNDEFINED_REASON_SET = new Set(ALLOWED_UNDEFINED_REASONS);
+
+export const UNDEFINED_REASON_LABELS = Object.freeze({
+  missing_cost_nano_usd: 'Unavailable (missing cost)',
+  zero_expected_solves: 'Undefined (0 expected solves)',
+  panel_blocked: 'Withheld (panel audit blocked)',
+  no_retained_tasks: 'Undefined (0 retained tasks)',
+  unconditional_interval_blocked_by_zero_solve_draws: 'Undefined (zero-solve bootstrap draws)',
+  undefined_bootstrap_draws_present: 'Undefined (undefined bootstrap draws)',
+  zero_escalations: 'Undefined (0 escalations)',
+  zero_a_failures: 'Undefined (0 base failures)',
+  zero_baseline_cost: 'Undefined (0 baseline cost)',
+});
+
+export const V2_ERROR_CODES = Object.freeze({
+  INVALID_RATIONAL_DTO: 'Invalid or non-canonical v2 rational DTO.',
+  NEGATIVE_RATIONAL_FORBIDDEN: 'Negative rational value is not permitted for this metric.',
+  INVALID_NANO_USD: 'Invalid nano-USD integer string or DTO.',
+  INVALID_FORMAT_OPTIONS: 'Invalid formatting options; places must be an integer in 0..6.',
+  INVALID_EXPLORER_DATA: 'Input failed dojo-explorer-view-v2 validation.',
+  INVALID_DIAGNOSTIC_DATA: 'Input failed dojo-family-sensitivity-v2 validation.',
+  BUNDLE_MISMATCH: 'Explorer view and family diagnostic failed cross-artifact consistency.',
+  INVALID_DERIVED_MODEL: 'Invalid or mutated DerivedV2 read model.',
+  INVALID_SELECT_OPTIONS: 'Invalid row selection, filter, sort, or pagination options.',
+  RESOURCE_LIMIT_EXCEEDED: 'Input exceeds v2 browser resource or workload limits.',
+});
+
+export class V2DataError extends Error {
+  constructor(code = 'INVALID_EXPLORER_DATA') {
+    const safeCode = Object.prototype.hasOwnProperty.call(V2_ERROR_CODES, code)
+      ? code
+      : 'INVALID_EXPLORER_DATA';
+    super(V2_ERROR_CODES[safeCode]);
+    this.name = 'V2DataError';
+    this.code = safeCode;
+    Object.freeze(this);
+  }
+}
+
+const SIGNED_INT_RE = /^(?:0|-?[1-9][0-9]*)$/;
+const POSITIVE_INT_RE = /^[1-9][0-9]*$/;
+const NONNEGATIVE_INT_RE = /^(?:0|[1-9][0-9]*)$/;
+
+// 2^320 - 1 has 97 decimal digits, but we also enforce exact bit length <= 320.
+const MAX_320_BIT_UINT = (1n << 320n) - 1n;
+
+export function isPlainObject(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+export function hasExactKeys(obj, expectedKeys) {
+  if (!isPlainObject(obj)) return false;
+  if (Object.getOwnPropertySymbols(obj).length > 0) return false;
+  const keys = Object.keys(obj);
+  if (keys.length !== expectedKeys.length) return false;
+  for (let i = 0; i < expectedKeys.length; i += 1) {
+    const k = expectedKeys[i];
+    if (!Object.prototype.hasOwnProperty.call(obj, k)) return false;
+    const desc = Object.getOwnPropertyDescriptor(obj, k);
+    if (!desc || !Object.prototype.hasOwnProperty.call(desc, 'value')) return false;
+  }
+  return true;
+}
+
+export function isCleanAsciiOrUtf16String(value, maxLen = 1024, allowEmpty = false) {
+  if (typeof value !== 'string') return false;
+  if (!allowEmpty && value.length === 0) return false;
+  if (value.length > maxLen) return false;
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if (code < 32 || code === 127) return false;
+    if (code >= 0xd800 && code <= 0xdbff) {
+      if (i + 1 >= value.length) return false;
+      const next = value.charCodeAt(i + 1);
+      if (next < 0xdc00 || next > 0xdfff) return false;
+      i += 1;
+    } else if (code >= 0xdc00 && code <= 0xdfff) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function gcdBigInt(a, b) {
+  let x = a < 0n ? -a : a;
+  let y = b < 0n ? -b : b;
+  while (y !== 0n) {
+    const r = x % y;
+    x = y;
+    y = r;
+  }
+  return x;
+}
+
+export function parseBoundedSignedBigInt(str, { allowNegative = true } = {}) {
+  if (typeof str !== 'string' || str.length === 0 || str.length > MAX_INT_STRING_CHARS) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!SIGNED_INT_RE.test(str)) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!allowNegative && str.charCodeAt(0) === 45) {
+    throw new V2DataError('NEGATIVE_RATIONAL_FORBIDDEN');
+  }
+  const val = BigInt(str);
+  const absVal = val < 0n ? -val : val;
+  if (absVal > MAX_320_BIT_UINT) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  return val;
+}
+
+export function parseBoundedPositiveBigInt(str) {
+  if (typeof str !== 'string' || str.length === 0 || str.length > MAX_INT_STRING_CHARS) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!POSITIVE_INT_RE.test(str)) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  const val = BigInt(str);
+  if (val > MAX_320_BIT_UINT) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  return val;
+}
+
+export function parseNanoUsdString(value, { allowNull = true, checkMaxCost = false } = {}) {
+  if (value === null) {
+    if (allowNull) return null;
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+  if (typeof value !== 'string' || value.length === 0 || value.length > MAX_INT_STRING_CHARS) {
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+  if (!NONNEGATIVE_INT_RE.test(value)) {
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+  const parsed = BigInt(value);
+  if (parsed > MAX_320_BIT_UINT) {
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+  if (checkMaxCost && parsed > MAX_COST_NANO_USD) {
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+  return parsed;
+}
+
+const RATIONAL_KEYS = Object.freeze(['defined', 'numerator', 'denominator', 'reason']);
+
+export function parseRationalV2(dto, { allowNegative = false } = {}) {
+  if (typeof allowNegative !== 'boolean') {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!hasExactKeys(dto, RATIONAL_KEYS)) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  const { defined, numerator, denominator, reason } = dto;
+  if (typeof defined !== 'boolean') {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!defined) {
+    if (numerator !== null || denominator !== null) {
+      throw new V2DataError('INVALID_RATIONAL_DTO');
+    }
+    if (typeof reason !== 'string' || !UNDEFINED_REASON_SET.has(reason)) {
+      throw new V2DataError('INVALID_RATIONAL_DTO');
+    }
+    return null;
+  }
+  if (reason !== null) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  const num = parseBoundedSignedBigInt(numerator, { allowNegative });
+  const den = parseBoundedPositiveBigInt(denominator);
+  if (gcdBigInt(num, den) !== 1n) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  return { numerator: num, denominator: den };
+}
+
+export function makeDefinedRationalDto(numerator, denominator, { allowNegative = false } = {}) {
+  if (typeof numerator !== 'bigint' || typeof denominator !== 'bigint' || denominator <= 0n) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  if (!allowNegative && numerator < 0n) {
+    throw new V2DataError('NEGATIVE_RATIONAL_FORBIDDEN');
+  }
+  const divisor = gcdBigInt(numerator, denominator);
+  const redNum = numerator / divisor;
+  const redDen = denominator / divisor;
+  const absNum = redNum < 0n ? -redNum : redNum;
+  if (absNum > MAX_320_BIT_UINT || redDen > MAX_320_BIT_UINT) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  const numStr = redNum.toString(10);
+  const denStr = redDen.toString(10);
+  if (numStr.length > MAX_INT_STRING_CHARS || denStr.length > MAX_INT_STRING_CHARS) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  return {
+    defined: true,
+    numerator: numStr,
+    denominator: denStr,
+    reason: null,
+  };
+}
+
+export function makeUndefinedRationalDto(reason) {
+  if (typeof reason !== 'string' || !UNDEFINED_REASON_SET.has(reason)) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  return {
+    defined: false,
+    numerator: null,
+    denominator: null,
+    reason,
+  };
+}
+
+export function addRationals(a, b) {
+  const num = a.numerator * b.denominator + b.numerator * a.denominator;
+  const den = a.denominator * b.denominator;
+  const g = gcdBigInt(num, den);
+  return { numerator: num / g, denominator: den / g };
+}
+
+export function subRationals(a, b) {
+  const num = a.numerator * b.denominator - b.numerator * a.denominator;
+  const den = a.denominator * b.denominator;
+  const g = gcdBigInt(num, den);
+  return { numerator: num / g, denominator: den / g };
+}
+
+export function mulRationals(a, b) {
+  const num = a.numerator * b.numerator;
+  const den = a.denominator * b.denominator;
+  const g = gcdBigInt(num, den);
+  return { numerator: num / g, denominator: den / g };
+}
+
+export function divRationals(a, b) {
+  if (b.numerator === 0n) {
+    throw new V2DataError('INVALID_RATIONAL_DTO');
+  }
+  const sign = b.numerator < 0n ? -1n : 1n;
+  const num = a.numerator * b.denominator * sign;
+  const den = a.denominator * (b.numerator < 0n ? -b.numerator : b.numerator);
+  const g = gcdBigInt(num, den);
+  return { numerator: num / g, denominator: den / g };
+}
+
+export function equalsRational(a, b) {
+  if (a === null || b === null) return a === b;
+  return a.numerator === b.numerator && a.denominator === b.denominator;
+}
+
+export function compareParsedRationals(a, b) {
+  if (a === null || b === null) return null;
+  const lhs = a.numerator * b.denominator;
+  const rhs = b.numerator * a.denominator;
+  if (lhs < rhs) return -1;
+  if (lhs > rhs) return 1;
+  return 0;
+}
+
+export function compareRationalV2(left, right) {
+  const a = parseRationalV2(left, { allowNegative: true });
+  const b = parseRationalV2(right, { allowNegative: true });
+  return compareParsedRationals(a, b);
+}
+
+function validatePlaces(places) {
+  if (typeof places !== 'number' || !Number.isInteger(places) || places < 0 || places > 6) {
+    throw new V2DataError('INVALID_FORMAT_OPTIONS');
+  }
+  return places;
+}
+
+function formatGroupedDigits(digitsStr) {
+  let out = '';
+  const len = digitsStr.length;
+  for (let i = 0; i < len; i += 1) {
+    if (i > 0 && (len - i) % 3 === 0) {
+      out += ',';
+    }
+    out += digitsStr[i];
+  }
+  return out;
+}
+
+// Half-away-from-zero rounding on non-negative BigInt numerator/denominator at 10^places scale.
+function roundAbsRationalScaled(absNum, den, places) {
+  const scale = 10n ** BigInt(places);
+  const scaledNumerator = absNum * scale;
+  const quotient = scaledNumerator / den;
+  const remainder = scaledNumerator % den;
+  const rounded = remainder * 2n >= den ? quotient + 1n : quotient;
+  const intPart = rounded / scale;
+  const fracPart = places > 0 ? (rounded % scale).toString(10).padStart(places, '0') : '';
+  return {
+    rounded,
+    scale,
+    intText: formatGroupedDigits(intPart.toString(10)),
+    fracText: fracPart,
+  };
+}
+
+export function formatUndefinedReasonV2(reason) {
+  if (typeof reason === 'string' && Object.prototype.hasOwnProperty.call(UNDEFINED_REASON_LABELS, reason)) {
+    return UNDEFINED_REASON_LABELS[reason];
+  }
+  return 'Undefined';
+}
+
+export function formatRationalV2(dto, options = {}) {
+  if (!isPlainObject(options)) {
+    throw new V2DataError('INVALID_FORMAT_OPTIONS');
+  }
+  const places = validatePlaces(options.places === undefined ? 3 : options.places);
+  const parsed = parseRationalV2(dto, { allowNegative: true });
+  if (parsed === null) {
+    return formatUndefinedReasonV2(dto.reason);
+  }
+  const { numerator, denominator } = parsed;
+  const isNeg = numerator < 0n;
+  const absNum = isNeg ? -numerator : numerator;
+  const sign = isNeg ? '-' : '';
+  const { intText, fracText } = roundAbsRationalScaled(absNum, denominator, places);
+  const decText = places > 0 ? `${sign}${intText}.${fracText}` : `${sign}${intText}`;
+  const exactFraction = denominator === 1n
+    ? `${numerator.toString(10)}`
+    : `${numerator.toString(10)}/${denominator.toString(10)}`;
+  return `${decText} (${exactFraction})`;
+}
+
+export function formatPercentV2(dto, options = {}) {
+  if (!isPlainObject(options)) {
+    throw new V2DataError('INVALID_FORMAT_OPTIONS');
+  }
+  const places = validatePlaces(options.places === undefined ? 1 : options.places);
+  const parsed = parseRationalV2(dto, { allowNegative: true });
+  if (parsed === null) {
+    return formatUndefinedReasonV2(dto.reason);
+  }
+  const { numerator, denominator } = parsed;
+  const isNeg = numerator < 0n;
+  const absNum = (isNeg ? -numerator : numerator) * 100n;
+  const sign = isNeg ? '-' : '';
+  const { intText, fracText } = roundAbsRationalScaled(absNum, denominator, places);
+  const decText = places > 0 ? `${sign}${intText}.${fracText}%` : `${sign}${intText}%`;
+  const exactFraction = `${numerator.toString(10)}/${denominator.toString(10)}`;
+  return `${decText} (${exactFraction})`;
+}
+
+export function formatNanoUsdV2(dto, options = {}) {
+  if (!isPlainObject(options)) {
+    throw new V2DataError('INVALID_FORMAT_OPTIONS');
+  }
+  const places = validatePlaces(options.places === undefined ? 6 : options.places);
+
+  let numerator;
+  let denominator;
+  let exactNanoLabel;
+
+  if (typeof dto === 'string') {
+    const nano = parseNanoUsdString(dto, { allowNull: false });
+    numerator = nano;
+    denominator = 1n;
+    exactNanoLabel = `${formatGroupedDigits(nano.toString(10))} nano-USD`;
+  } else if (isPlainObject(dto)) {
+    const parsed = parseRationalV2(dto, { allowNegative: true });
+    if (parsed === null) {
+      return formatUndefinedReasonV2(dto.reason);
+    }
+    numerator = parsed.numerator;
+    denominator = parsed.denominator;
+    exactNanoLabel = denominator === 1n
+      ? `${numerator < 0n ? '-' : ''}${formatGroupedDigits((numerator < 0n ? -numerator : numerator).toString(10))} nano-USD`
+      : `${numerator.toString(10)}/${denominator.toString(10)} nano-USD`;
+  } else {
+    throw new V2DataError('INVALID_NANO_USD');
+  }
+
+  const isNeg = numerator < 0n;
+  const absNum = isNeg ? -numerator : numerator;
+  const usdDenominator = denominator * NANO_PER_USD;
+  const scale = 10n ** BigInt(places);
+
+  // Positive non-zero amount strictly below 1 displayed USD unit (10^-places USD)
+  if (!isNeg && absNum > 0n && absNum * scale < usdDenominator) {
+    const thresholdText = places === 0 ? '$1' : `$0.${'0'.repeat(places - 1)}1`;
+    return `< ${thresholdText} (${exactNanoLabel})`;
+  }
+
+  const { rounded, intText, fracText } = roundAbsRationalScaled(absNum, usdDenominator, places);
+  const sign = isNeg && (rounded > 0n || absNum > 0n) ? '-' : '';
+  const usdText = places > 0 ? `${sign}$${intText}.${fracText}` : `${sign}$${intText}`;
+  return `${usdText} (${exactNanoLabel})`;
+}
+
+// Chart-only finite Number approximation derived strictly AFTER validation.
+// Never used for arithmetic, dominance, sorting, or eligibility.
+export function approximateRationalToNumber(parsed, multiplier = 1n, divisor = 1n) {
+  if (parsed === null) return null;
+  const num = parsed.numerator * multiplier;
+  const den = parsed.denominator * divisor;
+  if (den <= 0n) return null;
+  const isNeg = num < 0n;
+  const absNum = isNeg ? -num : num;
+  // Scale by 10^12 in BigInt to maintain high precision before converting to finite IEEE-754 Number
+  const precisionScale = 1000000000000n;
+  const scaled = (absNum * precisionScale) / den;
+  const approx = Number(scaled) / 1e12;
+  if (!Number.isFinite(approx)) return null;
+  return isNeg ? -approx : approx;
+}
+

@@ -1,0 +1,52 @@
+{
+  "packet": "provider-restart-part2-accepted-supplement-v1.md",
+  "bytes": 125785,
+  "sha256": "aba5360aee6cc0ce817ff55af4beae40ccf2207c89e3a64cdae67286472fcbe7",
+  "sources": [
+    {
+      "path": "dojo/providers/__init__.py",
+      "bytes": 264,
+      "sha256": "d002784189daa91a32cc1aadb92b16354143f05a15bf432216ca0b901185e3aa"
+    },
+    {
+      "path": "dojo/providers/nebius_codec.py",
+      "bytes": 30045,
+      "sha256": "0ce5381176831f9a794d37fa5f76e39f5ab949eb4111ad8d5b1a73770b1cbfd8"
+    },
+    {
+      "path": "dojo/providers/fake_session.py",
+      "bytes": 22656,
+      "sha256": "53f8550f61a2f4d7578d616fc7b7ed258b62962f01c4afbf12722147563dddc3"
+    },
+    {
+      "path": "tests/test_nebius_codec.py",
+      "bytes": 16197,
+      "sha256": "12b362378ade8979570a2b432c8571695be2027bc033c0f6d752dab31acf24d6"
+    },
+    {
+      "path": "tests/test_provider_fake_session.py",
+      "bytes": 20021,
+      "sha256": "89570e281f544bdd3379828ee9ba7b26a558c1e59893986cf28a524508926fdd"
+    },
+    {
+      "path": "tests/test_provider_boundaries.py",
+      "bytes": 3144,
+      "sha256": "001bdd640df729db088dbe7607e6a14bed40b0fbc8d3a96ab15d4b5755ea2239"
+    },
+    {
+      "path": "docs/provider-core-adapters.md",
+      "bytes": 6932,
+      "sha256": "8de71770424af74409282be38a57a137d99ad5e5efc4402155211b4cc3493975"
+    },
+    {
+      "path": "dojo/store/credits.py",
+      "bytes": 10637,
+      "sha256": "11d44ece7e5f5704c5f1434afa3397c60b367a44ca7c8de13b205b3fafa9f9d6"
+    },
+    {
+      "path": "dojo/store/records.py",
+      "bytes": 13287,
+      "sha256": "1d9e8dcaa67a2c8c6d2e474856e4380403c003e2d8a713313bc1ef939d4dcf15"
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "status": "primary-reviewed-adapted-offline-only",
+  "action_plan": [
+    "13m1c",
+    "10i2",
+    "10i3",
+    "10i4"
+  ],
+  "source_response_sha256": "ac9dd9456b5cd840926b277e9007346c7597acf601ef1ac62db668379e5c4bfc",
+  "files": [
+    {
+      "path": "dojo/bench/evidence_bundle.py",
+      "bytes": 37105,
+      "sha256": "1a4a55572853dc9e4efa8f714501576fee17b2b165e70c7f7a2db44310258a96"
+    },
+    {
+      "path": "dojo/bench/export_cli.py",
+      "bytes": 10894,
+      "sha256": "f776b0f46123d069fa0284ca10d65611b2bea0e2758fa07ae7401b08c8474703"
+    },
+    {
+      "path": "tests/test_evidence_bundle.py",
+      "bytes": 15429,
+      "sha256": "23ad5bd8cde75ef996a61372a4a568552d4724390aeb4a15169e6de573445345"
+    },
+    {
+      "path": "tests/test_explorer_export_cli.py",
+      "bytes": 7517,
+      "sha256": "97a8348eafa248d50bb5b09b5dc6d49c3526ab4de4a5c5ec48250136a3332526"
+    },
+    {
+      "path": "tests/test_explorer_export_integration.py",
+      "bytes": 11296,
+      "sha256": "7d7a58630aecc2507003d0e0b67058940355c9846cbeb51e9a665708828f018b"
+    },
+    {
+      "path": "tests/test_evidence_bundle_boundary.py",
+      "bytes": 11878,
+      "sha256": "a11e723cdba24d4fe7be8fb1cef2f5b5f730530d28f7a114e3a7b685f6da7ecd"
+    },
+    {
+      "path": "docs/explorer-export-reproduction.md",
+      "bytes": 11927,
+      "sha256": "a01c4df8f678eb7d14eb6aa35fb52461bb19898409ea64f726a22341790e5c27"
+    },
+    {
+      "path": "docs/explorer-export-part2-verification-ledger-v1.md",
+      "bytes": 3651,
+      "sha256": "c8f8255486e6d9b7ed3efab8413ecefc429c9e2086d27fdfc0318a09b9d6831e"
+    },
+    {
+      "path": "docs/reviews/argon/explorer-export-part2-primary-assessment-v1.md",
+      "bytes": 5362,
+      "sha256": "e0c6d621506489fc61c4fd16e39a794e3b64bf9b82ab964a8928f3968af3cf95"
+    }
+  ],
+  "manifest_self_hash": null,
+  "self_hash_reason": "No circular self-digest; manifest records deliverable bytes only.",
+  "evidence_kind": "synthetic",
+  "eligibility": "UNVERIFIED",
+  "real_provider_calls": 0,
+  "publishable": false
+}

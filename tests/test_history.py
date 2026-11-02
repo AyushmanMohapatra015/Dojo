@@ -132,7 +132,15 @@ def test_all_inspected_records_have_explicit_held_out_exclusions():
     root = Path(__file__).resolve().parents[1]
     manifest = json.loads((root / "data/development_exclusions.json").read_text())
     exclusions = {(row["repo"], row["fix_sha"]) for row in manifest["exclusions"]}
+    runtime_reports = {"stage-b-runtime-input-check-v1.json", "stage-b-runtime-input-check-v2.json"}
+    inspected_records = 0
     for path in (root / "data/development").glob("*.json"):
         record = json.loads(path.read_text())
+        if path.name in runtime_reports:
+            assert record["execution_authorized"] is False
+            assert record["live_enabled"] is False
+            continue
         assert record["held_out_eligible"] is False
         assert (record["repo"], record["fix_sha"]) in exclusions
+        inspected_records += 1
+    assert inspected_records > 0

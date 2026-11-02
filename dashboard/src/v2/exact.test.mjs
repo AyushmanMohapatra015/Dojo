@@ -1,0 +1,121 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  V2DataError,
+  compareRationalV2,
+  formatNanoUsdV2,
+  formatPercentV2,
+  formatRationalV2,
+  parseRationalV2,
+} from './exact.mjs';
+
+describe('exact.mjs — rational DTO parsing and comparison', () => {
+  it('1. parses canonical defined and undefined rational DTOs accurately', () => {
+    const r = parseRationalV2({
+      defined: true,
+      numerator: '26000000',
+      denominator: '3',
+      reason: null,
+    });
+    assert.deepEqual(r, { numerator: 26000000n, denominator: 3n });
+
+    const u = parseRationalV2({
+      defined: false,
+      numerator: null,
+      denominator: null,
+      reason: 'zero_expected_solves',
+    });
+    assert.equal(u, null);
+
+    const neg = parseRationalV2(
+      { defined: true, numerator: '-1', denominator: '4', reason: null },
+      { allowNegative: true },
+    );
+    assert.deepEqual(neg, { numerator: -1n, denominator: 4n });
+  });
+
+  it('2. rejects non-canonical, unreduced, negative-when-forbidden, and oversized rationals before BigInt overflow', () => {
+    const invalidDtos = [
+      { defined: true, numerator: '01', denominator: '1', reason: null },
+      { defined: true, numerator: '-0', denominator: '1', reason: null },
+      { defined: true, numerator: '2', denominator: '4', reason: null },
+      { defined: true, numerator: '1', denominator: '0', reason: null },
+      { defined: true, numerator: '1', denominator: '-2', reason: null },
+      { defined: true, numerator: '1e5', denominator: '1', reason: null },
+      { defined: true, numerator: '9'.repeat(97), denominator: '1', reason: null },
+      { defined: false, numerator: '0', denominator: null, reason: 'panel_blocked' },
+      { defined: false, numerator: null, denominator: null, reason: 'not_an_allowed_reason' },
+      { defined: true, numerator: '1', denominator: '2', reason: null, extra: 1 },
+    ];
+
+    for (const dto of invalidDtos) {
+      assert.throws(
+        () => parseRationalV2(dto, { allowNegative: true }),
+        (err) => err instanceof V2DataError && err.code === 'INVALID_RATIONAL_DTO',
+      );
+    }
+
+    assert.throws(
+      () => parseRationalV2({ defined: true, numerator: '-1', denominator: '2', reason: null }),
+      (err) => err instanceof V2DataError && err.code === 'NEGATIVE_RATIONAL_FORBIDDEN',
+    );
+  });
+
+  it('3. compares exact rationals beyond Number.MAX_SAFE_INTEGER and returns null for undefined', () => {
+    const a = { defined: true, numerator: '1000000000000000009', denominator: '2', reason: null };
+    const b = { defined: true, numerator: '500000000000000004', denominator: '1', reason: null };
+    const u = { defined: false, numerator: null, denominator: null, reason: 'missing_cost_nano_usd' };
+
+    assert.equal(compareRationalV2(a, b), 1);
+    assert.equal(compareRationalV2(b, a), -1);
+    assert.equal(compareRationalV2(a, a), 0);
+    assert.equal(compareRationalV2(a, u), null);
+    assert.equal(compareRationalV2(u, b), null);
+  });
+
+  it('4. formats rationals and percentages with half-away-from-zero rounding and exact fraction labels', () => {
+    // 1/8 = 0.125 -> at 2 places rounds half-away-from-zero to 0.13
+    const posEighth = { defined: true, numerator: '1', denominator: '8', reason: null };
+    assert.equal(formatRationalV2(posEighth, { places: 2 }), '0.13 (1/8)');
+
+    // -1/8 = -0.125 -> at 2 places rounds half-away-from-zero to -0.13
+    const negEighth = { defined: true, numerator: '-1', denominator: '8', reason: null };
+    assert.equal(formatRationalV2(negEighth, { places: 2 }), '-0.13 (-1/8)');
+
+    // Percent: 1/4 = 25.0% (1/4)
+    const quarter = { defined: true, numerator: '1', denominator: '4', reason: null };
+    assert.equal(formatPercentV2(quarter, { places: 1 }), '25.0% (1/4)');
+
+    // Undefined shows explicit reason text
+    const undef = { defined: false, numerator: null, denominator: null, reason: 'zero_expected_solves' };
+    assert.match(formatRationalV2(undef), /0 expected solves/);
+    assert.match(formatPercentV2(undef), /0 expected solves/);
+  });
+
+  it('5. formats nano-USD with less-than threshold for tiny positive costs, exact zero, and large values', () => {
+    // 5 nano-USD = $0.000000005 < $0.000001 at 6 places
+    const fiveNanoDto = { defined: true, numerator: '5', denominator: '1', reason: null };
+    assert.equal(formatNanoUsdV2(fiveNanoDto, { places: 6 }), '< $0.000001 (5 nano-USD)');
+    assert.equal(formatNanoUsdV2('5', { places: 6 }), '< $0.000001 (5 nano-USD)');
+
+    // Exact 0 nano-USD must NOT show less-than threshold
+    const zeroDto = { defined: true, numerator: '0', denominator: '1', reason: null };
+    assert.equal(formatNanoUsdV2(zeroDto, { places: 6 }), '$0.000000 (0 nano-USD)');
+
+    // 26,000,000 / 3 nano-USD = $0.008667 (26000000/3 nano-USD)
+    const cascadeCps = { defined: true, numerator: '26000000', denominator: '3', reason: null };
+    assert.equal(formatNanoUsdV2(cascadeCps, { places: 6 }), '$0.008667 (26000000/3 nano-USD)');
+
+    // Large integer > 2^53: 1000000000000000009 nano-USD = $1,000,000,000.000000
+    assert.equal(
+      formatNanoUsdV2('1000000000000000009', { places: 6 }),
+      '$1,000,000,000.000000 (1,000,000,000,000,000,009 nano-USD)',
+    );
+
+    // Invalid places option rejected
+    assert.throws(
+      () => formatNanoUsdV2(zeroDto, { places: 7 }),
+      (err) => err instanceof V2DataError && err.code === 'INVALID_FORMAT_OPTIONS',
+    );
+  });
+});

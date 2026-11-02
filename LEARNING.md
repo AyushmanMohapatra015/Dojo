@@ -1,5 +1,235 @@
 # Learning log
 
+## Accounting settlement does not prove a model result (5f3c)
+
+The journal records intention before each hypothetical send, then independently
+checks known usage, per-request rounding and actual local ledger rows. An abrupt
+exit at any accounting boundary keeps a durable fence. Even complete fictional
+accounting and a well-shaped test receipt cannot authenticate a provider call
+or pytest run. That is why the demo remains diagnostic and never enters the
+benchmark. We also tested the inherited abort path: pending accounting must
+prevent it from releasing an attempt for replay.
+
+## Persisted intention is not a completed execution (5f3b)
+
+The new store attaches the exact host intent to a currently owned attempt.
+An abrupt exit after claiming but before attachment leaves an occupied run
+that cannot be replayed automatically. Ownership, intention, reservation,
+observed provider usage and evaluator outcome are distinct facts; successful
+storage of one must not manufacture the others.
+
+## Solver inputs and evaluator evidence need independent checks (5f3a)
+
+The solver receives original source and the reviewed issue. The evaluator also
+needs protected tests, which must stay outside the solver context. The host
+bridge reconstructs both paths, checks their shared task/source identities,
+then exposes only safe IDs in its summary. Preparing matching objects does not
+prove a model ran or that billing settled; those require durable runtime events.
+
+## Archive verification and image availability are different checks (7a4)
+
+Reconstructing the pinned Git snapshots proves that local task inputs match our
+frozen evidence. It does not prove Docker is ready or that an image exists.
+Here all 63 archive/contracts checked, while the fixed local Docker daemon did
+not respond. We retain that partial result and rerun inspection after Docker
+Desktop is ready, without treating the missing observation as a successful check.
+
+## Browser UI acceptance (10j3/10j4)
+
+Argon's web response delivered complete-looking React files, but response
+formatting escaped operators and the fixture tests silently substituted demo
+data when Vitest rewrote `import.meta.url`. A green build alone would have
+missed both. We archived the exact reply, used canonical fixture bytes, made
+missing test fixtures fail loudly and ran component and local-preview checks.
+Visual and keyboard review remains before calling the UI complete.
+
+## Settled spending and reusable execution are separate decisions (8a2)
+
+The owned fake coordinator may finish its fictional ledger accounting while the
+parent attempt stays fenced against replay. That prevents a successful budget
+update from masquerading as a genuine model result. Source hashes and reservation
+IDs identify matching records; they do not authenticate an actual provider run.
+
+There is also a gap between committing a ledger reservation and writing its UUID
+into the run store: two databases do not commit together. Tests kill a process
+inside that gap. The pending reservation and intent block another run instead
+of guessing whether a request happened or creating a replacement budget.
+
+## Reserve the run before asking an adaptive agent what to do (8a1)
+
+An agent's next prompt depends on the previous command's output, so we cannot
+precompute every request. We can still reserve a conservative whole-run bound
+first and refuse any later request that does not fit its per-turn/context limits.
+This rehearsal uses fictional byte/framing units; a real provider needs verified
+token bounds. Calling those units tokens would create false confidence.
+
+The reservation must survive interruption. Tests now terminate a child process
+after reservation and before dispatch; the reopened ledger sees pending work
+and refuses another run. Retrying uncertain work could otherwise duplicate a
+paid request. A completed fake session still proves no real model performance.
+
+## A rejection test needs a working positive control (10j5)
+
+Argon's selector initially rejected valid results because chart coordinates
+were decimals and its generic guard required integers. Some tests for edited
+results appeared to pass simply because every result was rejected. After we
+allowed valid chart decimals, six stale-result cases exposed the real gap.
+
+Each such test now proves the original result works before editing it. The
+selector then reconstructs and recomputes the represented metrics, so a stale
+headline, chart status or caller-supplied blocking flag cannot authorize rows.
+Exact source values remain fractions; chart coordinates are approximate display
+values with their own bounds. This is data consistency, not source authenticity.
+
+## A successful process can still do nothing (13m1c)
+
+A Python module can define main() without calling it. Running it with python -m
+then exits successfully while creating no output. Testing the Python function
+alone misses that problem; a subprocess test should check both the exit code
+and the intended artifact. Part 2 caught this in the returned Argon proposal.
+
+Checksums answer whether bytes match a recorded digest, not who produced them.
+Our bundle also checks schemas and recomputes diagnostic arithmetic from rows,
+but internally consistent fictional files are still fictional. Actual model
+evaluation and scorer/registration approval require their separate evidence.
+
+## Why a partial response needs behavioral review (13m1a)
+
+A fragment can parse while its intended test is unfinished. A schema can also
+reject extra top-level keys yet accept an arbitrary nested payload. We reproduced
+both the delivery gap and a frontier validator that trusted a status label despite
+contradictory coordinates. The integrated exporter now checks those relationships.
+With unequal seed counts, expected cost is the sum of per-task mean run costs;
+actual spend adds every recorded repetition. Family influence compares mean cost
+changes so smaller retained sets do not automatically look cheaper. The synthetic
+two-task example makes these quantities independently checkable by hand.
+
+## Split dependent work at a reviewed interface (13m1)
+
+A web agent needs actual source bytes, fixtures and independent arithmetic
+examples, since it cannot inspect our folder. Giving five related work packages
+all at once also risks inventing interfaces between them. We now request exact
+metrics and family diagnostics first, then review their concrete schema before
+preparing the bundle/CLI assignment. A manifest identifies supplied bytes; it
+does not prove the code is correct or authenticate measured model outcomes.
+
+## A strong resume metric must answer what was measured (14m)
+
+'63 validated repair tasks' measures benchmark construction, not model solves.
+'1,199 passing tests' measures the recorded suite result, not coverage or security.
+Useful resume bullets combine the tool's purpose, an engineering decision and
+defensible evidence. Real cost/success impact needs a named baseline, evaluated
+task count and comparable measurements. No phase label is needed to describe
+implemented work precisely; future runtime/result claims remain conditional.
+
+## Money must not inherit a caller's numeric settings (6d1a)
+
+Rounding after Decimal multiplication cannot recover digits that multiplication
+already discarded. We now parse exactly and shift/divide bounded integer digits
+to nano-USD. Spend ceilings round up; available funds round down. Displaying a
+remaining allowance also needs exact formatting, so that uses integers too.
+Temporary SQL-row checks show the persisted accounting is correct, not just a
+returned number. A one-nano usage excess remains an excess and blocks the ledger.
+This fixes local arithmetic; it does not create a provider hard spending cap.
+
+## Parallel batches need a usable shared data contract (13m / 10i)
+
+An explorer that accepts one whole-number result per task cannot faithfully
+display a backend averaging several seeds. The next Argon batch preserves exact
+fractions in a separate v2 contract, then adds reproducible exports around it.
+Five coordinated work packages cover a substantial missing path without assuming
+unreviewed provider code is already correct. Complete source snapshots, fixed
+interfaces and independent numeric oracles help make the response integrable.
+The returned code still needs acceptance; more requested files alone do not
+increase our completed percentage.
+
+## A fingerprint identifies contents, not approval (7a1 / 5f1)
+
+A stable hash tells us whether a draft changed. It cannot tell us whether the
+files exist, the host checked them, or a result genuinely came from the pinned
+evaluator. We now require all named artifact bindings and explicitly record the
+scorer's cooperative scope, while retaining unverified/unpublishable status.
+The later trusted verifier must recompute those artifacts and bind actual runs.
+Candidate errors stay in the denominator only with baseline evidence; unknown
+or broken evidence cannot disappear just because that makes the chart cleaner.
+
+## Packet quality means compatible interfaces, not more background (8h4)
+
+The existing source context was intact. Fixing the boundaries between modules
+was more useful than attaching the whole repository: stable DTO fields/function
+signatures, a shared state table, explicit units and independent known answers.
+Five substantial packages remain one coordinated batch, with provider/accounting
+files reviewable first. A small missing fixture excerpt removes a needless guess.
+
+An integer-based adapter can still lose precision when it calls an existing
+Decimal-based boundary under a changed context. Check the actual persisted amount,
+not just the adapter's calculation. The packet now describes a reproduced local
+compatibility issue; the underlying correction remains separate before live use.
+Original packets stay preserved; an in-progress agent receives only the addendum.
+
+## Parallel work should remove different blockers (8h/13l11/14b2)
+
+Give the large-context agent the provider/accounting implementation proposal;
+give token-limited agents small independent outputs with bounded input/output.
+Packets contain exact APIs and independent units, not the entire project history.
+Primary keeps registration/scorer decisions and review authority, so agents do
+not rewrite the same files concurrently.
+
+SDK options and HTTP JSON differ: extra_body is a client option whose fields
+belong in the wire body. Known token use can survive unusable content; missing
+usage must not become zero or trigger a blind retry. Tavily credits and Nebius
+nano-USD are separate units. A local trace contract is preparation, not actual
+LangSmith tracing. Actual service integration requires observed, approved use.
+
+Partner credits are resources, not requirements to add features. Real NVIDIA/
+Nebius evidence and the working core come first. Prepared packets and returned
+code still need review; they do not count as integrated features.
+
+## A connected run is more than a result object (5e1-5e3)
+
+The controller, cache identity and database now meet in a runnable fictional
+workflow. Deriving identity from actual inputs/settings prevents accidentally
+reusing a result under different behavior. Price interpretation is separate:
+changing rates should not rerun an identical solver. Reuse must revalidate saved
+artifacts, and uncertain attempts must stop rather than silently replay.
+
+The synthetic run finishes after three canned commands and one finish action;
+no shell executes. That completed state says nothing about hidden-test correctness.
+Similarly, synthetic zero spend is not a provider invoice or a useful hypothetical
+model cost. Unknown usage/cost remains explicit instead of becoming zero.
+
+Cross-process smoke checks catch issues that in-memory checks miss. On Windows,
+a sqlite3 connection's with-block manages transactions but does not close the
+connection. Explicit closure fixed the new smoke script's cleanup error. No
+upstream defect is inferred. The owner's handwritten exercises remain separate.
+
+## Reviewing external-agent deliveries (10a8/13l8) - 2026-10-22
+
+A completed agent report is a proposal, not accepted implementation. Preserve
+its bytes, then compare exact claims and APIs with the source. Gravity's review
+adds coverage but mixes scorer/solver paths; Argon's fixes pass independent
+parser probes while full frontend/browser verification remains open.
+
+Independent numeric oracles and exhaustive evidence-state checks are stronger
+than repeating implementation logic, but cannot establish that a UI renders.
+Likewise, isolating a collector or signing worker messages does not prove the
+worker truthfully observed tests. Protecting a report and establishing the truth
+of its contents require different evidence.
+
+Use longer outer Markdown fences, check extraction boundaries and retain source
+hashes to avoid truncated code handoffs. Owner-written exercise 16c remains open.
+
+## Task 9g4e - implementation observation
+
+A saved policy must agree with its candidate list and selection rule, not merely
+its own hash. That is internal consistency, not proof it was chosen before seeing
+held-out outcomes. Bound number parsing before constructing huge powers, and sum
+the work of all requested analysis stages before starting them. An explicit export
+schema rejects unknown nested metadata that a blacklist would miss; it still
+cannot decide whether a permitted label secretly contains private information.
+Checking interrupted patches on disk avoids duplicate edits. These observations
+do not complete the owner's written exercise 16c or authorize real model runs.
+
 ## Task 9g4b - implementation observation
 
 A validated container must bind its verdict to its actual contents. Replacing
@@ -332,3 +562,7 @@ We preserved that failed attempt and tested a bounded 128-PID development setup
 without changing v1 results. Resource limits and timing are part of the test
 environment and must be registered before candidate execution. The owner's own
 reflection is pending.
+
+
+## 6e6 / 10j4a: readiness evidence and table structure
+A configured key proves only local availability; authentication, financial eligibility and token-bound enforcement are separate observations. A public tokenizer revision is useful for reproducibility but does not prove provider deployment identity. React also treats same-line spaces between table elements as real text nodes: replace structural spaces with JSX line breaks and assert the rendered DOM has no direct text children under table sections/rows. All demo metrics remain synthetic.

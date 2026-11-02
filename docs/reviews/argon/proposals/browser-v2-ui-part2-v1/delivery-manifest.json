@@ -1,0 +1,66 @@
+{
+  "source_sha256": "9387cc523b3ee7d9eab310952b64f3b5656469f490b93dac460a24920decc7a2",
+  "files": [
+    {
+      "path": "dashboard/package.json",
+      "bytes": 998,
+      "sha256": "a1e4b5c967e3f5d4f1bf15c756338645d047255271cba840d0ed90d3efa1b968"
+    },
+    {
+      "path": "dashboard/index.html",
+      "bytes": 541,
+      "sha256": "348a2d3af2513bae868cd6381734f5b7ffa8f2a88587fb180044497b8e82579f"
+    },
+    {
+      "path": "dashboard/vite.config.js",
+      "bytes": 1225,
+      "sha256": "0e2cba9886e4603e416d40af635c293d583bc671a4d3c10c944f16957ee49dea"
+    },
+    {
+      "path": "dashboard/src/main.jsx",
+      "bytes": 235,
+      "sha256": "83aeeea6ff5cc0f3a1cec8cf09da3c191c6461585579c64f7e642609f9fe7b32"
+    },
+    {
+      "path": "dashboard/src/App.jsx",
+      "bytes": 58940,
+      "sha256": "a3fdad232fb3cfc7e1546f3734c6081cbc1948a7f340d87f525365ef3711fa1a"
+    },
+    {
+      "path": "dashboard/src/styles.css",
+      "bytes": 7982,
+      "sha256": "b4efb90f868af2bf9291d771e7d5fd826239070c34ad25af578757705c91ff59"
+    },
+    {
+      "path": "dashboard/src/test-setup.js",
+      "bytes": 400,
+      "sha256": "26fb03a29ceebebc339457d0e7b234d171f19ddd0863020677113af36f173378"
+    },
+    {
+      "path": "dashboard/src/hygiene.test.js",
+      "bytes": 2592,
+      "sha256": "7a38c578a3dfbddbfa2b8acd3e520ff77b5fc5f4ea3180d2bc35994e71f7a9b4"
+    },
+    {
+      "path": "dashboard/src/App.test.jsx",
+      "bytes": 20494,
+      "sha256": "85e9a5f6e642af8a29aa02814b6b0b8ccfefb60c9f9090fabf127e0452090c62"
+    },
+    {
+      "path": "dashboard/src/fixtures/synthetic-v2.explorer.json",
+      "bytes": 18427,
+      "sha256": "a4a022ba838359a4f94b9d44613ba3c046f75b4b161fdc945d3f6ca4883ec97e"
+    },
+    {
+      "path": "dashboard/src/fixtures/synthetic-v2.family-diagnostic.json",
+      "bytes": 5711,
+      "sha256": "4265b2ea2e7f16980c291f2112c3db597fa7e3151599b5840f044a6a2244e043"
+    },
+    {
+      "path": "docs/browser-v2-ui-reproduction.md",
+      "bytes": 1113,
+      "sha256": "f6c5ba665a1314ff5c93968fcb2f7d1ae4aca3a24169680244de94c9f1b57eb4"
+    }
+  ],
+  "verification": "UNEXECUTED upstream; preserved raw proposal only"
+}

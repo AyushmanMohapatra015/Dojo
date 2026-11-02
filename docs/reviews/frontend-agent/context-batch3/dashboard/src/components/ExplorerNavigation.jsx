@@ -1,0 +1,46 @@
+import './ExplorerNavigation.css';
+
+const VIEWS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'compare', label: 'Compare' },
+  { id: 'runs', label: 'Runs' },
+  { id: 'method', label: 'Method' },
+];
+
+export default function ExplorerNavigation({
+  activeView,
+  onViewChange,
+  contentId = 'explorer-content',
+}) {
+  function handleClick(id) {
+    if (id !== activeView) {
+      onViewChange(id);
+    }
+  }
+
+  return (
+    <nav className="dojo-explorer-nav" aria-label="Results views">
+      <ul className="dojo-explorer-nav__list" role="list">
+        {VIEWS.map(({ id, label }) => {
+          const isCurrent = id === activeView;
+          return (
+            <li key={id} className="dojo-explorer-nav__item">
+              <button
+                type="button"
+                className={
+                  'dojo-explorer-nav__btn' +
+                  (isCurrent ? ' dojo-explorer-nav__btn--active' : '')
+                }
+                aria-controls={contentId}
+                {...(isCurrent ? { 'aria-current': 'page' } : {})}
+                onClick={() => handleClick(id)}
+              >
+                {label}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}

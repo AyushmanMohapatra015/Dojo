@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "view_model": "dojo-explorer-view-v1",
+  "source_kind": "synthetic_ui_fixture",
+  "evidence_kind": "synthetic",
+  "eligibility": "UNVERIFIED",
+  "real_provider_calls": 0,
+  "construction_counts": {
+    "total": 63,
+    "train": 37,
+    "held_out": 26
+  },
+  "evaluated_task_count": 4,
+  "configs": [
+    {
+      "config_id": "A",
+      "label": "Fictional configuration A",
+      "task_count": 4,
+      "solved_count": 2,
+      "expected_total_cost_nano_usd": 6000000,
+      "confidence_interval": null,
+      "interval_reason": "Synthetic UI fixture; no empirical interval"
+    },
+    {
+      "config_id": "B",
+      "label": "Fictional configuration B",
+      "task_count": 4,
+      "solved_count": 2,
+      "expected_total_cost_nano_usd": 40000000,
+      "confidence_interval": null,
+      "interval_reason": "Synthetic UI fixture; no empirical interval"
+    }
+  ],
+  "rows": [
+    {
+      "task_id": "synthetic_stats_1",
+      "config_id": "A",
+      "seed": 0,
+      "outcome": "solved",
+      "scorer_status": "passed",
+      "evidence_validity": "valid",
+      "baseline_verified": false,
+      "cost_nano_usd": 1000000,
+      "visible_tests_pass": true
+    },
+    {
+      "task_id": "synthetic_stats_1",
+      "config_id": "B",
+      "seed": 0,
+      "outcome": "solved",
+      "scorer_status": "passed",
+      "evidence_validity": "valid",
+      "baseline_verified": false,
+      "cost_nano_usd": 10000000,
+      "visible_tests_pass": null
+    },
+    {
+      "task_id": "synthetic_stats_2",
+      "config_id": "A",
+      "seed": 0,
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "evidence_validity": "valid",
+      "baseline_verified": false,
+      "cost_nano_usd": 2000000,
+      "visible_tests_pass": false
+    },
+    {
+      "task_id": "synthetic_stats_2",
+      "config_id": "B",
+      "seed": 0,
+      "outcome": "solved",
+      "scorer_status": "passed",
+      "evidence_validity": "valid",
+      "baseline_verified": false,
+      "cost_nano_usd": 10000000,
+      "visible_tests_pass": null
+    },
+    {
+      "task_id": "synthetic_stats_3",
+      "config_id": "A",
+      "seed": 0,
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "evidence_validity": "valid",
+      "baseline_verified": false,
+      "cost_nano_usd": 1000000,
+      "visible_tests_pass": null
+    },
+    {
+      "task_id": "synthetic_stats_3",
+      "config_id": "B",
+      "seed": 0,
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "evidence_validity": "valid",
+      "baseline_verified": false,
+      "cost_nano_usd": 10000000,
+      "visible_tests_pass": null
+    },
+    {
+      "task_id": "synthetic_stats_4",
+      "config_id": "A",
+      "seed": 0,
+      "outcome": "solved",
+      "scorer_status": "passed",
+      "evidence_validity": "valid",
+      "baseline_verified": false,
+      "cost_nano_usd": 2000000,
+      "visible_tests_pass": true
+    },
+    {
+      "task_id": "synthetic_stats_4",
+      "config_id": "B",
+      "seed": 0,
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "evidence_validity": "valid",
+      "baseline_verified": false,
+      "cost_nano_usd": 10000000,
+      "visible_tests_pass": null
+    }
+  ],
+  "limitations": [
+    "Synthetic UI demonstration, not real model performance.",
+    "No verified registration or public-result eligibility.",
+    "Initial construction covers two pinned Python repositories.",
+    "Visible tests do not determine separate evaluator correctness.",
+    "No cold-restart cascade has been evaluated."
+  ]
+}

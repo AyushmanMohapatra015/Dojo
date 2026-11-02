@@ -3,10 +3,12 @@
 ## Current queue — 2026-10-22
 
 Use [the current owner handoff guide](agent-work-queue-v1.md) for the next steps.
-Primary owns 9g4e then 5e; Argon owns frontend refinement 10a4 through
-`docs/reviews/argon/frontend-refinement-packet-v1.md`; Agent 2 waits for the
-revised delivery before independent acceptance review 10a6. Gravity's next
-read-only tasks are 13l5/13l6 in `docs/reviews/Gravity/ASSIGNMENT-2.md`.
+Primary completed offline 5e1-5e3 and next owns 5f/7a/4j1 before gated actual
+repository execution 5e4. New non-frontend assignments and owner steps are in
+fasttrack-agent-guide-v1.md: Argon provider/accounting/partner preparation,
+Agent 2 two small research/evidence tasks, Gravity two small current-runner
+reviews. Agent 2 frontend acceptance 10a6 remains separate; do not combine that
+large packet with the new compact assignment or duplicate implementation work.
 Everything below records earlier handoffs; do not resend them as current work.
 
 Keep this workspace as the integration authority and ACTION_PLAN.md as the task

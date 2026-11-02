@@ -1,0 +1,56 @@
+{
+  "source": "docs/reviews/argon/explorer-export-part2-feedback-v1.txt",
+  "bytes": 104953,
+  "sha256": "ac9dd9456b5cd840926b277e9007346c7597acf601ef1ac62db668379e5c4bfc",
+  "status": "archived-unaccepted",
+  "files": [
+    {
+      "path": "dojo/bench/evidence_bundle.py.txt",
+      "bytes": 34821,
+      "sha256": "cffa3bcbaf3bb95fa005ee5647c8a3d698ea29c65ea2ea5149c36a4021a5f38a",
+      "syntax": "SyntaxError at line 171"
+    },
+    {
+      "path": "tests/test_evidence_bundle.py.txt",
+      "bytes": 15831,
+      "sha256": "ca3f286fb1d4317e1a9c7259c1d3358fe72fcbfcc2c70b5df2c24a59b860a77f",
+      "syntax": "AST parses; not executed"
+    },
+    {
+      "path": "dojo/bench/export_cli.py.txt",
+      "bytes": 11284,
+      "sha256": "9b81bd90fb77f06f035150526563cc55a03998d5ece9c7c95319bc9d273b85ce",
+      "syntax": "AST parses; not executed"
+    },
+    {
+      "path": "tests/test_explorer_export_cli.py.txt",
+      "bytes": 7782,
+      "sha256": "028ee0b69a7b7c38d5a15907cb609153c9a1d317546a4d869b3b2f0e9c40589b",
+      "syntax": "AST parses; not executed"
+    },
+    {
+      "path": "tests/test_explorer_export_integration.py.txt",
+      "bytes": 11337,
+      "sha256": "29112e5498042b36375055f6afa193740d667cc6079854f785d7ddc02329caa1",
+      "syntax": "AST parses; not executed"
+    },
+    {
+      "path": "docs/explorer-export-reproduction.md.txt",
+      "bytes": 10061,
+      "sha256": "348b95a38b2844f5348038fb8c5d27e7b51b6070dcfff86f9132d822e2b763b6",
+      "syntax": "not Python"
+    },
+    {
+      "path": "docs/explorer-export-part2-delivery-manifest-v1.json.txt",
+      "bytes": 2363,
+      "sha256": "fdf44eea5e9bba1afe4deba1e5f5c70d01697647a2f5417924ffc78552d0398d",
+      "syntax": "not Python"
+    },
+    {
+      "path": "docs/explorer-export-part2-verification-ledger-v1.md.txt",
+      "bytes": 5732,
+      "sha256": "840c051247ee140d4ad9404354fae2ca15ecb0dd0590371c98805eac687a2fd8",
+      "syntax": "not Python"
+    }
+  ]
+}

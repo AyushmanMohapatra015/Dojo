@@ -22,6 +22,7 @@ from dojo.bench.records import (
     NormalizedRecord,
     UndefinedValue,
     _validate_identifier,
+    canonical_sha256,
     format_fraction_Or_undef,
 )
 
@@ -46,6 +47,12 @@ def _bounded_fraction(value, field, *, maximum=MAX_ANALYSIS_VALUE):
             or value.denominator.bit_length() > MAX_FRACTION_BITS
             or not 0 <= value <= maximum):
         raise AnalysisInputError(f"{field} must be a bounded non-negative Fraction")
+
+
+def _derived_series_id(*parts):
+    """Keep valid long source IDs usable without overlong derived series labels."""
+    label = ':'.join(parts)
+    return label if len(label) <= 256 else 'derived:' + canonical_sha256(list(parts))
 
 __all__ = [
     "DEFAULT_BOOTSTRAP_REPLICATES",
@@ -1435,7 +1442,7 @@ def seed_sensitivity_analysis(
     for cfg in config_ids:
         declared = seeds_map[cfg]
         series = build_config_task_series(
-            envelope, cfg, seed_subset=declared, series_id=f"{cfg}:all_declared_seeds"
+            envelope, cfg, seed_subset=declared, series_id=_derived_series_id(cfg, 'all_declared_seeds')
         )
         pt = evaluate_series_point(series.series_id, series.tasks, include_actual_spend=True)
         entries.append(
@@ -1459,7 +1466,7 @@ def seed_sensitivity_analysis(
             chosen = (declared[pos],)
             label = f"position_{pos}_seed_{declared[pos]}"
             series = build_config_task_series(
-                envelope, cfg, seed_subset=chosen, series_id=f"{cfg}:{label}"
+                envelope, cfg, seed_subset=chosen, series_id=_derived_series_id(cfg, label)
             )
             pt = evaluate_series_point(series.series_id, series.tasks, include_actual_spend=True)
             entries.append(
@@ -1482,7 +1489,7 @@ def seed_sensitivity_analysis(
                     raise AnalysisInputError(f"Empty seed subset for config {cfg!r}")
                 label = "subset_" + "_".join(str(s) for s in subset_tuple)
                 series = build_config_task_series(
-                    envelope, cfg, seed_subset=subset_tuple, series_id=f"{cfg}:{label}"
+                    envelope, cfg, seed_subset=subset_tuple, series_id=_derived_series_id(cfg, label)
                 )
                 pt = evaluate_series_point(
                     series.series_id, series.tasks, include_actual_spend=True

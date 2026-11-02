@@ -1,0 +1,77 @@
+{
+  "task_ids": [
+    "10j1",
+    "10j2"
+  ],
+  "prepared_date": "2026-10-31",
+  "execution_status": "UNEXECUTED",
+  "hash_status_reason": "Bytes and SHA-256 digests are null because this web agent has no shell or filesystem execution environment; Primary computes exact byte lengths and SHA-256 digests during intake.",
+  "files": [
+    {
+      "order": 1,
+      "path": "dashboard/src/v2/exact.mjs",
+      "group": "10j1",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 2,
+      "path": "dashboard/src/v2/exact.test.mjs",
+      "group": "10j1",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 3,
+      "path": "dashboard/src/v2/data.mjs",
+      "group": "10j1",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 4,
+      "path": "dashboard/src/v2/data.test.mjs",
+      "group": "10j1",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 5,
+      "path": "dashboard/src/v2/derive.mjs",
+      "group": "10j2",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 6,
+      "path": "dashboard/src/v2/derive.test.mjs",
+      "group": "10j2",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 7,
+      "path": "docs/explorer-browser-v2-contract.md",
+      "group": "10j2",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 8,
+      "path": "docs/explorer-browser-v2-part1-verification-ledger-v1.md",
+      "group": "10j2",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 9,
+      "path": "docs/explorer-browser-v2-part1-delivery-manifest-v1.json",
+      "group": "10j2",
+      "bytes": null,
+      "sha256": null
+    }
+  ],
+  "delivered_count": 9,
+  "remaining_files": []
+}
+

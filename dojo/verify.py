@@ -11,10 +11,15 @@ from collections.abc import Callable
 from contextvars import ContextVar
 from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 from time import perf_counter
 
+from dojo.local_env import load_nebius_key
+from dojo.providers.call_limit import consume_one_call
 from dojo.solve.model import ModelConfig, positive_decimal
 from dojo.store.credits import CreditError, CreditLedger
+
+PROBE_CALL_MARKER = Path(__file__).resolve().parents[1] / "data/runtime/probe-one-call.consumed"
 
 # Deliberately locked pending confirmed promo expiry/exclusive account usage and
 # a reviewed credit allowance. The owner accepts monitored credit usage despite
@@ -84,6 +89,7 @@ def openai_request(model: ModelConfig, kwargs: dict, key: str):
     if credit_run is None:
         raise CreditError("No durable credit reservation; direct live calls blocked")
     credit_run[0].check_run(credit_run[1])
+    consume_one_call(PROBE_CALL_MARKER)
     from openai import OpenAI
 
     with OpenAI(api_key=key, base_url=model.api_base, max_retries=0, timeout=30) as client:
@@ -121,6 +127,11 @@ def run_verification(
     }
     if not live:
         report["probes"] = requests
+        return report
+    try:
+        load_nebius_key()
+    except ValueError:
+        report["status"] = "blocked_local_key_configuration"
         return report
     key = os.environ.get("NEBIUS_API_KEY")
     if not key or not key.strip():

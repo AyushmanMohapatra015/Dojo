@@ -1,5 +1,58 @@
 # Platform feedback
 
+## 2026-11-01 - single concurrent-ledger assertion failure
+
+- During the owned coordinator compatibility run, existing test_credits.py's
+  two-instance race once observed zero successful reservations instead of the
+  expected one. Both callers refusing is conservative for spending, but the
+  exact reason for that one result was not captured.
+- The test passed alone. A bounded reproduction of 100 two-thread races using
+  temporary fictional ledgers produced exactly one success in all 100; each
+  competing refusal had a sanitized SQLITE_BUSY cause. The unchanged full
+  targeted compatibility rerun passed 481 tests.
+- Classification: unreproduced one-off test/environment observation, not a
+  confirmed SQLite/Nebius or production-ledger defect. No retry, lock-wait,
+  financial policy or existing test was changed to hide it; no upstream report.
+
+## 2026-10-31 - sandbox command startup observation
+
+- Normal exec attempts (read-only Git and Get-Content; PowerShell and cmd)
+  failed before the requested program started: helper_unknown_error,
+  "setup refresh had errors". Approved escalated execution of the same kind
+  of read/check succeeded. No evidence of a Git/repository defect.
+- Classification: suspected local sandbox/runner setup failure, not a confirmed
+  upstream defect. Sanitized observation only; no credentials/output disclosed,
+  no external report or permission/account change performed. An upstream report
+  would need runner version and independently reproducible environment details.
+
+## 2026-10-22 - local ledger precision correction verified
+
+- 6d1a replaces context-sensitive multiplication/division with bounded integer
+  conversion/formatting and isolated Decimal parsing. The original low-precision
+  reproduction now returns exactly 122880 nano-USD, matching the independent
+  rational oracle. Actual temporary SQL reservation/usage values also verified.
+- Low precision, altered exponent bounds, all Decimal traps, sub-nano rounding,
+  signed-I64 limit, cumulative no-refund allowance and one-nano overrun blocking
+  are covered. The caller context remains unchanged. No real ledger initialized,
+  no provider calls or paid usage. The issue remains classified Dojo-local;
+  no upstream issue/contact is warranted. Financial/live gates stay closed.
+- Original provider packet bytes remain unchanged. Its 21 embedded reference
+  sizes/hashes still verify; current credits.py intentionally differs after
+  this fix. Audit reports source drift separately from snapshot corruption.
+
+## 2026-10-22 - project-local ledger precision finding
+
+- Pure reproduction: `scripts/audit_argon_provider_packet.py` calls our
+  CreditLedger.units('0.00012288') under Decimal localcontext precision 2.
+  Expected 122880 nano-USD; observed 120000 because multiplication rounds before
+  to_integral_value. Explicit isolated precision 80 restores the expected result.
+- Classification: confirmed defect/risk in Dojo's local conversion helper,
+  not an upstream Python/Decimal, Nebius or SDK defect. No external issue is
+  warranted from this evidence. No real ledger or provider request was used.
+- Follow-up 6d1: correct/verify the foundation before live adoption; Argon
+  addendum requires guarded compatibility calls and an actual temporary SQL-row
+  regression. Existing live lock stays in place; no financial policy changed.
+
 ## 2026-10-22 - Builder Program documentation inconsistency
 
 - Source checked: https://dev.nebius.com/builders . The membership cards list
@@ -81,3 +134,18 @@ the card. Support says the hard-limit request was passed to the product team.
 Manual balance/Usage monitoring does not meet this owner's zero-out-of-pocket
 requirement. Live project inference therefore remains disabled. Credit
 redemption, card removal and account closure have not been verified.
+# 2026-11-01: approval review usage limit during final checks
+
+The shell command for final offline journal/ownership tests was rejected because
+automatic approval review could not complete after a usage limit. The action was
+not executed; this was not a finding that the command was unsafe. A later normal
+retry succeeded and 130 combined tests passed. No bypass or upstream service
+defect is established, and no issue was filed.
+
+
+## Local dashboard defect - 10j4a
+Compatibility tests reproduced React warnings for whitespace text nodes directly under table/thead/tbody/tr in adopted compact JSX. This is a Dojo markup defect, not an upstream React bug. Replaced structural inter-element spaces with line breaks; new rendered-DOM regression forbids direct text-node children. Final 27 UI tests pass without these warnings. No external issue filed. Public documentation fetch failures during tokenizer research were tool/network limitations, not confirmed Nebius/Hugging Face defects.
+
+
+## Local regression assumption - 7a4t1
+Full Python run: 1788 passed / 2 skipped / 1 failure (454.08s). tests/test_history.py assumed every data/development JSON was a task record; added runtime input reports lack held_out_eligible. Explicitly distinguish only the two known runtime reports, validate their false execution/live flags, and retain held-out exclusion checks on every other record. Final narrowed suite 15 passed. Local test-maintenance defect; no upstream report required.

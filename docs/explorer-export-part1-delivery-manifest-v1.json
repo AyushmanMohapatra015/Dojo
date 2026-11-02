@@ -1,0 +1,53 @@
+{
+  "status": "integrated-primary-completion",
+  "task_ids": [
+    "13m1a",
+    "10i1a",
+    "9f1a"
+  ],
+  "original_delivery": "incomplete-unaccepted",
+  "source_sha256": "025681298fadf135f784584dd330c387df081a694d3416657f02c54308fca18e",
+  "hash_scope": "content bindings only; self excluded",
+  "files": [
+    {
+      "path": "dojo/bench/explorer_export.py",
+      "bytes": 101099,
+      "sha256": "fc77f72fd3184f079b6d30729b41ade7b196651950db7aab30375688ba01a80b"
+    },
+    {
+      "path": "dojo/bench/sensitivity_diagnostics.py",
+      "bytes": 13086,
+      "sha256": "c4007093e39203d2d83344bd6b177418698ec226984313326a9e2b1bab672311"
+    },
+    {
+      "path": "tests/test_explorer_export.py",
+      "bytes": 12972,
+      "sha256": "13923a4b597f76a7fbd419007ba1e33f0d4926b8e9fa081051e2819379710497"
+    },
+    {
+      "path": "tests/test_sensitivity_diagnostics.py",
+      "bytes": 6430,
+      "sha256": "4eff782dd6f786bc8eb17990e35dac15bfa117d9443fe1deb4a78075842408c2"
+    },
+    {
+      "path": "tests/fixtures/explorer_v2/unequal_seeds_panel.json",
+      "bytes": 4225,
+      "sha256": "9dc0d044f4bb04307aa3e124fb9f85a245caa2153cacb29e276242f31910cc91"
+    },
+    {
+      "path": "tests/fixtures/explorer_v2/expected_oracles.json",
+      "bytes": 740,
+      "sha256": "6d2bd96747b6e48078da9ed9162959656a863c95b25b42f647a8e57fcdb2ebfb"
+    },
+    {
+      "path": "docs/explorer-v2-contract.md",
+      "bytes": 14768,
+      "sha256": "fde6df8e166b351597eb8c3b98303b1317de5b9dc89ad94f5e94ebcdbd2f8b54"
+    },
+    {
+      "path": "docs/explorer-export-part1-verification-ledger-v1.md",
+      "bytes": 2244,
+      "sha256": "0d503a5dbb5e4c3116db54cae4927c4707fa7ec77276085e3d19e0896107d9e8"
+    }
+  ]
+}

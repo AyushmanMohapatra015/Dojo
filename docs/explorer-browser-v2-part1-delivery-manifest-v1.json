@@ -1,0 +1,91 @@
+{
+  "scope": "primary-reviewed browser v2 Part 1 adaptation",
+  "action_plan": [
+    "10j5",
+    "10j1",
+    "10j2"
+  ],
+  "source_response_sha256": "9e3d6669e08164eac49cd26bdebd7613e7efdcbe3c467a204aa2900a597b47c6",
+  "files": [
+    {
+      "path": "dashboard/src/v2/exact.mjs",
+      "bytes": 16933,
+      "sha256": "28261fee8cb95cf49fd22a4c56102dc159a28ea8757b5f4fd7b124867b35bd09"
+    },
+    {
+      "path": "dashboard/src/v2/data.mjs",
+      "bytes": 89371,
+      "sha256": "5a5357ec6008329b73ba570ca78c4eccc097f9c57f40d36a86a7964368a98270"
+    },
+    {
+      "path": "dashboard/src/v2/derive.mjs",
+      "bytes": 31182,
+      "sha256": "1bee35f1b96207838e3dd566cffa911be162fb5ef001d717ffea8c5d67f06ba4"
+    },
+    {
+      "path": "dashboard/src/v2/exact.test.mjs",
+      "bytes": 5461,
+      "sha256": "1b7eb93715d3c7d3fc06ec8dd8601d32016d3b3dee184fcbf7efc4221a54a8b3"
+    },
+    {
+      "path": "dashboard/src/v2/data.test.mjs",
+      "bytes": 13629,
+      "sha256": "875f9c90fa564eadab21172c8968d33354f97e7ba0283e6ea91f9659bc640452"
+    },
+    {
+      "path": "dashboard/src/v2/derive.test.mjs",
+      "bytes": 8374,
+      "sha256": "03391254775d35f1e2799012e86bb7b1925f97ddb5b9f5a0b78745f9ea6a87c2"
+    },
+    {
+      "path": "dashboard/src/v2/boundary.test.mjs",
+      "bytes": 5540,
+      "sha256": "79f212481996cad50e3265dfbd47b1c22bf30ff6d5783eeec4d4c54d99a29939"
+    },
+    {
+      "path": "scripts/intake_argon_browser_v2.py",
+      "bytes": 2336,
+      "sha256": "481fd8eae6df4ba73202f22cfe89c0d7d85e7c9c063c535db63864c9e7888c59"
+    },
+    {
+      "path": "scripts/review_argon_browser_v2.py",
+      "bytes": 7724,
+      "sha256": "1e87ab67c3ec276ed2563697a2dc5456cc55998ee135f4ae5313b8b10eb5b401"
+    },
+    {
+      "path": "docs/explorer-browser-v2-contract.md",
+      "bytes": 16533,
+      "sha256": "4ce04c3e743e784f1c32e7ea3ec35c270546b74b4ff77d99289833146a708cf6"
+    },
+    {
+      "path": "docs/explorer-browser-v2-part1-verification-ledger-v1.md",
+      "bytes": 3766,
+      "sha256": "01695a2076957c5515760147b64ac1bc2a884997a5aa38dab37e8ec6c0c3fa0d"
+    },
+    {
+      "path": "docs/reviews/argon/browser-v2-part1-primary-assessment-v1.md",
+      "bytes": 6162,
+      "sha256": "8d169fff146ccd60f768b0ebe4066dea1b4a943059b3123269d4d0595adeb640"
+    },
+    {
+      "path": "dashboard/README.md",
+      "bytes": 1377,
+      "sha256": "146d55fb0723b930567fa3bc51be8e6b261fc4e2c167850e95ab66ab464108ae"
+    }
+  ],
+  "self_hash": null,
+  "self_hash_reason": "No circular manifest digest; delivered files only.",
+  "node_tests": {
+    "passed": 43,
+    "failed": 0,
+    "skipped": 0
+  },
+  "python_browser_parity": {
+    "cases": 102,
+    "pairs": 5,
+    "mismatches": 0
+  },
+  "react_browser_build": "UNEXECUTED",
+  "real_provider_calls": 0,
+  "eligibility": "UNVERIFIED"
+}

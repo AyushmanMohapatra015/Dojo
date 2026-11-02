@@ -1,0 +1,329 @@
+"""Reviewed Argon adaptation: offline synthetic export/verify (10i3 / 13m1c).
+
+Commands:
+  python -m dojo.bench.export_cli export --input PANEL.json --output-dir NEW_DIR \
+      [--bootstrap-replicates 20] [--bootstrap-seed 17]
+  python -m dojo.bench.export_cli verify --bundle DIR
+
+Never echoes raw argv, file paths, source payloads, or exception reprs.
+Exit codes: 0 (success or --help), 1 (argument/validation/refusal/IO error),
+2 (panel audit status is blocked on export).
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import stat
+import sys
+from pathlib import Path
+from typing import NoReturn
+
+from dojo.bench.evidence_bundle import (
+    EvidenceBundleError,
+    _inspect_ancestors_no_symlink,
+    _is_reparse_or_symlink_stat,
+    _read_regular_file,
+    _validate_path_object,
+    verify_bundle,
+    write_bundle,
+)
+from dojo.bench.explorer_export import (
+    ExplorerExportError,
+    build_explorer_view,
+)
+from dojo.bench.records import (
+    MAX_COUNT_VALUE,
+    MAX_INPUT_BYTES,
+    AnalysisInputError,
+    parse_analysis_json,
+)
+from dojo.bench.report import build_analysis_report
+from dojo.bench.sensitivity_diagnostics import family_leave_one_out
+from dojo.bench.stats import (
+    DEFAULT_BOOTSTRAP_REPLICATES,
+    MAX_BOOTSTRAP_REPLICATES,
+)
+
+EXIT_OK: int = 0
+EXIT_ERROR: int = 1
+EXIT_BLOCKED: int = 2
+
+MAX_CLI_SCALAR_CHARS: int = 64
+
+__all__ = [
+    "EXIT_BLOCKED",
+    "EXIT_ERROR",
+    "EXIT_OK",
+    "build_arg_parser",
+    "main",
+]
+
+
+class _CLISanitizedError(Exception):
+    """Internal exception carrying a fixed sanitized error code."""
+
+    def __init__(self, code: str, exit_code: int = EXIT_ERROR) -> None:
+        super().__init__(code)
+        self.code = code
+        self.exit_code = exit_code
+
+
+class _CLIHelpExit(Exception):
+    """Internal signal raised when `-h` or `--help` is requested."""
+
+
+class _SafeArgumentParser(argparse.ArgumentParser):
+    """ArgumentParser that never echoes raw user arguments or paths to stderr."""
+
+    def print_help(self, file: object = None) -> None:
+        super().print_help(file=sys.stdout if file is None else file)
+
+    def exit(self, status: int = 0, message: str | None = None) -> NoReturn:
+        if status == 0:
+            raise _CLIHelpExit()
+        raise _CLISanitizedError("invalid_cli_arguments", EXIT_ERROR)
+
+    def error(self, message: str) -> NoReturn:
+        raise _CLISanitizedError("invalid_cli_arguments", EXIT_ERROR)
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Construct the command-line parser for `python -m dojo.bench.export_cli`."""
+    parser = _SafeArgumentParser(
+        prog="python -m dojo.bench.export_cli",
+        description="Offline synthetic v2 explorer bundle exporter and verifier.",
+    )
+    subparsers = parser.add_subparsers(
+        dest="subcommand",
+        parser_class=_SafeArgumentParser,
+    )
+    subparsers.required = True
+
+    export_parser = subparsers.add_parser(
+        "export",
+        help="Export a synthetic analysis panel to a new v2 evidence bundle directory.",
+    )
+    export_parser.add_argument(
+        "--input",
+        required=True,
+        help="Path to normalized analysis input panel JSON (<= 1 MiB).",
+    )
+    export_parser.add_argument(
+        "--output-dir",
+        required=True,
+        help="Path to brand-new bundle directory to create.",
+    )
+    export_parser.add_argument(
+        "--bootstrap-replicates",
+        type=str,
+        default=str(DEFAULT_BOOTSTRAP_REPLICATES),
+        help="Number of paired task bootstrap replicates (1..100000, default: 10000).",
+    )
+    export_parser.add_argument(
+        "--bootstrap-seed",
+        type=str,
+        default="17",
+        help="Non-negative integer RNG seed for bootstrap resampling (default: 17).",
+    )
+
+    verify_parser = subparsers.add_parser(
+        "verify",
+        help="Verify an existing v2 evidence bundle directory.",
+    )
+    verify_parser.add_argument(
+        "--bundle",
+        required=True,
+        help="Path to existing v2 evidence bundle directory.",
+    )
+
+    return parser
+
+
+def _parse_bounded_nonneg_int(
+    raw: str,
+    *,
+    field_code: str,
+    min_val: int,
+    max_val: int,
+) -> int:
+    if not isinstance(raw, str) or not raw.strip() or len(raw.strip()) > MAX_CLI_SCALAR_CHARS:
+        raise _CLISanitizedError(field_code)
+    text = raw.strip()
+    if not text.isascii() or not text.isdigit():
+        raise _CLISanitizedError(field_code)
+    val = int(text)
+    if val < min_val or val > max_val:
+        raise _CLISanitizedError(field_code)
+    return val
+
+
+def _read_bounded_input_panel(path_str: str) -> bytes:
+    """Read at most `MAX_INPUT_BYTES + 1` bytes from a regular non-symlink input file."""
+    if not isinstance(path_str, str) or not path_str.strip() or "\x00" in path_str:
+        raise _CLISanitizedError("invalid_input_path")
+    try:
+        path = _validate_path_object(Path(path_str), "input")
+        _inspect_ancestors_no_symlink(path)
+    except EvidenceBundleError as exc:
+        raise _CLISanitizedError("invalid_input_path") from exc
+
+    try:
+        st = os.lstat(os.fspath(path))
+    except OSError as exc:
+        raise _CLISanitizedError("unreadable_input_file") from exc
+
+    if _is_reparse_or_symlink_stat(st) or not stat.S_ISREG(st.st_mode):
+        raise _CLISanitizedError("non_regular_input_file")
+    if st.st_size > MAX_INPUT_BYTES:
+        raise _CLISanitizedError("oversized_input_file")
+
+    try:
+        data = _read_regular_file(path, max_bytes=MAX_INPUT_BYTES)
+    except (EvidenceBundleError, OSError) as exc:
+        raise _CLISanitizedError("unreadable_input_file") from exc
+
+    if len(data) > MAX_INPUT_BYTES:
+        raise _CLISanitizedError("oversized_input_file")
+    return data
+
+
+def _preflight_new_output_dir(path_str: str) -> Path:
+    """Ensure `--output-dir` is a valid path whose parent is a real directory and target does not exist."""
+    if not isinstance(path_str, str) or not path_str.strip() or "\x00" in path_str:
+        raise _CLISanitizedError("invalid_output_dir")
+    try:
+        out_dir = _validate_path_object(Path(path_str), "output_dir")
+        _inspect_ancestors_no_symlink(out_dir)
+    except EvidenceBundleError as exc:
+        raise _CLISanitizedError("invalid_output_dir") from exc
+
+    try:
+        os.lstat(os.fspath(out_dir))
+        raise _CLISanitizedError("output_dir_already_exists")
+    except FileNotFoundError:
+        pass
+    except _CLISanitizedError:
+        raise
+    except OSError as exc:
+        raise _CLISanitizedError("invalid_output_dir") from exc
+
+    parent = out_dir.parent
+    try:
+        parent_st = os.lstat(os.fspath(parent))
+    except OSError as exc:
+        raise _CLISanitizedError("missing_output_parent") from exc
+    if _is_reparse_or_symlink_stat(parent_st) or not stat.S_ISDIR(parent_st.st_mode):
+        raise _CLISanitizedError("invalid_output_dir")
+
+    return out_dir
+
+
+def _emit_stderr(code: str) -> None:
+    sys.stderr.write(f"dojo.bench.export_cli error [{code}]: request rejected.\n")
+
+
+def _emit_stdout(status_code: str, manifest: dict) -> None:
+    src_hash = manifest["source"]["input_sha256"]
+    mode = manifest["summary_mode"]
+    audit = manifest["audit_status"]
+    nt = manifest["evaluated_task_count"]
+    nc = manifest["n_configurations"]
+    nf = manifest["n_families"]
+    sys.stdout.write(
+        f"dojo.bench.export_cli ok [{status_code}]: "
+        f"summary_mode={mode} audit_status={audit} "
+        f"tasks={nt} configs={nc} families={nf} "
+        f"input_sha256={src_hash}\n"
+    )
+
+
+def _run_export(args: argparse.Namespace) -> int:
+    replicates = _parse_bounded_nonneg_int(
+        args.bootstrap_replicates,
+        field_code="invalid_bootstrap_replicates",
+        min_val=1,
+        max_val=MAX_BOOTSTRAP_REPLICATES,
+    )
+    seed = _parse_bounded_nonneg_int(
+        args.bootstrap_seed,
+        field_code="invalid_bootstrap_seed",
+        min_val=0,
+        max_val=MAX_COUNT_VALUE,
+    )
+    out_dir = _preflight_new_output_dir(args.output_dir)
+    raw_input = _read_bounded_input_panel(args.input)
+
+    try:
+        envelope = parse_analysis_json(raw_input)
+    except AnalysisInputError as exc:
+        raise _CLISanitizedError("invalid_input_panel") from exc
+
+    # Reject real evidence BEFORE any bootstrap/report/diagnostic work or directory creation
+    if envelope.evidence_kind != "synthetic" or any(
+        r.evidence_kind != "synthetic" for r in envelope.records
+    ):
+        raise _CLISanitizedError("real_evidence_refused")
+
+    # Reject blocked panels with exit code 2 BEFORE bootstrap/diagnostic work or directory creation
+    if envelope.audit.status == "blocked":
+        raise _CLISanitizedError("panel_audit_blocked", EXIT_BLOCKED)
+
+    try:
+        report = build_analysis_report(
+            envelope,
+            bootstrap_replicates=replicates,
+            bootstrap_seed=seed,
+            allow_success_only_when_cost_missing=True,
+        )
+        view = build_explorer_view(envelope, report)
+        sensitivity = family_leave_one_out(envelope)
+        manifest = write_bundle(out_dir, view=view, sensitivity=sensitivity)
+    except (AnalysisInputError, ExplorerExportError, EvidenceBundleError) as exc:
+        raise _CLISanitizedError("export_validation_failed") from exc
+
+    _emit_stdout("bundle_exported", manifest)
+    return EXIT_OK
+
+
+def _run_verify(args: argparse.Namespace) -> int:
+    if not isinstance(args.bundle, str) or not args.bundle.strip() or "\x00" in args.bundle:
+        raise _CLISanitizedError("invalid_bundle_path")
+    try:
+        bundle_dir = _validate_path_object(Path(args.bundle), "bundle")
+        manifest = verify_bundle(bundle_dir)
+    except (EvidenceBundleError, ExplorerExportError) as exc:
+        raise _CLISanitizedError("bundle_verification_failed") from exc
+
+    _emit_stdout("bundle_verified", manifest)
+    return EXIT_OK
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Execute `dojo.bench.export_cli` and return exit code (0, 1, or 2)."""
+    parser = build_arg_parser()
+    try:
+        if argv is not None and (type(argv) is not list or any(type(arg) is not str for arg in argv)):
+            raise _CLISanitizedError("invalid_cli_arguments")
+        parsed_argv = list(argv) if argv is not None else None
+        args = parser.parse_args(parsed_argv)
+        if args.subcommand == "export":
+            return _run_export(args)
+        if args.subcommand == "verify":
+            return _run_verify(args)
+        raise _CLISanitizedError("invalid_cli_arguments")
+    except _CLIHelpExit:
+        return EXIT_OK
+    except KeyboardInterrupt:
+        _emit_stderr("interrupted")
+        return EXIT_ERROR
+    except _CLISanitizedError as exc:
+        _emit_stderr(exc.code)
+        return exc.exit_code
+    except OSError:
+        _emit_stderr("io_error")
+        return EXIT_ERROR
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

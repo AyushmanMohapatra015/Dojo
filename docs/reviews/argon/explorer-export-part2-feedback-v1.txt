@@ -1,0 +1,2442 @@
+## API and Design Map
+
+### Dependency Direction & Module Ownership
+
+* `dojo.bench.explorer_export` (accepted Part 1): Pure v2 view projection, rational/nano-USD DTOs, bounded 2 MiB JSON loader (`loads_bounded_explorer_json`).
+* `dojo.bench.sensitivity_diagnostics` (accepted Part 1): Pure v2 leave-one-family-out diagnostics (`family_leave_one_out`, `validate_family_diagnostic`, `serialize_family_diagnostic`).
+* `dojo.bench.evidence_bundle` (WP3 / 10i2): Imports `explorer_export`, `sensitivity_diagnostics`, and `records` constants. Never imports `export_cli`, `analyze`, `report`, providers, or `subprocess`.
+* `dojo.bench.export_cli` (WP4 / 10i3): Imports `evidence_bundle`, `explorer_export`, `sensitivity_diagnostics`, `records` (`parse_analysis_json`, `MAX_INPUT_BYTES`, `AnalysisInputError`), `report` (`build_analysis_report`), and `stats` (`DEFAULT_BOOTSTRAP_REPLICATES`, `MAX_BOOTSTRAP_REPLICATES`).
+
+### Public Bundle API (`dojo/bench/evidence_bundle.py`)
+
+* `EvidenceBundleError(ExplorerExportError)`: Raised on schema, cross-file binding, digest, or filesystem violations.
+* `write_bundle(destination: Path, *, view: dict, sensitivity: dict) -> dict`:
+1. Validates `view` (`validate_explorer_view`), `sensitivity` (`validate_family_diagnostic`), and cross-file bindings (`validate_bundle_pair`) in memory before any filesystem action.
+2. Serializes canonical ASCII bytes for `explorer.json` and `family-diagnostic.json`, builds and validates `manifest.json` (`dojo-explorer-bundle-manifest-v2`, `schema_version=2`, `evidence_kind="synthetic"`, `eligibility="UNVERIFIED"`, `real_provider_calls=0`, `publishable=False`), and checks canonical manifest serialization (`<= 65,536` bytes).
+3. Checks `destination` is a `Path` without NUL/control chars, rejects existing targets or symlink/reparse parents (`os.lstat` / `st_file_attributes` / `st_reparse_tag`), creates `destination` with `mkdir(parents=False, exist_ok=False)`, writes the three fixed filenames exclusively (`open("xb")`), and runs `verify_bundle(destination)` before returning the manifest dict. Never overwrites or recursively deletes.
+
+
+* `verify_bundle(destination: Path) -> dict`:
+1. Verifies `destination` is a real directory (not symlink/junction/reparse) whose `os.scandir` entries equal `{explorer.json, family-diagnostic.json, manifest.json}` with regular non-symlink files.
+2. Reads each fixed file with a `+1` byte sentinel (`MAX_MANIFEST_BYTES + 1` or `MAX_VIEW_BYTES + 1`) without following manifest-supplied paths.
+3. Hashes actual bytes read, parses with `loads_bounded_explorer_json`, verifies canonical byte identity (`serialize_* == raw_bytes`), validates standalone schemas, cross-file invariants, and manifest SHA-256 / byte-length records. Returns the verified manifest dict.
+
+
+
+### Cross-File Consistency & Uncheckable Properties without Raw Input
+
+`validate_bundle_pair(view, sensitivity)` enforces:
+
+* `view["analysis"]["sensitivity"] is None`.
+* Exact equality of `source` (`input_sha256`, `expected_plan_hash`, `report_method_version`), `evidence_kind`, `eligibility`, `real_provider_calls`, `audit_status` (`view["analysis"]["audit_status"] == sensitivity["audit_status"]`), `evaluated_task_count == original_n_tasks`, and configuration alias lists (`[c["config_id"] for c in view["configurations"]] == sensitivity["configurations"]`).
+* Observed family count agreement and, for non-blocked panels, exact agreement of `family_sizes` task partition with `view["rows"]`, `originals` (`pass_at_1`, `expected_total_cost_nano_usd`, `mean_task_cost_nano_usd`) with `view["configurations"]`, and exact recomputation of every family exclusion in `sensitivity["exclusions"]` from the per-cell task/family/seed records in `view["rows"]`.
+* **What cannot be checked without raw input**: Because `view["rows"]` is empty or incomplete when `audit_status == "blocked"`, and because raw string identifiers (`task_id`, `config_id`, `family_id`, `dataset_id`) are replaced by sequential aliases and `source.input_sha256` hashes raw unaliased records, a standalone verifier on a blocked panel with 0 rows cannot verify `sensitivity["n_families"]` against rows, nor can any standalone verifier prove that `source.input_sha256` was genuinely hashed from a specific raw dataset rather than two co-forged synthetic files sharing a fabricated 64-hex string.
+
+### Offline CLI API (`dojo/bench/export_cli.py`)
+
+* `main(argv: list[str] | None = None) -> int`:
+* Subcommands `export` (`--input`, `--output-dir`, `--bootstrap-replicates`, `--bootstrap-seed`) and `verify` (`--bundle`).
+* `_SafeArgumentParser` suppresses raw `argv`/path echoing; `--help` exits `0` to stdout.
+* `export` validates integer arguments, checks `--output-dir` parent/non-existence before work, reads `--input` with `MAX_INPUT_BYTES + 1` sentinel, parses via `parse_analysis_json`, rejects `evidence_kind != "synthetic"` before report/bootstrap work, and returns exit `2` (`panel_audit_blocked`) without creating `--output-dir` when `envelope.audit.status == "blocked"`. Otherwise builds report (`allow_success_only_when_cost_missing=True`), view, sensitivity diagnostic, and writes the bundle.
+
+
+
+---
+
+## FILE: dojo/bench/evidence_bundle.py
+
+```python
+"""Deterministic synthetic evidence bundle writer and verifier (WP3 / 10i2).
+
+Packages `explorer.json`, `family-diagnostic.json`, and `manifest.json` into a
+brand-new directory with strict schema, canonical byte, SHA-256, and cross-file
+consistency checks. Verification establishes internal consistency of synthetic
+UNVERIFIED artifacts only; it never proves provider usage, scorer authenticity,
+or registration approval.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import stat
+from fractions import Fraction
+from pathlib import Path
+from typing import Any
+
+from dojo.bench.explorer_export import (
+    ALLOWED_AUDIT_STATUSES,
+    ALLOWED_SUMMARY_MODES,
+    MAX_VIEW_BYTES,
+    MAX_VIEW_DEPTH,
+    MAX_VIEW_NODES,
+    SOURCE_KEYS,
+    VIEW_MODEL,
+    VIEW_SCHEMA_VERSION,
+    ExplorerExportError,
+    _check_exact_keys,
+    _validate_clean_str,
+    _validate_sha256_str,
+    is_exact_int,
+    loads_bounded_explorer_json,
+    parse_rational_dto,
+    serialize_explorer_view,
+    to_rational_dto,
+    validate_explorer_view,
+    validate_json_tree_bounds,
+)
+from dojo.bench.records import FOUNDATION_METHOD_VERSION
+from dojo.bench.sensitivity_diagnostics import (
+    DIAGNOSTIC_MODEL,
+    family_leave_one_out,
+    serialize_family_diagnostic,
+    validate_family_diagnostic,
+)
+
+BUNDLE_SCHEMA_VERSION: int = 2
+BUNDLE_MODEL: str = "dojo-explorer-bundle-manifest-v2"
+
+EXPLORER_FILENAME: str = "explorer.json"
+DIAGNOSTIC_FILENAME: str = "family-diagnostic.json"
+MANIFEST_FILENAME: str = "manifest.json"
+
+EXPECTED_BUNDLE_FILENAMES: frozenset[str] = frozenset(
+    {
+        EXPLORER_FILENAME,
+        DIAGNOSTIC_FILENAME,
+        MANIFEST_FILENAME,
+    }
+)
+ARTIFACT_FILENAMES: tuple[str, str] = (
+    EXPLORER_FILENAME,
+    DIAGNOSTIC_FILENAME,
+)
+
+MAX_MANIFEST_BYTES: int = 65_536
+MAX_MANIFEST_NODES: int = 1_000
+MAX_MANIFEST_DEPTH: int = 12
+MAX_PATH_CHARS: int = 1_024
+
+MANIFEST_TOP_KEYS: frozenset[str] = frozenset(
+    {
+        "schema_version",
+        "bundle_model",
+        "evidence_kind",
+        "eligibility",
+        "real_provider_calls",
+        "publishable",
+        "source",
+        "summary_mode",
+        "audit_status",
+        "evaluated_task_count",
+        "n_configurations",
+        "n_families",
+        "files",
+        "limitations",
+    }
+)
+MANIFEST_FILES_KEYS: frozenset[str] = frozenset(
+    {
+        EXPLORER_FILENAME,
+        DIAGNOSTIC_FILENAME,
+    }
+)
+MANIFEST_FILE_ENTRY_KEYS: frozenset[str] = frozenset(
+    {
+        "filename",
+        "schema_version",
+        "model",
+        "byte_length",
+        "sha256",
+    }
+)
+
+BUNDLE_LIMITATIONS: list[str] = [
+    "synthetic_unverified_only",
+    "content_consistency_not_authenticity",
+    "no_live_provider_or_registration_approval",
+]
+
+_FILE_ATTRIBUTE_REPARSE_POINT: int = getattr(
+    stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400
+)
+
+__all__ = [
+    "ARTIFACT_FILENAMES",
+    "BUNDLE_LIMITATIONS",
+    "BUNDLE_MODEL",
+    "BUNDLE_SCHEMA_VERSION",
+    "DIAGNOSTIC_FILENAME",
+    "EXPECTED_BUNDLE_FILENAMES",
+    "EXPLORER_FILENAME",
+    "MANIFEST_FILENAME",
+    "MANIFEST_FILES_KEYS",
+    "MANIFEST_FILE_ENTRY_KEYS",
+    "MANIFEST_TOP_KEYS",
+    "MAX_MANIFEST_BYTES",
+    "EvidenceBundleError",
+    "build_bundle_manifest",
+    " canonicalize_manifest_bytes",
+    "family_leave_one_out",
+    "serialize_bundle_manifest",
+    "validate_bundle_manifest",
+    "validate_bundle_pair",
+    "verify_bundle",
+    "write_bundle",
+]
+
+
+class EvidenceBundleError(ExplorerExportError):
+    """Raised when an evidence bundle or its destination violates v2 bundle rules."""
+
+
+def _is_reparse_or_symlink_stat(st: os.stat_result) -> bool:
+    if stat.S_ISLNK(st.st_mode):
+        return True
+    file_attrs = getattr(st, "st_file_attributes", 0)
+    if isinstance(file_attrs, int) and (file_attrs & _FILE_ATTRIBUTE_REPARSE_POINT):
+        return True
+    reparse_tag = getattr(st, "st_reparse_tag", 0)
+    if isinstance(reparse_tag, int) and reparse_tag != 0:
+        return True
+    return False
+
+
+def _validate_path_object(path: Any, label: str = "destination") -> Path:
+    if not isinstance(path, Path):
+        raise EvidenceBundleError(f"{label} must be a pathlib.Path instance")
+    raw = os.fspath(path)
+    if not isinstance(raw, str) or not raw.strip() or len(raw) > MAX_PATH_CHARS:
+        raise EvidenceBundleError(f"{label} path string is empty or exceeds maximum length")
+    for ch in raw:
+        code = ord(ch)
+        if code < 32 or code == 127 or 0xD800 <= code <= 0xDFFF:
+            raise EvidenceBundleError(f"{label} path contains control characters or surrogates")
+    return path
+
+
+def _ inspect_ancestors_no_symlink(target: Path) -> None:
+    """Reject symlink/reparse ancestors for a target path."""
+    try:
+        abs_target = Path(os.path.abspath(os.fspath(target)))
+    except OSError as exc:
+        raise EvidenceBundleError("Unable to resolve destination path") from exc
+
+    # Check every existing ancestor from root down to parent
+    chain = [abs_target, *abs_target.parents]
+    for candidate in reversed(chain):
+        try:
+            st = os.lstat(os.fspath(candidate))
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise EvidenceBundleError("Unable to stat ancestor path") from exc
+        if _is_reparse_or_symlink_stat(st):
+            raise EvidenceBundleError("Symlink or reparse point detected in path hierarchy")
+        if candidate != abs_target and not stat.S_ISDIR(st.st_mode):
+            raise EvidenceBundleError("Ancestor in path hierarchy is not a directory")
+
+
+def _recompute_exclusions_from_view_rows(
+    view: dict[str, Any],
+    sensitivity: dict[str, Any],
+) -> None:
+    """Verify non-blocked sensitivity sizes, originals, and exclusions against view rows."""
+    n_tasks = view["evaluated_task_count"]
+    configs = view["configurations"]
+    rows = view["rows"]
+    hide_costs = view["analysis"]["audit_status"] == "cost_incomplete"
+
+    # Build declared seeds map and verify originals match configuration point metrics
+    seeds_by_cfg: dict[str, tuple[int, ...]] = {}
+    cfg_metrics_by_id: dict[str, dict[str, Any]] = {}
+    for cfg in configs:
+        cid = cfg["config_id"]
+        seeds_by_cfg[cid] = tuple(cfg["declared_seeds"])
+        cfg_metrics_by_id[cid] = cfg
+
+    for orig in sensitivity["originals"]:
+        cid = orig["config_id"]
+        cfg = cfg_metrics_by_id[cid]
+        if orig["pass_at_1"] != cfg["pass_at_1"]:
+            raise EvidenceBundleError(
+                f"Cross-file mismatch: sensitivity original pass_at_1 for {cid} contradicts explorer.json"
+            )
+        if hide_costs:
+            if (
+                orig["expected_total_cost_nano_usd"]["defined"] is not False
+                or orig["mean_task_cost_nano_usd"]["defined"] is not False
+            ):
+                raise EvidenceBundleError(
+                    f"Cross-file mismatch: cost_incomplete sensitivity original cost defined for {cid}"
+                )
+        else:
+            if orig["expected_total_cost_nano_usd"] != cfg["expected_total_cost_nano_usd"]:
+                raise EvidenceBundleError(
+                    f"Cross-file mismatch: sensitivity original total cost for {cid} contradicts explorer.json"
+                )
+            tot_frac = parse_rational_dto(
+                cfg["expected_total_cost_nano_usd"],
+                "cfg.expected_total_cost_nano_usd",
+            )
+            mean_frac = parse_rational_dto(
+                orig["mean_task_cost_nano_usd"],
+                "orig.mean_task_cost_nano_usd",
+            )
+            if tot_frac is None or mean_frac is None or tot_frac != mean_frac * n_tasks:
+                raise EvidenceBundleError(
+                    f"Cross-file mismatch: sensitivity original mean cost for {cid} contradicts explorer.json"
+                )
+
+    # Map tasks to families and per-(config, task) pass_rate and mean_cost from view["rows"]
+    task_to_family: dict[str, str] = {}
+    cell_lookup: dict[tuple[str, str, int], dict[str, Any]] = {}
+    for row in rows:
+        tid = row["task_id"]
+        fid = row["family_id"]
+        cid = row["config_id"]
+        seed = row["seed"]
+        if tid in task_to_family and task_to_family[tid] != fid:
+            raise EvidenceBundleError("Inconsistent task family in explorer.json rows")
+        task_to_family[tid] = fid
+        cell_lookup[(cid, tid, seed)] = row
+
+    all_tasks = sorted(task_to_family.keys())
+    all_families = sorted(set(task_to_family.values()))
+    if len(all_families) != sensitivity["n_families"]:
+        raise EvidenceBundleError(
+            "Cross-file mismatch: sensitivity n_families contradicts families in explorer.json rows"
+        )
+
+    expected_family_sizes = [
+        {
+            "family_id": fam_id,
+            "task_count": sum(1 for tid in all_tasks if task_to_family[tid] == fam_id),
+        }
+        for fam_id in all_families
+    ]
+    if sensitivity["family_sizes"] != expected_family_sizes:
+        raise EvidenceBundleError(
+            "Cross-file mismatch: sensitivity family_sizes contradicts task family partition in explorer.json"
+        )
+
+    # Precompute per-config, per-task pass rate and mean cost
+    task_points_by_cfg: dict[str, list[tuple[str, str, Fraction, Fraction | None]]] = {}
+    for cid, seeds in seeds_by_cfg.items():
+        k_c = len(seeds)
+        pts: list[tuple[str, str, Fraction, Fraction | None]] = []
+        for tid in all_tasks:
+            fam_id = task_to_family[tid]
+            solved = 0
+            cost_sum = 0
+            missing_cost = False
+            for s in seeds:
+                cell = cell_lookup[(cid, tid, s)]
+                if cell["outcome"] == "solved":
+                    solved += 1
+                if cell["cost_nano_usd"] is None:
+                    missing_cost = True
+                else:
+                    cost_sum += int(cell["cost_nano_usd"])
+            p_rate = Fraction(solved, k_c)
+            m_cost = None if (missing_cost or hide_costs) else Fraction(cost_sum, k_c)
+            pts.append((tid, fam_id, p_rate, m_cost))
+        task_points_by_cfg[cid] = pts
+
+    orig_by_cfg = {o["config_id"]: o for o in sensitivity["originals"]}
+    for excl, fam_id in zip(sensitivity["exclusions"], all_families, strict=True):
+        if excl["family_id"] != fam_id:
+            raise EvidenceBundleError("Cross-file mismatch: exclusion family_id ordering mismatch")
+        retained_tasks = [tid for tid in all_tasks if task_to_family[tid] != fam_id]
+        if excl["retained_task_count"] != len(retained_tasks):
+            raise EvidenceBundleError(
+                f"Cross-file mismatch: retained_task_count for {fam_id} contradicts explorer.json rows"
+            )
+        if excl["excluded_task_count"] != n_tasks - len(retained_tasks):
+            raise EvidenceBundleError(
+                f"Cross-file mismatch: excluded_task_count for {fam_id} contradicts explorer.json rows"
+            )
+
+        for cfg_entry in excl["configurations"]:
+            cid = cfg_entry["config_id"]
+            retained_pts = [
+                pt for pt in task_points_by_cfg[cid] if pt[1] != fam_id
+            ]
+            if not retained_pts:
+                for metric_key in (
+                    "pass_at_1",
+                    "expected_total_cost_nano_usd",
+                    "mean_task_cost_nano_usd",
+                    "delta_pass_at_1",
+                    "delta_mean_task_cost_nano_usd",
+                ):
+                    if (
+                        cfg_entry[metric_key]["defined"] is not False
+                        or cfg_entry[metric_key]["reason"] != "no_retained_tasks"
+                    ):
+                        raise EvidenceBundleError(
+                            f"Cross-file mismatch: empty retained set for {fam_id}/{cid} must be undefined"
+                        )
+                continue
+
+            n_ret = Fraction(len(retained_pts), 1)
+            exp_pass = sum((pt[2] for pt in retained_pts), Fraction(0, 1)) / n_ret
+            orig_pass = parse_rational_dto(
+                orig_by_cfg[cid]["pass_at_1"], "orig.pass_at_1"
+            )
+            assert orig_pass is not None
+            exp_delta_pass = exp_pass - orig_pass
+
+            if cfg_entry["pass_at_1"] != to_rational_dto(exp_pass):
+                raise EvidenceBundleError(
+                    f"Cross-file mismatch: exclusion pass_at_1 for {fam_id}/{cid} contradicts explorer.json rows"
+                )
+            if cfg_entry["delta_pass_at_1"] != to_rational_dto(
+                exp_delta_pass, allow_negative=True
+            ):
+                raise EvidenceBundleError(
+                    f"Cross-file mismatch: exclusion delta_pass_at_1 for {fam_id}/{cid} contradicts explorer.json rows"
+                )
+
+            if hide_costs:
+                for cost_key in (
+                    "expected_total_cost_nano_usd",
+                    "mean_task_cost_nano_usd",
+                    "delta_mean_task_cost_nano_usd",
+                ):
+                    if (
+                        cfg_entry[cost_key]["defined"] is not False
+                        or cfg_entry[cost_key]["reason"] != "missing_cost_nano_usd"
+                    ):
+                        raise EvidenceBundleError(
+                            f"Cross-file mismatch: cost_incomplete exclusion cost must be withheld for {fam_id}/{cid}"
+                        )
+            else:
+                exp_tot_cost = sum(
+                    (pt[3] for pt in retained_pts if pt[3] is not None),
+                    Fraction(0, 1),
+                )
+                exp_mean_cost = exp_tot_cost / n_ret
+                orig_mean_cost = parse_rational_dto(
+                    orig_by_cfg[cid]["mean_task_cost_nano_usd"],
+                    "orig.mean_task_cost_nano_usd",
+                )
+                assert orig_mean_cost is not None
+                exp_delta_mean = exp_mean_cost - orig_mean_cost
+
+                if cfg_entry["expected_total_cost_nano_usd"] != to_rational_dto(exp_tot_cost):
+                    raise EvidenceBundleError(
+                        f"Cross-file mismatch: exclusion total cost for {fam_id}/{cid} contradicts explorer.json rows"
+                    )
+                if cfg_entry["mean_task_cost_nano_usd"] != to_rational_dto(exp_mean_cost):
+                    raise EvidenceBundleError(
+                        f"Cross-file mismatch: exclusion mean cost for {fam_id}/{cid} contradicts explorer.json rows"
+                    )
+                if cfg_entry["delta_mean_task_cost_nano_usd"] != to_rational_dto(
+                    exp_delta_mean, allow_negative=True
+                ):
+                    raise EvidenceBundleError(
+                        f"Cross-file mismatch: exclusion delta mean cost for {fam_id}/{cid} contradicts explorer.json rows"
+                    )
+
+
+def validate_bundle_pair(view: dict[str, Any], sensitivity: dict[str, Any]) -> None:
+    """Validate `view` and `sensitivity` individually and check all cross-file bindings."""
+    try:
+        validate_explorer_view(view)
+        validate_family_diagnostic(sensitivity)
+    except ExplorerExportError as exc:
+        raise EvidenceBundleError(str(exc)) from exc
+
+    if view["analysis"]["sensitivity"] is not None:
+        raise EvidenceBundleError("view.analysis.sensitivity must remain null in v2 bundles")
+
+    if view["source"] != sensitivity["source"]:
+        raise EvidenceBundleError(
+            "Cross-file mismatch: explorer.json and family-diagnostic.json source bindings differ"
+        )
+
+    if (
+        view["evidence_kind"] != sensitivity["evidence_kind"]
+        or view["eligibility"] != sensitivity["eligibility"]
+        or view["real_provider_calls"] != sensitivity["real_provider_calls"]
+    ):
+        raise EvidenceBundleError(
+            "Cross-file mismatch: evidence_kind, eligibility, or real_provider_calls differ"
+        )
+
+    view_audit = view["analysis"]["audit_status"]
+    diag_audit = sensitivity["audit_status"]
+    if view_audit != diag_audit:
+        raise EvidenceBundleError(
+            "Cross-file mismatch: audit_status differs between explorer.json and family-diagnostic.json"
+        )
+
+    if view["evaluated_task_count"] != sensitivity["original_n_tasks"]:
+        raise EvidenceBundleError(
+            "Cross-file mismatch: evaluated_task_count does not match diagnostic original_n_tasks"
+        )
+
+    view_configs = [cfg["config_id"] for cfg in view["configurations"]]
+    if view_configs != sensitivity["configurations"]:
+        raise EvidenceBundleError(
+            "Cross-file mismatch: configuration alias lists differ between artifacts"
+        )
+
+    observed_families = {row["family_id"] for row in view["rows"]}
+    if len(observed_families) != sensitivity["n_families"]:
+        raise EvidenceBundleError(
+            "Cross-file mismatch: observed family count in explorer.json rows does not match diagnostic n_families"
+        )
+
+    if view_audit != "blocked":
+        _recompute_exclusions_from_view_rows(view, sensitivity)
+
+
+def build_bundle_manifest(
+    *,
+    view: dict[str, Any],
+    sensitivity: dict[str, Any],
+    view_bytes: bytes,
+    sensitivity_bytes: bytes,
+) -> dict[str, Any]:
+    """Construct the deterministic `manifest.json` dictionary for validated bundle artifacts."""
+    validate_bundle_pair(view, sensitivity)
+    view_sha256 = hashlib.sha256(view_bytes).hexdigest()
+    diag_sha256 = hashlib.sha256(sensitivity_bytes).hexdigest()
+
+    manifest: dict[str, Any] = {
+        "schema_version": BUNDLE_SCHEMA_VERSION,
+        "bundle_model": BUNDLE_MODEL,
+        "evidence_kind": "synthetic",
+        "eligibility": "UNVERIFIED",
+        "real_provider_calls": 0,
+        "publishable": False,
+        "source": dict(view["source"]),
+        "summary_mode": view["analysis"]["summary_mode"],
+        "audit_status": view["analysis"]["audit_status"],
+        "evaluated_task_count": view["evaluated_task_count"],
+        "n_configurations": len(view["configurations"]),
+        "n_families": sensitivity["n_families"],
+        "files": {
+            EXPLORER_FILENAME: {
+                "filename": EXPLORER_FILENAME,
+                "schema_version": VIEW_SCHEMA_VERSION,
+                "model": VIEW_MODEL,
+                "byte_length": len(view_bytes),
+                "sha256": view_sha256,
+            },
+            DIAGNOSTIC_FILENAME: {
+                "filename": DIAGNOSTIC_FILENAME,
+                "schema_version": 2,
+                "model": DIAGNOSTIC_MODEL,
+                "byte_length": len(sensitivity_bytes),
+                "sha256": diag_sha256,
+            },
+        },
+        "limitations": list(BUNDLE_LIMITATIONS),
+    }
+    validate_bundle_manifest(manifest)
+    return manifest
+
+
+def validate_bundle_manifest(manifest: dict[str, Any]) -> None:
+    """Strictly validate the `manifest.json` structure and invariants."""
+    if type(manifest) is not dict:
+        raise EvidenceBundleError("Manifest must be a plain dict")
+    try:
+        validate_json_tree_bounds(
+            manifest,
+            max_nodes=MAX_MANIFEST_NODES,
+            max_depth=MAX_MANIFEST_DEPTH,
+        )
+        _check_exact_keys(manifest, MANIFEST_TOP_KEYS, "manifest")
+    except ExplorerExportError as exc:
+        raise EvidenceBundleError(str(exc)) from exc
+
+    if (
+        not is_exact_int(manifest["schema_version"])
+        or manifest["schema_version"] != BUNDLE_SCHEMA_VERSION
+    ):
+        raise EvidenceBundleError("manifest.schema_version must be exact integer 2")
+    if manifest["bundle_model"] != BUNDLE_MODEL:
+        raise EvidenceBundleError(f"manifest.bundle_model must be {BUNDLE_MODEL!r}")
+    if manifest["evidence_kind"] != "synthetic":
+        raise EvidenceBundleError("manifest.evidence_kind must be 'synthetic'")
+    if manifest["eligibility"] != "UNVERIFIED":
+        raise EvidenceBundleError("manifest.eligibility must be 'UNVERIFIED'")
+    if not is_exact_int(manifest["real_provider_calls"]) or manifest["real_provider_calls"] != 0:
+        raise EvidenceBundleError("manifest.real_provider_calls must be exact integer 0")
+    if manifest["publishable"] is not False:
+        raise EvidenceBundleError("manifest.publishable must be False")
+
+    try:
+        src = _check_exact_keys(manifest["source"], SOURCE_KEYS, "manifest.source")
+        _validate_sha256_str(src["input_sha256"], "manifest.source.input_sha256")
+        _validate_sha256_str(src["expected_plan_hash"], "manifest.source.expected_plan_hash")
+    except ExplorerExportError as exc:
+        raise EvidenceBundleError(str(exc)) from exc
+    if src["report_method_version"] != FOUNDATION_METHOD_VERSION:
+        raise EvidenceBundleError("manifest.source.report_method_version mismatch")
+
+    summary_mode = manifest["summary_mode"]
+    audit_status = manifest["audit_status"]
+    if type(summary_mode) is not str or summary_mode not in ALLOWED_SUMMARY_MODES:
+        raise EvidenceBundleError("manifest.summary_mode invalid")
+    if type(audit_status) is not str or audit_status not in ALLOWED_AUDIT_STATUSES:
+        raise EvidenceBundleError("manifest.audit_status invalid")
+    if audit_status == "blocked" and summary_mode != "blocked":
+        raise EvidenceBundleError("Blocked manifest audit_status requires summary_mode == 'blocked'")
+    if audit_status == "cost_incomplete" and summary_mode not in {"blocked", "success_only"}:
+        raise EvidenceBundleError("cost_incomplete manifest audit_status forbids headline_complete")
+    if audit_status == "valid" and summary_mode != "headline_complete":
+        raise EvidenceBundleError("valid manifest audit_status requires headline_complete")
+
+    if not is_exact_int(manifest["evaluated_task_count"]) or manifest["evaluated_task_count"] < 1:
+        raise EvidenceBundleError("manifest.evaluated_task_count must be a positive int")
+    if not is_exact_int(manifest["n_configurations"]) or manifest["n_configurations"] < 1:
+        raise EvidenceBundleError("manifest.n_configurations must be a positive int")
+    if not is_exact_int(manifest["n_families"]) or manifest["n_families"] < 0:
+        raise EvidenceBundleError("manifest.n_families must be a non-negative int")
+    if audit_status != "blocked" and manifest["n_families"] < 1:
+        raise EvidenceBundleError("Non-blocked manifest requires n_families >= 1")
+
+    try:
+        files_map = _check_exact_keys(manifest["files"], MANIFEST_FILES_KEYS, "manifest.files")
+    except ExplorerExportError as exc:
+        raise EvidenceBundleError(str(exc)) from exc
+
+    expected_models = {
+        EXPLORER_FILENAME: (VIEW_SCHEMA_VERSION, VIEW_MODEL),
+        DIAGNOSTIC_FILENAME: (2, DIAGNOSTIC_MODEL),
+    }
+    for fname, (exp_ver, exp_model) in expected_models.items():
+        try:
+            entry = _check_exact_keys(
+                files_map[fname],
+                MANIFEST_FILE_ENTRY_KEYS,
+                f"manifest.files[{fname}]",
+            )
+            _validate_clean_str(entry["filename"], f"manifest.files[{fname}].filename", max_len=64)
+            _validate_clean_str(entry["model"], f"manifest.files[{fname}].model", max_len=64)
+            _validate_sha256_str(entry["sha256"], f"manifest.files[{fname}].sha256")
+        except ExplorerExportError as exc:
+            raise EvidenceBundleError(str(exc)) from exc
+
+        if entry["filename"] != fname:
+            raise EvidenceBundleError(f"manifest.files[{fname}].filename must equal {fname!r}")
+        if not is_exact_int(entry["schema_version"]) or entry["schema_version"] != exp_ver:
+            raise EvidenceBundleError(f"manifest.files[{fname}].schema_version mismatch")
+        if entry["model"] != exp_model:
+            raise EvidenceBundleError(f"manifest.files[{fname}].model mismatch")
+        blen = entry["byte_length"]
+        if not is_exact_int(blen) or not 1 <= blen <= MAX_VIEW_BYTES:
+            raise EvidenceBundleError(f"manifest.files[{fname}].byte_length out of bounds")
+
+    if manifest["limitations"] != BUNDLE_LIMITATIONS:
+        raise EvidenceBundleError("manifest.limitations must match exact fixed bundle disclosures")
+
+
+def serialize_bundle_manifest(manifest: dict[str, Any]) -> bytes:
+    """Validate `manifest` and return canonical ASCII JSON bytes with a single trailing newline."""
+    validate_bundle_manifest(manifest)
+    raw = (
+        json.dumps(
+            manifest,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        )
+        + "\n"
+    ).encode("ascii")
+    if len(raw) > MAX_MANIFEST_BYTES:
+        raise EvidenceBundleError("Serialized manifest exceeds byte limit")
+    return raw
+
+
+canonicalize_manifest_bytes = serialize_bundle_manifest
+
+
+def _read_regular_bundle_file(
+    bundle_dir: Path,
+    fixed_name: str,
+    *,
+    max_bytes: int,
+) -> bytes:
+    """Safely read a fixed filename from `bundle_dir` using a +1 byte sentinel."""
+    if fixed_name not in EXPECTED_BUNDLE_FILENAMES:
+        raise EvidenceBundleError("Internal error: unapproved bundle filename")
+    file_path = bundle_dir / fixed_name
+    try:
+        st = os.lstat(os.fspath(file_path))
+    except OSError as exc:
+        raise EvidenceBundleError(f"Missing or unreadable bundle file: {fixed_name}") from exc
+
+    if _is_reparse_or_symlink_stat(st) or not stat.S_ISREG(st.st_mode):
+        raise EvidenceBundleError(f"Bundle entry {fixed_name} must be a regular non-symlink file")
+    if st.st_size < 1 or st.st_size > max_bytes:
+        raise EvidenceBundleError(f"Bundle file {fixed_name} size is out of bounds")
+
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(os.fspath(file_path), flags)
+    except OSError as exc:
+        raise EvidenceBundleError(f"Cannot open bundle file: {fixed_name}") from exc
+
+    try:
+        f_st = os.fstat(fd)
+        if (
+            _is_reparse_or_symlink_stat(f_st)
+            or not stat.S_ISREG(f_st.st_mode)
+            or f_st.st_ino != st.st_ino
+            or f_st.st_dev != st.st_dev
+        ):
+            raise EvidenceBundleError(f"File identity changed while opening {fixed_name}")
+        with os.fdopen(fd, "rb") as stream:
+            data = stream.read(max_bytes + 1)
+    except EvidenceBundleError:
+        raise
+    except OSError as exc:
+        raise EvidenceBundleError(f"Failed reading bundle file: {fixed_name}") from exc
+
+    if len(data) < 1 or len(data) > max_bytes or len(data) != st.st_size:
+        raise EvidenceBundleError(f"Bundle file {fixed_name} byte length exceeded limit or changed")
+    return data
+
+
+def _write_exclusive_file(target_path: Path, payload: bytes) -> None:
+    try:
+        st = os.lstat(os.fspath(target_path))
+        if st is not None:
+            raise EvidenceBundleError("Target bundle file already exists")
+    except FileNotFoundError:
+        pass
+    except EvidenceBundleError:
+        raise
+    except OSError as exc:
+        raise EvidenceBundleError("Failed checking target file path") from exc
+
+    flags = (
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | getattr(os, "O_BINARY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        fd = os.open(os.fspath(target_path), flags, 0o644)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(payload)
+    except OSError as exc:
+        raise EvidenceBundleError("Exclusive bundle file write failed") from exc
+
+
+def write_bundle(destination: Path, *, view: dict, sensitivity: dict) -> dict:
+    """Validate `view` and `sensitivity`, write a brand-new 3-file bundle, and verify it."""
+    dest = _validate_path_object(destination, "destination")
+
+    # 1. Validate inputs and cross-file bindings before any filesystem mutation
+    validate_bundle_pair(view, sensitivity)
+    try:
+        view_bytes = serialize_explorer_view(view)
+        sensitivity_bytes = serialize_family_diagnostic(sensitivity)
+    except ExplorerExportError as exc:
+        raise EvidenceBundleError(str(exc)) from exc
+
+    manifest = build_bundle_manifest(
+        view=view,
+        sensitivity=sensitivity,
+        view_bytes=view_bytes,
+        sensitivity_bytes=sensitivity_bytes,
+    )
+    manifest_bytes = serialize_bundle_manifest(manifest)
+
+    # 2. Validate destination and parent safety
+    _inspect_ancestors_no_symlink(dest)
+    try:
+        os.lstat(os.fspath(dest))
+        raise EvidenceBundleError("Destination path already exists")
+    except FileNotFoundError:
+        pass
+    except EvidenceBundleError:
+        raise
+    except OSError as exc:
+        raise EvidenceBundleError("Unable to inspect destination path") from exc
+
+    parent = dest.parent
+    try:
+        parent_st = os.lstat(os.fspath(parent))
+    except OSError as exc:
+        raise EvidenceBundleError("Destination parent directory does not exist") from exc
+    if _is_reparse_or_symlink_stat(parent_st) or not stat.S_ISDIR(parent_st.st_mode):
+        raise EvidenceBundleError("Destination parent must be an existing non-symlink directory")
+
+    # 3. Create brand-new directory exclusively and write the 3 fixed files
+    try:
+        dest.mkdir(parents=False, exist_ok=False)
+    except OSError as exc:
+        raise EvidenceBundleError("Failed to create brand-new destination directory") from exc
+
+    try:
+        dest_st = os.lstat(os.fspath(dest))
+    except OSError as exc:
+        raise EvidenceBundleError("Failed to stat created destination directory") from exc
+    if _is_reparse_or_symlink_stat(dest_st) or not stat.S_ISDIR(dest_st.st_mode):
+        raise EvidenceBundleError("Created destination is not a regular directory")
+
+    _write_exclusive_file(dest / EXPLORER_FILENAME, view_bytes)
+    _write_exclusive_file(dest / DIAGNOSTIC_FILENAME, sensitivity_bytes)
+    _write_exclusive_file(dest / MANIFEST_FILENAME, manifest_bytes)
+
+    return verify_bundle(dest)
+
+
+def verify_bundle(destination: Path) -> dict:
+    """Verify a 3-file v2 synthetic evidence bundle directory and return its manifest dict."""
+    dest = _validate_path_object(destination, "destination")
+    _inspect_ancestors_no_symlink(dest)
+
+    try:
+        dest_st = os.lstat(os.fspath(dest))
+    except OSError as exc:
+        raise EvidenceBundleError("Bundle destination does not exist or is unreadable") from exc
+
+    if _is_reparse_or_symlink_stat(dest_st) or not stat.S_ISDIR(dest_st.st_mode):
+        raise EvidenceBundleError("Bundle destination must be a non-symlink directory")
+
+    # Enumerate directory entries; require exact 3 filenames with no extras or symlinks
+    seen_names: set[str] = set()
+    try:
+        with os.scandir(os.fspath(dest)) as it:
+            for entry in it:
+                name = entry.name
+                seen_names.add(name)
+                if name not in EXPECTED_BUNDLE_FILENAMES:
+                    raise EvidenceBundleError(f"Unexpected file in bundle directory: {name}")
+                entry_st = entry.stat(follow_symlinks=False)
+                if _is_reparse_or_symlink_stat(entry_st) or not stat.S_ISREG(entry_st.st_mode):
+                    raise EvidenceBundleError(f"Non-regular or symlink entry in bundle: {name}")
+    except EvidenceBundleError:
+        raise
+    except OSError as exc:
+        raise EvidenceBundleError("Unable to list bundle directory") from exc
+
+    if seen_names != EXPECTED_BUNDLE_FILENAMES:
+        raise EvidenceBundleError(
+            "Bundle directory must contain exactly explorer.json, family-diagnostic.json, and manifest.json"
+        )
+
+    # Read fixed filenames only (never follow manifest-provided paths)
+    manifest_bytes = _read_regular_bundle_file(
+        dest, MANIFEST_FILENAME, max_bytes=MAX_MANIFEST_BYTES
+    )
+    view_bytes = _read_regular_bundle_file(
+        dest, EXPLORER_FILENAME, max_bytes=MAX_VIEW_BYTES
+    )
+    sensitivity_bytes = _read_regular_bundle_file(
+        dest, DIAGNOSTIC_FILENAME, max_bytes=MAX_VIEW_BYTES
+    )
+
+    try:
+        manifest = loads_bounded_explorer_json(
+            manifest_bytes,
+            max_bytes=MAX_MANIFEST_BYTES,
+            max_depth=MAX_MANIFEST_DEPTH,
+            max_nodes=MAX_MANIFEST_NODES,
+        )
+        view = loads_bounded_explorer_json(
+            view_bytes,
+            max_bytes=MAX_VIEW_BYTES,
+            max_depth=MAX_VIEW_DEPTH,
+            max_nodes=MAX_VIEW_NODES,
+        )
+        sensitivity = loads_bounded_explorer_json(
+            sensitivity_bytes,
+            max_bytes=MAX_VIEW_BYTES,
+            max_depth=MAX_VIEW_DEPTH,
+            max_nodes=MAX_VIEW_NODES,
+        )
+    except ExplorerExportError as exc:
+        raise EvidenceBundleError(str(exc)) from exc
+
+    validate_bundle_manifest(manifest)
+    validate_bundle_pair(view, sensitivity)
+
+    # Check canonical byte formatting of all three files
+    try:
+        canonical_view_bytes = serialize_explorer_view(view)
+        canonical_diag_bytes = serialize_family_diagnostic(sensitivity)
+        canonical_manifest_bytes = serialize_bundle_manifest(manifest)
+    except ExplorerExportError as exc:
+        raise EvidenceBundleError(str(exc)) from exc
+
+    if view_bytes != canonical_view_bytes:
+        raise EvidenceBundleError("explorer.json is not in canonical serialized byte format")
+    if sensitivity_bytes != canonical_diag_bytes:
+        raise EvidenceBundleError("family-diagnostic.json is not in canonical serialized byte format")
+    if manifest_bytes != canonical_manifest_bytes:
+        raise EvidenceBundleError("manifest.json is not in canonical serialized byte format")
+
+    # Verify manifest metadata against actual artifacts and digests
+    expected_manifest = build_bundle_manifest(
+        view=view,
+        sensitivity=sensitivity,
+        view_bytes=view_bytes,
+        sensitivity_bytes=sensitivity_bytes,
+    )
+    if manifest != expected_manifest:
+        raise EvidenceBundleError(
+            "manifest.json metadata, hashes, or byte lengths do not match bundle artifacts"
+        )
+
+    return manifest
+
+```
+
+## FILE: tests/test_evidence_bundle.py
+
+```python
+"""Unit and boundary tests for WP3 / 10i2 evidence bundle packaging (`dojo.bench.evidence_bundle`)."""
+
+from __future__ import annotations
+
+import copy
+import hashlib
+import json
+from pathlib import Path
+
+import pytest
+
+from dojo.bench.evidence_bundle import (
+    DIAGNOSTIC_FILENAME,
+    EXPLORER_FILENAME,
+    MANIFEST_FILENAME,
+    MAX_MANIFEST_BYTES,
+    EvidenceBundleError,
+    serialize_bundle_manifest,
+    validate_bundle_pair,
+    verify_bundle,
+    write_bundle,
+)
+from dojo.bench.explorer_export import (
+    MAX_VIEW_BYTES,
+    build_explorer_view,
+    serialize_explorer_view,
+    validate_explorer_view,
+)
+from dojo.bench.records import parse_analysis_envelope
+from dojo.bench.report import build_analysis_report
+from dojo.bench.sensitivity_diagnostics import (
+    family_leave_one_out,
+    serialize_family_diagnostic,
+    validate_family_diagnostic,
+)
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+@pytest.fixture
+def unequal_panel() -> dict:
+    return json.loads((FIXTURES / "explorer_v2/unequal_seeds_panel.json").read_text(encoding="utf-8"))
+
+
+def _make_artifacts(panel: dict, **report_kwargs) -> tuple[dict, dict]:
+    env = parse_analysis_envelope(panel)
+    report = build_analysis_report(
+        env,
+        bootstrap_replicates=20,
+        bootstrap_seed=17,
+        **report_kwargs,
+    )
+    view = build_explorer_view(env, report)
+    diag = family_leave_one_out(env)
+    return view, diag
+
+
+def test_write_and_verify_bundle_roundtrip_and_determinism(
+    unequal_panel: dict,
+    tmp_path: Path,
+) -> None:
+    view, diag = _make_artifacts(unequal_panel)
+    bundle_a = tmp_path / "bundle_a"
+    bundle_b = tmp_path / "bundle_b"
+
+    manifest_a = write_bundle(bundle_a, view=view, sensitivity=diag)
+    manifest_b = write_bundle(bundle_b, view=view, sensitivity=diag)
+    assert manifest_a == manifest_b
+
+    verified = verify_bundle(bundle_a)
+    assert verified == manifest_a
+    assert verified["schema_version"] == 2
+    assert verified["bundle_model"] == "dojo-explorer-bundle-manifest-v2"
+    assert verified["evidence_kind"] == "synthetic"
+    assert verified["eligibility"] == "UNVERIFIED"
+    assert verified["real_provider_calls"] == 0
+    assert verified["publishable"] is False
+
+    # Exactly three files exist and byte-for-byte match across deterministic builds
+    files_a = sorted(p.name for p in bundle_a.iterdir())
+    assert files_a == [EXPLORER_FILENAME, DIAGNOSTIC_FILENAME, MANIFEST_FILENAME]
+    for fname in files_a:
+        bytes_a = (bundle_a / fname).read_bytes()
+        bytes_b = (bundle_b / fname).read_bytes()
+        assert bytes_a == bytes_b
+        if fname != MANIFEST_FILENAME:
+            assert verified["files"][fname]["byte_length"] == len(bytes_a)
+            assert verified["files"][fname]["sha256"] == hashlib.sha256(bytes_a).hexdigest()
+
+    # No absolute path, temp directory name, or raw dataset_id in any bundle file
+    for fname in files_a:
+        text = (bundle_a / fname).read_text(encoding="utf-8")
+        assert str(tmp_path) not in text
+        assert "synthetic_stats_fixture_v1" not in text
+
+
+def test_success_only_and_blocked_bundle_roundtrip(
+    unequal_panel: dict,
+    tmp_path: Path,
+) -> None:
+    # 1. Cost-incomplete / success-only bundle
+    cost_inc = copy.deepcopy(unequal_panel)
+    cost_inc["records"][0]["cost_nano_usd"] = None
+    view_so, diag_so = _make_artifacts(
+        cost_inc, allow_success_only_when_cost_missing=True
+    )
+    so_dir = tmp_path / "bundle_success_only"
+    m_so = write_bundle(so_dir, view=view_so, sensitivity=diag_so)
+    assert m_so["summary_mode"] == "success_only"
+    assert m_so["audit_status"] == "cost_incomplete"
+    assert verify_bundle(so_dir) == m_so
+
+    # 2. Blocked bundle (pure bundle API supports valid blocked pair even though CLI refuses blocked)
+    blocked = copy.deepcopy(unequal_panel)
+    blocked["records"].pop()
+    view_bl, diag_bl = _make_artifacts(blocked)
+    bl_dir = tmp_path / "bundle_blocked"
+    m_bl = write_bundle(bl_dir, view=view_bl, sensitivity=diag_bl)
+    assert m_bl["summary_mode"] == "blocked"
+    assert m_bl["audit_status"] == "blocked"
+    assert verify_bundle(bl_dir) == m_bl
+
+
+def test_cross_file_mismatch_with_standalone_valid_objects_rejected(
+    unequal_panel: dict,
+    tmp_path: Path,
+) -> None:
+    view_1, diag_1 = _make_artifacts(unequal_panel)
+
+    # Create a second valid panel with different outcomes/costs
+    panel_2 = copy.deepcopy(unequal_panel)
+    panel_2["records"][0]["cost_nano_usd"] = 7
+    view_2, diag_2 = _make_artifacts(panel_2)
+
+    # Both are individually valid
+    validate_explorer_view(view_1)
+    validate_family_diagnostic(diag_2)
+
+    # Pairing view_1 with diag_2 fails source hash binding
+    with pytest.raises(EvidenceBundleError, match="source bindings differ"):
+        write_bundle(tmp_path / "mismatch_source", view=view_1, sensitivity=diag_2)
+
+    # Even if source hashes are forged to match, originals and exclusions contradict view_1 rows
+    forged_diag = copy.deepcopy(diag_2)
+    forged_diag["source"] = copy.deepcopy(view_1["source"])
+    validate_family_diagnostic(forged_diag)
+    with pytest.raises(EvidenceBundleError, match="Cross-file mismatch"):
+        validate_bundle_pair(view_1, forged_diag)
+    assert not (tmp_path / "mismatch_source").exists()
+
+
+def test_cross_file_task_family_swap_with_matching_originals_rejected(
+    tmp_path: Path,
+) -> None:
+    """Two panels with identical config totals but swapped task-to-family mapping must fail cross-check."""
+    panel_a = {
+        "schema_version": 1,
+        "evidence_kind": "synthetic",
+        "dataset_id": "swap_test",
+        "expected_plan": {"tasks": ["t1", "t2"], "seeds_by_config": {"A": [0], "B": [0]}},
+        "records": [
+            {
+                "task_id": "t1",
+                "config_id": "A",
+                "seed": 0,
+                "split": "train",
+                "family_id": "f1",
+                "dataset_id": "swap_test",
+                "evidence_kind": "synthetic",
+                "registration_id": None,
+                "execution_complete": True,
+                "outcome": "solved",
+                "evidence_validity": "valid",
+                "scorer_status": "passed",
+                "baseline_verified": False,
+                "cost_nano_usd": 10,
+                "signals": {
+                    "has_patch": True,
+                    "visible_tests_pass": True,
+                    "hit_step_cap": False,
+                    "no_command_rate": 0.0,
+                    "agent_self_reports_done": True,
+                },
+            },
+            {
+                "task_id": "t2",
+                "config_id": "A",
+                "seed": 0,
+                "split": "train",
+                "family_id": "f2",
+                "dataset_id": "swap_test",
+                "evidence_kind": "synthetic",
+                "registration_id": None,
+                "execution_complete": True,
+                "outcome": "unsolved",
+                "evidence_validity": "valid",
+                "scorer_status": "failed",
+                "baseline_verified": False,
+                "cost_nano_usd": 20,
+                "signals": {
+                    "has_patch": True,
+                    "visible_tests_pass": True,
+                    "hit_step_cap": False,
+                    "no_command_rate": 0.0,
+                    "agent_self_reports_done": True,
+                },
+            },
+            {
+                "task_id": "t1",
+                "config_id": "B",
+                "seed": 0,
+                "split": "train",
+                "family_id": "f1",
+                "dataset_id": "swap_test",
+                "evidence_kind": "synthetic",
+                "registration_id": None,
+                "execution_complete": True,
+                "outcome": "unsolved",
+                "evidence_validity": "valid",
+                "scorer_status": "failed",
+                "baseline_verified": False,
+                "cost_nano_usd": 30,
+                "signals": {
+                    "has_patch": True,
+                    "visible_tests_pass": True,
+                    "hit_step_cap": False,
+                    "no_command_rate": 0.0,
+                    "agent_self_reports_done": True,
+                },
+            },
+            {
+                "task_id": "t2",
+                "config_id": "B",
+                "seed": 0,
+                "split": "train",
+                "family_id": "f2",
+                "dataset_id": "swap_test",
+                "evidence_kind": "synthetic",
+                "registration_id": None,
+                "execution_complete": True,
+                "outcome": "solved",
+                "evidence_validity": "valid",
+                "scorer_status": "passed",
+                "baseline_verified": False,
+                "cost_nano_usd": 40,
+                "signals": {
+                    "has_patch": True,
+                    "visible_tests_pass": True,
+                    "hit_step_cap": False,
+                    "no_command_rate": 0.0,
+                    "agent_self_reports_done": True,
+                },
+            },
+        ],
+    }
+    panel_b = copy.deepcopy(panel_a)
+    for rec in panel_b["records"]:
+        rec["family_id"] = "f2" if rec["task_id"] == "t1" else "f1"
+
+    view_a, _ = _make_artifacts(panel_a)
+    _, diag_b = _make_artifacts(panel_b)
+    diag_b["source"] = copy.deepcopy(view_a["source"])
+
+    # Both have identical originals and family_sizes, but swapped exclusions
+    validate_explorer_view(view_a)
+    validate_family_diagnostic(diag_b)
+    with pytest.raises(EvidenceBundleError, match="contradicts explorer.json rows"):
+        write_bundle(tmp_path / "swapped_families", view=view_a, sensitivity=diag_b)
+
+
+def test_destination_safety_refuses_existing_or_missing_parent_or_symlinks(
+    unequal_panel: dict,
+    tmp_path: Path,
+) -> None:
+    view, diag = _make_artifacts(unequal_panel)
+
+    # 1. Existing directory refused
+    existing_dir = tmp_path / "existing_dir"
+    existing_dir.mkdir()
+    sentinel = existing_dir / "keep.txt"
+    sentinel.write_text("do not delete", encoding="utf-8")
+    with pytest.raises(EvidenceBundleError, match="already exists"):
+        write_bundle(existing_dir, view=view, sensitivity=diag)
+    assert sentinel.read_text(encoding="utf-8") == "do not delete"
+
+    # 2. Existing file refused
+    existing_file = tmp_path / "existing_file"
+    existing_file.write_text("file", encoding="utf-8")
+    with pytest.raises(EvidenceBundleError, match="already exists"):
+        write_bundle(existing_file, view=view, sensitivity=diag)
+
+    # 3. Missing parent refused (no parents=True)
+    missing_parent = tmp_path / "nonexistent_parent" / "bundle"
+    with pytest.raises(EvidenceBundleError):
+        write_bundle(missing_parent, view=view, sensitivity=diag)
+
+    # 4. Symlink destination or symlink parent refused if supported by OS
+    real_parent = tmp_path / "real_parent"
+    real_parent.mkdir()
+    symlink_parent = tmp_path / "symlink_parent"
+    try:
+        symlink_parent.symlink_to(real_parent, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip("Symlinks not available in this environment")
+
+    with pytest.raises(EvidenceBundleError, match="Symlink|reparse"):
+        write_bundle(symlink_parent / "bundle", view=view, sensitivity=diag)
+
+
+def test_verify_rejects_partial_extra_and_tampered_files(
+    unequal_panel: dict,
+    tmp_path: Path,
+) -> None:
+    view, diag = _make_artifacts(unequal_panel)
+    bundle_dir = tmp_path / "bundle"
+    write_bundle(bundle_dir, view=view, sensitivity=diag)
+
+    # 1. Extra file in bundle directory rejected
+    extra = bundle_dir / "extra.json"
+    extra.write_text("{}\n", encoding="utf-8")
+    with pytest.raises(EvidenceBundleError, match="Unexpected file"):
+        verify_bundle(bundle_dir)
+    extra.unlink()
+    assert verify_bundle(bundle_dir)["schema_version"] == 2
+
+    # 2. Missing file (partial bundle) rejected
+    diag_path = bundle_dir / DIAGNOSTIC_FILENAME
+    saved_diag = diag_path.read_bytes()
+    diag_path.unlink()
+    with pytest.raises(EvidenceBundleError, match="must contain exactly"):
+        verify_bundle(bundle_dir)
+    diag_path.write_bytes(saved_diag)
+
+    # 3. Non-canonical whitespace in explorer.json rejected even if manifest hash updated
+    pretty_view = (json.dumps(view, indent=2, sort_keys=True) + "\n").encode("ascii")
+    (bundle_dir / EXPLORER_FILENAME).write_bytes(pretty_view)
+    with pytest.raises(EvidenceBundleError, match="canonical serialized byte format"):
+        verify_bundle(bundle_dir)
+    (bundle_dir / EXPLORER_FILENAME).write_bytes(serialize_explorer_view(view))
+
+    # 4. Tampered metric with stale manifest digest rejected
+    tampered_view = copy.deepcopy(view)
+    tampered_view["source"]["input_sha256"] = "a" * 64
+    tampered_diag = copy.deepcopy(diag)
+    tampered_diag["source"]["input_sha256"] = "a" * 64
+    (bundle_dir / EXPLORER_FILENAME).write_bytes(serialize_explorer_view(tampered_view))
+    (bundle_dir / DIAGNOSTIC_FILENAME).write_bytes(serialize_family_diagnostic(tampered_diag))
+    with pytest.raises(EvidenceBundleError, match="do not match bundle artifacts"):
+        verify_bundle(bundle_dir)
+
+
+def test_verify_rejects_manifest_tampering_and_duplicate_keys(
+    unequal_panel: dict,
+    tmp_path: Path,
+) -> None:
+    view, diag = _make_artifacts(unequal_panel)
+    bundle_dir = tmp_path / "bundle"
+    manifest = write_bundle(bundle_dir, view=view, sensitivity=diag)
+
+    # 1. Forged publishable=True or real evidence in manifest
+    forged = copy.deepcopy(manifest)
+    forged["publishable"] = True
+    with pytest.raises(EvidenceBundleError, match="publishable"):
+        serialize_bundle_manifest(forged)
+
+    # 2. Path traversal in manifest filename entry rejected without following it
+    bad_manifest = copy.deepcopy(manifest)
+    bad_manifest["files"][EXPLORER_FILENAME]["filename"] = "../outside.json"
+    (bundle_dir / MANIFEST_FILENAME).write_text(
+        json.dumps(bad_manifest, sort_keys=True, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(EvidenceBundleError, match="filename must equal"):
+        verify_bundle(bundle_dir)
+
+    # 3. Duplicate JSON key in manifest.json rejected
+    dup_manifest_bytes = (
+        b'{"schema_version":2,"schema_version":2,"bundle_model":"dojo-explorer-bundle-manifest-v2"}\n'
+    )
+    (bundle_dir / MANIFEST_FILENAME).write_bytes(dup_manifest_bytes)
+    with pytest.raises(EvidenceBundleError, match="Duplicate JSON object key"):
+        verify_bundle(bundle_dir)
+
+
+def test_verify_oversized_sentinel_read_rejected(
+    unequal_panel: dict,
+    tmp_path: Path,
+) -> None:
+    view, diag = _make_artifacts(unequal_panel)
+    bundle_dir = tmp_path / "bundle"
+    write_bundle(bundle_dir, view=view, sensitivity=diag)
+
+    # Oversized manifest (> 64 KiB)
+    (bundle_dir / MANIFEST_FILENAME).write_bytes(b"{" + b" " * (MAX_MANIFEST_BYTES + 10) + b"}\n")
+    with pytest.raises(EvidenceBundleError, match="size is out of bounds"):
+        verify_bundle(bundle_dir)
+
+    # Restore manifest, make explorer.json > 2 MiB
+    write_bundle(tmp_path / "bundle2", view=view, sensitivity=diag)
+    (tmp_path / "bundle2" / EXPLORER_FILENAME).write_bytes(b"x" * (MAX_VIEW_BYTES + 1))
+    with pytest.raises(EvidenceBundleError, match="size is out of bounds"):
+        verify_bundle(tmp_path / "bundle2")
+
+```
+
+## FILE: dojo/bench/export_cli.py
+
+```python
+"""Offline CLI for exporting and verifying v2 synthetic explorer bundles (WP4 / 10i3).
+
+Commands:
+  python -m dojo.bench.export_cli export --input PANEL.json --output-dir NEW_DIR \
+      [--bootstrap-replicates 20] [--bootstrap-seed 17]
+  python -m dojo.bench.export_cli verify --bundle DIR
+
+Never echoes raw argv, file paths, source payloads, or exception reprs.
+Exit codes: 0 (success or --help), 1 (argument/validation/refusal/IO error),
+2 (panel audit status is blocked on export).
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import stat
+import sys
+from collections.abc import Sequence
+from pathlib import Path
+from typing import NoReturn
+
+from dojo.bench.evidence_bundle import (
+    EvidenceBundleError,
+    _inspect_ancestors_no_symlink,
+    _is_reparse_or_symlink_stat,
+    _validate_path_object,
+    verify_bundle,
+    write_bundle,
+)
+from dojo.bench.explorer_export import (
+    ExplorerExportError,
+    build_explorer_view,
+)
+from dojo.bench.records import (
+    MAX_COUNT_VALUE,
+    MAX_INPUT_BYTES,
+    AnalysisInputError,
+    parse_analysis_json,
+)
+from dojo.bench.report import build_analysis_report
+from dojo.bench.sensitivity_diagnostics import family_leave_one_out
+from dojo.bench.stats import (
+    DEFAULT_BOOTSTRAP_REPLICATES,
+    MAX_BOOTSTRAP_REPLICATES,
+)
+
+EXIT_OK: int = 0
+EXIT_ERROR: int = 1
+EXIT_BLOCKED: int = 2
+
+MAX_CLI_SCALAR_CHARS: int = 64
+
+__all__ = [
+    "EXIT_BLOCKED",
+    "EXIT_ERROR",
+    "EXIT_OK",
+    "build_arg_parser",
+    "main",
+]
+
+
+class _CLISanitizedError(Exception):
+    """Internal exception carrying a fixed sanitized error code."""
+
+    def __init__(self, code: str, exit_code: int = EXIT_ERROR) -> None:
+        super().__init__(code)
+        self.code = code
+        self.exit_code = exit_code
+
+
+class _CLIHelpExit(Exception):
+    """Internal signal raised when `-h` or `--help` is requested."""
+
+
+class _SafeArgumentParser(argparse.ArgumentParser):
+    """ArgumentParser that never echoes raw user arguments or paths to stderr."""
+
+    def print_help(self, file: object = None) -> None:
+        super().print_help(file=sys.stdout if file is None else file)
+
+    def exit(self, status: int = 0, message: str | None = None) -> NoReturn:
+        if status == 0:
+            raise _CLIHelpExit()
+        raise _CLISanitizedError("invalid_cli_arguments", EXIT_ERROR)
+
+    def error(self, message: str) -> NoReturn:
+        raise _CLISanitizedError("invalid_cli_arguments", EXIT_ERROR)
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Construct the command-line parser for `python -m dojo.bench.export_cli`."""
+    parser = _SafeArgumentParser(
+        prog="python -m dojo.bench.export_cli",
+        description="Offline synthetic v2 explorer bundle exporter and verifier.",
+    )
+    subparsers = parser.add_subparsers(
+        dest="subcommand",
+        parser_class=_SafeArgumentParser,
+    )
+    subparsers.required = True
+
+    export_parser = subparsers.add_parser(
+        "export",
+        help="Export a synthetic analysis panel to a new v2 evidence bundle directory.",
+    )
+    export_parser.add_argument(
+        "--input",
+        required=True,
+        help="Path to normalized analysis input panel JSON (<= 1 MiB).",
+    )
+    export_parser.add_argument(
+        "--output-dir",
+        required=True,
+        help="Path to brand-new bundle directory to create.",
+    )
+    export_parser.add_argument(
+        "--bootstrap-replicates",
+        type=str,
+        default=str(DEFAULT_BOOTSTRAP_REPLICATES),
+        help="Number of paired task bootstrap replicates (1..100000, default: 10000).",
+    )
+    export_parser.add_argument(
+        "--bootstrap-seed",
+        type=str,
+        default="17",
+        help="Non-negative integer RNG seed for bootstrap resampling (default: 17).",
+    )
+
+    verify_parser = subparsers.add_parser(
+        "verify",
+        help="Verify an existing v2 evidence bundle directory.",
+    )
+    verify_parser.add_argument(
+        "--bundle",
+        required=True,
+        help="Path to existing v2 evidence bundle directory.",
+    )
+
+    return parser
+
+
+def _parse_bounded_nonneg_int(
+    raw: str,
+    *,
+    field_code: str,
+    min_val: int,
+    max_val: int,
+) -> int:
+    if not isinstance(raw, str) or not raw.strip() or len(raw.strip()) > MAX_CLI_SCALAR_CHARS:
+        raise _CLISanitizedError(field_code)
+    text = raw.strip()
+    if not text.isascii() or not text.isdigit():
+        raise _CLISanitizedError(field_code)
+    val = int(text)
+    if val < min_val or val > max_val:
+        raise _CLISanitizedError(field_code)
+    return val
+
+
+def _read_bounded_input_panel(path_str: str) -> bytes:
+    """Read at most `MAX_INPUT_BYTES + 1` bytes from a regular non-symlink input file."""
+    if not isinstance(path_str, str) or not path_str.strip() or "\x00" in path_str:
+        raise _CLISanitizedError("invalid_input_path")
+    try:
+        path = _validate_path_object(Path(path_str), "input")
+        _inspect_ancestors_no_symlink(path)
+    except EvidenceBundleError as exc:
+        raise _CLISanitizedError("invalid_input_path") from exc
+
+    try:
+        st = os.lstat(os.fspath(path))
+    except OSError as exc:
+        raise _CLISanitizedError("unreadable_input_file") from exc
+
+    if _is_reparse_or_symlink_stat(st) or not stat.S_ISREG(st.st_mode):
+        raise _CLISanitizedError("non_regular_input_file")
+    if st.st_size > MAX_INPUT_BYTES:
+        raise _CLISanitizedError("oversized_input_file")
+
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(os.fspath(path), flags)
+        with os.fdopen(fd, "rb") as stream:
+            data = stream.read(MAX_INPUT_BYTES + 1)
+    except OSError as exc:
+        raise _CLISanitizedError("unreadable_input_file") from exc
+
+    if len(data) > MAX_INPUT_BYTES:
+        raise _CLISanitizedError("oversized_input_file")
+    return data
+
+
+def _preflight_new_output_dir(path_str: str) -> Path:
+    """Ensure `--output-dir` is a valid path whose parent is a real directory and target does not exist."""
+    if not isinstance(path_str, str) or not path_str.strip() or "\x00" in path_str:
+        raise _CLISanitizedError("invalid_output_dir")
+    try:
+        out_dir = _validate_path_object(Path(path_str), "output_dir")
+        _inspect_ancestors_no_symlink(out_dir)
+    except EvidenceBundleError as exc:
+        raise _CLISanitizedError("invalid_output_dir") from exc
+
+    try:
+        os.lstat(os.fspath(out_dir))
+        raise _CLISanitizedError("output_dir_already_exists")
+    except FileNotFoundError:
+        pass
+    except _CLISanitizedError:
+        raise
+    except OSError as exc:
+        raise _CLISanitizedError("invalid_output_dir") from exc
+
+    parent = out_dir.parent
+    try:
+        parent_st = os.lstat(os.fspath(parent))
+    except OSError as exc:
+        raise _CLISanitizedError("missing_output_parent") from exc
+    if _is_reparse_or_symlink_stat(parent_st) or not stat.S_ISDIR(parent_st.st_mode):
+        raise _CLISanitizedError("invalid_output_dir")
+
+    return out_dir
+
+
+def _emit_stderr(code: str) -> None:
+    sys.stderr.write(f"dojo.bench.export_cli error [{code}]: request rejected.\n")
+
+
+def _emit_stdout(status_code: str, manifest: dict) -> None:
+    src_hash = manifest["source"]["input_sha256"]
+    mode = manifest["summary_mode"]
+    audit = manifest["audit_status"]
+    nt = manifest["evaluated_task_count"]
+    nc = manifest["n_configurations"]
+    nf = manifest["n_families"]
+    sys.stdout.write(
+        f"dojo.bench.export_cli ok [{status_code}]: "
+        f"summary_mode={mode} audit_status={audit} "
+        f"tasks={nt} configs={nc} families={nf} "
+        f"input_sha256={src_hash}\n"
+    )
+
+
+def _run_export(args: argparse.Namespace) -> int:
+    replicates = _parse_bounded_nonneg_int(
+        args.bootstrap_replicates,
+        field_code="invalid_bootstrap_replicates",
+        min_val=1,
+        max_val=MAX_BOOTSTRAP_REPLICATES,
+    )
+    seed = _parse_bounded_nonneg_int(
+        args.bootstrap_seed,
+        field_code="invalid_bootstrap_seed",
+        min_val=0,
+        max_val=MAX_COUNT_VALUE,
+    )
+    out_dir = _preflight_new_output_dir(args.output_dir)
+    raw_input = _read_bounded_input_panel(args.input)
+
+    try:
+        envelope = parse_analysis_json(raw_input)
+    except AnalysisInputError as exc:
+        raise _CLISanitizedError("invalid_input_panel") from exc
+
+    # Reject real evidence BEFORE any bootstrap/report/diagnostic work or directory creation
+    if envelope.evidence_kind != "synthetic" or any(
+        r.evidence_kind != "synthetic" for r in envelope.records
+    ):
+        raise _CLISanitizedError("real_evidence_refused")
+
+    # Reject blocked panels with exit code 2 BEFORE bootstrap/diagnostic work or directory creation
+    if envelope.audit.status == "blocked":
+        raise _CLISanitizedError("panel_audit_blocked", EXIT_BLOCKED)
+
+    try:
+        report = build_analysis_report(
+            envelope,
+            bootstrap_replicates=replicates,
+            bootstrap_seed=seed,
+            allow_success_only_when_cost_missing=True,
+        )
+        view = build_explorer_view(envelope, report)
+        sensitivity = family_leave_one_out(envelope)
+        manifest = write_bundle(out_dir, view=view, sensitivity=sensitivity)
+    except (AnalysisInputError, ExplorerExportError, EvidenceBundleError) as exc:
+        raise _CLISanitizedError("export_validation_failed") from exc
+
+    _emit_stdout("bundle_exported", manifest)
+    return EXIT_OK
+
+
+def _run_verify(args: argparse.Namespace) -> int:
+    if not isinstance(args.bundle, str) or not args.bundle.strip() or "\x00" in args.bundle:
+        raise _CLISanitizedError("invalid_bundle_path")
+    try:
+        bundle_dir = _validate_path_object(Path(args.bundle), "bundle")
+        manifest = verify_bundle(bundle_dir)
+    except (EvidenceBundleError, ExplorerExportError) as exc:
+        raise _CLISanitizedError("bundle_verification_failed") from exc
+
+    _emit_stdout("bundle_verified", manifest)
+    return EXIT_OK
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Execute `dojo.bench.export_cli` and return exit code (0, 1, or 2)."""
+    parser = build_arg_parser()
+    try:
+        if argv is not None and not isinstance(argv, Sequence):
+            raise _CLISanitizedError("invalid_cli_arguments")
+        parsed_argv = list(argv) if argv is not None else None
+        args = parser.parse_args(parsed_argv)
+        if args.subcommand == "export":
+            return _run_export(args)
+        if args.subcommand == "verify":
+            return _run_verify(args)
+        raise _CLISanitizedError("invalid_cli_arguments")
+    except _CLIHelpExit:
+        return EXIT_OK
+    except KeyboardInterrupt:
+        _emit_stderr("interrupted")
+        return EXIT_ERROR
+    except _CLISanitizedError as exc:
+        _emit_stderr(exc.code)
+        return exc.exit_code
+    except OSError:
+        _emit_stderr("io_error")
+        return EXIT_ERROR
+
+```
+
+## FILE: tests/test_explorer_export_cli.py
+
+```python
+"""CLI unit and behavioral tests for WP4 / 10i3 (`dojo.bench.export_cli`)."""
+
+from __future__ import annotations
+
+import copy
+import json
+from pathlib import Path
+
+import pytest
+
+from dojo.bench import export_cli
+from dojo.bench.evidence_bundle import (
+    DIAGNOSTIC_FILENAME,
+    EXPLORER_FILENAME,
+    MANIFEST_FILENAME,
+)
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+@pytest.fixture
+def unequal_panel_path() -> Path:
+    return FIXTURES / "explorer_v2/unequal_seeds_panel.json"
+
+
+@pytest.fixture
+def unequal_panel(unequal_panel_path: Path) -> dict:
+    return json.loads(unequal_panel_path.read_text(encoding="utf-8"))
+
+
+def test_cli_help_exits_zero_and_writes_nothing(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    rc = export_cli.main(["--help"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "export" in captured.out
+    assert "verify" in captured.out
+    assert captured.err == ""
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_cli_export_and_verify_happy_path(
+    unequal_panel_path: Path,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    out_dir = tmp_path / "out_bundle"
+    rc = export_cli.main(
+        [
+            "export",
+            "--input",
+            str(unequal_panel_path),
+            "--output-dir",
+            str(out_dir),
+            "--bootstrap-replicates",
+            "20",
+            "--bootstrap-seed",
+            "17",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "bundle_exported" in captured.out
+    assert "summary_mode=headline_complete" in captured.out
+    assert str(unequal_panel_path) not in captured.out
+    assert str(out_dir) not in captured.out
+    assert captured.err == ""
+
+    assert sorted(p.name for p in out_dir.iterdir()) == [
+        EXPLORER_FILENAME,
+        DIAGNOSTIC_FILENAME,
+        MANIFEST_FILENAME,
+    ]
+
+    rc_ver = export_cli.main(["verify", "--bundle", str(out_dir)])
+    captured_ver = capsys.readouterr()
+    assert rc_ver == 0
+    assert "bundle_verified" in captured_ver.out
+    assert str(out_dir) not in captured_ver.out
+    assert captured_ver.err == ""
+
+
+def test_cli_cost_incomplete_exports_success_only(
+    unequal_panel: dict,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    unequal_panel["records"][0]["cost_nano_usd"] = None
+    in_file = tmp_path / "cost_incomplete.json"
+    in_file.write_text(json.dumps(unequal_panel), encoding="utf-8")
+    out_dir = tmp_path / "so_bundle"
+
+    rc = export_cli.main(
+        [
+            "export",
+            "--input",
+            str(in_file),
+            "--output-dir",
+            str(out_dir),
+            "--bootstrap-replicates",
+            "15",
+            "--bootstrap-seed",
+            "7",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "summary_mode=success_only" in captured.out
+    assert "audit_status=cost_incomplete" in captured.out
+    view = json.loads((out_dir / EXPLORER_FILENAME).read_text(encoding="utf-8"))
+    assert view["analysis"]["summary_mode"] == "success_only"
+    assert view["analysis"]["bootstrap"] is None
+
+
+def test_cli_blocked_panel_exits_two_before_report_or_output_creation(
+    unequal_panel: dict,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    unequal_panel["records"].pop()
+    in_file = tmp_path / "SECRET_BLOCKED_NAME.json"
+    in_file.write_text(json.dumps(unequal_panel), encoding="utf-8")
+    out_dir = tmp_path / "blocked_bundle"
+
+    def _forbid_report(*args, **kwargs):
+        pytest.fail("build_analysis_report must not run on blocked panel in export_cli")
+
+    monkeypatch.setattr(export_cli, "build_analysis_report", _forbid_report)
+
+    rc = export_cli.main(
+        [
+            "export",
+            "--input",
+            str(in_file),
+            "--output-dir",
+            str(out_dir),
+            "--bootstrap-replicates",
+            "20",
+            "--bootstrap-seed",
+            "17",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert not out_dir.exists()
+    assert "[panel_audit_blocked]" in captured.err
+    assert "SECRET_BLOCKED_NAME" not in captured.err
+    assert captured.out == ""
+
+
+def test_cli_real_evidence_refused_with_exit_one_before_report_or_output(
+    unequal_panel: dict,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    unequal_panel["evidence_kind"] = "real"
+    for row in unequal_panel["records"]:
+        row["evidence_kind"] = "real"
+    in_file = tmp_path / "REAL_EVIDENCE_CANARY.json"
+    in_file.write_text(json.dumps(unequal_panel), encoding="utf-8")
+    out_dir = tmp_path / "real_bundle"
+
+    def _forbid_report(*args, **kwargs):
+        pytest.fail("build_analysis_report must not run on real evidence in export_cli")
+
+    monkeypatch.setattr(export_cli, "build_analysis_report", _forbid_report)
+
+    rc = export_cli.main(
+        [
+            "export",
+            "--input",
+            str(in_file),
+            "--output-dir",
+            str(out_dir),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert not out_dir.exists()
+    assert "[real_evidence_refused]" in captured.err
+    assert "REAL_EVIDENCE_CANARY" not in captured.err
+
+
+@pytest.mark.parametrize(
+    "bad_argv",
+    [
+        ["--unknown-flag-canary-xyz"],
+        ["export", "--input", "foo.json"],
+        ["export", "--input", "foo.json", "--output-dir", "bar", "--bootstrap-replicates", "0"],
+        ["export", "--input", "foo.json", "--output-dir", "bar", "--bootstrap-replicates", "100001"],
+        ["export", "--input", "foo.json", "--output-dir", "bar", "--bootstrap-replicates", "-5"],
+        ["export", "--input", "foo.json", "--output-dir", "bar", "--bootstrap-seed", "-1"],
+        ["export", "--input", "foo.json", "--output-dir", "bar", "--bootstrap-seed", "not_an_int"],
+        ["verify"],
+    ],
+)
+def test_cli_invalid_arguments_exit_one_and_never_echo_argv(
+    bad_argv: list[str],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    rc = export_cli.main(bad_argv)
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert captured.out == ""
+    assert "dojo.bench.export_cli error [" in captured.err
+    for token in ("--unknown-flag-canary-xyz", "foo.json", "not_an_int"):
+        assert token not in captured.err
+
+
+def test_cli_refuses_existing_output_dir_and_keyboard_interrupt_fails(
+    unequal_panel_path: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    existing = tmp_path / "already_there"
+    existing.mkdir()
+    rc = export_cli.main(
+        [
+            "export",
+            "--input",
+            str(unequal_panel_path),
+            "--output-dir",
+            str(existing),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "[output_dir_already_exists]" in captured.err
+
+    # KeyboardInterrupt must return EXIT_ERROR (1), never 0
+    def _raise_kb_interrupt(*args, **kwargs):
+        raise KeyboardInterrupt()
+
+    monkeypatch.setattr(export_cli, "_run_export", _raise_kb_interrupt)
+    rc_kb = export_cli.main(
+        [
+            "export",
+            "--input",
+            str(unequal_panel_path),
+            "--output-dir",
+            str(tmp_path / "kb_bundle"),
+        ]
+    )
+    captured_kb = capsys.readouterr()
+    assert rc_kb == 1
+    assert "[interrupted]" in captured_kb.err
+
+```
+
+## FILE: tests/test_explorer_export_integration.py
+
+```python
+"""End-to-end integration and subprocess acceptance tests for WP5 / 10i4."""
+
+from __future__ import annotations
+
+import copy
+import json
+import subprocess
+import sys
+from fractions import Fraction
+from pathlib import Path
+
+import pytest
+
+from dojo.bench import export_cli
+from dojo.bench.evidence_bundle import (
+    DIAGNOSTIC_FILENAME,
+    EXPLORER_FILENAME,
+    MANIFEST_FILENAME,
+    EvidenceBundleError,
+    verify_bundle,
+    write_bundle,
+)
+from dojo.bench.explorer_export import (
+    ExplorerExportError,
+    build_explorer_view,
+    loads_bounded_explorer_json,
+    parse_rational_dto,
+)
+from dojo.bench.records import parse_analysis_envelope
+from dojo.bench.report import build_analysis_report
+from dojo.bench.sensitivity_diagnostics import family_leave_one_out
+from dojo.cascade.policies import policy_primitive
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def _rat(dto: dict) -> Fraction | None:
+    return parse_rational_dto(dto, "oracle_check", allow_negative=True)
+
+
+def test_end_to_end_main_process_two_task_unequal_seeds_oracle(tmp_path: Path) -> None:
+    """Verify full export -> bundle -> verify pipeline against all independent two-task oracles."""
+    panel_path = FIXTURES / "explorer_v2/unequal_seeds_panel.json"
+    oracles = json.loads(
+        (FIXTURES / "explorer_v2/expected_oracles.json").read_text(encoding="utf-8")
+    )
+    out_dir = tmp_path / "v2_bundle"
+
+    rc = export_cli.main(
+        [
+            "export",
+            "--input",
+            str(panel_path),
+            "--output-dir",
+            str(out_dir),
+            "--bootstrap-replicates",
+            "20",
+            "--bootstrap-seed",
+            "17",
+        ]
+    )
+    assert rc == 0
+
+    manifest = verify_bundle(out_dir)
+    view = loads_bounded_explorer_json((out_dir / EXPLORER_FILENAME).read_bytes())
+    diag = loads_bounded_explorer_json((out_dir / DIAGNOSTIC_FILENAME).read_bytes())
+
+    assert view["analysis"]["sensitivity"] is None
+    assert view["source"] == diag["source"] == manifest["source"]
+
+    # Check Config A (config_0001) and Config B (config_0002) exact arithmetic
+    cfg_by_id = {c["config_id"]: c for c in view["configurations"]}
+    assert _rat(cfg_by_id["config_0001"]["pass_at_1"]) == Fraction(1, 4)
+    assert _rat(cfg_by_id["config_0001"]["expected_solved_tasks"]) == Fraction(1, 2)
+    assert _rat(cfg_by_id["config_0001"]["expected_total_cost_nano_usd"]) == Fraction(5, 1)
+    assert cfg_by_id["config_0001"]["actual_all_repetitions_spend_nano_usd"] == "10"
+
+    assert _rat(cfg_by_id["config_0002"]["pass_at_1"]) == Fraction(1, 2)
+    assert _rat(cfg_by_id["config_0002"]["expected_solved_tasks"]) == Fraction(1, 1)
+    assert _rat(cfg_by_id["config_0002"]["expected_total_cost_nano_usd"]) == Fraction(30, 1)
+    assert cfg_by_id["config_0002"]["actual_all_repetitions_spend_nano_usd"] == "30"
+
+    # Check frontier cost_per_solved: A=10, B=30 -> both non_dominated (B has higher pass_at_1)
+    cps_rows = {
+        r["series_id"]: r
+        for r in view["analysis"]["frontiers"]["cost_per_solved"]["rows"]
+    }
+    assert _rat(cps_rows["config_0001"]["cost_value_nano_usd"]) == Fraction(10, 1)
+    assert _rat(cps_rows["config_0002"]["cost_value_nano_usd"]) == Fraction(30, 1)
+
+    # Check family diagnostic originals: mean task cost A=5/2, B=15
+    orig_by_id = {o["config_id"]: o for o in diag["originals"]}
+    assert _rat(orig_by_id["config_0001"]["mean_task_cost_nano_usd"]) == Fraction(5, 2)
+    assert _rat(orig_by_id["config_0002"]["mean_task_cost_nano_usd"]) == Fraction(15, 1)
+
+    # Check leave-one-family-out exclusions against expected_oracles.json
+    for excl in diag["exclusions"]:
+        fam_key = f"exclude_{excl['family_id']}"
+        for c_entry in excl["configurations"]:
+            exp = oracles[fam_key][c_entry["config_id"]]
+            assert _rat(c_entry["pass_at_1"]) == Fraction(exp["pass"])
+            assert _rat(c_entry["mean_task_cost_nano_usd"]) == Fraction(exp["mean_cost"])
+            assert _rat(c_entry["delta_pass_at_1"]) == Fraction(exp["delta_pass"])
+            assert _rat(c_entry["delta_mean_task_cost_nano_usd"]) == Fraction(
+                exp["delta_mean_cost"]
+            )
+
+
+def test_end_to_end_four_task_fixture_with_cascade_bundle(tmp_path: Path) -> None:
+    """Verify existing four-task fixture arithmetic (A=6,000,000; B=40,000,000) and cascade bundle."""
+    valid_panel_path = FIXTURES / "analysis/valid_panel.json"
+    if not valid_panel_path.exists():
+        pytest.skip("analysis/valid_panel.json fixture not present")
+
+    panel = json.loads(valid_panel_path.read_text(encoding="utf-8"))
+    env = parse_analysis_envelope(panel)
+    report = build_analysis_report(
+        env,
+        bootstrap_replicates=20,
+        bootstrap_seed=17,
+        policy=policy_primitive("visible_tests_not_true"),
+    )
+    view = build_explorer_view(env, report)
+    diag = family_leave_one_out(env)
+
+    cfg_by_id = {c["config_id"]: c for c in view["configurations"]}
+    assert _rat(cfg_by_id["config_0001"]["pass_at_1"]) == Fraction(1, 2)
+    assert _rat(cfg_by_id["config_0001"]["expected_total_cost_nano_usd"]) == Fraction(6_000_000, 1)
+    assert _rat(cfg_by_id["config_0002"]["pass_at_1"]) == Fraction(1, 2)
+    assert _rat(cfg_by_id["config_0002"]["expected_total_cost_nano_usd"]) == Fraction(40_000_000, 1)
+
+    bundle_dir = tmp_path / "four_task_cascade_bundle"
+    manifest = write_bundle(bundle_dir, view=view, sensitivity=diag)
+    assert manifest["evaluated_task_count"] == 4
+    assert verify_bundle(bundle_dir) == manifest
+
+
+def test_subprocess_cli_export_verify_and_blocked_exit_codes(tmp_path: Path) -> None:
+    """Subprocess test exercising `python -m dojo.bench.export_cli`."""
+    panel_path = FIXTURES / "explorer_v2/unequal_seeds_panel.json"
+    out_dir = tmp_path / "subproc_bundle"
+
+    res_export = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "dojo.bench.export_cli",
+            "export",
+            "--input",
+            str(panel_path),
+            "--output-dir",
+            str(out_dir),
+            "--bootstrap-replicates",
+            "20",
+            "--bootstrap-seed",
+            "17",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert res_export.returncode == 0
+    assert "bundle_exported" in res_export.stdout
+    assert res_export.stderr == ""
+
+    res_verify = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "dojo.bench.export_cli",
+            "verify",
+            "--bundle",
+            str(out_dir),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert res_verify.returncode == 0
+    assert "bundle_verified" in res_verify.stdout
+    assert res_verify.stderr == ""
+
+    # Subprocess blocked panel test -> exit 2 and no directory created
+    blocked_panel = json.loads(panel_path.read_text(encoding="utf-8"))
+    blocked_panel["records"].append(copy.deepcopy(blocked_panel["records"][0]))
+    blocked_path = tmp_path / "dup_cell_blocked.json"
+    blocked_path.write_text(json.dumps(blocked_panel), encoding="utf-8")
+    blocked_out = tmp_path / "blocked_subproc_out"
+
+    res_blocked = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "dojo.bench.export_cli",
+            "export",
+            "--input",
+            str(blocked_path),
+            "--output-dir",
+            str(blocked_out),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert res_blocked.returncode == 2
+    assert not blocked_out.exists()
+    assert "[panel_audit_blocked]" in res_blocked.stderr
+    assert str(blocked_path) not in res_blocked.stderr
+
+
+@pytest.mark.parametrize(
+    "hazard_payload",
+    [
+        '{"schema_version":1,"evidence_kind":"synthetic","dataset_id":"d","expected_plan":{"tasks":["t1"],"seeds_by_config":{"A":[0]}},"records":[],"expected":{"oracle":1}}',
+        '{"x":' + ("[" * 40) + "1" + ("]" * 40) + "}",
+        '{"x":' + ("9" * 100) + "}",
+        '{"x":"' + ("a" * 5000) + '"}',
+    ],
+)
+def test_cli_rejects_oracle_fields_deep_nesting_huge_numbers_and_strings(
+    hazard_payload: str,
+    tmp_path: Path,
+) -> None:
+    in_file = tmp_path / "hazard.json"
+    in_file.write_text(hazard_payload, encoding="utf-8")
+    out_dir = tmp_path / "hazard_out"
+
+    rc = export_cli.main(
+        [
+            "export",
+            "--input",
+            str(in_file),
+            "--output-dir",
+            str(out_dir),
+        ]
+    )
+    assert rc == 1
+    assert not out_dir.exists()
+
+
+def test_zero_solved_panel_exports_and_verifies_cleanly(tmp_path: Path) -> None:
+    panel = json.loads(
+        (FIXTURES / "explorer_v2/unequal_seeds_panel.json").read_text(encoding="utf-8")
+    )
+    for rec in panel["records"]:
+        rec["outcome"] = "unsolved"
+        rec["scorer_status"] = "failed"
+    in_file = tmp_path / "zero_solved.json"
+    in_file.write_text(json.dumps(panel), encoding="utf-8")
+    out_dir = tmp_path / "zero_solved_bundle"
+
+    rc = export_cli.main(
+        [
+            "export",
+            "--input",
+            str(in_file),
+            "--output-dir",
+            str(out_dir),
+            "--bootstrap-replicates",
+            "10",
+            "--bootstrap-seed",
+            "17",
+        ]
+    )
+    assert rc == 0
+    assert export_cli.main(["verify", "--bundle", str(out_dir)]) == 0
+    view = loads_bounded_explorer_json((out_dir / EXPLORER_FILENAME).read_bytes())
+    for row in view["analysis"]["frontiers"]["cost_per_solved"]["rows"]:
+        assert row["status"] == "undefined_cost"
+        assert row["cost_value_nano_usd"]["reason"] == "zero_expected_solves"
+
+
+def test_no_raw_field_leakage_across_entire_bundle(tmp_path: Path) -> None:
+    panel = json.loads(
+        (FIXTURES / "explorer_v2/unequal_seeds_panel.json").read_text(encoding="utf-8")
+    )
+    raw_text = (
+        json.dumps(panel)
+        .replace('"t1"', '"SECRET_TASK_ALPHA"')
+        .replace('"f1"', '"SECRET_FAMILY_BETA"')
+        .replace('"A"', '"SECRET_CONFIG_GAMMA"')
+        .replace('"synthetic_stats_fixture_v1"', '"SECRET_DATASET_DELTA"')
+    )
+    in_file = tmp_path / "secret_panel.json"
+    in_file.write_text(raw_text, encoding="utf-8")
+    out_dir = tmp_path / "clean_bundle"
+
+    rc = export_cli.main(
+        [
+            "export",
+            "--input",
+            str(in_file),
+            "--output-dir",
+            str(out_dir),
+            "--bootstrap-replicates",
+            "10",
+            "--bootstrap-seed",
+            "17",
+        ]
+    )
+    assert rc == 0
+    for fname in (EXPLORER_FILENAME, DIAGNOSTIC_FILENAME, MANIFEST_FILENAME):
+        content = (out_dir / fname).read_text(encoding="utf-8")
+        for canary in (
+            "SECRET_TASK_ALPHA",
+            "SECRET_FAMILY_BETA",
+            "SECRET_CONFIG_GAMMA",
+            "SECRET_DATASET_DELTA",
+            str(in_file),
+            str(out_dir),
+        ):
+            assert canary not in content
+
+```
+
+## FILE: docs/explorer-export-reproduction.md
+
+```markdown
+# Synthetic Explorer v2 Bundle Reproduction and Frontend Migration Guide
+
+Scope: ACTION_PLAN 10i2 / 10i3 / 10i4 (`dojo.bench.evidence_bundle`, `dojo.bench.export_cli`).
+All fixture panels and oracle numbers are **fictional synthetic arithmetic**. No live Nebius/NVIDIA calls, real model evaluations, scorer executions, or Stage B registrations have occurred.
+
+## 1. Local Reproduction Commands
+
+Run the Part 1 + Part 2 test suite and linter from the repository root:
+
+```powershell
+.venv\Scripts\python.exe -m pytest -q --tb=short tests/test_explorer_export.py tests/test_sensitivity_diagnostics.py tests/test_evidence_bundle.py tests/test_explorer_export_cli.py tests/test_explorer_export_integration.py
+.venv\Scripts\ruff.exe check dojo/bench/explorer_export.py dojo/bench/sensitivity_diagnostics.py dojo/bench/evidence_bundle.py dojo/bench/export_cli.py tests/test_explorer_export.py tests/test_sensitivity_diagnostics.py tests/test_evidence_bundle.py tests/test_explorer_export_cli.py tests/test_explorer_export_integration.py
+```
+
+Export and verify the fictional unequal-seeds panel via the offline CLI:
+
+```powershell
+.venv\Scripts\python.exe -m dojo.bench.export_cli export --input tests/fixtures/explorer_v2/unequal_seeds_panel.json --output-dir .pytest_tmp/manual_v2_bundle --bootstrap-replicates 20 --bootstrap-seed 17
+.venv\Scripts\python.exe -m dojo.bench.export_cli verify --bundle .pytest_tmp/manual_v2_bundle
+```
+
+Exit codes for `python -m dojo.bench.export_cli`:
+- `0`: Successful bundle export, successful bundle verification, or `--help`.
+- `1`: Invalid CLI arguments, real-evidence refusal, existing/unsafe destination refusal, I/O error, verification failure, or `KeyboardInterrupt`.
+- `2`: Input panel `audit.status == "blocked"` during `export` (no output directory is created).
+
+## 2. Independent Fictional Oracles
+
+### Two-Task Unequal-Seeds Fixture (`tests/fixtures/explorer_v2/unequal_seeds_panel.json`)
+- Tasks: `t1` (`f1` -> `task_0001`, `family_0001`), `t2` (`f2` -> `task_0002`, `family_0002`), both `train`, `synthetic`.
+- `A` (`config_0001`, seeds `[0, 1]`): `t1` solved/cost `1` and unsolved/cost `3`; `t2` unsolved/cost `2` and unsolved/cost `4` nano-USD.
+  - Per-task success: `[1/2, 0]`, `pass_at_1 = 1/4`, `expected_solved_tasks = 1/2`.
+  - Per-task mean cost: `[2, 3]`, `expected_total_cost_nano_usd = 5/1`, `mean_task_cost_nano_usd = 5/2`, `actual_all_repetitions_spend_nano_usd = "10"`, `expected_cost_per_solved_nano_usd = 10/1`.
+- `B` (`config_0002`, seed `[0]`): `t1` unsolved/cost `10`; `t2` solved/cost `20` nano-USD.
+  - Per-task success: `[0, 1]`, `pass_at_1 = 1/2`, `expected_solved_tasks = 1/1`.
+  - `expected_total_cost_nano_usd = 30/1`, `mean_task_cost_nano_usd = 15/1`, `actual_all_repetitions_spend_nano_usd = "30"`, `expected_cost_per_solved_nano_usd = 30/1`.
+- Leave-one-family-out (`family-diagnostic.json`):
+  - Exclude `family_0001`: `config_0001` pass `0/1` (`delta_pass = -1/4`), mean cost `3/1` (`delta_mean_cost = 1/2`); `config_0002` pass `1/1` (`delta_pass = 1/2`), mean cost `20/1` (`delta_mean_cost = 5/1`).
+  - Exclude `family_0002`: `config_0001` pass `1/2` (`delta_pass = 1/4`), mean cost `2/1` (`delta_mean_cost = -1/2`); `config_0002` pass `0/1` (`delta_pass = -1/2`), mean cost `10/1` (`delta_mean_cost = -5/1`).
+
+### Four-Task Valid Panel Fixture (`tests/fixtures/analysis/valid_panel.json`)
+- Fictional arithmetic only: `config_0001` (`A`) `pass_at_1 = 1/2`, `expected_total_cost_nano_usd = 6000000/1`; `config_0002` (`B`) `pass_at_1 = 1/2`, `expected_total_cost_nano_usd = 40000000/1`.
+- With observable policy `visible_tests_not_true`: cascade `pass_at_1 = 3/4`, `expected_total_cost_nano_usd = 26000000/1`, `expected_cost_per_solved_nano_usd = 26000000/3`.
+
+## 3. Frontend v1 Incompatibilities and Future v2 Migration Rules
+
+The existing React frontend v1 (`frontend/`) is **not modified** in this work package and cannot directly consume `dojo-explorer-view-v2`:
+1. **Whole-number `solved_count` vs fractional `expected_solved_tasks`**: Frontend v1 expects an integer `solved_count` per configuration. With unequal seed counts (e.g., `k_A = 2`, `pass_at_1 = 1/4` across `2` tasks), `expected_solved_tasks = 1/2` is a non-integer rational DTO (`{"defined": true, "numerator": "1", "denominator": "2", "reason": null}`).
+2. **One-row-per-`(task, config)` vs multi-seed `rows`**: Frontend v1 assumes a unique `(task_id, config_id)` key in the task matrix. In v2, `rows` contains every `(config_id, task_id, seed)` run (plus any duplicate blocked cells).
+3. **IEEE-754 `Number` costs vs exact nano-USD strings and rational DTOs**: Frontend v1 parses floating-point USD numbers, which lose precision above $2^{53}-1$ nano-USD (`9,007,199.254740991` USD) and cannot represent exact thirds (such as `26000000/3`).
+4. **Expected 1-seed cost vs actual all-repetitions spend**: Frontend v1 conflates expected 1-seed deployment cost with total spend across all seeds (`actual_all_repetitions_spend_nano_usd`).
+
+### Proposed Frontend v2 Formatting Rules (Future Adoption)
+- Parse rational DTOs with `BigInt(dto.numerator)` and `BigInt(dto.denominator)` before formatting display decimals; never coerce raw numerator/denominator strings through `Number()`.
+- Key run tables by `(config_id, task_id, seed)` and aggregate per-task pass rate across seeds when rendering a task-by-config summary grid.
+- Display both `expected_total_cost_nano_usd` (1-seed expected benchmark cost) and `actual_all_repetitions_spend_nano_usd` (summed spend over all declared seeds) with distinct labels.
+- Render explicit badges when `defined == false` (`reason` in `missing_cost_nano_usd`, `zero_expected_solves`, `panel_blocked`, etc.) and keep `UNVERIFIED` / `synthetic` banners visible whenever `eligibility == "UNVERIFIED"`.
+
+## 4. Verification Scope, Consistency Limits, and Future Real-Evidence Gates
+
+- **Content consistency vs authenticity**: `verify_bundle` proves that `explorer.json`, `family-diagnostic.json`, and `manifest.json` conform to the v2 schemas, canonical formatting, SHA-256 digests, and cross-file arithmetic bindings. It **cannot** prove that runs came from a real provider, passed a real test harness, or followed a pre-registered Stage B protocol.
+- **Cross-file properties uncheckable without raw input**: Because raw task/config/family strings are aliased and `source.input_sha256` digests the unaliased NormalizedEnvelope, standalone bundle verification cannot verify `input_sha256` against raw task names, nor can it reconstruct per-family task partitions on a `blocked` bundle whose rows are incomplete/empty.
+- **Filesystem race limits**: `write_bundle` and `verify_bundle` use `lstat`, `O_NOFOLLOW`, `O_CREAT | O_EXCL`, and `+1` sentinel reads to guard against ordinary local mistakes and symlinks/reparse points, but user-space Python on local OS filesystems cannot guarantee atomic immunity against a privileged concurrent process mutating directory trees mid-call.
+- **Future real-evidence gates**: Promoting any non-synthetic result requires passing the separate billing/credit gate (`8h5`), hardened scorer/sandbox gate (`5f`), and Stage B cryptographic registration gate (`7a` / `4j1`).
+
+## 5. Claim-to-Test Verification Ledger
+
+All checks below are marked **UNEXECUTED** because code execution is unavailable in this offline text generation response.
+
+| Claim ID | Claim Summary | Test File / Function | Status |
+|---|---|---|---|
+| C1 | 3-file deterministic bundle write/verify roundtrip & byte identity | `tests/test_evidence_bundle.py::test_write_and_verify_bundle_roundtrip_and_determinism` | UNEXECUTED |
+| C2 | Success-only and blocked bundle pairs validate and roundtrip | `tests/test_evidence_bundle.py::test_success_only_and_blocked_bundle_roundtrip` | UNEXECUTED |
+| C3 | Cross-file mismatch rejected even when both files are standalone-valid | `tests/test_evidence_bundle.py::test_cross_file_mismatch_with_standalone_valid_objects_rejected` | UNEXECUTED |
+| C4 | Cross-file task-family swap with identical config totals rejected | `tests/test_evidence_bundle.py::test_cross_file_task_family_swap_with_matching_originals_rejected` | UNEXECUTED |
+| C5 | Existing target, missing parent, and symlink parent/target refused | `tests/test_evidence_bundle.py::test_destination_safety_refuses_existing_or_missing_parent_or_symlinks` | UNEXECUTED |
+| C6 | Extra files, missing files, non-canonical JSON, and hash mismatches rejected | `tests/test_evidence_bundle.py::test_verify_rejects_partial_extra_and_tampered_files` | UNEXECUTED |
+| C7 | Manifest `publishable=True`, path traversal, duplicate keys, and +1 oversize rejected | `tests/test_evidence_bundle.py::test_verify_rejects_manifest_tampering_and_duplicate_keys`, `test_verify_oversized_sentinel_read_rejected` | UNEXECUTED |
+| C8 | CLI `--help`, `export`, and `verify` exit 0 with sanitized stdout | `tests/test_explorer_export_cli.py::test_cli_help_exits_zero_and_writes_nothing`, `test_cli_export_and_verify_happy_path` | UNEXECUTED |
+| C9 | CLI rejects blocked panels (exit 2) and real evidence (exit 1) before report/output | `tests/test_explorer_export_cli.py::test_cli_blocked_panel_exits_two_before_report_or_output_creation`, `test_cli_real_evidence_refused_with_exit_one_before_report_or_output` | UNEXECUTED |
+| C10 | CLI rejects malformed/unknown args without echoing raw argv/paths | `tests/test_explorer_export_cli.py::test_cli_invalid_arguments_exit_one_and_never_echo_argv` | UNEXECUTED |
+| C11 | End-to-end two-task unequal-seeds oracle & four-task cascade fixture match exact Fractions | `tests/test_explorer_export_integration.py::test_end_to_end_main_process_two_task_unequal_seeds_oracle`, `test_end_to_end_four_task_fixture_with_cascade_bundle` | UNEXECUTED |
+| C12 | Subprocess CLI test and zero-leakage canary check across bundle files | `tests/test_explorer_export_integration.py::test_subprocess_cli_export_verify_and_blocked_exit_codes`, `test_no_raw_field_leakage_across_entire_bundle` | UNEXECUTED |
+
+```
+
+## FILE: docs/explorer-export-part2-delivery-manifest-v1.json
+
+```json
+{
+  "schema_version": 1,
+  "packet_id": "explorer-export-part2-packet-v1",
+  "agent": "Argon / Agent 1",
+  "date": "2026-10-31",
+  "work_packages": [
+    "10i2",
+    "10i3",
+    "10i4"
+  ],
+  "evidence_scope": "synthetic_fictional_only",
+  "execution_status": "UNEXECUTED",
+  "part1_regenerated_or_modified": false,
+  "Byte_and_sha256_computed": false,
+  "deliverables": [
+    {
+      "order": 1,
+      "path": "dojo/bench/evidence_bundle.py",
+      "work_package": "WP3 / 10i2",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 2,
+      "path": "tests/test_evidence_bundle.py",
+      "work_package": "WP3 / 10i2",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 3,
+      "path": "dojo/bench/export_cli.py",
+      "work_package": "WP4 / 10i3",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 4,
+      "path": "tests/test_explorer_export_cli.py",
+      "work_package": "WP4 / 10i3",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 5,
+      "path": "tests/test_explorer_export_integration.py",
+      "work_package": "WP5 / 10i4",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 6,
+      "path": "docs/explorer-export-reproduction.md",
+      "work_package": "WP5 / 10i4",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 7,
+      "path": "docs/explorer-export-part2-delivery-manifest-v1.json",
+      "work_package": "shared",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 8,
+      "path": "docs/explorer-export-part2-verification-ledger-v1.md",
+      "work_package": "shared",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    }
+  ],
+  "untouched_accepted_part1_files": [
+    "docs/explorer-v2-contract.md",
+    "dojo/bench/explorer_export.py",
+    "dojo/bench/sensitivity_diagnostics.py",
+    "tests/test_explorer_export.py",
+    "tests/test_sensitivity_diagnostics.py",
+    "tests/fixtures/explorer_v2/unequal_seeds_panel.json",
+    "tests/fixtures/explorer_v2/expected_oracles.json"
+  ]
+}
+
+```
+
+## FILE: docs/explorer-export-part2-verification-ledger-v1.md
+
+```markdown
+# Argon Explorer Export Part 2 Verification Ledger (v1)
+
+Date: 2026-10-31
+Work Packages: `10i2` (WP3), `10i3` (WP4), `10i4` (WP5)
+Authority: Accepted Part 1 snapshot embedded in `explorer-export-part2-packet-v1.md`.
+
+## 1. Execution Disclosure
+
+- **Test & Lint Execution Status**: **UNEXECUTED**. This response was generated in an environment without local shell/pytest execution against the Dojo repository.
+- **Byte Lengths & SHA-256 Digests**: Omitted (`null` in delivery manifest) per instructions not to invent or guess uncomputed digests.
+- **Evidence Scope**: All fixtures and test cases use fictional synthetic arithmetic (`evidence_kind="synthetic"`, `eligibility="UNVERIFIED"`, `real_provider_calls=0`, `publishable=False`). No live Nebius/NVIDIA calls, real benchmark evaluations, or frontend deployments occurred.
+- **Accepted Part 1 Files**: Untouched. No defects requiring a separate patch were found in the accepted Part 1 snapshot.
+
+## 2. Substantive Part 2 Test Case Inventory (28 Cases)
+
+| # | Test Module | Test Function / Parametrization | Requirement / Oracle Covered | Status |
+|---:|---|---|---|---|
+| 1 | `tests/test_evidence_bundle.py` | `test_write_and_verify_bundle_roundtrip_and_determinism` | `write_bundle` + `verify_bundle` roundtrip, exact 3 files, byte determinism, no path/dataset leakage | UNEXECUTED |
+| 2 | `tests/test_evidence_bundle.py` | `test_success_only_and_blocked_bundle_roundtrip` | `cost_incomplete` (`success_only`) and `blocked` bundle roundtrips | UNEXECUTED |
+| 3 | `tests/test_evidence_bundle.py` | `test_cross_file_mismatch_with_standalone_valid_objects_rejected` | Standalone-valid `explorer.json` + standalone-valid `family-diagnostic.json` from different panels rejected | UNEXECUTED |
+| 4 | `tests/test_evidence_bundle.py` | `test_cross_file_task_family_swap_with_matching_originals_rejected` | Cross-file recomputation catches swapped task->family assignment even when `originals` and `family_sizes` match | UNEXECUTED |
+| 5 | `tests/test_evidence_bundle.py` | `test_destination_safety_refuses_existing_or_missing_parent_or_symlinks` | Refuses existing dir/file, missing parent, and symlink parent without overwriting or deleting | UNEXECUTED |
+| 6 | `tests/test_evidence_bundle.py` | `test_verify_rejects_partial_extra_and_tampered_files` | Rejects extra file, missing file, non-canonical JSON formatting, and tampered SHA-256 | UNEXECUTED |
+| 7 | `tests/test_evidence_bundle.py` | `test_verify_rejects_manifest_tampering_and_duplicate_keys` | Rejects `publishable=True`, manifest filename traversal, and duplicate JSON keys | UNEXECUTED |
+| 8 | `tests/test_evidence_bundle.py` | `test_verify_oversized_sentinel_read_rejected` | `+1` byte sentinel rejects oversized `manifest.json` (`> 64 KiB`) and `explorer.json` (`> 2 MiB`) | UNEXECUTED |
+| 9 | `tests/test_explorer_export_cli.py` | `test_cli_help_exits_zero_and_writes_nothing` | `--help` exits `0` to stdout and performs no writes | UNEXECUTED |
+| 10 | `tests/test_explorer_export_cli.py` | `test_cli_export_and_verify_happy_path` | `export` and `verify` CLI subcommands exit `0` and never echo file paths | UNEXECUTED |
+| 11 | `tests/test_explorer_export_cli.py` | `test_cli_cost_incomplete_exports_success_only` | CLI passes `allow_success_only_when_cost_missing=True` and withholds bootstrap/frontiers | UNEXECUTED |
+| 12 | `tests/test_explorer_export_cli.py` | `test_cli_blocked_panel_exits_two_before_report_or_output_creation` | Blocked audit exits `2` before `build_analysis_report` or creating `--output-dir` | UNEXECUTED |
+| 13 | `tests/test_explorer_export_cli.py` | `test_cli_real_evidence_refused_with_exit_one_before_report_or_output` | Real evidence exits `1` before `build_analysis_report` or creating `--output-dir` | UNEXECUTED |
+| 14-21 | `tests/test_explorer_export_cli.py` | `test_cli_invalid_arguments_exit_one_and_never_echo_argv` (8 params) | Unknown flags, missing args, out-of-range/negative/non-integer `--bootstrap-replicates` & `--bootstrap-seed` exit `1` without echoing `argv` | UNEXECUTED |
+| 22 | `tests/test_explorer_export_cli.py` | `test_cli_refuses_existing_output_dir_and_keyboard_interrupt_fails` | Existing `--output-dir` and `KeyboardInterrupt` return exit `1` | UNEXECUTED |
+| 23 | `tests/test_explorer_export_integration.py` | `test_end_to_end_main_process_two_task_unequal_seeds_oracle` | Exact two-task unequal-seeds oracle (`pass_at_1`, `expected_solved_tasks`, `expected_total_cost_nano_usd`, `actual_all_repetitions_spend_nano_usd`, `cost_per_solved`, family exclusions) | UNEXECUTED |
+| 24 | `tests/test_explorer_export_integration.py` | `test_end_to_end_four_task_fixture_with_cascade_bundle` | Four-task fixture (`A=6,000,000`, `B=40,000,000`, cascade `26,000,000` nano-USD) bundle roundtrip | UNEXECUTED |
+| 25 | `tests/test_explorer_export_integration.py` | `test_subprocess_cli_export_verify_and_blocked_exit_codes` | Subprocess `python -m dojo.bench.export_cli` `export` (`0`), `verify` (`0`), and duplicate-cell blocked (`2`) | UNEXECUTED |
+| 26-29 | `tests/test_explorer_export_integration.py` | `test_cli_rejects_oracle_fields_deep_nesting_huge_numbers_and_strings` (4 params) | Production CLI rejects `"expected"` oracle key, deep nesting, 100-digit numbers, and huge strings | UNEXECUTED |
+| 30 | `tests/test_explorer_export_integration.py` | `test_zero_solved_panel_exports_and_verifies_cleanly` | Zero-solved panel exports `undefined_cost` (`zero_expected_solves`) and verifies cleanly | UNEXECUTED |
+| 31 | `tests/test_explorer_export_integration.py` | `test_no_raw_field_leakage_across_entire_bundle` | Raw task, family, config, dataset, and filesystem path canaries absent across all 3 bundle files | UNEXECUTED |
+
+```

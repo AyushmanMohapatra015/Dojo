@@ -1,0 +1,169 @@
+{
+  "authority": "accepted Python validators plus separately stated literal oracles",
+  "cases": [
+    {
+      "diagnostic": "fixtures/unequal-seeds.family-diagnostic.json",
+      "expected": {
+        "audit_status": "valid",
+        "declared_tasks": 2,
+        "ok": true,
+        "run_rows": 6,
+        "summary_mode": "headline_complete"
+      },
+      "explorer": "fixtures/unequal-seeds.explorer.json",
+      "id": "unequal-seeds",
+      "literal_oracles": {
+        "config_0001": {
+          "expected_cost": "5",
+          "mean_cost": "5/2",
+          "pass": "1/4",
+          "solves": "1/2",
+          "spend": "10"
+        },
+        "config_0002": {
+          "expected_cost": "30",
+          "mean_cost": "15",
+          "pass": "1/2",
+          "solves": "1",
+          "spend": "30"
+        },
+        "exclude_family_0001": {
+          "config_0001": {
+            "delta_mean_cost": "1/2",
+            "delta_pass": "-1/4",
+            "mean_cost": "3",
+            "pass": "0"
+          },
+          "config_0002": {
+            "delta_mean_cost": "5",
+            "delta_pass": "1/2",
+            "mean_cost": "20",
+            "pass": "1"
+          }
+        },
+        "exclude_family_0002": {
+          "config_0001": {
+            "delta_mean_cost": "-1/2",
+            "delta_pass": "1/4",
+            "mean_cost": "2",
+            "pass": "1/2"
+          },
+          "config_0002": {
+            "delta_mean_cost": "-5",
+            "delta_pass": "-1/2",
+            "mean_cost": "10",
+            "pass": "0"
+          }
+        },
+        "scope": "fictional arithmetic only, never model results"
+      }
+    },
+    {
+      "diagnostic": "fixtures/cost-incomplete.family-diagnostic.json",
+      "expected": {
+        "audit_status": "cost_incomplete",
+        "declared_tasks": 2,
+        "ok": true,
+        "run_rows": 6,
+        "summary_mode": "success_only"
+      },
+      "explorer": "fixtures/cost-incomplete.explorer.json",
+      "id": "cost-incomplete"
+    },
+    {
+      "diagnostic": "fixtures/audit-blocked.family-diagnostic.json",
+      "expected": {
+        "audit_status": "blocked",
+        "declared_tasks": 2,
+        "ok": true,
+        "run_rows": 5,
+        "summary_mode": "blocked"
+      },
+      "explorer": "fixtures/audit-blocked.explorer.json",
+      "id": "audit-blocked"
+    },
+    {
+      "diagnostic": "fixtures/zero-solved.family-diagnostic.json",
+      "expected": {
+        "audit_status": "valid",
+        "declared_tasks": 2,
+        "ok": true,
+        "run_rows": 6,
+        "summary_mode": "headline_complete"
+      },
+      "explorer": "fixtures/zero-solved.explorer.json",
+      "id": "zero-solved"
+    },
+    {
+      "diagnostic": "fixtures/one-family.family-diagnostic.json",
+      "expected": {
+        "audit_status": "valid",
+        "declared_tasks": 2,
+        "ok": true,
+        "run_rows": 6,
+        "summary_mode": "headline_complete"
+      },
+      "explorer": "fixtures/one-family.explorer.json",
+      "id": "one-family"
+    },
+    {
+      "diagnostic": "fixtures/large-exact-cost.family-diagnostic.json",
+      "expected": {
+        "audit_status": "valid",
+        "declared_tasks": 2,
+        "ok": true,
+        "run_rows": 6,
+        "summary_mode": "headline_complete"
+      },
+      "explorer": "fixtures/large-exact-cost.explorer.json",
+      "id": "large-exact-cost",
+      "literal_oracles": {
+        "config_0001_actual_all_repetitions_spend_nano_usd": "1000000000000000009",
+        "config_0001_cost_per_solved_nano_usd": "1000000000000000009",
+        "config_0001_expected_total_cost_nano_usd": "1000000000000000009/2",
+        "first_row_cost_nano_usd": "1000000000000000000"
+      }
+    },
+    {
+      "diagnostic": "fixtures/four-task-cascade.family-diagnostic.json",
+      "expected": {
+        "audit_status": "valid",
+        "declared_tasks": 4,
+        "ok": true,
+        "run_rows": 8,
+        "summary_mode": "headline_complete"
+      },
+      "explorer": "fixtures/four-task-cascade.explorer.json",
+      "id": "four-task-cascade",
+      "literal_oracles": {
+        "cascade_cost_per_solved_nano_usd": "26000000/3",
+        "cascade_pass_at_1": "3/4",
+        "cascade_total_cost_nano_usd": "26000000"
+      }
+    }
+  ],
+  "fixtures_are_read_only": true,
+  "negative_cases": [
+    {
+      "expected": "reject",
+      "mutation": "numeric token 2e0 in schema_version"
+    },
+    {
+      "expected": "reject",
+      "mutation": "duplicate decoded schema_version key using Unicode escape"
+    },
+    {
+      "expected": "reject",
+      "mutation": "matching-source diagnostic with swapped family exclusions"
+    },
+    {
+      "expected": "reject",
+      "mutation": "any real flag or unsupported nested field"
+    },
+    {
+      "expected": "reject",
+      "mutation": "self-consistent wrong frontier dominance at existing exact coordinates"
+    }
+  ],
+  "scope": "fictional synthetic arithmetic only; not actual model results"
+}

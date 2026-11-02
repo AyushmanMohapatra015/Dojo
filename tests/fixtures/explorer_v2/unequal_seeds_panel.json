@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "synthetic",
+  "dataset_id": "synthetic_stats_fixture_v1",
+  "expected_plan": {
+    "tasks": [
+      "t1",
+      "t2"
+    ],
+    "seeds_by_config": {
+      "A": [
+        0,
+        1
+      ],
+      "B": [
+        0
+      ]
+    }
+  },
+  "records": [
+    {
+      "task_id": "t1",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "f1",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 1,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "t1",
+      "config_id": "A",
+      "seed": 1,
+      "split": "train",
+      "family_id": "f1",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 3,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "t2",
+      "config_id": "A",
+      "seed": 0,
+      "split": "train",
+      "family_id": "f2",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 2,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "t2",
+      "config_id": "A",
+      "seed": 1,
+      "split": "train",
+      "family_id": "f2",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 4,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "t1",
+      "config_id": "B",
+      "seed": 0,
+      "split": "train",
+      "family_id": "f1",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "unsolved",
+      "evidence_validity": "valid",
+      "scorer_status": "failed",
+      "baseline_verified": false,
+      "cost_nano_usd": 10,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    },
+    {
+      "task_id": "t2",
+      "config_id": "B",
+      "seed": 0,
+      "split": "train",
+      "family_id": "f2",
+      "dataset_id": "synthetic_stats_fixture_v1",
+      "evidence_kind": "synthetic",
+      "registration_id": null,
+      "execution_complete": true,
+      "outcome": "solved",
+      "evidence_validity": "valid",
+      "scorer_status": "passed",
+      "baseline_verified": false,
+      "cost_nano_usd": 20,
+      "signals": {
+        "has_patch": true,
+        "visible_tests_pass": true,
+        "hit_step_cap": false,
+        "no_command_rate": 0.0,
+        "agent_self_reports_done": true
+      }
+    }
+  ]
+}

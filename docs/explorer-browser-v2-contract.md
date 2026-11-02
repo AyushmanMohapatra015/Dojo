@@ -1,0 +1,198 @@
+# Dojo Browser Explorer v2 Contract (Part 1 Foundation & Part 2 UI Handoff)
+
+Reviewed primary adaptation: ACTION_PLAN `10j5` / `10j1` / `10j2` (`dashboard/src/v2/exact.mjs`, `dashboard/src/v2/data.mjs`, `dashboard/src/v2/derive.mjs`).
+All inputs and derived models represent **synthetic, UNVERIFIED offline benchmark arithmetic (`real_provider_calls === 0`)**. Nothing in this browser layer authenticates provider calls, test-harness execution, or Stage B benchmark registration.
+
+---
+
+## 1. Public API & Error Contract
+
+### 1.1 `dashboard/src/v2/exact.mjs`
+- `class V2DataError extends Error`:
+  - `.code`: One of 10 fixed error codes (`INVALID_RATIONAL_DTO`, `NEGATIVE_RATIONAL_FORBIDDEN`, `INVALID_NANO_USD`, `INVALID_FORMAT_OPTIONS`, `INVALID_EXPLORER_DATA`, `INVALID_DIAGNOSTIC_DATA`, `BUNDLE_MISMATCH`, `INVALID_DERIVED_MODEL`, `INVALID_SELECT_OPTIONS`, `RESOURCE_LIMIT_EXCEEDED`).
+  - `.message` and `.stack`: Fixed safe text mapped from `.code`. No untrusted values or local source paths. This validates data; it does not sandbox executable JavaScript or Proxy traps.
+- `parseRationalV2(dto, { allowNegative = false } = {})`:
+  - Validates exact keys `{ defined, numerator, denominator, reason }`, string length `<= 96`, bit length `<= 320` before decimal expansion, canonical integer syntax, and reduced-fraction invariant (`gcd(|num|, den) === 1n`).
+  - Returns `{ numerator: bigint, denominator: bigint }` when `defined === true`, or `null` when `defined === false`.
+- `compareRationalV2(left, right)`:
+  - Compares two valid rational DTOs (allowing signed deltas) using exact `BigInt` cross-multiplication. Returns `-1 | 0 | 1`, or `null` if either DTO is undefined.
+- `formatRationalV2(dto, { places = 3 } = {})`:
+  - Rejects unknown, hidden or accessor options. Formats a rational DTO using half-away-from-zero `BigInt` rounding (`places` integer `0..6`) plus its exact fraction in parentheses, e.g. `"0.250 (1/4)"`, or an explicit undefined label.
+- `formatPercentV2(dto, { places = 1 } = {})`:
+  - Multiplies numerator by `100n` before half-away-from-zero `BigInt` rounding, e.g. `"25.0% (1/4)"`.
+- `formatNanoUsdV2(dto, { places = 6 } = {})`:
+  - Accepts a rational DTO or canonical nonnegative decimal string. Divides nano-USD by `10^9` using `BigInt` arithmetic. Positive non-zero amounts strictly below `10^-places` USD display `< $0.000001 (<exact> nano-USD)` instead of `$0.000000`.
+
+### 1.2 `dashboard/src/v2/data.mjs`
+- `LIMITS_V2`: Frozen object publishing `{ maxViewBytes: 2097152, maxViewNodes: 80000, maxViewRows: 10000, maxViewConfigs: 100, maxViewDepth: 24, maxIntStringChars: 96, maxIntBits: 320, maxLimitations: 50, maxCellVisits: 2000000, maxStringChars: 1024, maxCostNanoUsd: "1000000000000000000", maxCountValue: 1000000000000, maxBootstrapReplicates: 100000, maxPairedDifferences: 10000 }`.
+- `parseExplorerV2(text)` -> `{ ok: boolean, data: ViewV2 | null, errors: string[] }`
+- `validateExplorerV2(input)` -> `{ ok: boolean, data: ViewV2 | null, errors: string[] }`
+- `parseFamilyDiagnosticV2(text)` -> `{ ok: boolean, data: FamilyDiagnosticV2 | null, errors: string[] }`
+- `bindFamilyDiagnosticV2(view, diagnostic)` -> `{ ok: boolean, data: { view, diagnostic } | null, errors: string[] }`
+
+### 1.3 `dashboard/src/v2/derive.mjs`
+- `deriveExplorerV2(view, diagnostic = null)` -> `DerivedV2` (throws `V2DataError` on invalid input or cross-file mismatch).
+- `selectRowsV2(derived, options = {})` -> `PageV2` (revalidates `derived` and `options`; throws `V2DataError` on any violation).
+
+---
+
+## 2. Exact `DerivedV2` Read-Model Specification
+
+`deriveExplorerV2(view, diagnostic = null)` returns a deep-frozen object with exact top-level keys:
+`{ scope, configurations, runRows, taskSummaries, frontiers, cascade, familyDiagnostic, limitations }`.
+
+### 2.1 `scope`
+- `schemaVersion`: `2`
+- `viewModel`: `'dojo-explorer-view-v2'`
+- `evidenceKind`: `'synthetic'`
+- `eligibility`: `'UNVERIFIED'`
+- `realProviderCalls`: `0`
+- `bannerText`: `'SYNTHETIC OFFLINE VIEW ONLY — UNVERIFIED ELIGIBILITY — 0 REAL PROVIDER CALLS'`
+- `source`: `{ input_sha256, expected_plan_hash, report_method_version }`
+- `constructionCounts`: `{ total: 63, train: 37, held_out: 26 }` (informational project construction inventory, never evaluated panel outcomes)
+- `evaluatedTaskCount`: positive integer declared task count for this panel
+- `declaredConfigCount`: positive integer (`1..100`)
+- `observedConfigIds`: sorted array of declared and observed `config_XXXX` aliases
+- `observedTaskIds`: sorted array of declared and observed `task_XXXX` aliases
+- `observedFamilyIds`: sorted array of observed `family_XXXX` aliases
+- `declaredSeedsByConfig`: `{ [configId]: number[] }`
+- `summaryMode`: `'headline_complete' | 'success_only' | 'blocked'`
+- `auditStatus`: `'valid' | 'cost_incomplete' | 'blocked'`
+- `isBlocked`: boolean
+- `blockedReason`: `'panel_audit_blocked' | 'cost_incomplete_report_blocked' | null`
+- `isCostIncomplete`: boolean
+
+### 2.2 `configurations` (Array of `ConfigReadModelV2`)
+Each item preserves original aliases and exact metric DTOs alongside formatted strings:
+- `configId`: `'config_XXXX'`
+- `nTasks`: integer (`=== scope.evaluatedTaskCount`)
+- `declaredSeeds`: `number[]`
+- `seedCount`: integer (`declaredSeeds.length`)
+- `totalRuns`: integer (`nTasks * seedCount`)
+- `observedRuns`, `solvedRuns`, `unsolvedRuns`, `undeterminedRuns`, `missingCostRuns`: exact nonnegative integer row counts
+- `passAt1`, `expectedSolvedTasks`, `expectedTotalCostNanoUsd`, `meanTaskCostNanoUsd`, `expectedCostPerSolvedNanoUsd`: exact rational DTOs
+- `actualAllRepetitionsSpendNanoUsd`: canonical decimal string or `null`
+- `undefinedReasons`: `{ passAt1, expectedSolvedTasks, expectedTotalCostNanoUsd, meanTaskCostNanoUsd, expectedCostPerSolvedNanoUsd, actualAllRepetitionsSpendNanoUsd }`
+- `display`: `{ passAt1Percent, expectedSolvedTasks, expectedTotalCostUsd, meanTaskCostUsd, expectedCostPerSolvedUsd, actualAllRepetitionsSpendUsd }`
+
+### 2.3 `runRows` (Array of `{ rowKey, row }`)
+- `rowKey`: `'run:' + ordinal` (`'run:0'`, `'run:1'`, ... in canonical `view.rows` array order). Stable across filtering, sorting, and pagination; disambiguates duplicate blocked cells.
+- `row`: Fresh validated copy of the 10-field wire row (`task_id, config_id, family_id, seed, outcome, scorer_status, evidence_validity, baseline_verified, cost_nano_usd, visible_tests_pass`).
+
+### 2.4 `taskSummaries` (Array of `TaskSummaryV2`)
+Empty array `[]` when `scope.isBlocked === true`. Otherwise contains one entry per declared task (`task_0001..task_NNNN`):
+- `taskId`: `'task_XXXX'`
+- `familyId`: `'family_XXXX'`
+- `byConfig`: `{ [configId]: { configId, declaredSeeds, seedCount, solvedSeedCount, unsolvedSeedCount, undeterminedSeedCount, successRate, meanCostNanoUsd, actualAllSeedsSpendNanoUsd, display: { successPercent, meanCostUsd, actualAllSeedsSpendUsd } } }`
+- **Invariants**: Per-task success averages seed successes within that task (`solvedSeedCount / seedCount`); unequal seed counts never alter the task denominator. When `scope.isCostIncomplete === true`, `meanCostNanoUsd` (`reason: 'missing_cost_nano_usd'`) and `actualAllSeedsSpendNanoUsd` (`null`) are withheld globally across all tasks and configurations.
+
+### 2.5 `frontiers` (`null` or `{ cost_per_solved, mean_task_cost }`)
+Present only when `summaryMode === 'headline_complete'`. Each axis table contains:
+- `costAxis`: `'cost_per_solved' | 'mean_task_cost'`
+- `isHeadlineAxis`: boolean (`true` for `cost_per_solved`, `false` for `mean_task_cost`)
+- `frontierSeriesIds`, `dominatedSeriesIds`, `undefinedSeriesIds`: `string[]`
+- `rows`: Array of `{ seriesId, costAxis, passAt1, costValueNanoUsd, status, isOnFrontier, tieGroupId, tiedWith, dominatedBy, plottable, unplottableReason, chartOnlyApprox: { isApproximate: true, approxXUsd, approxYPercent }, display: { passAt1Percent, costUsd } }`
+
+### 2.6 `cascade` (`null` or `CascadeReadModelV2`)
+Present only when `view.analysis.cascade !== null`. Exposes frozen report cascade coordinates (`seriesId, baseConfigId, escalateConfigId, policyHash, nTasks, passAt1, expectedSolvedTasks, expectedTotalCostNanoUsd, meanTaskCostNanoUsd, expectedCostPerSolvedNanoUsd`), `comparisonVsBase`, `comparisonVsEscalate`, `policyNote`, and `display`.
+
+### 2.7 `familyDiagnostic` (`null` or `FamilyDiagnosticReadModelV2`)
+Exact fields: `schemaVersion, diagnosticModel, isPrimary, auditStatus, originalNTasks, nFamilies, configurations, familySizes, originals, exclusions, limitations, advisoryNote`. `schemaVersion=2`, `diagnosticModel=dojo-family-sensitivity-v2`, `isPrimary=false`. Never a subset selector. See the additional nested shape rules below.
+
+### 2.8 `PageV2` (`selectRowsV2(derived, options)`)
+- Exact return shape: `{ rows, totalMatched, page, pageCount, pageSize }`.
+- Options: `configId` (`null` or observed/declared alias), `outcome` (`null` or `'solved' | 'unsolved' | 'undetermined'`), `taskId` (`null` or observed/declared alias), `page` (positive int, default `1`), `pageSize` (int `1..200`, default `50`), `sortKey` (`'task_id' | 'config_id' | 'seed' | 'outcome' | 'cost_nano_usd'`, default `'task_id'`), `direction` (`'asc' | 'desc'`, default `'asc'`).
+- Null `cost_nano_usd` values sort **LAST** in both `asc` and `desc` directions. Ties break deterministically by ascending `rowKey` ordinal.
+
+---
+
+## 3. Part 2 React UI Integration Points
+
+1. **Upload / Reset Race Protection**: Maintain a monotonic request counter (`requestTicketRef.current += 1`) across single-file explorer uploads, optional paired family-diagnostic uploads, and built-in fixture resets. Discard stale async `FileReader` completions. Check `file.size <= LIMITS_V2.maxViewBytes` (2 MiB) before reading.
+2. **Persistent Synthetic Banner & Scope Header**: Render `derived.scope.bannerText` persistently at the top of the viewport. Display `constructionCounts` (`63 total: 37 train / 26 held-out`) with explicit labeling distinguishing project construction inventory from `evaluatedTaskCount`.
+3. **Configuration Comparison Cards**: Show `passAt1Percent`, fractional `expectedSolvedTasks` (never whole-number v1 `solved_count`), `expectedTotalCostUsd` (1-seed expected benchmark cost) vs. `actualAllRepetitionsSpendUsd` (summed across `declaredSeeds`), and explicit undefined reason badges when blocked or cost-incomplete.
+4. **Two-Axis Frontier Chart & Accessible Table Equivalent**: Provide an axis toggle between `cost_per_solved` (headline) and `mean_task_cost`. Plot only rows where `row.plottable === true` using `row.chartOnlyApprox.approxXUsd` and `approxYPercent`. Always render the complete exact frontier table below the chart (including `undefined_cost` series such as `zero_expected_solves`) and use exact `display` strings in tooltips.
+5. **Seed-Aware Run Grid & Task Summary Matrix**: Render `derived.taskSummaries` as the task-by-configuration summary view and `selectRowsV2(derived, options)` as the paginated seed-level run table with controls for `configId`, `taskId`, `outcome`, `sortKey`, `direction`, `page`, and `pageSize` (`aria-sort` on active column header, keyboard-focusable row detail drawer keyed by `rowKey`).
+6. **Frozen Cascade & Non-Primary Family Sensitivity Panels**: When `derived.cascade` is non-null, render the cascade summary and `comparisonVsBase` / `comparisonVsEscalate` tables with `derived.cascade.policyNote`. When `derived.familyDiagnostic` is bound, render `originals` and leave-one-family-out `exclusions` (`delta_pass_at_1` and `delta_mean_task_cost_nano_usd`) with `advisoryNote`.
+
+
+## 4. Accepted corrections and consuming boundaries
+
+MAX_COUNT_VALUE and LIMITS_V2.maxCountValue are exactly 10^12 (not the original
+proposal's 10^9). QUANTILE_METHOD is exactly hyndman_fan_type_7_linear. The
+accepted backend wire contract remains docs/explorer-v2-contract.md; it was not
+changed to accommodate the JavaScript. Wire numeric tokens remain integers;
+negative zero, floats/exponents/nonfinite tokens and duplicate decoded keys are
+refused. Rational/cost integers stay strings. No Number-based rounding occurs.
+
+Direct object validation rejects unknown own keys, including non-enumerable
+ones, symbols, accessor properties, cycles, sparse/exotic arrays and unsupported
+objects. Shared acyclic objects remain allowed within budgets. Lexical node
+counting occurs before whole-root JSON.parse, and direct array cardinality is
+checked before element descriptor scans. Helper limit overrides are bounded.
+
+DerivedV2 is a fresh deep-frozen JSON-safe read model, not authority or a
+registration. Reconstructed JSON copies are supported. selectRowsV2 checks the
+represented wire data, recomputes the full derived result and compares all
+fields, including display strings/flags/chart values. Edits to headlines,
+construction scope, rows, task summaries or chart status cannot pass based on a
+caller-provided flag. Comparison ignores object property ordering, not fields.
+Selection returns fresh PageV2 row copies and never changes caller state.
+
+DerivedV2 permits finite fractional chart Numbers with separate bounded graph
+caps (320,000 nodes / 8 MiB, depth 24). This does not relax the 80,000-node/2-MiB
+wire boundary. Chart approximations use bounded ratio conversion without a
+fixed decimal truncation to zero; exact cost/success/fraction values always
+remain the authority for sorting, comparisons and tooltips.
+
+The source ViewV2 retains validated analysis.bootstrap, but DerivedV2 does NOT
+include intervals. UI uncertainty/method components must receive the original
+validated ViewV2 as well as DerivedV2. Row selection cannot authenticate omitted
+intervals or original source data. No browser resampling, policy replay or
+cryptographic registration is supplied.
+
+### Complete nested derived conventions
+
+Cascade `display` is exactly `passAt1Percent, expectedSolvedTasks,
+expectedTotalCostUsd, meanTaskCostUsd, expectedCostPerSolvedUsd`. Each
+`comparisonVsBase`/`comparisonVsEscalate` contains all exact snake_case comparison
+fields from the backend cascade contract plus exactly `display`. That display
+is exactly `baselinePassAt1Percent, cascadePassAt1Percent, deltaPassAt1Percent,
+baselineExpectedTotalCostUsd, cascadeExpectedTotalCostUsd, deltaExpectedTotalCostUsd,
+relativeCostSavingsPercent, baselineCostPerSolvedUsd, cascadeCostPerSolvedUsd,
+deltaCostPerSolvedUsd`. Original numeric values remain rational DTOs; all display
+values are strings, not data for later arithmetic.
+
+Family `configurations` is an alias list; `familySizes` contains exactly
+`family_id, task_count`. Each `originals` item is exactly `config_id, pass_at_1,
+expected_total_cost_nano_usd, mean_task_cost_nano_usd, display`, with display
+exactly `passAt1Percent, expectedTotalCostUsd, meanTaskCostUsd`. Each exclusion is
+exactly `familyId, excludedTaskCount, retainedTaskCount, configurations`. Each
+inner config contains the four original wire fields, `delta_pass_at_1`,
+`delta_mean_task_cost_nano_usd`, and `display`; display adds
+`deltaPassAt1Percent, deltaMeanTaskCostUsd` to the original three display fields.
+`advisoryNote` is fixed nonprimary/no-retuning text. Wire source/scope agreement
+is checked before this read model is built.
+
+`limitations` remains the validated ViewV2 limitations string array. All nested
+objects preserve the shapes described above and have no raw labels or reverse
+alias map. A consistent synthetic source can still be fabricated; no provider
+usage/scorer outcome/registration approval is authenticated by these checks.
+
+PageV2 empty matches are exactly rows=[], totalMatched=0, page=1, pageCount=1,
+with the chosen pageSize. An excessive valid page clamps to the last page.
+Pagination/filtering never changes the full panel denominator or eligibility.
+Every run is reachable across pages; rowKey stays its original canonical ordinal.
+
+## 5. Primary execution and remaining UI work
+
+Primary ran 43 Node behavioral tests (22 adapted supplied and 21 independent),
+and 102 Python/browser validation cases plus five paired artifacts with zero
+disagreements. This is a bounded compatibility check, not exhaustive proof.
+The original agent tests were UNEXECUTED; their original files and ledger are
+preserved unchanged in the proposal archive. See the primary verification ledger.
+
+No React component, Vite/Recharts dependency tree, browser build, CSP,
+accessibility or hosted demo is accepted by this data-layer work. UI Part 2
+remains queued. The owner requested Nemotron/provider integration next; its
+live balance/expiry/spending and scorer/registration prerequisites remain.

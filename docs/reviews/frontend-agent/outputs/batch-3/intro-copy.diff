@@ -1,0 +1,46 @@
+--- a/dashboard/src/App.jsx
++++ b/dashboard/src/App.jsx
+@@ -284,6 +284,8 @@
+   return (
+     <section className="dataset-restriction-bar" aria-label="Current dataset status">
+-      <p className="dataset-status-summary">Synthetic example ? {scope.evaluatedTaskCount} evaluated tasks ? {scope.declaredConfigCount} configurations. Unverified; no live provider calls.</p>
++      <p className="dataset-status-summary">
++        Synthetic example · {scope.evaluatedTaskCount} evaluated tasks · {scope.declaredConfigCount} configurations. Unverified offline data; no live provider calls.
++      </p>
+       {scope.isBlocked ? (
+         <div
+           className="banner-state banner-blocked"
+@@ -318,12 +320,18 @@
+     <section className="panel" aria-labelledby="overview-heading">
+       <h2 id="overview-heading">Overview</h2>
+-      <p>Compare coding model configurations by the tasks they solve and what they cost.</p>
+-      <p>This synthetic example contains <strong>{scope.evaluatedTaskCount} evaluated tasks</strong> across <strong>{scope.declaredConfigCount} configurations</strong>. These are sample outcomes, not measured model performance.</p>
++      <p>
++        Compare coding model configurations by evaluated task success, cost, and offline escalation cascades.
++      </p>
++      <p>
++        This synthetic example demonstrates <strong>{scope.evaluatedTaskCount} evaluated tasks</strong> across{' '}
++        <strong>{scope.declaredConfigCount} configurations</strong>. These are sample benchmark outcomes, not measured live model performance.
++      </p>
+       <ul className="overview-guide">
+-        <li><strong>Compare:</strong> inspect success, cost and cascade comparisons.</li>
+-        <li><strong>Runs:</strong> filter individual attempts and inspect their details.</li>
+-        <li><strong>Method:</strong> understand uncertainty, evidence and limitations.</li>
++        <li><strong>Compare:</strong> inspect Pareto frontiers, cost tradeoffs, and cold-restart cascades.</li>
++        <li><strong>Runs:</strong> inspect task-level success, seed attempts, and filter execution records.</li>
++        <li><strong>Method:</strong> understand uncertainty intervals, leave-one-family-out sensitivity, and limitations.</li>
+       </ul>
+-      <p className="hint">Use Change dataset to load a compatible local results file. Files are processed in your browser.</p>
++      <p className="hint">
++        Use Change dataset above to upload a compatible <code>dojo-explorer-view-v2</code> JSON file. Files are validated locally in your browser.
++      </p>
+     </section>
+   );
+@@ -1518,6 +1526,6 @@
+           <h1>Dojo results explorer (v2)</h1>
+           <p>
+-            Explore coding model comparisons, inspect individual attempts, and understand the evidence behind the results.
++            Compare coding model configurations by task success, cost, and offline cascades with full arithmetic provenance.
+           </p>
+         </div>
+       </header>

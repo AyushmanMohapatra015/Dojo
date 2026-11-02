@@ -1,16 +1,17 @@
 # Gravity review workspace instructions
 
 This folder is a deliberately limited snapshot of Dojo for an independent review.
-The original two tasks in ASSIGNMENT.md are complete. For the next assignment,
-read FOLLOWUP-README.md, ASSIGNMENT-2.md and context-manifest-v2.json first.
-The current authorized scope is exactly 13l5/13l6; do not repeat the old audit.
+The prior assignments are complete and primary-reviewed. For the current two
+small tasks read ASSIGNMENT-3.md, context-manifest-v3.json and context-v3/ only.
+Current authorized scope is exactly 13l9/13l10; do not repeat either old audit.
 These restrictions govern the review agent after the primary prepares/verifies
 the initial snapshot; snapshot preparation is the primary workspace's setup task.
 
-- Read context-v2/ as current reference and context/ as preserved supplementary
-  source. Do not change either snapshot's files or hashes. The primary assessment
-  in context-v2 corrects errors in the earlier outputs.
-- Write only outputs/ review documents and clearly labeled proposed test source.
+- Read context-v3/ as current reference. context/ and context-v2/ and all earlier
+  reports are preserved history, not additional reading for this bounded task.
+  Do not change any snapshot's files or hashes.
+- Write only the two named outputs/ Markdown reports. Put any proposed test
+  snippets inside those reports; do not create additional test/code files.
 - Do not edit main application files, the older D:/Dojo-Antigravity checkout,
   parent directories, real task records or frozen construction artifacts.
 - Do not invoke Git (including init/config/pull/commit/push), package installs,

@@ -1,0 +1,60 @@
+.dojo-explorer-nav {
+  background: var(--surface, #fff);
+  border-bottom: 1px solid var(--soft-border, #c5ccd9);
+  padding: 0.25rem;
+}
+
+.dojo-explorer-nav__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dojo-explorer-nav__item {
+  display: flex;
+  min-width: 0;
+}
+
+.dojo-explorer-nav__btn {
+  appearance: none;
+  min-height: 44px;
+  width: 100%;
+  margin: 0;
+  padding: 0.65rem 1rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--muted, #3d4657);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.dojo-explorer-nav__btn:hover {
+  background: var(--bg, #f4f5f8);
+  color: var(--text, #1a1f2b);
+}
+
+.dojo-explorer-nav__btn--active {
+  border-bottom-color: var(--accent, #1a45ad);
+  color: var(--accent, #1a45ad);
+  background: var(--bg, #f4f5f8);
+}
+
+.dojo-explorer-nav__btn:focus-visible {
+  outline: 3px solid var(--accent, #1a45ad);
+  outline-offset: -3px;
+}
+
+@media (max-width: 480px) {
+  .dojo-explorer-nav__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

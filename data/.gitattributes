@@ -1,0 +1,2 @@
+# Keep new preflight artifact bytes and draft hashes stable through Git checkout.
+development/stage-b-preflight-v1/** -text

@@ -1,0 +1,445 @@
+"""UNEXECUTED offline unit tests for WP1 (dojo/providers/nebius_codec.py)."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import FrozenInstanceError, replace
+from typing import Any
+
+import pytest
+
+from dojo.providers.nebius_codec import (
+    MAX_CONTENT_BYTES,
+    MAX_RAW_BYTES,
+    CodecError,
+    ProviderObservation,
+    build_http_payload,
+    build_sdk_kwargs,
+    decode_completion,
+)
+from dojo.solve.agent import Message
+from dojo.solve.contracts import ModelRequest
+from dojo.store.records import I64_MAX, UsageEvidence
+
+MODEL_ID = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+API_BASE = "https://api.tokenfactory.nebius.com/v1/"
+MESSAGES = (
+    Message("system", "You are fixing a Python project."),
+    Message("user", "ISSUE DATA:\nSynthetic defect description."),
+)
+
+
+def make_request(**overrides: Any) -> ModelRequest:
+    base = ModelRequest(
+        model_id=MODEL_ID,
+        api_base=API_BASE,
+        messages=MESSAGES,
+        max_completion_tokens=256,
+        temperature=1.0,
+        top_p=0.95,
+        seed=42,
+        enable_thinking=True,
+        thinking_budget=64,
+        timeout_seconds=30.0,
+    )
+    return replace(base, **overrides)
+
+
+def make_response_bytes(
+    *,
+    model: Any = MODEL_ID,
+    content: Any = '{"action":"finish"}',
+    finish_reason: Any = "stop",
+    role: Any = "assistant",
+    index: Any = 0,
+    usage: Any = None,
+    reasoning_content: Any = None,
+    tool_calls: Any = None,
+    function_call: Any = None,
+    refusal: Any = None,
+    extra_top: dict[str, Any] | None = None,
+) -> bytes:
+    if usage is False:
+        usage_payload = None
+    elif usage is None:
+        usage_payload = {
+            "prompt_tokens": 400,
+            "completion_tokens": 50,
+            "total_tokens": 450,
+        }
+    else:
+        usage_payload = usage
+
+    msg: dict[str, Any] = {"role": role, "content": content}
+    if reasoning_content is not None:
+        msg["reasoning_content"] = reasoning_content
+    if tool_calls is not None:
+        msg["tool_calls"] = tool_calls
+    if function_call is not None:
+        msg["function_call"] = function_call
+    if refusal is not None:
+        msg["refusal"] = refusal
+
+    payload: dict[str, Any] = {
+        "id": "chatcmpl-private-canary-id-999",
+        "object": "chat.completion",
+        "created": 1761134400,
+        "model": model,
+        "choices": [
+            {
+                "index": index,
+                "message": msg,
+                "finish_reason": finish_reason,
+            }
+        ],
+    }
+    if usage_payload is not None:
+        payload["usage"] = usage_payload
+    if extra_top:
+        payload.update(extra_top)
+    return json.dumps(payload).encode("utf-8")
+
+
+def test_sdk_and_http_mapping_equivalence_and_isolation():
+    req = make_request()
+    sdk_1 = build_sdk_kwargs(req)
+    sdk_2 = build_sdk_kwargs(req)
+    http_1 = build_http_payload(req)
+    http_2 = build_http_payload(req)
+
+    assert sdk_1 == sdk_2 and sdk_1 is not sdk_2
+    assert http_1 == http_2 and http_1 is not http_2
+
+    assert sdk_1["stream"] is False and sdk_1["n"] == 1
+    assert sdk_1["extra_body"] == {
+        "chat_template_kwargs": {
+            "enable_thinking": True,
+            "force_nonempty_content": True,
+            "thinking_budget": 64,
+        }
+    }
+
+    assert "extra_body" not in http_1
+    assert http_1["stream"] is False and http_1["n"] == 1
+    assert http_1["chat_template_kwargs"] == {
+        "enable_thinking": True,
+        "force_nonempty_content": True,
+        "thinking_budget": 64,
+    }
+    for forbidden in (
+        "extra_body",
+        "api_base",
+        "url",
+        "timeout",
+        "timeout_seconds",
+        "api_key",
+        "headers",
+    ):
+        assert forbidden not in http_1
+
+    # Mutating returned dicts must not affect subsequent calls or request
+    sdk_1["messages"][0]["content"] = "MUTATED"
+    sdk_1["extra_body"]["chat_template_kwargs"]["enable_thinking"] = False
+    http_1["chat_template_kwargs"]["thinking_budget"] = 999
+    assert req.messages[0].content == "You are fixing a Python project."
+    assert build_sdk_kwargs(req)["extra_body"]["chat_template_kwargs"]["enable_thinking"] is True
+    assert build_http_payload(req)["chat_template_kwargs"]["thinking_budget"] == 64
+
+
+def test_mapping_without_thinking_budget_preserves_controls():
+    req = make_request(enable_thinking=False, thinking_budget=None)
+    sdk = build_sdk_kwargs(req)
+    http = build_http_payload(req)
+    assert sdk["extra_body"]["chat_template_kwargs"] == {
+        "enable_thinking": False,
+        "force_nonempty_content": True,
+    }
+    assert http["chat_template_kwargs"] == {
+        "enable_thinking": False,
+        "force_nonempty_content": True,
+    }
+
+
+def test_corrupted_model_request_rejected_at_consuming_boundary():
+    req = make_request()
+    object.__setattr__(req, "api_base", "https://evil.invalid/v1/")
+    with pytest.raises(CodecError) as exc_info:
+        build_sdk_kwargs(req)
+    assert exc_info.value.reason == "invalid_request"
+    assert "evil.invalid" not in str(exc_info.value)
+
+    bad_seed = make_request()
+    object.__setattr__(bad_seed, "seed", True)
+    with pytest.raises(CodecError):
+        build_http_payload(bad_seed)
+    with pytest.raises(CodecError):
+        decode_completion(make_response_bytes(), bad_seed)
+
+
+def test_ready_observation_and_not_parsed_as_action():
+    # Prose that would fail parse_action is still a valid 'ready' observation in nebius_codec
+    raw = make_response_bytes(
+        content="Plain assistant text, not a JSON action",
+        reasoning_content="PRIVATE_REASONING_CANARY",
+        usage={
+            "prompt_tokens": 400,
+            "completion_tokens": 50,
+            "total_tokens": 450,
+            "prompt_tokens_details": {"cached_tokens": 100},
+            "completion_tokens_details": {"reasoning_tokens": 20},
+        },
+    )
+    obs = decode_completion(raw, make_request())
+    assert obs.status == "ready"
+    assert obs.reason == "ok"
+    assert obs.content == "Plain assistant text, not a JSON action"
+    assert obs.finish_reason == "stop"
+    assert obs.model_matches is True
+    assert obs.provider_evidence_verified is False
+    assert obs.usage == UsageEvidence(
+        "provider", 400, 50, 1, cached_tokens=100, reasoning_tokens=20
+    )
+    assert "Plain assistant text" not in repr(obs)
+    assert "PRIVATE_REASONING_CANARY" not in repr(obs)
+    assert "chatcmpl-private-canary-id-999" not in repr(obs)
+
+
+def test_truncated_length_observation_retains_content_and_usage():
+    raw = make_response_bytes(content='{"action":"bash","command":"echo hi', finish_reason="length")
+    obs = decode_completion(raw, make_request())
+    assert obs.status == "truncated"
+    assert obs.reason == "output_limit"
+    assert obs.finish_reason == "length"
+    assert obs.content == '{"action":"bash","command":"echo hi'
+    assert obs.usage == UsageEvidence("provider", 400, 50, 1)
+    assert obs.provider_evidence_verified is False
+
+
+@pytest.mark.parametrize(
+    ("content", "reasoning", "expected_reason"),
+    [
+        (None, None, "content_missing"),
+        ("", None, "content_missing"),
+        ("   \n\t  ", None, "content_missing"),
+        (None, "Reasoning only without visible content", "content_missing"),
+        ("", "Reasoning only with empty visible string", "content_missing"),
+        (12345, None, "content_invalid"),
+        (["text_part"], None, "content_invalid"),
+        ({"text": "nested"}, None, "content_invalid"),
+    ],
+)
+def test_missing_or_reasoning_only_or_nonstring_content_preserves_known_usage(
+    content: Any, reasoning: Any, expected_reason: str
+):
+    raw = make_response_bytes(
+        content=content,
+        reasoning_content=reasoning,
+        usage={"prompt_tokens": 310, "completion_tokens": 45, "total_tokens": 355},
+    )
+    obs = decode_completion(raw, make_request())
+    assert obs.status == "unusable"
+    assert obs.reason == expected_reason
+    assert obs.content is None
+    assert obs.model_matches is True
+    assert obs.usage == UsageEvidence("provider", 310, 45, 1)
+
+
+def test_oversized_visible_content_preserves_known_usage_when_raw_fits():
+    # Raw bytes <= 1 MiB, but visible content > 64 KiB
+    huge_content = "A" * (MAX_CONTENT_BYTES + 1)
+    payload = {
+        "model": MODEL_ID,
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": huge_content},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 200, "completion_tokens": 100},
+    }
+    raw = json.dumps(payload).encode("utf-8")
+    # Ensure string check allows or flags appropriately:
+    # Note: _check_bounded_tree enforces MAX_STRING_BYTES = 64 KiB by raising CodecError("string_too_large")
+    with pytest.raises(CodecError) as exc_info:
+        decode_completion(raw, make_request())
+    assert exc_info.value.reason == "string_too_large"
+    assert "AAAA" not in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "expected_reason"),
+    [
+        ({"tool_calls": [{"id": "call_1", "type": "function"}]}, "unsupported_tools"),
+        ({"function_call": {"name": "bash", "arguments": "{}"}}, "unsupported_tools"),
+        ({"finish_reason": "tool_calls"}, "unsupported_tools"),
+        ({"finish_reason": "function_call"}, "unsupported_tools"),
+        ({"refusal": "Cannot fulfill request"}, "unsupported_finish"),
+        ({"finish_reason": "content_filter"}, "unsupported_finish"),
+        ({"finish_reason": None}, "unsupported_finish"),
+        ({"role": "user"}, "response_invalid"),
+        ({"index": 1}, "response_invalid"),
+    ],
+)
+def test_unsupported_tools_refusal_and_bad_choice_preserve_known_usage(
+    kwargs: dict[str, Any], expected_reason: str
+):
+    raw = make_response_bytes(**kwargs)
+    obs = decode_completion(raw, make_request())
+    assert obs.status == "unusable"
+    assert obs.reason == expected_reason
+    assert obs.content is None
+    assert obs.usage == UsageEvidence("provider", 400, 50, 1)
+
+
+def test_model_mismatch_forces_unknown_usage_and_discards_content():
+    raw = make_response_bytes(model="nvidia/Other-Unrequested-Model", content='{"action":"finish"}')
+    obs = decode_completion(raw, make_request())
+    assert obs.status == "unknown_usage"
+    assert obs.reason == "model_mismatch"
+    assert obs.model_matches is False
+    assert obs.content is None
+    assert obs.usage == UsageEvidence("unknown", None, None, 1)
+
+
+@pytest.mark.parametrize(
+    ("usage_payload", "expected_reason"),
+    [
+        (False, "usage_unknown"),
+        ({}, "usage_unknown"),
+        ({"prompt_tokens": 100}, "usage_unknown"),
+        ({"completion_tokens": 50}, "usage_unknown"),
+        ({"prompt_tokens": None, "completion_tokens": 50}, "usage_invalid"),
+        ({"prompt_tokens": -1, "completion_tokens": 50}, "usage_invalid"),
+        ({"prompt_tokens": 100, "completion_tokens": -1}, "usage_invalid"),
+        ({"prompt_tokens": True, "completion_tokens": 50}, "usage_invalid"),
+        ({"prompt_tokens": 100, "completion_tokens": False}, "usage_invalid"),
+        ({"prompt_tokens": 100.5, "completion_tokens": 50}, "usage_invalid"),
+        ({"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 149}, "usage_invalid"),
+        ({"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": True}, "usage_invalid"),
+        (
+            {
+                "prompt_tokens": 100,
+                "completion_tokens": 50,
+                "prompt_tokens_details": {"cached_tokens": 101},
+            },
+            "usage_invalid",
+        ),
+        (
+            {
+                "prompt_tokens": 100,
+                "completion_tokens": 50,
+                "completion_tokens_details": {"reasoning_tokens": 51},
+            },
+            "usage_invalid",
+        ),
+        (
+            {
+                "prompt_tokens": 100,
+                "completion_tokens": 50,
+                "prompt_tokens_details": {"cached_tokens": True},
+            },
+            "usage_invalid",
+        ),
+        (
+            {
+                "prompt_tokens": I64_MAX,
+                "completion_tokens": 1,
+            },
+            "usage_invalid",
+        ),
+        (
+            {
+                "prompt_tokens": 10,
+                "completion_tokens": 10,
+                "unknown_usage_key": 1,
+            },
+            "usage_invalid",
+        ),
+    ],
+)
+def test_missing_or_invalid_usage_produces_unknown_usage(usage_payload: Any, expected_reason: str):
+    raw = make_response_bytes(usage=usage_payload)
+    obs = decode_completion(raw, make_request())
+    assert obs.status == "unknown_usage"
+    assert obs.reason == expected_reason
+    assert obs.content is None
+    assert obs.model_matches is True
+    assert obs.usage == UsageEvidence("unknown", None, None, 1)
+
+
+@pytest.mark.parametrize(
+    ("bad_raw", "expected_code"),
+    [
+        (b"", "json_malformed"),
+        (b"{not json", "json_malformed"),
+        (b"[]", "top_level_not_object"),
+        (b"x" * (MAX_RAW_BYTES + 1), "raw_too_large"),
+        (b"\xff\xfeinvalid", "utf8_invalid"),
+        (b'{"model":"nvidia/x\x00"}', "utf8_invalid"),
+        (b'{"model":"a","model":"b"}', "duplicate_key"),
+        (b'{"m":1,"nested":{"k":1,"k":2}}', "duplicate_key"),
+        (b'{"key":1,"\\u006bey":2}', "duplicate_key"),
+        (b'{"score":NaN}', "number_invalid"),
+        (b'{"score":Infinity}', "number_invalid"),
+        (b'{"score":-Infinity}', "number_invalid"),
+        (b'{"big":999999999999999999999999999999}', "number_invalid"),
+        (b'{"exp":1e500}', "number_invalid"),
+    ],
+    ids=lambda value: str(len(value)) if isinstance(value, bytes) else None,
+)
+def test_malformed_duplicate_oversized_and_nonfinite_json_raise_codec_error(
+    bad_raw: bytes, expected_code: str
+):
+    with pytest.raises(CodecError) as exc_info:
+        decode_completion(bad_raw, make_request())
+    assert exc_info.value.reason == expected_code
+
+
+def test_excessive_json_nesting_raises_depth_exceeded():
+    nested = b'{"a":' * 35 + b"1" + b"}" * 35
+    with pytest.raises(CodecError) as exc_info:
+        decode_completion(nested, make_request())
+    assert exc_info.value.reason == "depth_exceeded"
+
+
+def test_provider_observation_direct_constructor_and_immutability_guards():
+    valid = ProviderObservation(
+        status="ready",
+        reason="ok",
+        content='{"action":"finish"}',
+        finish_reason="stop",
+        usage=UsageEvidence("provider", 10, 5, 1),
+        model_matches=True,
+        provider_evidence_verified=False,
+    )
+    with pytest.raises(FrozenInstanceError):
+        valid.status = "unusable"  # type: ignore[misc]
+
+    # provider_evidence_verified=True is strictly forbidden
+    with pytest.raises(ValueError, match="provider_evidence_verified"):
+        replace(valid, provider_evidence_verified=True)
+
+    # Synthetic usage cannot be attached to a ready provider observation
+    with pytest.raises(ValueError):
+        replace(valid, usage=UsageEvidence("synthetic", 10, 5, 0))
+
+    # Content on unusable or unknown_usage is rejected
+    with pytest.raises(ValueError):
+        ProviderObservation(
+            status="unusable",
+            reason="content_missing",
+            content="should not be retained",
+            finish_reason="stop",
+            usage=UsageEvidence("provider", 10, 5, 1),
+            model_matches=True,
+        )
+    with pytest.raises(ValueError):
+        ProviderObservation(
+            status="unknown_usage",
+            reason="usage_unknown",
+            content="should not be retained",
+            finish_reason="stop",
+            usage=UsageEvidence("unknown", None, None, 1),
+            model_matches=True,
+        )

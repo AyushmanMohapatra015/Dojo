@@ -1,0 +1,57 @@
+[
+  {
+    "path": "dojo/providers/trace_events.py",
+    "bytes": 11499,
+    "sha256": "c179c75ea7d67c4e1ccfe34996129a7d496742b368f53b48e81876b3c30404d9"
+  },
+  {
+    "path": "dojo/providers/langsmith_codec.py",
+    "bytes": 2212,
+    "sha256": "58824e9463b9dcd9ff4ab69e4cc23fddee0c2502b4d86aaed2c35f18f47873b7"
+  },
+  {
+    "path": "dojo/providers/tavily_codec.py",
+    "bytes": 17573,
+    "sha256": "73d33ab7632eefecd50fe60f3d9a6ea024e463d1ca148d645d2c6276eb3669d2"
+  },
+  {
+    "path": "tests/test_langsmith_codec.py",
+    "bytes": 2038,
+    "sha256": "873c2f86b81b6fe05ad056d706cac85ff0e9c3323ae624d652af56f55bfc0496"
+  },
+  {
+    "path": "tests/test_trace_events.py",
+    "bytes": 9045,
+    "sha256": "05d6ab08fa192b164145c9e8b6e7173b285a3905234b786986fe11a7f5f3bcc9"
+  },
+  {
+    "path": "tests/test_partner_boundaries.py",
+    "bytes": 2255,
+    "sha256": "5938f29d490d8a9fb62acd4a109bab5aedc30517cbe4c995619746f9c09de5a5"
+  },
+  {
+    "path": "scripts/partner_adapters_demo.py",
+    "bytes": 12823,
+    "sha256": "1553db9b93aeb1f16e2236083ced7489025261ac0a23bfbcede683d8a172c990"
+  },
+  {
+    "path": "docs/partner-resources.md",
+    "bytes": 5868,
+    "sha256": "16da601a0d1c8972c0c451a651da538f6b9a535a2101acba9d35aa2011c62ba3"
+  },
+  {
+    "path": "docs/observation-journal.md",
+    "bytes": 5462,
+    "sha256": "517b3231407f2d00e1bfd6bba0564cc2edb3c59dabbf71c8acae4ece402cb11a"
+  },
+  {
+    "path": "docs/supervised-probe-result-v1.md",
+    "bytes": 2443,
+    "sha256": "5f6da42ec9ba195be84a91aa15d79412b55c6d56fd528b480d41c45e6e508ff6"
+  },
+  {
+    "path": "pyproject.toml",
+    "bytes": 826,
+    "sha256": "620268cd067067b6f4fbf391c2e39fedcd547a277e95930b45c5bcc20a38d850"
+  }
+]

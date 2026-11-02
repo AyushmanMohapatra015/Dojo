@@ -1,0 +1,53 @@
+{
+  "source": "docs/reviews/argon/browser-v2-part1-feedback-v1.txt",
+  "bytes": 185789,
+  "sha256": "9e3d6669e08164eac49cd26bdebd7613e7efdcbe3c467a204aa2900a597b47c6",
+  "status": "archived-unaccepted",
+  "files": [
+    {
+      "path": "dashboard/src/v2/exact.mjs.txt",
+      "bytes": 16358,
+      "sha256": "1cc5f11e04300d0db4c1c54aa92f6e4f17c89b304f2f0fa56d2efdaf2ae9ef0c"
+    },
+    {
+      "path": "dashboard/src/v2/exact.test.mjs.txt",
+      "bytes": 5585,
+      "sha256": "3c8017e2a4e5ab5b8e3a309b74769ec1e53e92a95d43fbf38a510f5132ac7ade"
+    },
+    {
+      "path": "dashboard/src/v2/data.mjs.txt",
+      "bytes": 90690,
+      "sha256": "2f8b760c293773c04fdcd011bffd08a60dec1f2a4a29a4ff62c2279d443e2bbc"
+    },
+    {
+      "path": "dashboard/src/v2/data.test.mjs.txt",
+      "bytes": 13898,
+      "sha256": "434fd3c3f32912249a6076a6a8574ab44738419a61eb45b113ed9f5e1df2731e"
+    },
+    {
+      "path": "dashboard/src/v2/derive.mjs.txt",
+      "bytes": 27459,
+      "sha256": "0342ccd2f1a3615ec6dc02c5976816962916fb371b31a1c231ab1f721d8a64b7"
+    },
+    {
+      "path": "dashboard/src/v2/derive.test.mjs.txt",
+      "bytes": 8524,
+      "sha256": "7ec4c67c35d2b70c3764bc3fb795f1ccbafdef1f5c18f8652374b9d932c0764c"
+    },
+    {
+      "path": "docs/explorer-browser-v2-contract.md.txt",
+      "bytes": 11398,
+      "sha256": "1dd7383b5402a7d8b0ed1cdc7bb808b9395183dd955a382e85c900db3b381c33"
+    },
+    {
+      "path": "docs/explorer-browser-v2-part1-verification-ledger-v1.md.txt",
+      "bytes": 5931,
+      "sha256": "cc8f60076cc06df8644af423593c2260eb78e6869f33b9fd3873d5db4d685c98"
+    },
+    {
+      "path": "docs/explorer-browser-v2-part1-delivery-manifest-v1.json.txt",
+      "bytes": 1811,
+      "sha256": "965205ed95ec473af3a77c84199ec82ba3d4bee8dd80659992d450ec96f1ec72"
+    }
+  ]
+}

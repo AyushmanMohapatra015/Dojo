@@ -1,0 +1,57 @@
+[
+  {
+    "path": "dojo/solve/configured.py",
+    "bytes": 3170,
+    "sha256": "8d66b8155c3f8a234a80aa3dc78b1af75b3a72560315f430032138b1a17fccf0"
+  },
+  {
+    "path": "dojo/solve/patches.py",
+    "bytes": 2785,
+    "sha256": "284b1a656a455ecbf98cd3fdf69fd16b34a1d04cec503847b8df531d8b12d258"
+  },
+  {
+    "path": "dojo/backends/profiles.py",
+    "bytes": 990,
+    "sha256": "538a44ee4b2a08e90d536441b54fbf65e9d1af07e01b1a9ec6f4102aa653d022"
+  },
+  {
+    "path": "dojo/backends/local_docker_v2.py",
+    "bytes": 4409,
+    "sha256": "fb4e4dbda53ececf5ebeb81475828286d59eeac28f2ed0e14d66f4d5115e3ac2"
+  },
+  {
+    "path": "dojo/store/results.py",
+    "bytes": 12507,
+    "sha256": "4a8da20bfa6d2ec493fcdc50a4e810f842879bd4728a13aa8716fa0bf818d9f4"
+  },
+  {
+    "path": "dojo/mine/demo.py",
+    "bytes": 1702,
+    "sha256": "b292a647f782664d0d50da3dd9f78698fa0ba3c1164a6943b906cae44dd25298"
+  },
+  {
+    "path": "dojo/mine/validate.py",
+    "bytes": 5242,
+    "sha256": "95f781cf0a6ccda1f1159d60cdf57ec3c4bf15db341d880982cae179aee30005"
+  },
+  {
+    "path": "dojo/mine/pool.py",
+    "bytes": 10917,
+    "sha256": "059ad676029fdb42f3fa1df58476cbf8b9f6e02ec215bbc2d8d4f63db73898b8"
+  },
+  {
+    "path": "dojo/mine/real_task.py",
+    "bytes": 10118,
+    "sha256": "22628124cc1a65f38cb69e82d3974fb5258a0dc3206b0a9c6755c4378764d73b"
+  },
+  {
+    "path": "dojo/mine/git_mine.py",
+    "bytes": 6282,
+    "sha256": "745afd942da45eafb3b8eab3219abb5003bf378b80cf17632834a9f8adc118a7"
+  },
+  {
+    "path": "dojo/mine/construction_v2.py",
+    "bytes": 15203,
+    "sha256": "4e380270ad5d241da035d0ac9b9ba4159becb6ab951145cc83fe8a0c092511e9"
+  }
+]

@@ -1,0 +1,88 @@
+--- a/dashboard/src/styles.css
++++ b/dashboard/src/styles.css
+@@ -180,6 +180,58 @@ main:focus {
+   min-width: 0;
+ }
+ 
++/* -----------------------------------------------------------------------
++ * Dataset controls wrapper: compact status line + collapsible details
++ * ----------------------------------------------------------------------- */
++
++.dataset-controls-wrapper {
++  display: grid;
++  grid-template-columns: minmax(0, 1fr);
++  gap: 0.5rem;
++}
++
++.dataset-status-line {
++  margin: 0;
++  padding: 0.5rem 1rem;
++  font-size: 0.92rem;
++  color: var(--muted);
++  background: var(--surface);
++  border: 1px solid var(--soft-border);
++  border-radius: 6px;
++}
++
++.dataset-status-line__diag {
++  color: var(--muted);
++}
++
++.dataset-details {
++  /* reuses .panel — adds no extra background */
++}
++
++.dataset-details__summary {
++  cursor: pointer;
++  font-weight: 600;
++  font-size: 0.95rem;
++  list-style: none; /* remove default marker in Firefox */
++  padding: 0.25rem 0;
++  color: var(--accent);
++}
++
++.dataset-details__summary::-webkit-details-marker {
++  display: none;
++}
++
++.dataset-details__summary::before {
++  content: '▶ ';
++  font-size: 0.75em;
++}
++
++details[open] .dataset-details__summary::before {
++  content: '▼ ';
++}
++
++.dataset-details__body {
++  padding-top: 0.75rem;
++}
++
++/* -----------------------------------------------------------------------
++ * Persistent dataset restriction bar (blocked / cost-incomplete)
++ * shown above the view content in all views
++ * ----------------------------------------------------------------------- */
++
++.dataset-restriction-bar {
++  display: grid;
++  grid-template-columns: minmax(0, 1fr);
++  gap: 0.5rem;
++}
++
++.dataset-restriction-bar .banner-state {
++  margin-bottom: 0;
++}
++
++/* -----------------------------------------------------------------------
++ * Hidden view wrappers: use the native hidden attribute.
++ * display:none removes from layout AND accessibility tree (tab sequence).
++ * visibility:hidden is intentionally NOT used because it leaves layout space.
++ * ----------------------------------------------------------------------- */
++
++[hidden] {
++  display: none !important;
++}
++
+ .panel {
+   background: var(--surface);
+   border: 1px solid var(--soft-border);

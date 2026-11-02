@@ -1,0 +1,48 @@
+{
+  "source": "docs/reviews/argon/provider-restart-part2-feedback-v1.txt",
+  "source_bytes": 84650,
+  "source_sha256": "99db324d88b7ffc31b4a472e1b16c32230c517c933911adf6378474dd870e938",
+  "status": "archived-unaccepted",
+  "files": [
+    {
+      "path": "dojo/providers/tavily_codec.py",
+      "bytes": 17444,
+      "sha256": "9a8fd96dcdf77c80ccc7448223428502720a248c00eb5fb40eb5df1e2e4d9b12"
+    },
+    {
+      "path": "dojo/providers/trace_events.py",
+      "bytes": 11278,
+      "sha256": "060b6c3aaeab35bbbca121126ab2e544dc33920276c530e0876d72d10789d1d5"
+    },
+    {
+      "path": "scripts/partner_adapters_demo.py",
+      "bytes": 12884,
+      "sha256": "68fda2896aedf2b5ed5a9c4650fbe3cf1c7698b98a652b169ad11927d5f7e3fb"
+    },
+    {
+      "path": "tests/test_tavily_codec.py",
+      "bytes": 11230,
+      "sha256": "60b8755ab6619b57bcf4690c32991fac07217db5ab8c891933ad8dcf4d743d89"
+    },
+    {
+      "path": "tests/test_trace_events.py",
+      "bytes": 9069,
+      "sha256": "4a656d5d780e5e49df8800e333957d585f789012b4deefcc35501d05216ffbd9"
+    },
+    {
+      "path": "tests/test_partner_demo.py",
+      "bytes": 4623,
+      "sha256": "f594e2a5432459f3a8f3d28de64147d30dc32dd86dcc4f568475a87ea23407e8"
+    },
+    {
+      "path": "tests/test_partner_boundaries.py",
+      "bytes": 2235,
+      "sha256": "83634dff03ca699e0e6dbc4041b1cb5c3d61c72921f8ed8187ae5a18ad48ab26"
+    },
+    {
+      "path": "docs/provider-partner-adapters.md",
+      "bytes": 8732,
+      "sha256": "c7d06acd02cf54aeba4e9d0b0dc5e98ece19d0155ed7046bf74c49cdbb52b12f"
+    }
+  ]
+}

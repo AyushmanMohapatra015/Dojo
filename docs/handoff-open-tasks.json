@@ -1,0 +1,826 @@
+{
+  "snapshot_date": "2026-11-02",
+  "action_plan_sha256": "d623c841afa93d552e0b22713e36645120f925d9df337870b584a2f7275fff28",
+  "open_task_count": 117,
+  "tasks": [
+    {
+      "id": "1d",
+      "status": "PARTIAL",
+      "task": "CLI scaffold; finish bench/cost/report/cascade via 5e/9/10.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "Keep plan/progress/learning evidence current; distinguish actual CLI behavior from unfinished live features."
+    },
+    {
+      "id": "1f",
+      "status": "PARTIAL",
+      "task": "Maintain progress, learning, feedback and cleanup records throughout.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "Keep plan/progress/learning evidence current; distinguish actual CLI behavior from unfinished live features."
+    },
+    {
+      "id": "2c",
+      "status": "GATED",
+      "task": "Owner confirms Devpost registration, entrant/team eligibility/details and Coding track; no personal data in repository.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Verify current eligibility/license/claim facts from primary sources; preserve historical deadline failures and seek owner decisions for publication."
+    },
+    {
+      "id": "2d",
+      "status": "PARTIAL",
+      "task": "Upstream, mini-swe-agent and dependency licenses/notices; redistribution provenance and attribution.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Verify current eligibility/license/claim facts from primary sources; preserve historical deadline failures and seek owner decisions for publication."
+    },
+    {
+      "id": "2e",
+      "status": "PLANNED",
+      "task": "Recheck prior-art/paper claims; separate precedent from demonstrated Dojo contributions.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Verify current eligibility/license/claim facts from primary sources; preserve historical deadline failures and seek owner decisions for publication."
+    },
+    {
+      "id": "2f",
+      "status": "PLANNED",
+      "task": "Final official-rules/required-fields/English-material review; see 14.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Verify current eligibility/license/claim facts from primary sources; preserve historical deadline failures and seek owner decisions for publication."
+    },
+    {
+      "id": "3g",
+      "status": "PLANNED",
+      "task": "Fresh-checkout mine/validate/export reproduction and, if feasible, an owner-repo demonstration without evaluation contamination.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Reconstruct pinned inputs in a fresh checkout, review train-task clarity/duplication without held-out tuning, and version accepted changes."
+    },
+    {
+      "id": "3h",
+      "status": "PLANNED",
+      "task": "Independent editorial review of issue clarity, solution leakage and semantic duplication using appropriate authoring context, without inspecting held-out model outcomes; version accepted content changes.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Reconstruct pinned inputs in a fresh checkout, review train-task clarity/duplication without held-out tuning, and version accepted changes."
+    },
+    {
+      "id": "4j",
+      "status": "PARTIAL",
+      "task": "Explicit scoring threat model/sign-off: interpreter evasion reproduced; FD/AST checks are not authentication. Decide stronger isolation scope honestly.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Resolve cooperative versus adversarial scope explicitly; test the claimed boundary and do not infer authentication from a receipt."
+    },
+    {
+      "id": "4j1",
+      "status": "PARTIAL",
+      "task": "RegistrationDraft now explicitly binds cooperative, non-adversarially-authenticated scorer scope; execution metadata and actual scope signoff remain open. Review recommendations/draft fingerprints do not approve registered evaluation.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Resolve cooperative versus adversarial scope explicitly; test the claimed boundary and do not infer authentication from a receipt."
+    },
+    {
+      "id": "4j3",
+      "status": "PLANNED",
+      "task": "If adversarial scoring is required, specify restricted candidate interfaces and an observer outside candidate control with enforceable process/credential/filesystem/IPC boundaries. Process split or second-container pytest alone is insufficient.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Resolve cooperative versus adversarial scope explicitly; test the claimed boundary and do not infer authentication from a receipt."
+    },
+    {
+      "id": "4k",
+      "status": "OPTIONAL",
+      "task": "Bounded cleanup retry/final verification with total deadline and own-container-only removal; review finding 6, retain stop-on-uncertainty.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Resolve cooperative versus adversarial scope explicitly; test the claimed boundary and do not infer authentication from a receipt."
+    },
+    {
+      "id": "5d",
+      "status": "PARTIAL",
+      "task": "Validated private result contracts and immutable storage/history complete at 5d1/5d2. Supplied provider-shaped records remain uncertain diagnostics; actual trusted runtime provenance/usage binding still requires 5e/6/8. No evaluator outcome or billing settlement inferred.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Bind host-owned intent, attempt, admitted request, raw evidence, candidate/scorer and accounting; test crash/failure paths before any genuine run."
+    },
+    {
+      "id": "5e",
+      "status": "PARTIAL",
+      "task": "Offline host metadata/private persistence and working bench/cost/report workflow complete at 5e1-5e3. Actual trusted repository solver/scorer integration remains gated at 5e4; no real transport, scorer or publication unlocked.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Bind host-owned intent, attempt, admitted request, raw evidence, candidate/scorer and accounting; test crash/failure paths before any genuine run."
+    },
+    {
+      "id": "5e4",
+      "status": "GATED",
+      "task": "Actual repository solver-to-scorer execution and trusted evaluation persistence require 4j scope, 5f/7 registration/provenance and 6 financial/live approvals. No caller-supplied DTO or synthetic run can satisfy these gates.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Bind host-owned intent, attempt, admitted request, raw evidence, candidate/scorer and accounting; test crash/failure paths before any genuine run."
+    },
+    {
+      "id": "5f",
+      "status": "PARTIAL",
+      "task": "Registered denominator/error policy: justified candidate errors unsolved; invalid/infrastructure evidence blocks publication. Verify actual registration/provenance and evaluator identity; do not adopt proposal's metadata-only publishable predicate or latest-score selection (review R6/R7).",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Bind host-owned intent, attempt, admitted request, raw evidence, candidate/scorer and accounting; test crash/failure paths before any genuine run."
+    },
+    {
+      "id": "6a",
+      "status": "GATED",
+      "task": "Latest owner report: US$29.50 account balance plus separate US$1 trial/12 days left. Builder grant exact expiry and fresh exclusive-use confirmation still missing; no inferred expiry; US$0.01 single-probe allowance approved separately. Console/support steps in docs/supervised-probe-next-steps.md.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Obtain fresh owner-confirmed credit/expiry/exclusive-use/allowance and verified token/serving bounds; keep real calls locked until integrated checks pass."
+    },
+    {
+      "id": "6b",
+      "status": "PARTIAL",
+      "task": "Durable cumulative ledger exists/tested offline; initialize only with verified data, explicit allowance and reserve.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Obtain fresh owner-confirmed credit/expiry/exclusive-use/allowance and verified token/serving bounds; keep real calls locked until integrated checks pass."
+    },
+    {
+      "id": "6c",
+      "status": "PLANNED",
+      "task": "Every solver/provider/docsearch request obeys applicable cumulative caps, per-request bounds and accounting.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Obtain fresh owner-confirmed credit/expiry/exclusive-use/allowance and verified token/serving bounds; keep real calls locked until integrated checks pass."
+    },
+    {
+      "id": "6d",
+      "status": "PARTIAL",
+      "task": "Unknown usage, pending reservations and expiry stop controls; finish integrated fake accounting/restart checks. No provider hard cap.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Obtain fresh owner-confirmed credit/expiry/exclusive-use/allowance and verified token/serving bounds; keep real calls locked until integrated checks pass."
+    },
+    {
+      "id": "6e",
+      "status": "PARTIAL",
+      "task": "The one authorized Nano arithmetic probe ran at 6e7; permit consumed and console reconciliation remains outstanding. No additional paid call is authorized. Future coding probes require fresh credit/token/runtime checks and a separate allowance.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Obtain fresh owner-confirmed credit/expiry/exclusive-use/allowance and verified token/serving bounds; keep real calls locked until integrated checks pass."
+    },
+    {
+      "id": "6f",
+      "status": "GATED",
+      "task": "Small development/train cost probe plus thinking micro-test; select affordable grid before evaluation.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Obtain fresh owner-confirmed credit/expiry/exclusive-use/allowance and verified token/serving bounds; keep real calls locked until integrated checks pass."
+    },
+    {
+      "id": "6g",
+      "status": "PARTIAL",
+      "task": "Public documentation review at 6g1; actual IDs/regions, template forwarding, provider tokenization, 429/cancellation and billing agreement remain gated on current account-specific checks and supervised evidence. Documentation is not execution proof.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Obtain fresh owner-confirmed credit/expiry/exclusive-use/allowance and verified token/serving bounds; keep real calls locked until integrated checks pass."
+    },
+    {
+      "id": "6g2",
+      "status": "GATED",
+      "task": "Obtain a reviewed, conservative prompt-token bound for each approved model/template and verify actual endpoint/model/pricing/response behavior before any multi-turn paid transport. No hard spending cap is available from Token Factory.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Obtain fresh owner-confirmed credit/expiry/exclusive-use/allowance and verified token/serving bounds; keep real calls locked until integrated checks pass."
+    },
+    {
+      "id": "6h",
+      "status": "PLANNED",
+      "task": "Fresh balance/expiry/reserve/consumption checks around every live checkpoint; never unattended provider runs.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Obtain fresh owner-confirmed credit/expiry/exclusive-use/allowance and verified token/serving bounds; keep real calls locked until integrated checks pass."
+    },
+    {
+      "id": "6i",
+      "status": "PLANNED",
+      "task": "Record measured friction in FEEDBACK; account exit remains 15.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Obtain fresh owner-confirmed credit/expiry/exclusive-use/allowance and verified token/serving bounds; keep real calls locked until integrated checks pass."
+    },
+    {
+      "id": "6j",
+      "status": "GATED",
+      "task": "Audit actual promotional entitlements and optional separate hackathon credits; owner handles private redemption. Never assume advertised credit pools stack or are current usable funds.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Obtain fresh owner-confirmed credit/expiry/exclusive-use/allowance and verified token/serving bounds; keep real calls locked until integrated checks pass."
+    },
+    {
+      "id": "7a",
+      "status": "PARTIAL",
+      "task": "Separate Stage B registration/version: task/input/config/scaffold/source-policy hashes, collectors/images and error rules. Preserve Stage A. Draft fingerprint contract at 7a1; actual host verification/registration remains open.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Finish trusted scope/registration and train calibration, freeze before held-out outcomes, and audit the complete expected panel."
+    },
+    {
+      "id": "5f3",
+      "status": "PARTIAL",
+      "task": "Offline owned intent/ledger/observation association implemented at 5f3a-5f3c. Genuine runtime adapters, actual dispatch/evaluator provenance and private evidence retention remain unverified; source registration/scope/token/financial gates remain open. Never relabel supplied diagnostics as real execution.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Bind host-owned intent, attempt, admitted request, raw evidence, candidate/scorer and accounting; test crash/failure paths before any genuine run."
+    },
+    {
+      "id": "5f3e",
+      "status": "PARTIAL",
+      "task": "Runtime source and environment metadata now bind cache identity at 5f3e1/5f3e2. Actual loaded-code/image/environment verification and approval remain gated at 5f3e3; no genuine execution authorized.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Bind host-owned intent, attempt, admitted request, raw evidence, candidate/scorer and accounting; test crash/failure paths before any genuine run."
+    },
+    {
+      "id": "5f3e3",
+      "status": "GATED",
+      "task": "Before genuine runs, review actual loaded dependency/image/environment provenance and registration/scorer scope; metadata fingerprints alone do not satisfy this gate.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Bind host-owned intent, attempt, admitted request, raw evidence, candidate/scorer and accounting; test crash/failure paths before any genuine run."
+    },
+    {
+      "id": "7b",
+      "status": "PARTIAL",
+      "task": "Candidate-panel composition audited at 7b1; outcome-based family sensitivity and mixed-kind result reporting still require eligible measured evidence. Frozen split unchanged.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Finish trusted scope/registration and train calibration, freeze before held-out outcomes, and audit the complete expected panel."
+    },
+    {
+      "id": "7c",
+      "status": "GATED",
+      "task": "Grid, sampling/thinking, seeds/repetitions/subsets/budget fixed using authorized train probe evidence.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Finish trusted scope/registration and train calibration, freeze before held-out outcomes, and audit the complete expected panel."
+    },
+    {
+      "id": "7d",
+      "status": "PARTIAL",
+      "task": "Offline train-only policy selection, paired bootstrap and missing/error aggregation implemented at 9g4e. Genuine train calibration, trusted freeze and measured held-out policy evaluation remain gated.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Finish trusted scope/registration and train calibration, freeze before held-out outcomes, and audit the complete expected panel."
+    },
+    {
+      "id": "7e",
+      "status": "PARTIAL",
+      "task": "No gold/hidden labels in solver/visible feedback/docsearch/traces; review all transfer paths. Offline source/actual-plan audit at 7e1; genuine provider/container canary verification remains open.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Finish trusted scope/registration and train calibration, freeze before held-out outcomes, and audit the complete expected panel."
+    },
+    {
+      "id": "7f",
+      "status": "GATED",
+      "task": "Commit Stage B before inspecting held-out solver outcomes; no held-out tuning.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Finish trusted scope/registration and train calibration, freeze before held-out outcomes, and audit the complete expected panel."
+    },
+    {
+      "id": "7g",
+      "status": "PLANNED",
+      "task": "Independent protocol review via 13; reproduce/version accepted corrections before outcomes.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Finish trusted scope/registration and train calibration, freeze before held-out outcomes, and audit the complete expected panel."
+    },
+    {
+      "id": "8a",
+      "status": "PARTIAL",
+      "task": "Offline codecs, fixed-plan and adaptive fake accounting integrated at 8h7/8h8/8a1. Genuine provider/controller execution still requires tokenization, durable attempt binding and live gates; no live transport.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Implement/review genuine transport and provenance, then perform only explicitly authorized supervised runs; reconcile all attempts and costs."
+    },
+    {
+      "id": "8b",
+      "status": "GATED",
+      "task": "Live transport only after 6; approved endpoints and host-only keys.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Implement/review genuine transport and provenance, then perform only explicitly authorized supervised runs; reconcile all attempts and costs."
+    },
+    {
+      "id": "8c",
+      "status": "GATED",
+      "task": "Registered affordable train grid with real token/cost/stall records.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Implement/review genuine transport and provenance, then perform only explicitly authorized supervised runs; reconcile all attempts and costs."
+    },
+    {
+      "id": "8d",
+      "status": "GATED",
+      "task": "Frozen policy/config held-out grid without tuning/selective reruns.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Implement/review genuine transport and provenance, then perform only explicitly authorized supervised runs; reconcile all attempts and costs."
+    },
+    {
+      "id": "8e",
+      "status": "GATED",
+      "task": "Checked-cache resume and accounting reconciliation of every attempt, including failures/unknown usage.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Implement/review genuine transport and provenance, then perform only explicitly authorized supervised runs; reconcile all attempts and costs."
+    },
+    {
+      "id": "8f",
+      "status": "PLANNED",
+      "task": "Genuine NVIDIA/Nebius runtime, latency/throughput and feedback evidence for submission.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Implement/review genuine transport and provenance, then perform only explicitly authorized supervised runs; reconcile all attempts and costs."
+    },
+    {
+      "id": "8g",
+      "status": "PARTIAL",
+      "task": "Read-only static bundle audit at 8g1; remaining container cleanup and full shareable-artifact/privacy review before release.",
+      "guide": "1. Core runtime and evidence",
+      "next_instruction": "Implement/review genuine transport and provenance, then perform only explicitly authorized supervised runs; reconcile all attempts and costs."
+    },
+    {
+      "id": "9a",
+      "status": "PARTIAL",
+      "task": "Pure metrics/secondary unknowns/zero-solve behavior implemented and checked on fictional inputs at 9g4b. Trusted actual-run normalization and measured outcomes remain 5e/5f/8/9g4e.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Reuse tested exact offline modules; add genuine normalization/freeze/evidence, report sensitivity, and preserve the separate owner exercise."
+    },
+    {
+      "id": "9b",
+      "status": "PLANNED",
+      "task": "Owner-written paired task bootstrap and cold-restart cascade composition; known-answer/edge checks (16c).",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Reuse tested exact offline modules; add genuine normalization/freeze/evidence, report sensitivity, and preserve the separate owner exercise."
+    },
+    {
+      "id": "9c",
+      "status": "PARTIAL",
+      "task": "Exact frontier tables, paired bootstrap intervals and undefined/tie behavior checked at 9g4b. Plot/UI, trusted actual task grid/export and measured results remain pending.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Reuse tested exact offline modules; add genuine normalization/freeze/evidence, report sensitivity, and preserve the separate owner exercise."
+    },
+    {
+      "id": "9d",
+      "status": "PARTIAL",
+      "task": "Offline observable policies/cold-restart composition and train-only selection implemented/checked at 9g4e, including unequal seeds, harmful escalation and saved-artifact consistency. Actual-run normalization, trusted freeze and measured evaluation remain 5e/5f/7/8.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Reuse tested exact offline modules; add genuine normalization/freeze/evidence, report sensitivity, and preserve the separate owner exercise."
+    },
+    {
+      "id": "9e",
+      "status": "GATED",
+      "task": "Frozen held-out cascade, trigger precision/recall, savings/success tradeoffs.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Reuse tested exact offline modules; add genuine normalization/freeze/evidence, report sensitivity, and preserve the separate owner exercise."
+    },
+    {
+      "id": "9f",
+      "status": "PARTIAL",
+      "task": "Family/seed sensitivity, complete-panel invalid-result audit and bounded work checked at 9g4b; actual-run sensitivity, report caveats/export and measured claims remain pending.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Reuse tested exact offline modules; add genuine normalization/freeze/evidence, report sensitivity, and preserve the separate owner exercise."
+    },
+    {
+      "id": "9g",
+      "status": "PARTIAL",
+      "task": "A and B offline implementations reviewed/adopted at 9g4b/9g4e. Genuine measured evaluation and owner-written 16c remain separate unfinished work; proposal integration is complete.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Reuse tested exact offline modules; add genuine normalization/freeze/evidence, report sensitivity, and preserve the separate owner exercise."
+    },
+    {
+      "id": "9h",
+      "status": "PARTIAL",
+      "task": "Strict unverified offline JSON report/provenance export at 9g4e; actual trusted cache/registration/scorer adapter and approved real/public/frontend summaries remain 5e/5f/7/10. No synthetic-as-real metrics.",
+      "guide": "2. Genuine results and statistics",
+      "next_instruction": "Reuse tested exact offline modules; add genuine normalization/freeze/evidence, report sensitivity, and preserve the separate owner exercise."
+    },
+    {
+      "id": "10a",
+      "status": "PARTIAL",
+      "task": "Results schema, static React app and labeled synthetic fixtures integrated under 10j3/10j4; real-results and browser acceptance remain open.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10a2",
+      "status": "PARTIAL",
+      "task": "Agent 2 delivered 14-file static React/Vite/Recharts proposal in Frontend_Agent2; intake at 10a5 verifies fixture/copies and reproduces parser defects. Not installed in dashboard. Repairs, real dependency/build/browser checks and primary acceptance pending.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10a3",
+      "status": "PARTIAL",
+      "task": "91 written tests and partial author stand-in/stubbed-browser results delivered; real Vitest/RTL/Recharts/build not independently run. Eight primary Node parser checks at 10a5 are separate; verification/adoption, real adapter, privacy and hosting remain pending.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10a6",
+      "status": "READY",
+      "task": "Agent 2 independent review of actual Argon revision. frontend-acceptance-packet-v1.md contains 19 exact references: full 15-file proposal, contract, assessments and primary probes. Two review groups; no concurrent implementation. Owner shares packet; no agent contacted.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10b",
+      "status": "PARTIAL",
+      "task": "Header/counts/cost and navigation implemented in synthetic UI; manual accessibility/responsive inspection remains.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10c",
+      "status": "PARTIAL",
+      "task": "Two-axis frontier chart/tables and validated ViewV2 bootstrap uncertainty rendered in synthetic UI; browser acceptance remains.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10d",
+      "status": "PARTIAL",
+      "task": "Task/config and paginated seed-run tables with bounded local upload implemented; manual browser and real-evidence acceptance remain.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10e",
+      "status": "PARTIAL",
+      "task": "Frozen cascade display implemented for supplied synthetic fixture; real evaluation and browser acceptance remain.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10f",
+      "status": "PARTIAL",
+      "task": "Method/audit/family and synthetic scope panels implemented; user-facing review remains.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10g",
+      "status": "PARTIAL",
+      "task": "Production static build and localhost CSP/assets smoke pass; full browser, accessibility, deployment and real-data checks remain.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10h",
+      "status": "OPTIONAL",
+      "task": "L3 receipts/AGENTS export only after 12a.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10i",
+      "status": "PARTIAL",
+      "task": "Synthetic backend/export/browser pipeline implemented and reproduced under its completed child tasks. Genuine runtime normalization, trusted public eligibility and release/browser acceptance remain open.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10j",
+      "status": "PARTIAL",
+      "task": "Reviewed browser data/math/selection modules integrated at 10j5; React integration/build/browser acceptance remains. Advances 10b-10g without promoting synthetic evidence.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10j4",
+      "status": "PARTIAL",
+      "task": "React/fixture/hygiene checks now pass (26/26), accepted Node v2 checks pass (43/43), production Vite build and localhost static/CSP/assets smoke pass. Manual browser, keyboard/accessibility, responsive and hosted checks remain open; 694 kB JS chunk warning.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10k",
+      "status": "PARTIAL",
+      "task": "Four-view structure integrated at 10k2 with preserved exact metrics, dataset state and persistent evidence restrictions. Moderate polish and real-browser usability review remain 10k3/10k4.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "10k4",
+      "status": "PARTIAL",
+      "task": "Viewport/chart/focus, native keyboard controls, explicit palette contrast and 200% root-text reflow checked at 10k4a-10k4d. Full manual screen-reader/tab-order, rendered chart contrast, browser zoom, cross-browser/touch and end-user walkthrough remain.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Inspect current source and acceptance reports; complete the specific remaining manual/product/data boundary without redoing finished synthetic checks."
+    },
+    {
+      "id": "11a",
+      "status": "GATED",
+      "task": "Confirm separate Tavily access, expiry, limits, key handling and spend policy.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Verify Tavily entitlement/privacy/limits, implement bounded host retrieval/accounting, test offline first, then seek specific live authorization."
+    },
+    {
+      "id": "11b",
+      "status": "PLANNED",
+      "task": "Bounded host docsearch, untrusted retrieval/provenance and separate cost records; offline containers.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Verify Tavily entitlement/privacy/limits, implement bounded host retrieval/accounting, test offline first, then seek specific live authorization."
+    },
+    {
+      "id": "11c",
+      "status": "GATED",
+      "task": "Functional runtime integration and usage/effect evidence before bonus claims.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Verify Tavily entitlement/privacy/limits, implement bounded host retrieval/accounting, test offline first, then seek specific live authorization."
+    },
+    {
+      "id": "11d",
+      "status": "OPTIONAL",
+      "task": "Registered docsearch ablation and L3 grounding lookups as gates/budget permit; record decision.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Verify Tavily entitlement/privacy/limits, implement bounded host retrieval/accounting, test offline first, then seek specific live authorization."
+    },
+    {
+      "id": "12a",
+      "status": "GATED",
+      "task": "L3 decision: core MVP complete, about $18 usable credit left and >=3 days slack per BUILD_SPEC; record go/no-go.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12b",
+      "status": "GATED",
+      "task": "Train-only reflection, <=3 concise rules/failure; consumer model also gates; reference data evaluator-side only.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12c",
+      "status": "GATED",
+      "task": "Schema/grounding/dedup and optional cited external-doc checks.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12d",
+      "status": "GATED",
+      "task": "Owner-written gates: source-task replay, sentinel regressions/stalls and explicit rejection log (16d).",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12e",
+      "status": "GATED",
+      "task": "Greedy lift/token bundle <=500-600 tokens, train validation and leave-one-out receipts.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12f",
+      "status": "GATED",
+      "task": "Registered none/naive/generic_pad/dojo held-out comparison with matched scaffold/seeds and honest statistics.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12g",
+      "status": "GATED",
+      "task": "Rule receipt UI and AGENTS.md/JSON exports; claims follow measured results.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12h",
+      "status": "OPTIONAL",
+      "task": "Hermes accepted-rule skill export.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12i",
+      "status": "OPTIONAL",
+      "task": "LangSmith only with explicit data-sharing/cost choice and sanitized traces.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12jk2",
+      "status": "READY",
+      "task": "Official Toloka self-service versus managed Tendem/MCP roles checked; concrete sponsor-integration-plan-v1.md. Separate Argon packet has 11 complete files/72044 source bytes, verified hashes; A hosted LangSmith proposal, B local human-review contracts after review. No service activation or jobs.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12i3",
+      "status": "PLANNED",
+      "task": "After 8h5 review, integrate/test sanitized local events first. Decide hosted LangSmith sample only after runtime works and owner confirms data-sharing choice, region, usable credit/expiry and billing limits; no automatic hosted uploads or mandatory sponsor claim.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12j",
+      "status": "OPTIONAL",
+      "task": "Toloka only with relevant authorized affordable human-rating task.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12j1",
+      "status": "READY",
+      "task": "Agent 2 small task: concise official-source Toloka/Tendem fit/offer checklist, separate verified product facts from account-specific credit/card/expiry unknowns. Recommend one bounded useful use or defer; no onboarding/jobs/data sharing.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12k",
+      "status": "OPTIONAL",
+      "task": "Identify Tandem and concrete benefit before onboarding/integration.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12l",
+      "status": "OPTIONAL",
+      "task": "Nebius Jobs/Endpoints only with verified credits/need; preserve local path and follow named skills if invoked.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "12m",
+      "status": "OPTIONAL",
+      "task": "Existing-benchmark fallback, backup project tracks and language/RL future work remain recorded alternatives, not claimed deliverables; explicit decision to reopen.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Reconfirm that this optional feature solves a concrete need; verify credits/sharing/terms, complete missing adapter review and test before activation."
+    },
+    {
+      "id": "13e",
+      "status": "PARTIAL",
+      "task": "Cache/accounting v2 includes complete relevant sources, exact scorer/input excerpts, hashes/versions, synthetic fixtures and conservative defaults; scope excludes calls into omitted internals. Continue the same sufficiency audit for later assignments.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Check current queue and actual returned files first; prepare current bounded context only if still needed, then review and reproduce proposed fixes."
+    },
+    {
+      "id": "13f",
+      "status": "PARTIAL",
+      "task": "Cache v2 response assessed with reproduced evidence/dispositions at 13f2; continue the same review process for future responses.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Check current queue and actual returned files first; prepare current bounded context only if still needed, then review and reproduce proposed fixes."
+    },
+    {
+      "id": "13g",
+      "status": "PLANNED",
+      "task": "Consult at 7g/9g/final UX/submission; flag meaningful blockers promptly and request focused help when useful.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Check current queue and actual returned files first; prepare current bounded context only if still needed, then review and reproduce proposed fixes."
+    },
+    {
+      "id": "13i",
+      "status": "PARTIAL",
+      "task": "Service/tool defect log under 1f: sanitized observations, reproduction/confidence and upstream report readiness; notify owner, no automatic issue filing.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Check current queue and actual returned files first; prepare current bounded context only if still needed, then review and reproduce proposed fixes."
+    },
+    {
+      "id": "13l9",
+      "status": "READY",
+      "task": "Gravity small follow-up 1: current runner/CLI summary and no-execution boundary review, exact call sites and bounded fictional cases. No architecture redesign/scorer re-audit.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Check current queue and actual returned files first; prepare current bounded context only if still needed, then review and reproduce proposed fixes."
+    },
+    {
+      "id": "13l10",
+      "status": "READY",
+      "task": "Gravity small follow-up 2: new run_demo claim/dispatch/save/block/reuse interruption matrix against supplied store API excerpts. Static only, focused test proposals and two short reports.",
+      "guide": "4. Sponsors and external agents",
+      "next_instruction": "Check current queue and actual returned files first; prepare current bounded context only if still needed, then review and reproduce proposed fixes."
+    },
+    {
+      "id": "14a",
+      "status": "PARTIAL",
+      "task": "README, wheel/installed checks and isolated cached dependency reconstruction complete at 14a1-14a7. Uncached fresh-machine setup and full data reconstruction remain pending.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "14b",
+      "status": "PLANNED",
+      "task": "Actual NVIDIA/Nebius contribution, licenses, references, significant submission-period changes and limitations.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "14b1",
+      "status": "READY",
+      "task": "Agent 2 small task: delta claim-to-evidence checklist for current 1,147-test offline runner checkpoint and sponsor claims, with allowed wording/missing actual evidence. No frontend, broad re-audit, README/storyboard rewrite or fabricated runtime results.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "14c",
+      "status": "GATED",
+      "task": "Full credential/history/privacy review and owner approval for public repository; detect license.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "14d",
+      "status": "GATED",
+      "task": "Approved demo/test-build hosting and local fallback; free judge access through Dec 15.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "14e",
+      "status": "PLANNED",
+      "task": "Under-three-minute real working video with English narration/captions, clear charts and licensed assets.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "14f",
+      "status": "GATED",
+      "task": "Owner-approved public YouTube upload and playback/duration/link checks.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "14g",
+      "status": "PLANNED",
+      "task": "Devpost text/track/team/new-work details/feedback; city only if attended.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "14h",
+      "status": "PLANNED",
+      "task": "Feature freeze, fresh reproduction, browser/demo, result/claim and all-links review.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "14i",
+      "status": "GATED",
+      "task": "Authorized submission by Oct 29; verify receipt/status; no post-deadline edits.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Original submission date is past. Record actual non-submission/receipt status; do not backdate or assume an extension. Owner decides later scope."
+    },
+    {
+      "id": "14j",
+      "status": "PARTIAL",
+      "task": "Handoff inventory and judge-access maintenance without continuing paid inference.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "14j3",
+      "status": "PARTIAL",
+      "task": "Owner explicitly authorizes cumulative private GitHub checkpoint: audit candidates, stage/commit/push without force, verify remote state. Preserve ignored credentials/runtime evidence and report any blocker.",
+      "guide": "3. Product, setup and release",
+      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
+    },
+    {
+      "id": "15a",
+      "status": "GATED",
+      "task": "Stop jobs/endpoints and revoke unused API keys after preserving evidence.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "At completion preserve evidence, stop owned work, reconcile usage, revoke unused keys, request verified support card inactivation and review project-only cleanup."
+    },
+    {
+      "id": "15b",
+      "status": "GATED",
+      "task": "Reconcile pending/outstanding usage/invoices and final balance; prior liabilities do not disappear on closure.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "At completion preserve evidence, stop owned work, reconcile usage, revoke unused keys, request verified support card inactivation and review project-only cleanup."
+    },
+    {
+      "id": "15c",
+      "status": "GATED",
+      "task": "Owner-directed support suspension/card inactivation, private verification and written confirmation.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "At completion preserve evidence, stop owned work, reconcile usage, revoke unused keys, request verified support card inactivation and review project-only cleanup."
+    },
+    {
+      "id": "15d",
+      "status": "GATED",
+      "task": "PROJECT_CLEANUP: GitHub CLI logout/OAuth/uninstall and project-local tools only when no longer needed.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "At completion preserve evidence, stop owned work, reconcile usage, revoke unused keys, request verified support card inactivation and review project-only cleanup."
+    },
+    {
+      "id": "15e",
+      "status": "GATED",
+      "task": "Exact project cache/image/temp-path review; preserve shared Git/Python/Docker and required judge build; no broad prune.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "At completion preserve evidence, stop owned work, reconcile usage, revoke unused keys, request verified support card inactivation and review project-only cleanup."
+    },
+    {
+      "id": "15f",
+      "status": "PLANNED",
+      "task": "Retained-artifact inventory, unresolved account actions and judging-access maintenance.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "At completion preserve evidence, stop owned work, reconcile usage, revoke unused keys, request verified support card inactivation and review project-only cleanup."
+    },
+    {
+      "id": "16a",
+      "status": "GATED",
+      "task": "Owner-written mining/validation explanation and implementation; AI reference does not complete it.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "Have the owner implement/explain the named learning exercise and record their understanding; generated reference work does not satisfy it."
+    },
+    {
+      "id": "16b",
+      "status": "GATED",
+      "task": "Owner-written restore-before-score logic/explanation, injection/integrity understanding and test review.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "Have the owner implement/explain the named learning exercise and record their understanding; generated reference work does not satisfy it."
+    },
+    {
+      "id": "16c",
+      "status": "GATED",
+      "task": "Owner-written paired bootstrap/cascade math with known-answer examples.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "Have the owner implement/explain the named learning exercise and record their understanding; generated reference work does not satisfy it."
+    },
+    {
+      "id": "16d",
+      "status": "GATED",
+      "task": "If L3 proceeds, owner-written gate decisions and rejection reasons.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "Have the owner implement/explain the named learning exercise and record their understanding; generated reference work does not satisfy it."
+    },
+    {
+      "id": "16e",
+      "status": "PARTIAL",
+      "task": "Owner milestone reflections/video explanation; distinguish from AI-written implementation notes.",
+      "guide": "5. Owner work and cleanup",
+      "next_instruction": "Have the owner implement/explain the named learning exercise and record their understanding; generated reference work does not satisfy it."
+    }
+  ]
+}

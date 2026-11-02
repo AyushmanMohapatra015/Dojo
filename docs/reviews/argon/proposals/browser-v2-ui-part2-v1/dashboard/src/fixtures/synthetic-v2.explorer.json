@@ -1,0 +1,621 @@
+{
+  "analysis": {
+    "audit_status": "valid",
+    "bootstrap": {
+      "confidence_level": {
+        "defined": true,
+        "denominator": "20",
+        "numerator": "19",
+        "reason": null
+      },
+      "method_version": "dojo-stats-foundation-v1",
+      "n_tasks": 2,
+      "paired_differences": [
+        {
+          "baseline_id": "config_0001",
+          "delta_expected_cost_per_solved_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 5,
+            "lower": null,
+            "metric_name": "delta_expected_cost_per_solved_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "20",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 15,
+            "upper": null,
+            "zero_solve_draws": 15
+          },
+          "delta_expected_total_cost_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "16",
+              "reason": null
+            },
+            "metric_name": "delta_expected_total_cost_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "25",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "34",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "delta_pass_at_1": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "-1",
+              "reason": null
+            },
+            "metric_name": "delta_pass_at_1",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "4",
+              "numerator": "1",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "1",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "target_id": "config_0002"
+        }
+      ],
+      "quantile_method": "hyndman_fan_type_7_linear",
+      "replicates": 20,
+      "seed": 17,
+      "series_summaries": {
+        "config_0001": {
+          "expected_cost_per_solved_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 14,
+            "lower": null,
+            "metric_name": "expected_cost_per_solved_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "10",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 6,
+            "upper": null,
+            "zero_solve_draws": 6
+          },
+          "expected_total_cost_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "4",
+              "reason": null
+            },
+            "metric_name": "expected_total_cost_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "5",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "6",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "mean_task_cost_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "2",
+              "reason": null
+            },
+            "metric_name": "mean_task_cost_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "5",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "3",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "pass_at_1": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "0",
+              "reason": null
+            },
+            "metric_name": "pass_at_1",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "4",
+              "numerator": "1",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "1",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "series_id": "config_0001"
+        },
+        "config_0002": {
+          "expected_cost_per_solved_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 11,
+            "lower": null,
+            "metric_name": "expected_cost_per_solved_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "30",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 9,
+            "upper": null,
+            "zero_solve_draws": 9
+          },
+          "expected_total_cost_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "20",
+              "reason": null
+            },
+            "metric_name": "expected_total_cost_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "30",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "40",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "mean_task_cost_nano_usd": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "10",
+              "reason": null
+            },
+            "metric_name": "mean_task_cost_nano_usd",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "15",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "20",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "pass_at_1": {
+            "confidence_level": {
+              "defined": true,
+              "denominator": "20",
+              "numerator": "19",
+              "reason": null
+            },
+            "defined_draws": 20,
+            "lower": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "0",
+              "reason": null
+            },
+            "metric_name": "pass_at_1",
+            "point_estimate": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "1",
+              "reason": null
+            },
+            "quantile_method": "hyndman_fan_type_7_linear",
+            "replicates": 20,
+            "undefined_draws": 0,
+            "upper": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "1",
+              "reason": null
+            },
+            "zero_solve_draws": 0
+          },
+          "series_id": "config_0002"
+        }
+      }
+    },
+    "cascade": null,
+    "frontiers": {
+      "cost_per_solved": {
+        "cost_axis": "cost_per_solved",
+        "dominated_series_ids": [],
+        "frontier_series_ids": [
+          "config_0001",
+          "config_0002"
+        ],
+        "is_headline_axis": true,
+        "rows": [
+          {
+            "cost_axis": "cost_per_solved",
+            "cost_value_nano_usd": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "10",
+              "reason": null
+            },
+            "dominated_by": [],
+            "is_on_frontier": true,
+            "pass_at_1": {
+              "defined": true,
+              "denominator": "4",
+              "numerator": "1",
+              "reason": null
+            },
+            "series_id": "config_0001",
+            "status": "non_dominated",
+            "tie_group_id": null,
+            "tied_with": []
+          },
+          {
+            "cost_axis": "cost_per_solved",
+            "cost_value_nano_usd": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "30",
+              "reason": null
+            },
+            "dominated_by": [],
+            "is_on_frontier": true,
+            "pass_at_1": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "1",
+              "reason": null
+            },
+            "series_id": "config_0002",
+            "status": "non_dominated",
+            "tie_group_id": null,
+            "tied_with": []
+          }
+        ],
+        "undefined_series_ids": []
+      },
+      "mean_task_cost": {
+        "cost_axis": "mean_task_cost",
+        "dominated_series_ids": [],
+        "frontier_series_ids": [
+          "config_0001",
+          "config_0002"
+        ],
+        "is_headline_axis": false,
+        "rows": [
+          {
+            "cost_axis": "mean_task_cost",
+            "cost_value_nano_usd": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "5",
+              "reason": null
+            },
+            "dominated_by": [],
+            "is_on_frontier": true,
+            "pass_at_1": {
+              "defined": true,
+              "denominator": "4",
+              "numerator": "1",
+              "reason": null
+            },
+            "series_id": "config_0001",
+            "status": "non_dominated",
+            "tie_group_id": null,
+            "tied_with": []
+          },
+          {
+            "cost_axis": "mean_task_cost",
+            "cost_value_nano_usd": {
+              "defined": true,
+              "denominator": "1",
+              "numerator": "15",
+              "reason": null
+            },
+            "dominated_by": [],
+            "is_on_frontier": true,
+            "pass_at_1": {
+              "defined": true,
+              "denominator": "2",
+              "numerator": "1",
+              "reason": null
+            },
+            "series_id": "config_0002",
+            "status": "non_dominated",
+            "tie_group_id": null,
+            "tied_with": []
+          }
+        ],
+        "undefined_series_ids": []
+      }
+    },
+    "sensitivity": null,
+    "summary_mode": "headline_complete"
+  },
+  "configurations": [
+    {
+      "actual_all_repetitions_spend_nano_usd": "10",
+      "config_id": "config_0001",
+      "declared_seeds": [
+        0,
+        1
+      ],
+      "expected_solved_tasks": {
+        "defined": true,
+        "denominator": "2",
+        "numerator": "1",
+        "reason": null
+      },
+      "expected_total_cost_nano_usd": {
+        "defined": true,
+        "denominator": "1",
+        "numerator": "5",
+        "reason": null
+      },
+      "n_tasks": 2,
+      "pass_at_1": {
+        "defined": true,
+        "denominator": "4",
+        "numerator": "1",
+        "reason": null
+      },
+      "total_runs": 4
+    },
+    {
+      "actual_all_repetitions_spend_nano_usd": "30",
+      "config_id": "config_0002",
+      "declared_seeds": [
+        0
+      ],
+      "expected_solved_tasks": {
+        "defined": true,
+        "denominator": "1",
+        "numerator": "1",
+        "reason": null
+      },
+      "expected_total_cost_nano_usd": {
+        "defined": true,
+        "denominator": "1",
+        "numerator": "30",
+        "reason": null
+      },
+      "n_tasks": 2,
+      "pass_at_1": {
+        "defined": true,
+        "denominator": "2",
+        "numerator": "1",
+        "reason": null
+      },
+      "total_runs": 2
+    }
+  ],
+  "construction_counts": {
+    "held_out": 26,
+    "total": 63,
+    "train": 37
+  },
+  "eligibility": "UNVERIFIED",
+  "evaluated_task_count": 2,
+  "evidence_kind": "synthetic",
+  "limitations": [
+    "synthetic_unverified_only: Synthetic offline benchmark view only; eligibility is UNVERIFIED and real_provider_calls is 0.",
+    "descriptive_bootstrap_uncertainty: Bootstrap intervals represent descriptive empirical uncertainty over observed tasks, not a hypothesis test or registration certificate.",
+    "selection_multiplicity_and_contamination: Small task samples and potential pretraining overlap limit external generalization; train-selected policies require locked held-out evaluation without retuning.",
+    "sensitivity_requires_bundle_packaging: analysis.sensitivity is always null; the separately validated family diagnostic is reserved for future bundle packaging.",
+    "no_cascade_evaluated: analysis.cascade is null because no cold-restart cascade was evaluated in the report."
+  ],
+  "real_provider_calls": 0,
+  "rows": [
+    {
+      "baseline_verified": true,
+      "config_id": "config_0001",
+      "cost_nano_usd": "1",
+      "evidence_validity": "valid",
+      "family_id": "family_0001",
+      "outcome": "solved",
+      "scorer_status": "passed",
+      "seed": 0,
+      "task_id": "task_0001",
+      "visible_tests_pass": true
+    },
+    {
+      "baseline_verified": true,
+      "config_id": "config_0001",
+      "cost_nano_usd": "3",
+      "evidence_validity": "valid",
+      "family_id": "family_0001",
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "seed": 1,
+      "task_id": "task_0001",
+      "visible_tests_pass": false
+    },
+    {
+      "baseline_verified": true,
+      "config_id": "config_0001",
+      "cost_nano_usd": "2",
+      "evidence_validity": "valid",
+      "family_id": "family_0002",
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "seed": 0,
+      "task_id": "task_0002",
+      "visible_tests_pass": false
+    },
+    {
+      "baseline_verified": true,
+      "config_id": "config_0001",
+      "cost_nano_usd": "4",
+      "evidence_validity": "valid",
+      "family_id": "family_0002",
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "seed": 1,
+      "task_id": "task_0002",
+      "visible_tests_pass": false
+    },
+    {
+      "baseline_verified": true,
+      "config_id": "config_0002",
+      "cost_nano_usd": "10",
+      "evidence_validity": "valid",
+      "family_id": "family_0001",
+      "outcome": "unsolved",
+      "scorer_status": "failed",
+      "seed": 0,
+      "task_id": "task_0001",
+      "visible_tests_pass": false
+    },
+    {
+      "baseline_verified": true,
+      "config_id": "config_0002",
+      "cost_nano_usd": "20",
+      "evidence_validity": "valid",
+      "family_id": "family_0002",
+      "outcome": "solved",
+      "scorer_status": "passed",
+      "seed": 0,
+      "task_id": "task_0002",
+      "visible_tests_pass": true
+    }
+  ],
+  "schema_version": 2,
+  "source": {
+    "expected_plan_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "input_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "report_method_version": "dojo-stats-foundation-v1"
+  },
+  "view_model": "dojo-explorer-view-v2"
+}

@@ -1,5 +1,13 @@
 # Promotional-credit accounting
 
+Latest owner report: account balance US$29.50, and a separate US$1 trial entry
+with 12 days left. The exact Builder Program credit expiry is still unknown;
+the trial countdown does not establish it. The owner requests preparation for a
+supervised probe but has not supplied a maximum allowance or fresh exclusive-use
+confirmation. US$0.01 was suggested, not authorized. No real ledger or paid call
+is enabled by these reported values. If the console does not show credit expiry,
+ask support to confirm the usable amount and expiry of each credit grant.
+
 The owner accepts monitored promotional use despite Token Factory having no
 provider hard spending cap. No card-funded usage is authorized. Card inactivation
 after the project is an exit procedure, not protection against charges now.
@@ -21,6 +29,12 @@ No real ledger has been initialized and live inference remains disabled.
 
 ## Implemented local controls
 
+- Amount conversion now uses bounded exact integer nano-USD arithmetic after
+  isolated Decimal parsing. Balance/allowance round down; reservation/usage
+  round up. Status formatting also uses integer arithmetic. Caller Decimal
+  precision, rounding, traps and exponent settings cannot round stored amounts
+  or displayed remaining allowance. Inputs over 128 characters and amounts over
+  signed SQLite I64 capacity are rejected. Only floor/ceiling policies supported.
 - A single default ledger at data/spend.sqlite3, excluded from Git along with
   SQLite sidecars. It stores amounts/timestamps/status, not keys or request text.
 - An explicit initial cumulative allowance of at most US$1, separate from the

@@ -1,0 +1,73 @@
+{
+  "task": "8a2",
+  "date": "2026-11-01",
+  "status": "accepted_offline_fake_only",
+  "schema_version": 4,
+  "automatic_migrations": false,
+  "new_coordinator_cases": 34,
+  "targeted_compatibility_passes": 481,
+  "final_coordinator_passes": 34,
+  "actual_provider_calls": 0,
+  "live_enabled": false,
+  "registration_verified": false,
+  "provider_evidence_verified": false,
+  "completed_cache_artifact": false,
+  "cross_database_atomicity": false,
+  "crash_windows_tested": [
+    "claim",
+    "intent",
+    "reservation",
+    "bind",
+    "dispatch",
+    "response",
+    "ledger_finish",
+    "terminal"
+  ],
+  "preserved_sources": [
+    "dojo/solve/agent.py",
+    "dojo/solve/configured.py",
+    "dojo/solve/contracts.py",
+    "dojo/store/schemas.py",
+    "dojo/store/schema_v1.py",
+    "dojo/store/schema_v2.py"
+  ],
+  "files": [
+    {
+      "path": "dojo/store/schema_v4.py",
+      "bytes": 3863,
+      "sha256": "c8b20b6e34864f3ec55fc88b91991c942c63d0968307d24292a9ced454d1ff47"
+    },
+    {
+      "path": "dojo/store/bindings.py",
+      "bytes": 11376,
+      "sha256": "2bc4663b6e56ec6bb597870299233eac5ec0549de5834bb62df8ed134e4d02aa"
+    },
+    {
+      "path": "dojo/solve/owned_adaptive.py",
+      "bytes": 9949,
+      "sha256": "ab5701a35ddc7e976f9af782d0b408f201c32b32939b83590517545cdeeb4502"
+    },
+    {
+      "path": "dojo/solve/adaptive.py",
+      "bytes": 15387,
+      "sha256": "91f7da01c25db50547cefd6f4ed829e04861aca371bb0b22d5b9f261110f7429"
+    },
+    {
+      "path": "scripts/owned_provider_demo.py",
+      "bytes": 3935,
+      "sha256": "59b5f0faece6efb5520f3fec2b8a212ebef9a878e3a39dfa496a03a8b04547bc"
+    },
+    {
+      "path": "tests/test_owned_adaptive.py",
+      "bytes": 19137,
+      "sha256": "bc270eb0eb146ffee67403813efc9162cb1c9938728893e18f6525b64f6d1ce9"
+    },
+    {
+      "path": "docs/owned-adaptive-bindings.md",
+      "bytes": 6325,
+      "sha256": "b5d4df644fc4360fcde02159ee91a54ac3d30a9d4c8c2f1aff2d450f6e2a2e7d"
+    }
+  ],
+  "historical_observation": "One original legacy race assertion failed; isolated rerun, 100 races and compatibility rerun passed. See FEEDBACK.md.",
+  "scan_scope": "Seven allowlisted deliverables; common-pattern scan is not universal secret detection."
+}

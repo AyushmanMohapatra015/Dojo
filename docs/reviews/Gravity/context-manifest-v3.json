@@ -1,0 +1,34 @@
+{
+  "snapshot_date": "2026-10-22",
+  "purpose": "13l9/13l10 bounded static runner review",
+  "application_test_baseline": 1147,
+  "files": [
+    {
+      "snapshot": "context-v3/dojo/bench/runner.py",
+      "bytes": 14264,
+      "sha256": "7da10e09ea53841c30d98c77c8584cf6c3de77e64b3656d1f6ba7ec511871d4e"
+    },
+    {
+      "snapshot": "context-v3/dojo/bench/cli.py",
+      "bytes": 5380,
+      "sha256": "e6aca66e39fafe2d4e2ada9bf254a07a67e5670d27df33b2f46110f28400af16"
+    },
+    {
+      "snapshot": "context-v3/store-api-excerpts.md",
+      "bytes": 12692,
+      "sha256": "ef350d878f4641f259bdb2a17cad94fd395b9ab60850d7dc2dfc32dd05c5a3a0"
+    },
+    {
+      "snapshot": "context-v3/current-facts.md",
+      "bytes": 3598,
+      "sha256": "eee7f387a8a34975b769203216ba5eaf32c831825ab2b9acd824e52cb205ac83"
+    }
+  ],
+  "original_source_hashes": {
+    "dojo/store/attempts.py": "f07944b268215842e500ba2f17fdca48dd8ee421fae3db4e4561a74af0c8ba93",
+    "dojo/store/results.py": "4a8da20bfa6d2ec493fcdc50a4e810f842879bd4728a13aa8716fa0bf818d9f4"
+  },
+  "snapshot_id": "9f83659e1bd2c69dee73409e9db4c571ae6b0011f87fe3a68107a0747f35392f",
+  "execution_authorized": false,
+  "provider_calls": 0
+}

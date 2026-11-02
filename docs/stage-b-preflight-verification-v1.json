@@ -1,0 +1,121 @@
+{
+  "tasks": [
+    "7a2",
+    "7a3",
+    "10j3"
+  ],
+  "date": "2026-11-01",
+  "tests_passed": 252,
+  "tests_skipped": 1,
+  "skip_scope": "Real Windows symlink privilege unavailable; mocked reparse case passes",
+  "subagents": [
+    "artifact_boundary_review",
+    "host_preflight_review"
+  ],
+  "task_count": 63,
+  "candidate_cells": 252,
+  "registration_verified": false,
+  "execution_authorized": false,
+  "actual_provider_calls": 0,
+  "packet_references": 43,
+  "packet_bytes": 521624,
+  "packet_sha256": "69d4bb49de2a8706002b5ccc223884e13da978923199fd49704163caa939b441",
+  "files": [
+    {
+      "path": "dojo/bench/registration_artifacts.py",
+      "bytes": 17424,
+      "sha256": "4d31f31e9ff30f68f2172e6113b246e133399877b8c1d217ab34f9d1e3c4b4a0"
+    },
+    {
+      "path": "dojo/bench/registration_preflight.py",
+      "bytes": 13193,
+      "sha256": "10a38aeef0aa85eadbdc9cc787a3b7ba623fb29c65ac2da7ef632e1063a93fa2"
+    },
+    {
+      "path": "tests/test_registration_artifacts.py",
+      "bytes": 10427,
+      "sha256": "285121519921165019fe4cfece8ea7fdfe7d44235bdfe60b19c18ae6dd6e61a0"
+    },
+    {
+      "path": "tests/test_registration_preflight.py",
+      "bytes": 5327,
+      "sha256": "b07a3cb446a75056b5400aab7886350cfae0a52e8d58aed1f6c341a77bfb6e8e"
+    },
+    {
+      "path": "scripts/prepare_browser_ui_part2.py",
+      "bytes": 6570,
+      "sha256": "ee5de11ac79a6ecf9b26d08c3ae569017e0a7b7d25878abdb256114dd190094c"
+    },
+    {
+      "path": "docs/stage-b-artifact-preflight.md",
+      "bytes": 3650,
+      "sha256": "0da12e787745768859ace808b5141b66f57785a23fe1be48e2f57f268ae87be5"
+    },
+    {
+      "path": "docs/reviews/argon/browser-v2-ui-part2-packet-v1.md",
+      "bytes": 521624,
+      "sha256": "69d4bb49de2a8706002b5ccc223884e13da978923199fd49704163caa939b441"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/baseline_policy.json",
+      "bytes": 433,
+      "sha256": "06ba17869045a554e4ba92ce825f063fe797c749c01959d55dd7c79cb881f157"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/collector.json",
+      "bytes": 577,
+      "sha256": "ad2d93a1f2da8627faf3229835a38d5fb45c8bf0ca8e6fca24dba839a6748bd9"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/configurations.json",
+      "bytes": 1571,
+      "sha256": "aeefb3b1097c43db8fb0bcc9b6550a77a2f1bd705e46a1beaf5d460d332779de"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/draft.json",
+      "bytes": 1156,
+      "sha256": "c4d38972c474fffd116258b49a44849e74887c96c8a0b177266668a216cf97ff"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/evaluator.json",
+      "bytes": 1005,
+      "sha256": "e739d4a30d7427209f127a146334087b7ffbcfdd70e556b9d677f021456ea863"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/expected_plan.json",
+      "bytes": 16940,
+      "sha256": "44e91af405f817cca9615718a3e34275f295d1e0c17c47d32b225212eeff42b9"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/sampling_and_thinking.json",
+      "bytes": 693,
+      "sha256": "9c13546f4151e1d18c01f11b3f902fbbb20645c86f524e1da68b28733b226574"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/scaffold.json",
+      "bytes": 2894,
+      "sha256": "2d104a40b4670ff0c6bf32f93082f99e61940599ef9ab6a54350bd3212e6aa2a"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/scoring_image.json",
+      "bytes": 631,
+      "sha256": "82bce7a592150d56f89404345c9eaaf4acc5df63941330157e71f2867e9f4857"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/solver_image.json",
+      "bytes": 630,
+      "sha256": "bb3babf82f2e863fc3da7cf3eda35def777c03ff0aa8febf80d5286d8b45b038"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/source_policy.json",
+      "bytes": 497,
+      "sha256": "8a2a9e241f48a64ea953d9d1b98884503f155b1dcc7075ee7dee3d025119bdbf"
+    },
+    {
+      "path": "data/development/stage-b-preflight-v1/task_inputs.json",
+      "bytes": 23354,
+      "sha256": "23397fd48ed45e0116745bee854f5ff10187822788a72e91256b8b9f058e6bb6"
+    }
+  ],
+  "scan_scope": "Bounded common credential-pattern scan of 19 allowlisted deliverables; not universal secret detection"
+}

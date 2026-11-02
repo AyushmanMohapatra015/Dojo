@@ -17,6 +17,11 @@ from dojo.verify import INPUT_TOKEN_BOUND, Budget, BudgetExceeded, openai_reques
 MODELS = load_models(Path(__file__).resolve().parents[1] / "configs/models.yaml")
 
 
+@pytest.fixture(autouse=True)
+def isolate_local_credentials(monkeypatch, tmp_path):
+    monkeypatch.setattr("dojo.local_env.PROJECT_ENV", tmp_path / "missing.env")
+
+
 @pytest.fixture
 def simulated_live(monkeypatch, tmp_path):
     """Exercise accounting with injected fake transports; never unlock real calls."""

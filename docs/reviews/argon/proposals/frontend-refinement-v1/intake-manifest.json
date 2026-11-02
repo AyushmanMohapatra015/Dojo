@@ -1,0 +1,101 @@
+{
+  "task_id": "10a8",
+  "source": "docs/reviews/argon/frontend-refinement-feedback-v1.txt",
+  "source_sha256": "4b48fd0ff8bf037adb56839c2550100b97307f241983433679acd79d68035579",
+  "source_bytes": 153033,
+  "files": [
+    {
+      "path": "dashboard/README.md",
+      "bytes": 3862,
+      "sha256": "d30401d1e133042bdfd2d5bacb06fc281122c31a681787ffdad9a82e461bae05",
+      "origin": "agent2_baseline"
+    },
+    {
+      "path": "dashboard/index.html",
+      "bytes": 535,
+      "sha256": "8b68b7559eac38197e34e166693319aafa325957b82d540d692ddc03de8a5fd0",
+      "origin": "agent2_baseline"
+    },
+    {
+      "path": "dashboard/package.json",
+      "bytes": 911,
+      "sha256": "21530a28dfd16cac245c9c5c88aaba1b1b8b24f8b4bbbb2e64079482af9fad80",
+      "origin": "agent2_baseline"
+    },
+    {
+      "path": "dashboard/src/App.jsx",
+      "bytes": 35947,
+      "sha256": "e6b9bbd6ef38b0dbe30a90cbdee873e04da5641e38244a2008d3655ce5671b50",
+      "origin": "argon"
+    },
+    {
+      "path": "dashboard/src/App.test.jsx",
+      "bytes": 23105,
+      "sha256": "046e0d4f58f50d5ac871bf9d71a16d942af5e41d13c7ecb3ea828c481638e0b1",
+      "origin": "argon"
+    },
+    {
+      "path": "dashboard/src/data.js",
+      "bytes": 33339,
+      "sha256": "23cbd4419be46b9aed35dd271a12015dcfeffd511c20d124848e7668fa52ca65",
+      "origin": "argon"
+    },
+    {
+      "path": "dashboard/src/data.test.js",
+      "bytes": 30214,
+      "sha256": "ae658b9b83613eec3f437cd9d7e00c081913b5542d30dfbb525cbfd62db559fe",
+      "origin": "argon"
+    },
+    {
+      "path": "dashboard/src/fixtures/synthetic.json",
+      "bytes": 3558,
+      "sha256": "1dea71231a4e61f5e1775b32428d4fcfdc9a52fb6f28f59e73dddf290918c8c1",
+      "origin": "agent2_baseline"
+    },
+    {
+      "path": "dashboard/src/hygiene.test.js",
+      "bytes": 2105,
+      "sha256": "d5657511be293c3a0b022639560a496eb3a29646a394990759882573a425d137",
+      "origin": "agent2_baseline"
+    },
+    {
+      "path": "dashboard/src/main.jsx",
+      "bytes": 235,
+      "sha256": "83aeeea6ff5cc0f3a1cec8cf09da3c191c6461585579c64f7e642609f9fe7b32",
+      "origin": "agent2_baseline"
+    },
+    {
+      "path": "dashboard/src/styles.css",
+      "bytes": 7657,
+      "sha256": "ec9dc72025b22a2f8507fcd6f5e3a534859273495951c5fe2a2856cf86f3fb99",
+      "origin": "argon"
+    },
+    {
+      "path": "dashboard/src/test-setup.js",
+      "bytes": 400,
+      "sha256": "26fb03a29ceebebc339457d0e7b234d171f19ddd0863020677113af36f173378",
+      "origin": "agent2_baseline"
+    },
+    {
+      "path": "dashboard/vite.config.js",
+      "bytes": 1167,
+      "sha256": "eb769464daea90799266144b1c7e3df7b173c901b5c8c0db6a3cc4da7bb07ece",
+      "origin": "agent2_baseline"
+    },
+    {
+      "path": "docs/explorer-integration.md",
+      "bytes": 16633,
+      "sha256": "893759e4d8ceb19daac2e09f5462343ce26d3bf980cbfebce047197055fdb4f5",
+      "origin": "agent2_baseline"
+    },
+    {
+      "path": "docs/frontend-refinement-handoff-v1.md",
+      "bytes": 14159,
+      "sha256": "72fc027a57ac09dec811f444e38449eb3f63a5b11f3770c0d0dabc92dcc15778",
+      "origin": "argon"
+    }
+  ],
+  "extraction": "UTF-8 code blocks; CRLF normalized to LF",
+  "dashboard_adopted": false,
+  "proposal_code_executed_by_intake": false
+}

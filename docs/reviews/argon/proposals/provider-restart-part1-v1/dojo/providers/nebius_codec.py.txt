@@ -1,0 +1,818 @@
+"""WP1 (8h1): Nebius/OpenAI-shaped request mapping and bounded completion codec.
+
+Pure offline transformations and defensive JSON decoding. No SDK client,
+network transport, environment read, or parse_action coupling.
+"""
+
+from __future__ import annotations
+
+import json
+import math
+import re
+from dataclasses import dataclass, field
+from typing import Any
+
+from dojo.solve.agent import Message
+from dojo.solve.contracts import ModelRequest
+from dojo.store.identity import APPROVED_API_BASES
+from dojo.store.records import I64_MAX, RecordError, UsageEvidence
+
+MAX_RAW_BYTES = 1_048_576
+MAX_CONTENT_BYTES = 65_536
+MAX_STRING_BYTES = 65_536
+MAX_JSON_DEPTH = 32
+MAX_JSON_NODES = 4_096
+MAX_INT_DIGITS = 20
+
+OBSERVATION_STATUSES = frozenset({
+    "ready",
+    "truncated",
+    "unusable",
+    "unknown_usage",
+})
+
+OBSERVATION_REASONS = frozenset({
+    "ok",
+    "output_limit",
+    "content_missing",
+    "content_invalid",
+    "unsupported_finish",
+    "unsupported_tools",
+    "model_mismatch",
+    "usage_unknown",
+    "usage_invalid",
+    "response_invalid",
+})
+
+CODEC_ERROR_REASONS = frozenset({
+    "invalid_request",
+    "raw_type_invalid",
+    "raw_too_large",
+    "utf8_invalid",
+    "json_malformed",
+    "duplicate_key",
+    "invalid_key",
+    "depth_exceeded",
+    "node_limit_exceeded",
+    "string_too_large",
+    "number_invalid",
+    "top_level_not_object",
+})
+
+_SDK_KEYS = frozenset({
+    "model",
+    "messages",
+    "max_completion_tokens",
+    "temperature",
+    "top_p",
+    "seed",
+    "extra_body",
+})
+
+_FORBIDDEN_HTTP_KEYS = frozenset({
+    "extra_body",
+    "api_base",
+    "base_url",
+    "url",
+    "endpoint",
+    "timeout",
+    "timeout_seconds",
+    "api_key",
+    "key",
+    "headers",
+    "organization",
+    "project",
+})
+
+_USAGE_ALLOWED_KEYS = frozenset({
+    "prompt_tokens",
+    "completion_tokens",
+    "total_tokens",
+    "prompt_tokens_details",
+    "completion_tokens_details",
+})
+
+_PROMPT_DETAILS_ALLOWED_KEYS = frozenset({
+    "cached_tokens",
+    "audio_tokens",
+})
+
+_COMPLETION_DETAILS_ALLOWED_KEYS = frozenset({
+    "reasoning_tokens",
+    "audio_tokens",
+    "accepted_prediction_tokens",
+    "rejected_prediction_tokens",
+})
+
+_INT_TOKEN_RE = re.compile(r"^-?(0|[1-9][0-9]{0,19})$")
+
+
+class CodecError(ValueError):
+    """Raised on invalid request inputs or malformed/duplicate/oversized wire JSON.
+
+    Carries only a fixed reason code; never echoes raw payloads or exception text.
+    """
+
+    def __init__(self, reason: str) -> None:
+        if type(reason) is not str or reason not in CODEC_ERROR_REASONS:
+            reason = "json_malformed"
+        self.reason = reason
+        super().__init__(reason)
+
+
+def _unknown_usage() -> UsageEvidence:
+    return UsageEvidence("unknown", None, None, 1)
+
+
+def _validate_utf8_no_nul(text: str, *, max_bytes: int) -> bytes:
+    if type(text) is not str or "\x00" in text:
+        raise CodecError("invalid_request")
+    try:
+        encoded = text.encode("utf-8", errors="strict")
+    except UnicodeEncodeError as exc:
+        raise CodecError("invalid_request") from exc
+    if len(encoded) > max_bytes:
+        raise CodecError("invalid_request")
+    return encoded
+
+
+def _revalidate_request(request: Any) -> ModelRequest:
+    if type(request) is not ModelRequest:
+        raise CodecError("invalid_request")
+    if (
+        type(request.model_id) is not str
+        or not request.model_id.startswith("nvidia/")
+        or not (8 <= len(request.model_id) <= 256)
+        or "\x00" in request.model_id
+        or any(ord(ch) < 33 or ord(ch) > 126 for ch in request.model_id)
+    ):
+        raise CodecError("invalid_request")
+    if type(request.api_base) is not str or request.api_base not in APPROVED_API_BASES:
+        raise CodecError("invalid_request")
+    if type(request.messages) is not tuple or not request.messages:
+        raise CodecError("invalid_request")
+    system_count = 0
+    for idx, msg in enumerate(request.messages):
+        if type(msg) is not Message:
+            raise CodecError("invalid_request")
+        if type(msg.role) is not str or msg.role not in {"system", "user", "assistant"}:
+            raise CodecError("invalid_request")
+        if type(msg.content) is not str:
+            raise CodecError("invalid_request")
+        try:
+            msg.content.encode("utf-8", errors="strict")
+        except UnicodeEncodeError as exc:
+            raise CodecError("invalid_request") from exc
+        if idx == 0 and msg.role != "system":
+            raise CodecError("invalid_request")
+        if msg.role == "system":
+            system_count += 1
+    if system_count != 1:
+        raise CodecError("invalid_request")
+    if (
+        type(request.max_completion_tokens) is not int
+        or not (1 <= request.max_completion_tokens <= 2048)
+        or type(request.seed) is not int
+        or not (0 <= request.seed <= 2_147_483_647)
+        or type(request.enable_thinking) is not bool
+    ):
+        raise CodecError("invalid_request")
+    for val, lower, upper, strictly_pos in (
+        (request.temperature, 0.0, 2.0, False),
+        (request.top_p, 0.0, 1.0, True),
+        (request.timeout_seconds, 0.0, 60.0, True),
+    ):
+        if (
+            type(val) not in (int, float)
+            or not math.isfinite(val)
+            or val < lower
+            or val > upper
+            or (strictly_pos and val <= 0)
+        ):
+            raise CodecError("invalid_request")
+    if request.thinking_budget is not None:
+        if (
+            not request.enable_thinking
+            or type(request.thinking_budget) is not int
+            or not (1 <= request.thinking_budget < request.max_completion_tokens)
+        ):
+            raise CodecError("invalid_request")
+    try:
+        raw_body = request.body()
+    except Exception as exc:
+        raise CodecError("invalid_request") from exc
+    if type(raw_body) is not dict or set(raw_body.keys()) != _SDK_KEYS:
+        raise CodecError("invalid_request")
+    extra_body = raw_body.get("extra_body")
+    if type(extra_body) is not dict or set(extra_body.keys()) != {"chat_template_kwargs"}:
+        raise CodecError("invalid_request")
+    template = extra_body.get("chat_template_kwargs")
+    expected_template: dict[str, Any] = {
+        "enable_thinking": request.enable_thinking,
+        "force_nonempty_content": True,
+    }
+    if request.thinking_budget is not None:
+        expected_template["thinking_budget"] = request.thinking_budget
+    if type(template) is not dict or template != expected_template:
+        raise CodecError("invalid_request")
+    return request
+
+
+@dataclass(frozen=True)
+class ProviderObservation:
+    """Typed immutable observation of a single provider-shaped completion response."""
+
+    status: str
+    reason: str
+    content: str | None = field(repr=False)
+    finish_reason: str | None
+    usage: UsageEvidence
+    model_matches: bool
+    provider_evidence_verified: bool = False
+
+    def __post_init__(self) -> None:
+        if type(self.status) is not str or self.status not in OBSERVATION_STATUSES:
+            raise ValueError("Invalid observation status")
+        if type(self.reason) is not str or self.reason not in OBSERVATION_REASONS:
+            raise ValueError("Invalid observation reason")
+        if type(self.usage) is not UsageEvidence:
+            raise ValueError("Invalid observation usage evidence")
+        if type(self.model_matches) is not bool:
+            raise ValueError("model_matches must be an exact bool")
+        if type(self.provider_evidence_verified) is not bool or self.provider_evidence_verified:
+            raise ValueError("provider_evidence_verified must remain False")
+        if self.finish_reason is not None:
+            if (
+                type(self.finish_reason) is not str
+                or not self.finish_reason
+                or len(self.finish_reason) > 64
+                or "\x00" in self.finish_reason
+            ):
+                raise ValueError("Invalid finish_reason")
+            try:
+                self.finish_reason.encode("utf-8", errors="strict")
+            except UnicodeEncodeError as exc:
+                raise ValueError("Invalid finish_reason encoding") from exc
+        if self.content is not None:
+            if type(self.content) is not str or not self.content or "\x00" in self.content:
+                raise ValueError("Observation content must be non-empty UTF-8 without NUL")
+            try:
+                encoded = self.content.encode("utf-8", errors="strict")
+            except UnicodeEncodeError as exc:
+                raise ValueError("Invalid content UTF-8") from exc
+            if len(encoded) > MAX_CONTENT_BYTES:
+                raise ValueError("Observation content exceeds 64 KiB bound")
+
+        if self.status == "ready":
+            if (
+                self.reason != "ok"
+                or self.content is None
+                or self.finish_reason != "stop"
+                or not self.model_matches
+                or self.usage.basis != "provider"
+                or self.usage.provider_calls != 1
+            ):
+                raise ValueError("Inconsistent ready observation state")
+        elif self.status == "truncated":
+            if (
+                self.reason != "output_limit"
+                or self.content is None
+                or self.finish_reason != "length"
+                or not self.model_matches
+                or self.usage.basis != "provider"
+                or self.usage.provider_calls != 1
+            ):
+                raise ValueError("Inconsistent truncated observation state")
+        elif self.status == "unusable":
+            if (
+                self.reason not in {
+                    "content_missing",
+                    "content_invalid",
+                    "unsupported_finish",
+                    "unsupported_tools",
+                    "response_invalid",
+                }
+                or self.content is not None
+                or not self.model_matches
+                or self.usage.basis != "provider"
+                or self.usage.provider_calls != 1
+            ):
+                raise ValueError("Inconsistent unusable observation state")
+        elif self.status == "unknown_usage":
+            if (
+                self.reason not in {
+                    "model_mismatch",
+                    "usage_unknown",
+                    "usage_invalid",
+                    "response_invalid",
+                }
+                or self.content is not None
+                or self.usage != _unknown_usage()
+            ):
+                raise ValueError("Inconsistent unknown_usage observation state")
+            if self.reason == "model_mismatch" and self.model_matches:
+                raise ValueError("model_mismatch requires model_matches=False")
+
+
+def build_sdk_kwargs(request: ModelRequest) -> dict[str, Any]:
+    """Build fresh OpenAI-SDK-shaped keyword arguments for a validated ModelRequest."""
+    req = _revalidate_request(request)
+    template: dict[str, Any] = {
+        "enable_thinking": req.enable_thinking,
+        "force_nonempty_content": True,
+    }
+    if req.thinking_budget is not None:
+        template["thinking_budget"] = req.thinking_budget
+    return {
+        "model": req.model_id,
+        "messages": [{"role": m.role, "content": m.content} for m in req.messages],
+        "max_completion_tokens": req.max_completion_tokens,
+        "temperature": float(req.temperature) if type(req.temperature) is float else req.temperature,
+        "top_p": float(req.top_p) if type(req.top_p) is float else req.top_p,
+        "seed": req.seed,
+        "extra_body": {"chat_template_kwargs": template},
+        "stream": False,
+        "n": 1,
+    }
+
+
+def build_http_payload(request: ModelRequest) -> dict[str, Any]:
+    """Build fresh raw HTTP wire JSON payload with extra_body merged at top level."""
+    sdk_kwargs = build_sdk_kwargs(request)
+    extra_body = sdk_kwargs.pop("extra_body")
+    if type(extra_body) is not dict or set(extra_body.keys()) != {"chat_template_kwargs"}:
+        raise CodecError("invalid_request")
+    chat_template_kwargs = extra_body["chat_template_kwargs"]
+    if type(chat_template_kwargs) is not dict:
+        raise CodecError("invalid_request")
+    payload: dict[str, Any] = {
+        "model": sdk_kwargs["model"],
+        "messages": [dict(item) for item in sdk_kwargs["messages"]],
+        "max_completion_tokens": sdk_kwargs["max_completion_tokens"],
+        "temperature": sdk_kwargs["temperature"],
+        "top_p": sdk_kwargs["top_p"],
+        "seed": sdk_kwargs["seed"],
+        "stream": False,
+        "n": 1,
+        "chat_template_kwargs": dict(chat_template_kwargs),
+    }
+    if _FORBIDDEN_HTTP_KEYS.intersection(payload.keys()):
+        raise CodecError("invalid_request")
+    return payload
+
+
+def _parse_int_token(token: str) -> int:
+    if len(token) > MAX_INT_DIGITS or _INT_TOKEN_RE.fullmatch(token) is None:
+        raise CodecError("number_invalid")
+    val = int(token, 10)
+    if not (-I64_MAX - 1 <= val <= I64_MAX):
+        raise CodecError("number_invalid")
+    return val
+
+
+def _parse_float_token(token: str) -> float:
+    if len(token) > 64:
+        raise CodecError("number_invalid")
+    try:
+        val = float(token)
+    except ValueError as exc:
+        raise CodecError("number_invalid") from exc
+    if not math.isfinite(val):
+        raise CodecError("number_invalid")
+    return val
+
+
+def _check_bounded_tree(node: Any, *, depth: int, counter: list[int]) -> None:
+    if depth > MAX_JSON_DEPTH:
+        raise CodecError("depth_exceeded")
+    counter[0] += 1
+    if counter[0] > MAX_JSON_NODES:
+        raise CodecError("node_limit_exceeded")
+    if node is None or type(node) is bool:
+        return
+    if type(node) is int:
+        if not (-I64_MAX - 1 <= node <= I64_MAX):
+            raise CodecError("number_invalid")
+        return
+    if type(node) is float:
+        if not math.isfinite(node):
+            raise CodecError("number_invalid")
+        return
+    if type(node) is str:
+        if "\x00" in node:
+            raise CodecError("utf8_invalid")
+        try:
+            encoded = node.encode("utf-8", errors="strict")
+        except UnicodeEncodeError as exc:
+            raise CodecError("utf8_invalid") from exc
+        if len(encoded) > MAX_STRING_BYTES:
+            raise CodecError("string_too_large")
+        return
+    if type(node) is list:
+        for item in node:
+            _check_bounded_tree(item, depth=depth + 1, counter=counter)
+        return
+    if type(node) is dict:
+        for key, value in node.items():
+            if type(key) is not str or "\x00" in key:
+                raise CodecError("invalid_key")
+            try:
+                key_bytes = key.encode("utf-8", errors="strict")
+            except UnicodeEncodeError as exc:
+                raise CodecError("utf8_invalid") from exc
+            if len(key_bytes) > 256:
+                raise CodecError("invalid_key")
+            _check_bounded_tree(value, depth=depth + 1, counter=counter)
+        return
+    raise CodecError("json_malformed")
+
+
+def _strict_decode_json_bytes(raw: bytes) -> dict[str, Any]:
+    if type(raw) is not bytes:
+        raise CodecError("raw_type_invalid")
+    if len(raw) == 0:
+        raise CodecError("json_malformed")
+    if len(raw) > MAX_RAW_BYTES:
+        raise CodecError("raw_too_large")
+    try:
+        text = raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise CodecError("utf8_invalid") from exc
+    if "\x00" in text:
+        raise CodecError("utf8_invalid")
+
+    def _pairs_hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for k, v in pairs:
+            if type(k) is not str or "\x00" in k:
+                raise CodecError("invalid_key")
+            if len(k.encode("utf-8", errors="strict")) > 256:
+                raise CodecError("invalid_key")
+            if k in result:
+                raise CodecError("duplicate_key")
+            result[k] = v
+        return result
+
+    def _constant_hook(_token: str) -> Any:
+        raise CodecError("number_invalid")
+
+    try:
+        parsed = json.loads(
+            text,
+            object_pairs_hook=_pairs_hook,
+            parse_int=_parse_int_token,
+            parse_float=_parse_float_token,
+            parse_constant=_constant_hook,
+        )
+    except CodecError:
+        raise
+    except RecursionError as exc:
+        raise CodecError("depth_exceeded") from exc
+    except (ValueError, TypeError) as exc:
+        raise CodecError("json_malformed") from exc
+
+    if type(parsed) is not dict:
+        raise CodecError("top_level_not_object")
+    _check_bounded_tree(parsed, depth=0, counter=[0])
+    return parsed
+
+
+def _extract_usage(payload: dict[str, Any]) -> tuple[UsageEvidence | None, str | None]:
+    if "usage" not in payload or payload["usage"] is None:
+        return None, "usage_unknown"
+    usage_obj = payload["usage"]
+    if type(usage_obj) is not dict:
+        return None, "usage_invalid"
+    if not set(usage_obj.keys()).issubset(_USAGE_ALLOWED_KEYS):
+        return None, "usage_invalid"
+    if "prompt_tokens" not in usage_obj or "completion_tokens" not in usage_obj:
+        return None, "usage_unknown"
+
+    prompt_tokens = usage_obj["prompt_tokens"]
+    completion_tokens = usage_obj["completion_tokens"]
+    if (
+        type(prompt_tokens) is not int
+        or type(completion_tokens) is not int
+        or prompt_tokens < 0
+        or completion_tokens < 0
+        or prompt_tokens > I64_MAX
+        or completion_tokens > I64_MAX
+        or prompt_tokens + completion_tokens > I64_MAX
+    ):
+        return None, "usage_invalid"
+
+    if "total_tokens" in usage_obj and usage_obj["total_tokens"] is not None:
+        total_tokens = usage_obj["total_tokens"]
+        if (
+            type(total_tokens) is not int
+            or total_tokens != prompt_tokens + completion_tokens
+        ):
+            return None, "usage_invalid"
+
+    cached_tokens: int | None = None
+    if "prompt_tokens_details" in usage_obj and usage_obj["prompt_tokens_details"] is not None:
+        p_details = usage_obj["prompt_tokens_details"]
+        if (
+            type(p_details) is not dict
+            or not set(p_details.keys()).issubset(_PROMPT_DETAILS_ALLOWED_KEYS)
+        ):
+            return None, "usage_invalid"
+        if "cached_tokens" in p_details and p_details["cached_tokens"] is not None:
+            ct = p_details["cached_tokens"]
+            if type(ct) is not int or ct < 0 or ct > prompt_tokens:
+                return None, "usage_invalid"
+            cached_tokens = ct
+        if "audio_tokens" in p_details and p_details["audio_tokens"] is not None:
+            at = p_details["audio_tokens"]
+            if type(at) is not int or at < 0 or at > prompt_tokens:
+                return None, "usage_invalid"
+
+    reasoning_tokens: int | None = None
+    if (
+        "completion_tokens_details" in usage_obj
+        and usage_obj["completion_tokens_details"] is not None
+    ):
+        c_details = usage_obj["completion_tokens_details"]
+        if (
+            type(c_details) is not dict
+            or not set(c_details.keys()).issubset(_COMPLETION_DETAILS_ALLOWED_KEYS)
+        ):
+            return None, "usage_invalid"
+        if "reasoning_tokens" in c_details and c_details["reasoning_tokens"] is not None:
+            rt = c_details["reasoning_tokens"]
+            if type(rt) is not int or rt < 0 or rt > completion_tokens:
+                return None, "usage_invalid"
+            reasoning_tokens = rt
+        for extra_k in (
+            "audio_tokens",
+            "accepted_prediction_tokens",
+            "rejected_prediction_tokens",
+        ):
+            if extra_k in c_details and c_details[extra_k] is not None:
+                ev = c_details[extra_k]
+                if type(ev) is not int or ev < 0 or ev > completion_tokens:
+                    return None, "usage_invalid"
+
+    try:
+        evidence = UsageEvidence(
+            "provider",
+            prompt_tokens,
+            completion_tokens,
+            1,
+            cached_tokens=cached_tokens,
+            reasoning_tokens=reasoning_tokens,
+        )
+    except RecordError:
+        return None, "usage_invalid"
+    return evidence, None
+
+
+def _sanitize_finish_reason(raw_finish: Any) -> tuple[str | None, bool]:
+    if raw_finish is None:
+        return None, False
+    if type(raw_finish) is not str or not raw_finish or len(raw_finish) > 64 or "\x00" in raw_finish:
+        return None, False
+    return raw_finish, True
+
+
+def decode_completion(raw: bytes, request: ModelRequest) -> ProviderObservation:
+    """Decode raw completion bytes into a bounded immutable ProviderObservation.
+
+    Malformed/duplicate/oversized JSON raises CodecError. When JSON is well-formed
+    and model identity + usage are valid, known usage survives ordinary content or
+    finish problems. Never substitutes reasoning_content for visible content and
+    never runs parse_action.
+    """
+    req = _revalidate_request(request)
+    payload = _strict_decode_json_bytes(raw)
+
+    resp_model = payload.get("model")
+    if type(resp_model) is not str or resp_model != req.model_id:
+        return ProviderObservation(
+            status="unknown_usage",
+            reason="model_mismatch",
+            content=None,
+            finish_reason=None,
+            usage=_unknown_usage(),
+            model_matches=False,
+            provider_evidence_verified=False,
+        )
+
+    known_usage, usage_error_reason = _extract_usage(payload)
+    if known_usage is None:
+        return ProviderObservation(
+            status="unknown_usage",
+            reason=usage_error_reason or "usage_invalid",
+            content=None,
+            finish_reason=None,
+            usage=_unknown_usage(),
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    if "error" in payload and payload["error"] is not None:
+        return ProviderObservation(
+            status="unusable",
+            reason="response_invalid",
+            content=None,
+            finish_reason=None,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    choices = payload.get("choices")
+    if type(choices) is not list or len(choices) != 1:
+        return ProviderObservation(
+            status="unusable",
+            reason="response_invalid",
+            content=None,
+            finish_reason=None,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    choice = choices[0]
+    if type(choice) is not dict:
+        return ProviderObservation(
+            status="unusable",
+            reason="response_invalid",
+            content=None,
+            finish_reason=None,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    if choice.get("index") != 0 or type(choice.get("index")) is not int:
+        return ProviderObservation(
+            status="unusable",
+            reason="response_invalid",
+            content=None,
+            finish_reason=None,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    finish_reason, finish_ok = _sanitize_finish_reason(choice.get("finish_reason"))
+    message = choice.get("message")
+    if type(message) is not dict:
+        return ProviderObservation(
+            status="unusable",
+            reason="response_invalid",
+            content=None,
+            finish_reason=finish_reason if finish_ok else None,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    if message.get("role") != "assistant":
+        return ProviderObservation(
+            status="unusable",
+            reason="response_invalid",
+            content=None,
+            finish_reason=finish_reason if finish_ok else None,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    if "reasoning_content" in message and message["reasoning_content"] is not None:
+        if type(message["reasoning_content"]) is not str:
+            return ProviderObservation(
+                status="unusable",
+                reason="content_invalid",
+                content=None,
+                finish_reason=finish_reason if finish_ok else None,
+                usage=known_usage,
+                model_matches=True,
+                provider_evidence_verified=False,
+            )
+
+    if "reasoning" in message and message["reasoning"] is not None:
+        if type(message["reasoning"]) is not str:
+            return ProviderObservation(
+                status="unusable",
+                reason="content_invalid",
+                content=None,
+                finish_reason=finish_reason if finish_ok else None,
+                usage=known_usage,
+                model_matches=True,
+                provider_evidence_verified=False,
+            )
+
+    tool_calls = message.get("tool_calls")
+    function_call = message.get("function_call")
+    if tool_calls is not None and (type(tool_calls) is not list or len(tool_calls) > 0):
+        return ProviderObservation(
+            status="unusable",
+            reason="unsupported_tools",
+            content=None,
+            finish_reason=finish_reason if finish_ok else None,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+    if function_call is not None or finish_reason in {"tool_calls", "function_call"}:
+        return ProviderObservation(
+            status="unusable",
+            reason="unsupported_tools",
+            content=None,
+            finish_reason=finish_reason if finish_ok else None,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    refusal = message.get("refusal")
+    if refusal is not None:
+        return ProviderObservation(
+            status="unusable",
+            reason="unsupported_finish",
+            content=None,
+            finish_reason=finish_reason if finish_ok else None,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    if not finish_ok or finish_reason not in {"stop", "length"}:
+        return ProviderObservation(
+            status="unusable",
+            reason="unsupported_finish",
+            content=None,
+            finish_reason=finish_reason if finish_ok else None,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    if "content" not in message or message["content"] is None:
+        return ProviderObservation(
+            status="unusable",
+            reason="content_missing",
+            content=None,
+            finish_reason=finish_reason,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    content = message["content"]
+    if type(content) is not str:
+        return ProviderObservation(
+            status="unusable",
+            reason="content_invalid",
+            content=None,
+            finish_reason=finish_reason,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+    if not content or not content.strip():
+        return ProviderObservation(
+            status="unusable",
+            reason="content_missing",
+            content=None,
+            finish_reason=finish_reason,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    content_bytes = content.encode("utf-8", errors="strict")
+    if len(content_bytes) > MAX_CONTENT_BYTES:
+        return ProviderObservation(
+            status="unusable",
+            reason="content_invalid",
+            content=None,
+            finish_reason=finish_reason,
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    if finish_reason == "length":
+        return ProviderObservation(
+            status="truncated",
+            reason="output_limit",
+            content=content,
+            finish_reason="length",
+            usage=known_usage,
+            model_matches=True,
+            provider_evidence_verified=False,
+        )
+
+    return ProviderObservation(
+        status="ready",
+        reason="ok",
+        content=content,
+        finish_reason="stop",
+        usage=known_usage,
+        model_matches=True,
+        provider_evidence_verified=False,
+    )
+

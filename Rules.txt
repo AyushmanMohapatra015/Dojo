@@ -13,3 +13,5 @@
 - The owner now performs Git add, commit and push manually. Finish implementation/checks, review changed files for credentials/private data, then provide exact scoped commands. Do not stage, commit or push unless the owner explicitly asks again. Preserve the private remote; no force-push or unrelated account changes.
 - Notify the owner of service/tool defects encountered. Distinguish a suspected environment failure from a reproduced upstream defect; record minimal sanitized evidence and report readiness in FEEDBACK.md. Do not file issues or contact maintainers without authorization.
 - At project completion, remind the owner and review PROJECT_CLEANUP.md before final handoff; keep its tool inventory current.
+
+- One-time owner exception (6e7): owner explicitly instructed a single supervised US$0.01 probe with US$29.50 reported balance, exclusive use confirmed and expiry unknown. The probe has run; this is not standing authorization for additional calls or a fabricated expiry. General live locks remain, permit consumed and console reconciliation required.

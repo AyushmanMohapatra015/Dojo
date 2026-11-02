@@ -14,6 +14,7 @@ dist/
 data/verification*.json
 data/trajectories/
 node_modules/
+data/runtime/
 dashboard/dist/
 
 # Local credential directories.

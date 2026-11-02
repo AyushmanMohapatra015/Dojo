@@ -1,0 +1,293 @@
+"""UNEXECUTED offline unit tests for WP4 (dojo/providers/trace_events.py)."""
+
+from __future__ import annotations
+
+import re
+from dataclasses import FrozenInstanceError, replace
+from typing import Any
+
+import pytest
+
+from dojo.providers.trace_events import (
+    MAX_ATTEMPTS,
+    MAX_ELAPSED_US,
+    LocalTraceSink,
+    TraceEvent,
+    new_trace_token,
+)
+from dojo.store.records import I64_MAX
+
+
+def test_new_trace_token_is_opaque_uuid4_hex():
+    t1 = new_trace_token()
+    t2 = new_trace_token()
+    assert t1 != t2
+    assert re.fullmatch(r"[0-9a-f]{32}", t1) is not None
+    # UUID version 4 has '4' at hex index 12
+    assert t1[12] == "4"
+
+
+def test_valid_provider_docsearch_and_controller_trace_events():
+    tok = new_trace_token()
+
+    prov = TraceEvent(
+        stage="provider",
+        status="completed",
+        correlation_token=tok,
+        elapsed_us=150_000,
+        attempts=3,
+        prompt_tokens=1200,
+        completion_tokens=150,
+        cost_nano_usd=108_000,
+        tavily_credits=None,
+    )
+    assert prov.evidence_kind == "synthetic"
+    assert prov.provider_evidence_verified is False
+    assert len(prov.to_json_bytes()) <= 2048
+
+    doc = TraceEvent(
+        stage="docsearch",
+        status="completed",
+        correlation_token=tok,
+        elapsed_us=45_000,
+        attempts=1,
+        prompt_tokens=None,
+        completion_tokens=None,
+        cost_nano_usd=None,
+        tavily_credits=1,
+    )
+    assert doc.tavily_credits == 1
+
+    ctrl = TraceEvent(
+        stage="controller",
+        status="completed",
+        correlation_token=tok,
+        elapsed_us=500_000,
+        attempts=3,
+        prompt_tokens=None,
+        completion_tokens=None,
+        cost_nano_usd=None,
+        tavily_credits=None,
+    )
+    assert ctrl.status == "completed"
+
+
+@pytest.mark.parametrize(
+    "bad_kwargs",
+    [
+        # Provider carrying Tavily credits
+        {
+            "stage": "provider",
+            "status": "completed",
+            "prompt_tokens": 100,
+            "completion_tokens": 20,
+            "cost_nano_usd": 1000,
+            "tavily_credits": 1,
+        },
+        # Docsearch carrying model tokens or USD cost
+        {
+            "stage": "docsearch",
+            "status": "completed",
+            "prompt_tokens": 100,
+            "completion_tokens": 20,
+            "cost_nano_usd": None,
+            "tavily_credits": 1,
+        },
+        {
+            "stage": "docsearch",
+            "status": "completed",
+            "prompt_tokens": None,
+            "completion_tokens": None,
+            "cost_nano_usd": 1000,
+            "tavily_credits": 1,
+        },
+        # Completed provider missing known cost or tokens
+        {
+            "stage": "provider",
+            "status": "completed",
+            "prompt_tokens": 100,
+            "completion_tokens": 20,
+            "cost_nano_usd": None,
+            "tavily_credits": None,
+        },
+        {
+            "stage": "provider",
+            "status": "completed",
+            "prompt_tokens": None,
+            "completion_tokens": None,
+            "cost_nano_usd": 1000,
+            "tavily_credits": None,
+        },
+        # Completed docsearch missing known credits
+        {
+            "stage": "docsearch",
+            "status": "completed",
+            "prompt_tokens": None,
+            "completion_tokens": None,
+            "cost_nano_usd": None,
+            "tavily_credits": None,
+        },
+        # Unknown provider claiming 0 cost or tokens
+        {
+            "stage": "provider",
+            "status": "unknown",
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "cost_nano_usd": 0,
+            "tavily_credits": None,
+        },
+        # Blocked event with non-zero attempts
+        {
+            "stage": "provider",
+            "status": "blocked",
+            "attempts": 1,
+            "prompt_tokens": None,
+            "completion_tokens": None,
+            "cost_nano_usd": None,
+            "tavily_credits": None,
+        },
+        # Non-synthetic evidence or verified=True
+        {
+            "stage": "controller",
+            "status": "completed",
+            "evidence_kind": "live",
+        },
+        {
+            "stage": "controller",
+            "status": "completed",
+            "provider_evidence_verified": True,
+        },
+    ],
+)
+def test_stage_and_status_accounting_invariants_enforced(bad_kwargs: dict[str, Any]):
+    base: dict[str, Any] = {
+        "stage": "controller",
+        "status": "completed",
+        "correlation_token": new_trace_token(),
+        "elapsed_us": 1000,
+        "attempts": 1,
+        "prompt_tokens": None,
+        "completion_tokens": None,
+        "cost_nano_usd": None,
+        "tavily_credits": None,
+        "evidence_kind": "synthetic",
+        "provider_evidence_verified": False,
+    }
+    base.update(bad_kwargs)
+    with pytest.raises(ValueError):
+        TraceEvent(**base)
+
+
+@pytest.mark.parametrize(
+    ("field_name", "bad_val"),
+    [
+        ("stage", "PRIVATE_STAGE_CANARY"),
+        ("status", "PRIVATE_STATUS_CANARY"),
+        ("correlation_token", "task-click-001-canary"),
+        ("correlation_token", "chatcmpl-request-id-canary"),
+        ("correlation_token", "A" * 32),  # uppercase rejected
+        ("elapsed_us", -1),
+        ("elapsed_us", MAX_ELAPSED_US + 1),
+        ("elapsed_us", True),
+        ("elapsed_us", 12.5),
+        ("elapsed_us", float("nan")),
+        ("elapsed_us", float("inf")),
+        ("attempts", -1),
+        ("attempts", MAX_ATTEMPTS + 1),
+        ("attempts", True),
+        ("attempts", False),
+        ("prompt_tokens", True),
+        ("completion_tokens", False),
+        ("cost_nano_usd", True),
+        ("cost_nano_usd", -1),
+        ("cost_nano_usd", I64_MAX + 1),
+        ("tavily_credits", True),
+        ("tavily_credits", -1),
+    ],
+)
+def test_canaries_booleans_as_counts_and_bounds_rejected(field_name: str, bad_val: Any):
+    base: dict[str, Any] = {
+        "stage": "controller",
+        "status": "completed",
+        "correlation_token": new_trace_token(),
+        "elapsed_us": 1000,
+        "attempts": 1,
+        "prompt_tokens": None,
+        "completion_tokens": None,
+        "cost_nano_usd": None,
+        "tavily_credits": None,
+    }
+    base[field_name] = bad_val
+    with pytest.raises(ValueError):
+        TraceEvent(**base)
+
+
+def test_unknown_fields_and_metadata_rejected_in_from_dict_and_constructor():
+    tok = new_trace_token()
+    valid_dict = {
+        "stage": "controller",
+        "status": "completed",
+        "correlation_token": tok,
+        "elapsed_us": 100,
+        "attempts": 1,
+        "prompt_tokens": None,
+        "completion_tokens": None,
+        "cost_nano_usd": None,
+        "tavily_credits": None,
+    }
+    ev = TraceEvent.from_dict(valid_dict)
+    assert ev.correlation_token == tok
+
+    for forbidden_key in (
+        "metadata",
+        "extra",
+        "task_id",
+        "prompt",
+        "messages",
+        "query",
+        "url",
+        "patch",
+        "api_key",
+        "request_id",
+    ):
+        with pytest.raises(ValueError):
+            TraceEvent.from_dict({**valid_dict, forbidden_key: "PRIVATE_CANARY"})
+        with pytest.raises(TypeError):
+            TraceEvent(**{**valid_dict, forbidden_key: "PRIVATE_CANARY"})
+
+
+def test_disabled_sink_does_not_inspect_or_serialize_and_enabled_sink_enforces_caps():
+    class ExplodingArg:
+        def __repr__(self) -> str:
+            raise AssertionError("Disabled sink must not inspect or repr argument")
+
+        def __getattr__(self, name: str) -> Any:
+            raise AssertionError(f"Disabled sink must not access attribute {name}")
+
+    disabled = LocalTraceSink()
+    assert disabled.enabled is False
+    assert disabled.emit(ExplodingArg()) is False  # type: ignore[arg-type]
+    assert disabled.events == ()
+
+    # Enabled sink validates type and caps at max_events
+    sink = LocalTraceSink(enabled=True, max_events=2)
+    with pytest.raises(TypeError):
+        sink.emit(ExplodingArg())  # type: ignore[arg-type]
+
+    tok = new_trace_token()
+    ev1 = TraceEvent("controller", "completed", tok, 10, 1, None, None, None, None)
+    ev2 = TraceEvent("controller", "stopped", tok, 20, 1, None, None, None, None)
+    ev3 = TraceEvent("controller", "unknown", tok, 30, 1, None, None, None, None)
+
+    assert sink.emit(ev1) is True
+    assert sink.emit(ev2) is True
+    assert sink.events == (ev1, ev2)
+
+    with pytest.raises(RuntimeError, match="capacity exceeded"):
+        sink.emit(ev3)
+    assert sink.events == (ev1, ev2)
+
+    with pytest.raises(FrozenInstanceError):
+        ev1.status = "blocked"  # type: ignore[misc]
+    with pytest.raises(ValueError):
+        replace(ev1, provider_evidence_verified=True)

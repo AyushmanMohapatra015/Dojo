@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "packet_id": "explorer-export-part2-packet-v1",
+  "agent": "Argon / Agent 1",
+  "date": "2026-10-31",
+  "work_packages": [
+    "10i2",
+    "10i3",
+    "10i4"
+  ],
+  "evidence_scope": "synthetic_fictional_only",
+  "execution_status": "UNEXECUTED",
+  "part1_regenerated_or_modified": false,
+  "Byte_and_sha256_computed": false,
+  "deliverables": [
+    {
+      "order": 1,
+      "path": "dojo/bench/evidence_bundle.py",
+      "work_package": "WP3 / 10i2",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 2,
+      "path": "tests/test_evidence_bundle.py",
+      "work_package": "WP3 / 10i2",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 3,
+      "path": "dojo/bench/export_cli.py",
+      "work_package": "WP4 / 10i3",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 4,
+      "path": "tests/test_explorer_export_cli.py",
+      "work_package": "WP4 / 10i3",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 5,
+      "path": "tests/test_explorer_export_integration.py",
+      "work_package": "WP5 / 10i4",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 6,
+      "path": "docs/explorer-export-reproduction.md",
+      "work_package": "WP5 / 10i4",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 7,
+      "path": "docs/explorer-export-part2-delivery-manifest-v1.json",
+      "work_package": "shared",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    },
+    {
+      "order": 8,
+      "path": "docs/explorer-export-part2-verification-ledger-v1.md",
+      "work_package": "shared",
+      "status": "DELIVERED",
+      "bytes": null,
+      "sha256": null
+    }
+  ],
+  "untouched_accepted_part1_files": [
+    "docs/explorer-v2-contract.md",
+    "dojo/bench/explorer_export.py",
+    "dojo/bench/sensitivity_diagnostics.py",
+    "tests/test_explorer_export.py",
+    "tests/test_sensitivity_diagnostics.py",
+    "tests/fixtures/explorer_v2/unequal_seeds_panel.json",
+    "tests/fixtures/explorer_v2/expected_oracles.json"
+  ]
+}
+

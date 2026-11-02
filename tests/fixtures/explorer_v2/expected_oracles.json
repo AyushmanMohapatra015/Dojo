@@ -1,0 +1,13 @@
+{
+  "scope": "fictional arithmetic only, never model results",
+  "config_0001": {"pass": "1/4", "solves": "1/2", "expected_cost": "5", "spend": "10", "mean_cost": "5/2"},
+  "config_0002": {"pass": "1/2", "solves": "1", "expected_cost": "30", "spend": "30", "mean_cost": "15"},
+  "exclude_family_0001": {
+    "config_0001": {"pass": "0", "mean_cost": "3", "delta_pass": "-1/4", "delta_mean_cost": "1/2"},
+    "config_0002": {"pass": "1", "mean_cost": "20", "delta_pass": "1/2", "delta_mean_cost": "5"}
+  },
+  "exclude_family_0002": {
+    "config_0001": {"pass": "1/2", "mean_cost": "2", "delta_pass": "1/4", "delta_mean_cost": "-1/2"},
+    "config_0002": {"pass": "0", "mean_cost": "10", "delta_pass": "-1/2", "delta_mean_cost": "-5"}
+  }
+}

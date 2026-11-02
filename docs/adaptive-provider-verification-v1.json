@@ -1,0 +1,55 @@
+{
+  "task": "8a1",
+  "date": "2026-11-01",
+  "status": "accepted_offline_only",
+  "targeted_tests_passed": 480,
+  "new_adaptive_cases": 43,
+  "actual_provider_calls": 0,
+  "live_enabled": false,
+  "persistent_attempt_binding": false,
+  "unchanged_controller_files": [
+    "dojo/solve/agent.py",
+    "dojo/solve/configured.py",
+    "dojo/solve/contracts.py"
+  ],
+  "files": [
+    {
+      "path": "dojo/solve/adaptive.py",
+      "bytes": 13977,
+      "sha256": "b3960a76ecb95c1a1ed6b02b8ffed9d04c7d74afb3fdacad47c77cd808b82bf0"
+    },
+    {
+      "path": "scripts/adaptive_provider_demo.py",
+      "bytes": 3033,
+      "sha256": "5caf97523f1a5aebcffdb79e138256ea919480fc0602aff5d6a774cd90eda628"
+    },
+    {
+      "path": "tests/test_adaptive_provider.py",
+      "bytes": 18605,
+      "sha256": "25569e773bf8a28784dc2a9c5dbbc8d3f4fa615994ca04e88c724cc54497b241"
+    },
+    {
+      "path": "docs/adaptive-provider-rehearsal.md",
+      "bytes": 7305,
+      "sha256": "4d2cc9bddc33c027b9c8bbec23100b63b7ac60deca4e2758fd18865d26747b5d"
+    }
+  ],
+  "test_modules": {
+    "tests.test_adaptive_provider": 43,
+    "tests.test_solver_simulation": 32,
+    "tests.test_configured_solver": 53,
+    "tests.test_bench_runner": 35,
+    "tests.test_nebius_codec": 57,
+    "tests.test_provider_fake_session": 20,
+    "tests.test_provider_boundaries": 5,
+    "tests.test_credits": 25,
+    "tests.test_credit_precision": 26,
+    "tests.test_execution_records": 65,
+    "tests.test_tavily_codec": 59,
+    "tests.test_trace_events": 36,
+    "tests.test_partner_demo": 3,
+    "tests.test_partner_boundaries": 4,
+    "tests.test_partner_primary": 17
+  },
+  "credential_scan": "Bounded common-pattern scan of four deliverables; not universal secret detection"
+}

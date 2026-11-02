@@ -1,0 +1,471 @@
+"""WP3 (11b1): Bounded Tavily documentation-search payload and response codec.
+
+Pure offline request validation, bounded duplicate-safe JSON decoding, strict
+HTTPS public URL filtering, and exact-class scripted fake search. Retrieved
+text is untrusted observation data and never authorizes commands or claims
+live credit/USD accounting.
+"""
+
+from __future__ import annotations
+
+import ipaddress
+import json
+import math
+import re
+from dataclasses import dataclass, field
+from typing import Any
+from urllib.parse import urlsplit
+
+from dojo.store.records import I64_MAX
+
+MAX_QUERY_CHARS = 512
+MAX_RESULTS_LIMIT = 3
+MAX_CALLS_LIMIT = 3
+MAX_RAW_SEARCH_BYTES = 262_144
+MAX_SEARCH_DEPTH = 16
+MAX_SEARCH_NODES = 2_048
+MAX_STRING_BYTES = 65_536
+MAX_TITLE_CHARS = 256
+MAX_URL_CHARS = 2_048
+MAX_SNIPPET_CHARS = 2_000
+MAX_TOTAL_SNIPPET_CHARS = 6_000
+MAX_INT_DIGITS = 20
+
+_INT_TOKEN_RE = re.compile(r"^-?(0|[1-9][0-9]{0,19})$")
+_HOST_LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+
+_TOP_LEVEL_ALLOWED_KEYS = frozenset(
+    {
+        "query",
+        "follow_up_questions",
+        "answer",
+        "images",
+        "results",
+        "response_time",
+        "usage",
+        "request_id",
+    }
+)
+
+_RESULT_ALLOWED_KEYS = frozenset(
+    {
+        "title",
+        "url",
+        "content",
+        "score",
+        "raw_content",
+        "published_date",
+        "favicon",
+    }
+)
+
+_USAGE_ALLOWED_KEYS = frozenset(
+    {
+        "credits",
+    }
+)
+
+_FORBIDDEN_HOSTS = frozenset(
+    {
+        "localhost",
+        "localhost.localdomain",
+        "ip6-localhost",
+        "ip6-loopback",
+    }
+)
+
+_FORBIDDEN_HOST_SUFFIXES = (
+    ".localhost",
+    ".local",
+    ".internal",
+    ".invalid",
+    ".home.arpa",
+    ".lan",
+)
+
+
+def _validate_clean_str(
+    value: Any,
+    name: str,
+    *,
+    max_chars: int,
+    allow_empty: bool = False,
+    require_stripped_nonempty: bool = True,
+) -> str:
+    if type(value) is not str:
+        raise ValueError(f"{name} must be an exact str")
+    if "\x00" in value:
+        raise ValueError(f"{name} must not contain NUL")
+    try:
+        value.encode("utf-8", errors="strict")
+    except UnicodeEncodeError as exc:
+        raise ValueError(f"{name} contains invalid UTF-8 surrogates") from exc
+    if not allow_empty and not value:
+        raise ValueError(f"{name} must not be empty")
+    if require_stripped_nonempty and not value.strip():
+        raise ValueError(f"{name} must not be whitespace-only")
+    if len(value) > max_chars:
+        raise ValueError(f"{name} exceeds maximum length of {max_chars} chars")
+    return value
+
+
+def _validate_https_public_url(url: Any) -> str:
+    text = _validate_clean_str(
+        url,
+        "url",
+        max_chars=MAX_URL_CHARS,
+        allow_empty=False,
+        require_stripped_nonempty=True,
+    )
+    if text != text.strip() or any(ord(ch) <= 32 or ord(ch) >= 127 for ch in text):
+        raise ValueError("URL must be printable ASCII without whitespace or control chars")
+    try:
+        parts = urlsplit(text)
+    except ValueError as exc:
+        raise ValueError("Malformed URL") from exc
+
+    if not text.startswith("https://") or parts.scheme != "https":
+        raise ValueError("Only explicit lowercase https:// URLs are permitted")
+    if not parts.netloc:
+        raise ValueError("URL must include a network host")
+    if parts.username is not None or parts.password is not None or "@" in parts.netloc:
+        raise ValueError("Credentials in URLs are forbidden")
+
+    host = parts.hostname
+    if not host:
+        raise ValueError("URL hostname is missing")
+    try:
+        _ = parts.port
+    except ValueError as exc:
+        raise ValueError("Invalid URL port") from exc
+
+    host_lower = host.lower().rstrip(".")
+    if not host_lower or len(host_lower) > 253:
+        raise ValueError("Invalid URL hostname length")
+    if host_lower in _FORBIDDEN_HOSTS or host_lower.endswith(_FORBIDDEN_HOST_SUFFIXES):
+        raise ValueError("Local or internal URL hostnames are forbidden")
+
+    # Reject literal IPv4/IPv6 addresses and bracketed IP literals
+    if "[" in parts.netloc or "]" in parts.netloc:
+        raise ValueError("IP literal URLs are forbidden")
+    try:
+        ipaddress.ip_address(host_lower)
+    except ValueError:
+        pass
+    else:
+        raise ValueError("IP literal URLs are forbidden")
+
+    # Also reject numeric-only final TLD labels (e.g. 127.1 or decimal IP forms)
+    labels = host_lower.split(".")
+    if len(labels) < 2:
+        raise ValueError("URL hostname must be a qualified public domain")
+    for label in labels:
+        if not _HOST_LABEL_RE.fullmatch(label):
+            raise ValueError("Invalid domain label in URL hostname")
+    if labels[-1].isdigit():
+        raise ValueError("Numeric TLD or shorthand IPv4 address is forbidden")
+
+    return text
+
+
+@dataclass(frozen=True)
+class SearchHit:
+    """Bounded, untrusted documentation search hit."""
+
+    title: str
+    url: str
+    snippet: str
+
+    def __post_init__(self) -> None:
+        _validate_clean_str(
+            self.title,
+            "title",
+            max_chars=MAX_TITLE_CHARS,
+            allow_empty=False,
+            require_stripped_nonempty=True,
+        )
+        _validate_https_public_url(self.url)
+        _validate_clean_str(
+            self.snippet,
+            "snippet",
+            max_chars=MAX_SNIPPET_CHARS,
+            allow_empty=False,
+            require_stripped_nonempty=True,
+        )
+
+
+@dataclass(frozen=True)
+class SearchObservation:
+    """Bounded, untrusted search observation with separate integer credit accounting."""
+
+    hits: tuple[SearchHit, ...] = field(repr=False)
+    credits: int | None
+    untrusted: bool = True
+
+    def __post_init__(self) -> None:
+        if type(self.hits) is not tuple or len(self.hits) > MAX_RESULTS_LIMIT:
+            raise ValueError("hits must be a tuple of at most 3 SearchHit items")
+        total_snippet_chars = 0
+        for item in self.hits:
+            if type(item) is not SearchHit:
+                raise TypeError("Each hit must be an exact SearchHit")
+            RebuiltHit = SearchHit(title=item.title, url=item.url, snippet=item.snippet)
+            total_snippet_chars += len(RebuiltHit.snippet)
+        if total_snippet_chars > MAX_TOTAL_SNIPPET_CHARS:
+            raise ValueError("Total exposed snippet text exceeds 6000 characters")
+        if self.credits is not None and (
+            type(self.credits) is not int or not (0 <= self.credits <= I64_MAX)
+        ):
+            raise ValueError("credits must be None or an exact int in [0, I64_MAX]")
+        if type(self.untrusted) is not bool or self.untrusted is not True:
+            raise ValueError("untrusted flag must remain True")
+
+
+def build_search_payload(query: str, *, max_results: int = 3) -> dict[str, Any]:
+    """Build bounded Tavily search request payload with cost-expanding options disabled."""
+    validated_query = _validate_clean_str(
+        query,
+        "query",
+        max_chars=MAX_QUERY_CHARS,
+        allow_empty=False,
+        require_stripped_nonempty=True,
+    )
+    if type(max_results) is not int or not (1 <= max_results <= MAX_RESULTS_LIMIT):
+        raise ValueError("max_results must be an exact int in [1, 3]")
+    return {
+        "query": validated_query,
+        "search_depth": "basic",
+        "auto_parameters": False,
+        "max_results": max_results,
+        "include_answer": False,
+        "include_raw_content": False,
+        "include_images": False,
+        "include_usage": True,
+    }
+
+
+def _parse_int_token(token: str) -> int:
+    if len(token) > MAX_INT_DIGITS or _INT_TOKEN_RE.fullmatch(token) is None:
+        raise ValueError("Invalid integer token in search JSON")
+    val = int(token, 10)
+    if not (-I64_MAX - 1 <= val <= I64_MAX):
+        raise ValueError("Integer token exceeds signed 64-bit bounds")
+    return val
+
+
+def _parse_float_token(token: str) -> float:
+    if len(token) > 64:
+        raise ValueError("Float token too long in search JSON")
+    try:
+        val = float(token)
+    except ValueError as exc:
+        raise ValueError("Invalid float token in search JSON") from exc
+    if not math.isfinite(val):
+        raise ValueError("Non-finite float in search JSON")
+    return val
+
+
+def _check_search_tree(node: Any, *, depth: int, counter: list[int]) -> None:
+    if depth > MAX_SEARCH_DEPTH:
+        raise ValueError("Search JSON nesting exceeds depth bound of 16")
+    counter[0] += 1
+    if counter[0] > MAX_SEARCH_NODES:
+        raise ValueError("Search JSON node count exceeds limit")
+    if node is None or type(node) is bool:
+        return
+    if type(node) is int:
+        if not (-I64_MAX - 1 <= node <= I64_MAX):
+            raise ValueError("Search JSON int out of bounds")
+        return
+    if type(node) is float:
+        if not math.isfinite(node):
+            raise ValueError("Search JSON float is not finite")
+        return
+    if type(node) is str:
+        if "\x00" in node:
+            raise ValueError("Search JSON string contains NUL")
+        try:
+            encoded = node.encode("utf-8", errors="strict")
+        except UnicodeEncodeError as exc:
+            raise ValueError("Search JSON string has invalid UTF-8") from exc
+        if len(encoded) > MAX_STRING_BYTES:
+            raise ValueError("Search JSON string exceeds 64 KiB")
+        return
+    if type(node) is list:
+        for item in node:
+            _check_search_tree(item, depth=depth + 1, counter=counter)
+        return
+    if type(node) is dict:
+        for k, v in node.items():
+            if type(k) is not str or "\x00" in k:
+                raise ValueError("Invalid key in search JSON")
+            try:
+                k_bytes = k.encode("utf-8", errors="strict")
+            except UnicodeEncodeError as exc:
+                raise ValueError("Invalid UTF-8 key in search JSON") from exc
+            if len(k_bytes) > 256:
+                raise ValueError("Search JSON key too long")
+            _check_search_tree(v, depth=depth + 1, counter=counter)
+        return
+    raise ValueError("Unsupported JSON value in search response")
+
+
+def _strict_decode_search_json(raw: bytes) -> dict[str, Any]:
+    if type(raw) is not bytes:
+        raise TypeError("Search response raw input must be exact bytes")
+    if len(raw) == 0 or len(raw) > MAX_RAW_SEARCH_BYTES:
+        raise ValueError("Search response raw bytes must be in 1..262144")
+    try:
+        text = raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise ValueError("Search response is not valid UTF-8") from exc
+    if "\x00" in text:
+        raise ValueError("Search response contains NUL")
+
+    def _pairs_hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for k, v in pairs:
+            if type(k) is not str or "\x00" in k:
+                raise ValueError("Invalid JSON object key")
+            try:
+                key_len = len(k.encode("utf-8", errors="strict"))
+            except UnicodeEncodeError as exc:
+                raise ValueError("Invalid UTF-8 in JSON key") from exc
+            if key_len > 256:
+                raise ValueError("JSON object key too long")
+            if k in result:
+                raise ValueError("Duplicate JSON key in search response")
+            result[k] = v
+        return result
+
+    def _constant_hook(_token: str) -> Any:
+        raise ValueError("Forbidden non-finite JSON constant in search response")
+
+    try:
+        parsed = json.loads(
+            text,
+            object_pairs_hook=_pairs_hook,
+            parse_int=_parse_int_token,
+            parse_float=_parse_float_token,
+            parse_constant=_constant_hook,
+        )
+    except RecursionError as exc:
+        raise ValueError("Search JSON nesting exceeded recursion limit") from exc
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Malformed or invalid search JSON") from exc
+
+    if type(parsed) is not dict:
+        raise ValueError("Top-level search JSON must be an object")
+    _check_search_tree(parsed, depth=0, counter=[0])
+    return parsed
+
+
+def decode_search_response(raw: bytes) -> SearchObservation:
+    """Decode bounded Tavily JSON bytes into an untrusted SearchObservation."""
+    payload = _strict_decode_search_json(raw)
+
+    if not set(payload.keys()).issubset(_TOP_LEVEL_ALLOWED_KEYS):
+        raise ValueError("Unknown top-level keys in search response")
+    if "results" not in payload or type(payload["results"]) is not list:
+        raise ValueError("Search response must contain a results list")
+
+    raw_results = payload["results"]
+    if len(raw_results) > MAX_RESULTS_LIMIT:
+        raise ValueError("Search results count exceeds maximum of 3")
+
+    if "response_time" in payload and payload["response_time"] is not None:
+        rt = payload["response_time"]
+        if type(rt) not in (int, float) or not math.isfinite(rt) or rt < 0:
+            raise ValueError("Invalid response_time in search response")
+
+    hits: list[SearchHit] = []
+    total_snippet_chars = 0
+    for item in raw_results:
+        if type(item) is not dict:
+            raise ValueError("Each search result item must be a dict")
+        if not set(item.keys()).issubset(_RESULT_ALLOWED_KEYS):
+            raise ValueError("Unknown keys in search result item")
+        if "title" not in item or "url" not in item or "content" not in item:
+            raise ValueError("Search result item missing required title, url, or content")
+        if "score" in item and item["score"] is not None:
+            score = item["score"]
+            if type(score) not in (int, float) or not math.isfinite(score):
+                raise ValueError("Search result score must be a finite number")
+        if (
+            "raw_content" in item
+            and item["raw_content"] is not None
+            and type(item["raw_content"]) is not str
+        ):
+            raise ValueError("Invalid raw_content field type")
+
+        hit = SearchHit(
+            title=item["title"],
+            url=item["url"],
+            snippet=item["content"],
+        )
+        total_snippet_chars += len(hit.snippet)
+        if total_snippet_chars > MAX_TOTAL_SNIPPET_CHARS:
+            raise ValueError("Total exposed snippet text exceeds 6000 characters")
+        hits.append(hit)
+
+    credits: int | None = None
+    if "usage" in payload and payload["usage"] is not None:
+        usage_obj = payload["usage"]
+        if type(usage_obj) is not dict:
+            raise ValueError("Search usage field must be an object")
+        if not set(usage_obj.keys()).issubset(_USAGE_ALLOWED_KEYS):
+            raise ValueError("Unknown keys in search usage object")
+        if "credits" in usage_obj:
+            raw_credits = usage_obj["credits"]
+            if type(raw_credits) is not int or not (0 <= raw_credits <= I64_MAX):
+                raise ValueError("Search usage.credits must be an exact int in [0, I64_MAX]")
+            credits = raw_credits
+
+    return SearchObservation(
+        hits=tuple(hits),
+        credits=credits,
+        untrusted=True,
+    )
+
+
+class ScriptedSearch:
+    """Exact predeclared fake documentation search transport; never performs network I/O."""
+
+    def __init__(self, responses: tuple[bytes, ...], *, max_calls: int = 1) -> None:
+        if type(self) is not ScriptedSearch:
+            raise TypeError("ScriptedSearch subclasses are not permitted")
+        if type(max_calls) is not int or not (1 <= max_calls <= MAX_CALLS_LIMIT):
+            raise ValueError("max_calls must be an exact int in [1, 3]")
+        if type(responses) is not tuple or not (1 <= len(responses) <= MAX_CALLS_LIMIT):
+            raise ValueError("responses must be a non-empty tuple of at most 3 byte payloads")
+        if len(responses) > max_calls:
+            raise ValueError("responses length cannot exceed max_calls")
+        for item in responses:
+            if type(item) is not bytes:
+                raise TypeError("Each scripted search response must be exact bytes")
+            if len(item) > MAX_RAW_SEARCH_BYTES:
+                raise ValueError("Scripted search response exceeds byte limit")
+        self._responses: tuple[bytes, ...] = responses
+        self._max_calls: int = max_calls
+        self._calls: int = 0
+
+    @property
+    def calls(self) -> int:
+        return self._calls
+
+    def __repr__(self) -> str:
+        return (
+            f"ScriptedSearch(total={len(self._responses)}, "
+            f"max_calls={self._max_calls}, calls={self._calls})"
+        )
+
+    def search(self, query: str, *, max_results: int = 3) -> SearchObservation:
+        if self._calls >= self._max_calls or self._calls >= len(self._responses):
+            raise RuntimeError("Scripted search call budget or responses exhausted")
+        raw = self._responses[self._calls]
+        self._calls += 1
+        payload = build_search_payload(query, max_results=max_results)
+        obs = decode_search_response(raw)
+        if len(obs.hits) > payload["max_results"]:
+            raise ValueError("Decoded search hits exceed requested max_results bound")
+        return obs

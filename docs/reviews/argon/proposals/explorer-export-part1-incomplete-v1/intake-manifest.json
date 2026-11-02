@@ -1,0 +1,20 @@
+{
+  "source": "docs/reviews/argon/explorer-export-two-part-guide-v1_incomplete.txt",
+  "bytes": 98441,
+  "sha256": "025681298fadf135f784584dd330c387df081a694d3416657f02c54308fca18e",
+  "status": "incomplete-unaccepted",
+  "files": [
+    {
+      "path": "explorer_export.py.txt",
+      "bytes": 90563,
+      "sha256": "e743944b28a47376a3b6c9a6729ae622d69bc515d0c31466f52a49b21922c5c3",
+      "syntax": "SyntaxError at line 795"
+    },
+    {
+      "path": "test_explorer_export.py.fragment.txt",
+      "bytes": 2039,
+      "sha256": "817cd59296b0af1b07fac238196a92f67daa67a114911c7fc9d93169e94bdbcb",
+      "syntax": "parses; semantic/delivery completeness not established"
+    }
+  ]
+}

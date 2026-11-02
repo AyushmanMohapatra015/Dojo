@@ -1,0 +1,39 @@
+# Argon Explorer Export Part 2 Verification Ledger (v1)
+
+Date: 2026-10-31
+Work Packages: `10i2` (WP3), `10i3` (WP4), `10i4` (WP5)
+Authority: Accepted Part 1 snapshot embedded in `explorer-export-part2-packet-v1.md`.
+
+## 1. Execution Disclosure
+
+- **Test & Lint Execution Status**: **UNEXECUTED**. This response was generated in an environment without local shell/pytest execution against the Dojo repository.
+- **Byte Lengths & SHA-256 Digests**: Omitted (`null` in delivery manifest) per instructions not to invent or guess uncomputed digests.
+- **Evidence Scope**: All fixtures and test cases use fictional synthetic arithmetic (`evidence_kind="synthetic"`, `eligibility="UNVERIFIED"`, `real_provider_calls=0`, `publishable=False`). No live Nebius/NVIDIA calls, real benchmark evaluations, or frontend deployments occurred.
+- **Accepted Part 1 Files**: Untouched. No defects requiring a separate patch were found in the accepted Part 1 snapshot.
+
+## 2. Substantive Part 2 Test Case Inventory (28 Cases)
+
+| # | Test Module | Test Function / Parametrization | Requirement / Oracle Covered | Status |
+|---:|---|---|---|---|
+| 1 | `tests/test_evidence_bundle.py` | `test_write_and_verify_bundle_roundtrip_and_determinism` | `write_bundle` + `verify_bundle` roundtrip, exact 3 files, byte determinism, no path/dataset leakage | UNEXECUTED |
+| 2 | `tests/test_evidence_bundle.py` | `test_success_only_and_blocked_bundle_roundtrip` | `cost_incomplete` (`success_only`) and `blocked` bundle roundtrips | UNEXECUTED |
+| 3 | `tests/test_evidence_bundle.py` | `test_cross_file_mismatch_with_standalone_valid_objects_rejected` | Standalone-valid `explorer.json` + standalone-valid `family-diagnostic.json` from different panels rejected | UNEXECUTED |
+| 4 | `tests/test_evidence_bundle.py` | `test_cross_file_task_family_swap_with_matching_originals_rejected` | Cross-file recomputation catches swapped task->family assignment even when `originals` and `family_sizes` match | UNEXECUTED |
+| 5 | `tests/test_evidence_bundle.py` | `test_destination_safety_refuses_existing_or_missing_parent_or_symlinks` | Refuses existing dir/file, missing parent, and symlink parent without overwriting or deleting | UNEXECUTED |
+| 6 | `tests/test_evidence_bundle.py` | `test_verify_rejects_partial_extra_and_tampered_files` | Rejects extra file, missing file, non-canonical JSON formatting, and tampered SHA-256 | UNEXECUTED |
+| 7 | `tests/test_evidence_bundle.py` | `test_verify_rejects_manifest_tampering_and_duplicate_keys` | Rejects `publishable=True`, manifest filename traversal, and duplicate JSON keys | UNEXECUTED |
+| 8 | `tests/test_evidence_bundle.py` | `test_verify_oversized_sentinel_read_rejected` | `+1` byte sentinel rejects oversized `manifest.json` (`> 64 KiB`) and `explorer.json` (`> 2 MiB`) | UNEXECUTED |
+| 9 | `tests/test_explorer_export_cli.py` | `test_cli_help_exits_zero_and_writes_nothing` | `--help` exits `0` to stdout and performs no writes | UNEXECUTED |
+| 10 | `tests/test_explorer_export_cli.py` | `test_cli_export_and_verify_happy_path` | `export` and `verify` CLI subcommands exit `0` and never echo file paths | UNEXECUTED |
+| 11 | `tests/test_explorer_export_cli.py` | `test_cli_cost_incomplete_exports_success_only` | CLI passes `allow_success_only_when_cost_missing=True` and withholds bootstrap/frontiers | UNEXECUTED |
+| 12 | `tests/test_explorer_export_cli.py` | `test_cli_blocked_panel_exits_two_before_report_or_output_creation` | Blocked audit exits `2` before `build_analysis_report` or creating `--output-dir` | UNEXECUTED |
+| 13 | `tests/test_explorer_export_cli.py` | `test_cli_real_evidence_refused_with_exit_one_before_report_or_output` | Real evidence exits `1` before `build_analysis_report` or creating `--output-dir` | UNEXECUTED |
+| 14-21 | `tests/test_explorer_export_cli.py` | `test_cli_invalid_arguments_exit_one_and_never_echo_argv` (8 params) | Unknown flags, missing args, out-of-range/negative/non-integer `--bootstrap-replicates` & `--bootstrap-seed` exit `1` without echoing `argv` | UNEXECUTED |
+| 22 | `tests/test_explorer_export_cli.py` | `test_cli_refuses_existing_output_dir_and_keyboard_interrupt_fails` | Existing `--output-dir` and `KeyboardInterrupt` return exit `1` | UNEXECUTED |
+| 23 | `tests/test_explorer_export_integration.py` | `test_end_to_end_main_process_two_task_unequal_seeds_oracle` | Exact two-task unequal-seeds oracle (`pass_at_1`, `expected_solved_tasks`, `expected_total_cost_nano_usd`, `actual_all_repetitions_spend_nano_usd`, `cost_per_solved`, family exclusions) | UNEXECUTED |
+| 24 | `tests/test_explorer_export_integration.py` | `test_end_to_end_four_task_fixture_with_cascade_bundle` | Four-task fixture (`A=6,000,000`, `B=40,000,000`, cascade `26,000,000` nano-USD) bundle roundtrip | UNEXECUTED |
+| 25 | `tests/test_explorer_export_integration.py` | `test_subprocess_cli_export_verify_and_blocked_exit_codes` | Subprocess `python -m dojo.bench.export_cli` `export` (`0`), `verify` (`0`), and duplicate-cell blocked (`2`) | UNEXECUTED |
+| 26-29 | `tests/test_explorer_export_integration.py` | `test_cli_rejects_oracle_fields_deep_nesting_huge_numbers_and_strings` (4 params) | Production CLI rejects `"expected"` oracle key, deep nesting, 100-digit numbers, and huge strings | UNEXECUTED |
+| 30 | `tests/test_explorer_export_integration.py` | `test_zero_solved_panel_exports_and_verifies_cleanly` | Zero-solved panel exports `undefined_cost` (`zero_expected_solves`) and verifies cleanly | UNEXECUTED |
+| 31 | `tests/test_explorer_export_integration.py` | `test_no_raw_field_leakage_across_entire_bundle` | Raw task, family, config, dataset, and filesystem path canaries absent across all 3 bundle files | UNEXECUTED |
+

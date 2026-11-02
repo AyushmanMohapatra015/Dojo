@@ -1,8 +1,19 @@
 # Project completion checkpoint — tools and account access
 
+Thursday demo and continuation instructions: [HANDOFF.md](HANDOFF.md). Preserve ignored private capsules, pending captures and local ledgers securely; do not upload them. At project completion, request Nebius account suspension/payment-method inactivation and written confirmation after settling usage and revoking API keys. This is a checklist reminder, not an automatic notification.
+
+
 Status: PENDING. Review this checkpoint when DOJO is finished, before declaring
 project handoff complete. This is a persistent checklist, not a scheduled reminder.
 No cleanup has been performed by creating this file.
+
+Local browser QA added isolated Chrome/Edge profiles, copied test builds,
+screenshots and JSON reports under ignored `data/runtime/browser-ui-v*/`.
+Those project artifacts may be reviewed at cleanup. The existing browser itself
+was not installed by Dojo and must not be uninstalled as project cleanup.
+The local dashboard development server may also be running on loopback 5173.
+Stop the known project server when no longer needed; never terminate unrelated
+Node processes by name. Private launcher output logs are under `data/runtime/`.
 
 Latest owner direction: continue development using carefully monitored promo
 credits after spending safeguards are ready, then request Token Factory card
@@ -21,6 +32,10 @@ this is an estimate, not evidence that the request is already complete.
 
 At project completion:
 
+- [ ] Remind the owner to email Nebius Token Factory support to remove the
+  saved card/payment method. Ask whether stored payment tokens can be deleted,
+  what must be retained for legal/accounting purposes, and request written
+  confirmation. This reminder does not send an email or guarantee total erasure.
 - [ ] Stop all project workloads and revoke all Token Factory API keys.
 - [ ] Check balance/invoices and ask support to confirm no pending/unbilled
   usage remains; resolve any actual amount owed before inactivation.
@@ -54,6 +69,7 @@ program and revoking its account access are separate actions; complete both.
 | Git, Git Credential Manager, Python/Anaconda, winget | Already present | Do not automatically uninstall shared tools. Review with the owner if they want these removed too. |
 | Git safe.directory entry | Added for D:/NVIDIA X NEBIUS | Remove this exact entry if it is no longer needed; never clear unrelated entries. |
 | Nebius / Tavily / other CLIs | Not installed by this work | Add to inventory if installed later; do not claim they were removed. |
+| Offline runner SQLite/temporary fixtures | Added under ignored .pytest_tmp and optional owner-created data/offline-demo.sqlite3 | Preserve any wanted evidence first. One failed smoke fixture .pytest_tmp/runner-smoke-b9kbj8yx remains from a fixed connection-close bug; review/remove only this exact generated directory. Successful revised smoke removes its own directory. Never delete unrelated databases or broad temp trees. No new CLI package installed. |
 
 ## Checklist — perform at project completion
 
@@ -118,3 +134,7 @@ program and revoking its account access are separate actions; complete both.
 
 References: [GitHub CLI logout manual](https://cli.github.com/manual/gh_auth_logout)
 and [GitHub OAuth authorization review](https://docs.github.com/en/apps/oauth-apps/using-oauth-apps/reviewing-your-authorized-oauth-apps).
+
+
+## 14a2 temporary build inventory
+Project-local .pytest_tmp/build-tools-v1 (isolated Hatchling and dependencies), .pytest_tmp/release-wheel-v1 (audited wheel), and .pytest_tmp/wheel-install-v1 (isolated installed package) were created. Review these exact workspace paths before later cleanup. No global Python packages were installed. Keep the separate support/card-removal checklist in this document for project completion.

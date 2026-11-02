@@ -1,0 +1,58 @@
+"""WP1 (10i1) acceptance and behavioral regression tests for dojo/bench/explorer_export.py."""
+
+from __future__ import annotations
+
+import copy
+import json
+from dataclasses import replace
+from fractions import Fraction
+from pathlib import Path
+
+import pytest
+
+from dojo.bench import explorer_export
+from dojo.bench.explorer_export import (
+    ExplorerExportError,
+    build_explorer_view,
+    loads_bounded_explorer_json,
+    parse_rational_dto,
+    serialize_explorer_view,
+    to_rational_dto,
+    validate_explorer_view,
+)
+from dojo.bench.records import (
+    AnalysisInputError,
+     parse_analysis_envelope,
+    parse_analysis_json,
+)
+from dojo.bench.report import build_analysis_report
+from dojo.cascade.policies import policy_primitive
+
+ANALYSIS_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "analysis"
+EXPLORER_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "explorer_v2"
+
+
+def _load_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def test_wp1_01_two_task_unequal_seeds_oracle_and_exact_fractions() -> None:
+    """Verify exact rational metrics on the 2-task unequal-seed panel against expected_oracles.json."""
+    panel_data = _load_json(EXPLORER_FIXTURES / "unequal_seeds_panel.json")
+    oracles = _load_json(EXPLORER_FIXTURES / "expected_oracles.json")[
+        "two_task_unequal_seeds_oracle"
+    ]
+
+    env = parse_analysis_envelope(panel_data)
+    rep = build_analysis_report(env, bootstrap_replicates=25, bootstrap_seed=17)
+    view = build_explorer_view(env, rep)
+
+    assert view["schema_version"] == 2
+    assert view["view_model"] == "dojo-explorer-view-v2"
+    assert view["evidence_kind"] == "synthetic"
+    assert view["eligibility"] == "UNVERIFIED"
+    assert view["real_provider_calls"] == 0
+    assert view["construction_counts"] == {"total": 63, "train": 37, "held_out": 26}
+    assert view["evaluated_task_count"] == 2
+    assert view["source"]["input_sha256"] == oracles["input_sha256"]
+    
