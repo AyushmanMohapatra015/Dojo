@@ -339,6 +339,13 @@ addresses refer to their own computers; do not send them this URL as a public
 demo link. Allow 15–20 minutes for the full technical walkthrough or select the
 short version below. Rehearse once beforehand with new output paths.
 
+Website: **http://127.0.0.1:5173/** on this PC. The compact top disclosure
+reads **Synthetic sample results - no live model calls**. In Change dataset,
+select **1. Upload results JSON**, then **2. Upload matching family diagnostic
+(optional)**. The help text names the files in your demo pack. Shorter labels
+do not change synthetic-only eligibility, validation or the audit information
+available under Method. Refresh the browser after interface updates.
+
 ### Recommended: prepare the working demo in one command
 
 From `D:\NVIDIA X NEBIUS`, with Docker Desktop running:

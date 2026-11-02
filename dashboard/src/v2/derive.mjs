@@ -40,7 +40,7 @@ import {
 } from './data.mjs';
 
 export const SYNTHETIC_BANNER_V2 =
-  'SYNTHETIC OFFLINE VIEW ONLY — UNVERIFIED ELIGIBILITY — 0 REAL PROVIDER CALLS';
+  'Synthetic sample results - no live model calls';
 
 const DERIVED_TOP_KEYS = Object.freeze([
   'scope',

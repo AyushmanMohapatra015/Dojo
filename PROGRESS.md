@@ -1,5 +1,16 @@
 # Progress
 
+## Compact disclosure and upload flow (14j8)
+
+Verified local website responds. Numbered upload controls now name the demo-pack
+files and explain matching order without internal schema names in their labels.
+Compact synthetic warning and spacing retain disclosure and Method audit details.
+43 data/arithmetic tests and 51 UI tests passed; build passes with existing chunk
+warning. Visual inspection caught an unsuccessful Unicode banner replacement;
+corrected the actual constant and rebuilt. Final Chromium checks pass at all four widths with keyboard/focus and large-text checks; visually inspected final 375px screenshot.
+No provider call or paid feature enabled.
+
+
 ## Demo interface polish (14j7)
 
 Removed version/internal selector/DTO wording from main headings, simplified

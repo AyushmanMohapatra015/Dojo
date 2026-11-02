@@ -46,9 +46,9 @@ const jsonFile = (value, name = 'data.json') =>
   });
 
 const explorerInput = () =>
-  screen.getByLabelText(/Upload explorer view JSON \(dojo-explorer-view-v2\)/i);
+  screen.getByLabelText(/1. Upload results JSON/i);
 const diagnosticInput = () =>
-  screen.getByLabelText(/Upload optional paired family diagnostic JSON/i);
+  screen.getByLabelText(/2. Upload matching family diagnostic/i);
 
 describe('Runs recovery and keyboard navigation', () => {
   it('moves focus to selected details and returns it to the triggering row on close', async () => {

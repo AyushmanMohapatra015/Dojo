@@ -553,3 +553,9 @@ thead th {
   .overview-guide { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .overview-step { height: 100%; }
 }
+
+/* Compact disclosure leaves more space for results without hiding evidence status. */
+.banner { border-bottom-width: 2px; font-size: 0.95rem; }
+.title-block { padding-top: 1.25rem; padding-bottom: 1rem; }
+.dataset-details { margin-bottom: 0.5rem; }
+.dataset-details__body .field { flex: 1 1 18rem; }

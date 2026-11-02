@@ -155,7 +155,7 @@ function SyntheticBanner({ bannerText }) {
       <span aria-hidden="true">{'\u26A0 '}</span>
       <strong>{bannerText || SYNTHETIC_BANNER_V2}</strong>
       <span className="banner-sub">
-        Sample results for exploring the evaluation workflow. No live model requests.
+        Illustrative data, not measured model performance.
       </span>
     </div>
   );
@@ -200,13 +200,13 @@ function DatasetControls({
         </button>
         {hasBoundDiagnostic ? (
           <button type="button" className="btn btn-quiet" onClick={onClearDiagnostic} disabled={busy}>
-            Clear paired family diagnostic
+            Remove family diagnostic
           </button>
         ) : null}
       </div>
       <div className="controls">
         <div className="field">
-          <label htmlFor={explorerFileId}>Upload explorer view JSON (dojo-explorer-view-v2)</label>
+          <label htmlFor={explorerFileId}>1. Upload results JSON</label>
           <input
             id={explorerFileId}
             type="file"
@@ -216,14 +216,12 @@ function DatasetControls({
             disabled={false}
           />
           <p id={explorerHintId} className="hint">
-            Accepts a local <code>.json</code> file up to 2 MiB (2,097,152 bytes) in{' '}
-            <code>dojo-explorer-view-v2</code> format. Selecting a new explorer view clears any previously
-            bound family diagnostic.
+            Choose <code>explorer.json</code> from your prepared demo bundle (up to 2 MiB). Loading results clears the previous family diagnostic.
           </p>
         </div>
         <div className="field">
           <label htmlFor={diagFileId}>
-            Upload optional paired family diagnostic JSON (dojo-family-sensitivity-v2)
+            2. Upload matching family diagnostic (optional)
           </label>
           <input
             id={diagFileId}
@@ -234,8 +232,7 @@ function DatasetControls({
             disabled={false}
           />
           <p id={diagHintId} className="hint">
-            Validates and binds a secondary <code>dojo-family-sensitivity-v2</code> file against the
-            currently loaded results. A mismatched file is rejected.
+            Choose <code>family-diagnostic.json</code> from the same bundle after loading results. Mismatched files are rejected.
           </p>
         </div>
       </div>
