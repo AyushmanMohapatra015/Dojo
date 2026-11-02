@@ -209,7 +209,7 @@ to the completion instructions above. Regenerate after changing plan statuses:
 ```
 
 <!-- OPEN_TASKS_BEGIN -->
-**117 unfinished parent/child rows**, including optional/historical tasks.
+**116 unfinished parent/child rows**, including optional/historical tasks.
 
 | ID | Status | Remaining task | Next instruction |
 |---|---|---|---|
@@ -318,7 +318,6 @@ to the completion instructions above. Regenerate after changing plan statuses:
 | 14h | PLANNED | Feature freeze, fresh reproduction, browser/demo, result/claim and all-links review. | Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions. See section 3. |
 | 14i | GATED | Authorized submission by Oct 29; verify receipt/status; no post-deadline edits. | Original submission date is past. Record actual non-submission/receipt status; do not backdate or assume an extension. Owner decides later scope. See section 3. |
 | 14j | PARTIAL | Handoff inventory and judge-access maintenance without continuing paid inference. | Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions. See section 3. |
-| 14j3 | PARTIAL | Owner explicitly authorizes cumulative private GitHub checkpoint: audit candidates, stage/commit/push without force, verify remote state. Preserve ignored credentials/runtime evidence and report any blocker. | Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions. See section 3. |
 | 15a | GATED | Stop jobs/endpoints and revoke unused API keys after preserving evidence. | At completion preserve evidence, stop owned work, reconcile usage, revoke unused keys, request verified support card inactivation and review project-only cleanup. See section 5. |
 | 15b | GATED | Reconcile pending/outstanding usage/invoices and final balance; prior liabilities do not disappear on closure. | At completion preserve evidence, stop owned work, reconcile usage, revoke unused keys, request verified support card inactivation and review project-only cleanup. See section 5. |
 | 15c | GATED | Owner-directed support suspension/card inactivation, private verification and written confirmation. | At completion preserve evidence, stop owned work, reconcile usage, revoke unused keys, request verified support card inactivation and review project-only cleanup. See section 5. |

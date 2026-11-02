@@ -12,7 +12,7 @@ reports valid. These are offline/scripted demonstrations, not live integrations.
 No paid calls ran. Local screen sharing needs no deployment. Many paid requests
 remain gated; no reset, bypass or repeat-call instructions were added.
 Owner explicitly authorized the cumulative private GitHub push for this task,
-overriding the older manual-only rule for this checkpoint. Push verification pending.
+overriding the older manual-only rule for this checkpoint. Cumulative checkpoint f9f458c pushed and remote main verified equal. Repository remains private; ignored credentials and runtime evidence excluded.
 
 
 ## Persistent one-call probe guard (6e2)

@@ -1,7 +1,7 @@
 {
   "snapshot_date": "2026-11-02",
-  "action_plan_sha256": "d623c841afa93d552e0b22713e36645120f925d9df337870b584a2f7275fff28",
-  "open_task_count": 117,
+  "action_plan_sha256": "05e0fd6419f254a6f59845a120a22746395f5a60dd24004f733dbbc39b979b38",
+  "open_task_count": 116,
   "tasks": [
     {
       "id": "1d",
@@ -735,13 +735,6 @@
       "id": "14j",
       "status": "PARTIAL",
       "task": "Handoff inventory and judge-access maintenance without continuing paid inference.",
-      "guide": "3. Product, setup and release",
-      "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
-    },
-    {
-      "id": "14j3",
-      "status": "PARTIAL",
-      "task": "Owner explicitly authorizes cumulative private GitHub checkpoint: audit candidates, stage/commit/push without force, verify remote state. Preserve ignored credentials/runtime evidence and report any blocker.",
       "guide": "3. Product, setup and release",
       "next_instruction": "Complete uncached reproduction and evidence/claim/privacy checks; hosting, public visibility, video upload and submission require their specific owner decisions."
     },
